@@ -1,6 +1,6 @@
 -- Aura container lifecycle tests for the 12.1 container path: Alerts (pooled display pairs, chain
 -- ordering), Nameplates (pooled bar displays, release semantics), and HealerCC (AddAuraSound
--- registration idempotency). Drives the REAL modules loaded against module_env.
+-- registration idempotency). Drives the real modules loaded against module_env.
 
 local fw = require("Framework")
 local acm = require("AuraContainerMock")
@@ -8,7 +8,7 @@ local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 local db = env.db
--- How many tokens the prewarm prepares under test. Small on purpose; see the note at the module
+-- How many tokens the prewarm prepares under test. Small on purpose. See the note at the module
 -- loads below.
 local PREWARM_TOKENS = 14
 -- What a prewarm walk costs from the tick that starts it. Measured at one: the items cost nothing
@@ -39,8 +39,8 @@ assert(env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount == 3, "and three 
 env.addon.Modules.Alerts.Display.PrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.AlertsModule:Init()
--- Init only builds the lifecycle now; a module sets itself up on the first refresh that
--- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+-- Init only builds the lifecycle. A module sets itself up on the first refresh that finds it
+-- enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
 env.addon.Modules.AlertsModule:Refresh()
 local alertsEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(alertsEvents, "alerts event frame")
@@ -70,8 +70,8 @@ end
 
 fw.describe("Alerts 12.1 - display pair lifecycle", function()
 	-- A pair's two containers are built one after the other, Def then Imp, so the live pair for a
-	-- token is the last two carrying it. Counting groups no longer tells them apart: a container
-	-- is built with only the groups the current mode renders on it.
+	-- token is the last two carrying it. Counting groups does not tell them apart, because a
+	-- container is built with only the groups the current mode renders on it.
 	local function defOf(token)
 		local containers = env.containersForUnit(token)
 
@@ -146,8 +146,8 @@ fw.describe("Alerts 12.1 - display pair lifecycle", function()
 	end)
 
 	fw.it("chains the active defensives into one connected row", function()
-		-- nameplate7 active from the previous test; nameplate10 joins. The chain imposes no
-		-- token order - which enemy comes first carries no meaning - so the shape is what is
+		-- nameplate7 active from the previous test, and nameplate10 joins. The chain imposes no
+		-- token order, since which enemy comes first carries no meaning, so the shape is what is
 		-- locked in: one display starts at the bar, and every other hangs off its own
 		-- predecessor until the whole row is connected.
 		env.enemies.nameplate10 = true
@@ -207,7 +207,7 @@ fw.describe("Alerts 12.1 - display pair lifecycle", function()
 			end
 		end
 
-		-- Back to the default; on 12.1 that behaves as RIGHT (LEFT edges, positive spacing).
+		-- Back to the default. On 12.1 that behaves as RIGHT (LEFT edges, positive spacing).
 		db.Modules.Alerts.Grow = "CENTER"
 		env.addon.Modules.AlertsModule:Refresh()
 		for _, def in ipairs(defs) do
@@ -266,7 +266,7 @@ fw.describe("Alerts 12.1 - display pair lifecycle", function()
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate11")
 		assert(env.auraSoundAdds == addsBefore, "warm token re-adds nothing")
 
-		-- The token recycled to a NON-enemy drops its registrations.
+		-- The token recycled to a non-enemy drops its registrations.
 		env.enemies.nameplate11 = nil
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate11")
 		assert(net() - baseline == perToken * 3, "non-enemy recycle removed the token's registrations")
@@ -377,7 +377,7 @@ fw.describe("Nameplates 12.1 - pooled bar displays", function()
 
 	fw.it("a friendly plate's disarm group is budgeted to zero", function()
 		-- The disarm group's only real filter is its spell-ID map, which the engine skips for
-		-- debuffs on assistable units - left budgeted it would show every debuff on the plate.
+		-- debuffs on assistable units. Left budgeted it would show every debuff on the plate.
 		local friendlyBar = db.Modules.Nameplates.Friendly.Bar1
 		local enabledBefore, showCrowdControlBefore = friendlyBar.Enabled, friendlyBar.ShowCrowdControl
 		friendlyBar.Enabled = true
@@ -423,7 +423,7 @@ fw.describe("Nameplates 12.1 - pooled bar displays", function()
 		assert(display ~= parked, "a different token must not inherit another token's display")
 		assert(display._parent == plate and display._enabled, "configured for its own plate")
 
-		-- np_a coming back reuses what it had; that is what bounds frame growth, since WoW
+		-- np_a coming back reuses what it had. That is what bounds frame growth, since WoW
 		-- can never free a frame.
 		env.addPlate("np_a")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_a")
@@ -497,12 +497,12 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate20")
 		assert(#env.containersForUnit("nameplate20") == 0, "friendly plate starts untracked")
 
-		-- Duel starts: the unit becomes an enemy with no event; only the poll can see it.
+		-- A duel starts, so the unit becomes an enemy with no event. Only the poll can see it.
 		env.enemies.nameplate20 = true
 		acm.tickAll(1)
 		local containers = env.containersForUnit("nameplate20")
 		assert(#containers == 2, "duel opponent gained a Def+Imp pair, got " .. #containers)
-		-- Combined mode only enables the Def container; the Imp one is parked until bars split.
+		-- Combined mode only enables the Def container. The Imp one is parked until bars split.
 		local live = 0
 		for _, container in ipairs(containers) do
 			if container._enabled then
@@ -645,8 +645,8 @@ end)
 fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", function()
 	local healerCC = env.addon.Modules.HealerCrowdControlModule
 
-	-- The label container is the one whose buttons carry a fontstring and no icon texture;
-	-- the icon container's buttons always start with the icon.
+	-- The label container is the one whose buttons carry a fontstring and no icon texture.
+	-- The icon container's buttons always start with the icon.
 	local function splitContainers(token)
 		local label, icons
 		for _, container in ipairs(env.containersForUnit(token)) do
@@ -722,7 +722,7 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 		assert(icons._groups[cc].maxFrameCount > 0, "tracked while the healer is in range")
 
 		-- Out there the engine cannot filter their auras at all, so both of the healer's
-		-- containers go to nothing - the icons and the warning text alike.
+		-- containers go to nothing, the icons and the warning text alike.
 		env.phased.party1 = true
 
 		local refreshes = 0
@@ -732,8 +732,8 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 			return realRefresh(...)
 		end
 
-		-- The module-wide refresh a flip used to trigger is coalesced onto C_Timer.After, which this
-		-- harness runs synchronously, so it lands inside the tick and is counted.
+		-- The module-wide refresh is coalesced onto C_Timer.After, which this harness runs
+		-- synchronously, so it lands inside the tick and is counted.
 		acm.tickAll(1)
 		healerCC.Refresh = realRefresh
 
@@ -751,9 +751,9 @@ end)
 fw.describe("Nameplates 12.1 - the pool never leaks", function()
 	-- Every path that stops tracking a plate has to hand its displays back. A display that
 	-- escapes the pool has no symptom until the pool runs dry and plates start building
-	-- containers on demand - and then two plates can end up sharing one, which draws one
-	-- enemy's auras on another's nameplate. Total containers created is the observable: a
-	-- released display gets reused, a leaked one forces a new one.
+	-- containers on demand, and then two plates can end up sharing one, which draws one
+	-- enemy's auras on another's nameplate. Total containers created is the observable, since a
+	-- released display gets reused and a leaked one forces a new one.
 
 	local nameplates = env.addon.Modules.NameplatesModule
 
@@ -761,7 +761,7 @@ fw.describe("Nameplates 12.1 - the pool never leaks", function()
 		env.enemies[token] = isEnemy ~= false or nil
 		env.addPlate(token)
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", token)
-		-- A plate is handed a display without its groups; the walker declares them a group per
+		-- A plate is handed a display without its groups. The walker declares them a group per
 		-- turn and every display queued before this one comes first, so anything reading them
 		-- has to let it run out.
 		acm.tickAll(100)
@@ -774,8 +774,8 @@ fw.describe("Nameplates 12.1 - the pool never leaks", function()
 	end
 
 	---Displays actually driving a token. A parked display keeps whatever unit it last tracked
-	---until it is acquired again (harmless - a disabled container unregisters its events), so
-	---the unit lookup alone would count displays that are back in the pool.
+	---until it is acquired again, harmlessly, since a disabled container unregisters its events,
+	---so the unit lookup alone would count displays that are back in the pool.
 	local function activeDisplays(token)
 		local list = {}
 		for _, container in ipairs(env.containersForUnit(token)) do
@@ -802,7 +802,7 @@ fw.describe("Nameplates 12.1 - the pool never leaks", function()
 	end)
 
 	fw.it("toggling a bar releases and re-acquires rather than discarding", function()
-		-- Flipping an enabled bar is what drives RebuildContainers, i.e. a re-ADD for every
+		-- Flipping an enabled bar is what drives RebuildContainers, i.e. a re-add for every
 		-- live plate.
 		db.Modules.Nameplates.Enemy.Bar2.Enabled = true
 		nameplates:Refresh()
@@ -847,8 +847,8 @@ fw.describe("Nameplates 12.1 - the pool never leaks", function()
 
 	fw.it("dragging the icon size restyles instead of building a display per size", function()
 		-- Every step of a slider drag reaches Refresh. Keying displays on the configuration meant
-		-- a drag left one display per intermediate size on every tracked plate - twenty buttons
-		-- apiece - and WoW can never free them.
+		-- a drag left one display per intermediate size on every tracked plate, twenty buttons
+		-- apiece, and WoW can never free them.
 		addPlate("np_resize")
 		local display = activeDisplays("np_resize")[1]
 		assert(display, "tracked by the one enabled bar")
@@ -905,9 +905,9 @@ fw.describe("Nameplates 12.1 - the pool never leaks", function()
 
 	fw.it("a token that flips faction swaps between two cached displays", function()
 		-- GetUnitOptions returns Friendly or Enemy for the same token, and a duel flips it
-		-- mid-session. Restyling one display across the flip breaks while auras are secret (the
-		-- restyle defers and an enemy plate keeps the friendly size all arena), so each faction
-		-- keeps its own cached display: the first flip builds the second one, every later flip
+		-- mid-session. Restyling one display across the flip breaks while auras are secret, because
+		-- the restyle defers and an enemy plate keeps the friendly size all arena, so each faction
+		-- keeps its own cached display. The first flip builds the second one, and every later flip
 		-- swaps with no restyle and builds nothing.
 		-- Mirror the enemy bar's configuration so only the size differs.
 		local enemyBar = db.Modules.Nameplates.Enemy.Bar1
@@ -940,7 +940,7 @@ fw.describe("Nameplates 12.1 - the pool never leaks", function()
 		local created = env.auraContainerCount()
 
 		-- Duel starts: same token, now an enemy. The enemy-side display doesn't exist yet, so
-		-- this one flip builds it - at its own size, no restyle involved.
+		-- this one flip builds it, at its own size, no restyle involved.
 		env.enemies.np_flip = true
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
 		local enemy = activeDisplays("np_flip")[1]
@@ -1007,7 +1007,7 @@ end)
 fw.describe("Alerts 12.1 - enemy debuff announcements", function()
 	local alerts = env.addon.Modules.AlertsModule
 	local tts = db.Modules.Alerts.TTS
-	-- The player is always watched; the rest of the side comes from the roster.
+	-- The player is always watched. The rest of the side comes from the roster.
 	env.friendlyUnits = { "player", "party1", "party2" }
 	local allyTokens = #env.friendlyUnits
 
@@ -1108,10 +1108,10 @@ fw.describe("Nameplates 12.1 - prewarming the plate displays", function()
 			"a refresh outside a loading screen built " .. (env.auraContainerCount() - created))
 	end)
 
-	-- Bounded, not just "more than none". Only Enemy.Bar1 is on here, so one set is the ceiling;
-	-- a pass that ignored the Enabled flag would prepare all four bar-and-faction combinations.
-	-- Not an exact count: earlier tests in this file leave plates on a few nameplateN tokens, and
-	-- those displays are already built.
+	-- Bounded, not just "more than none". Only Enemy.Bar1 is on here, so one set is the ceiling.
+	-- A pass that ignored the Enabled flag would prepare all four bar-and-faction combinations.
+	-- Not an exact count, because earlier tests in this file leave plates on a few nameplateN
+	-- tokens and those displays are already built.
 	fw.it("builds no more than the one enabled bar's displays behind a loading screen", function()
 		local created = env.auraContainerCount()
 
@@ -1283,7 +1283,7 @@ fw.describe("Alerts 12.1 - prewarming the display pairs", function()
 			"a repeat pass rebuilt " .. (env.auraContainerCount() - created) .. " containers")
 	end)
 
-	-- Alerts only ever tracks plates in arenas, battlegrounds and the open world; in a dungeon or
+	-- Alerts only ever tracks plates in arenas, battlegrounds and the open world. In a dungeon or
 	-- raid its plate events are unregistered. Building the set on the way in would be forty pairs
 	-- of frames that content can never use, and a frame cannot be given back.
 	fw.it("builds nothing zoning into content that never tracks plates", function()
@@ -1337,10 +1337,10 @@ fw.describe("Alerts 12.1 - prewarming the display pairs", function()
 		env.enemies.nameplate2 = nil
 	end)
 
-	-- Prewarm runs AFTER UpdateContent, which is what discards every pair when the look baked into
-	-- their buttons changes. Reversed, the prewarm would skip (the entries still exist, just at the
-	-- old look), UpdateContent would then drop all forty, and only the handful of tracked tokens
-	-- would be rebuilt - silently forfeiting the prewarm on every look change.
+	-- Prewarm runs after UpdateContent, which is what discards every pair when the look baked into
+	-- their buttons changes. Reversed, the prewarm would skip, since the entries still exist at the
+	-- old look, UpdateContent would then drop all forty, and only the handful of tracked tokens
+	-- would be rebuilt, silently forfeiting the prewarm on every look change.
 	fw.it("still has pairs ready after a change to the baked-in look", function()
 		local icons = db.Modules.Alerts.Icons
 		local originalSize = icons.Size

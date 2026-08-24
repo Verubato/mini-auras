@@ -19,16 +19,16 @@ local UNIT_EVENTS = {
 	PLAYER_TARGET_CHANGED = "target",
 }
 -- A healer group follows whoever holds the role, so the token itself moves. Nothing short of a
--- full refresh covers that: the container has to be pointed at a different unit. An arena
--- opponent appearing is the same shape of change, and there are only a handful per match.
+-- full refresh covers that, since the container has to be pointed at a different unit. An arena
+-- opponent appearing is the same shape of change.
 local ROSTER_EVENTS = {
 	GROUP_ROSTER_UPDATE = true,
 	PLAYER_ROLES_ASSIGNED = true,
 	ARENA_OPPONENT_UPDATE = true,
 }
--- Both sides of the group's Show when condition. Registered with the rest, but only acted on
--- while some group is actually conditional: a profile of plain groups would otherwise take a
--- full rebuild every pull for an answer that cannot have changed.
+-- Both sides of the group's Show when condition. Only acted on while some group is actually
+-- conditional, or a profile of plain groups would take a full rebuild every pull for an answer
+-- that cannot have changed.
 local COMBAT_EVENTS = {
 	PLAYER_REGEN_ENABLED = true,
 	PLAYER_REGEN_DISABLED = true,
@@ -51,8 +51,9 @@ local M = {}
 addon.Modules.PersonalAuras.Module = M
 addon.Modules.PersonalAurasModule = M
 
--- Deferred as well as coalesced: a raid forming fires the roster event per member, and the frame
--- addons rebuild their own frames on it, so the anchors are only worth reading once settled.
+-- Deferred as well as coalesced, because a raid forming fires the roster event per member and
+-- the frame addons rebuild their own frames on it, so the anchors are only worth reading once
+-- settled.
 local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
 end)
@@ -62,7 +63,7 @@ local function GetOptions()
 	return db and db.Modules.PersonalAuras
 end
 
----No module-wide switch: a group carries its own, and no groups means no feature.
+---No module-wide switch, since a group carries its own and no groups means no feature.
 ---@return boolean
 local function HasGroups()
 	local options = GetOptions()
@@ -161,8 +162,8 @@ end
 local function Apply(options)
 	local hasGroups = HasGroups()
 
-	-- Narrower than the lifecycle: a preview keeps the module awake with no groups behind it, and
-	-- an empty group list has no events worth hearing.
+	-- Narrower than the lifecycle, since a preview keeps the module awake with no groups behind it
+	-- and an empty group list has no events worth hearing.
 	gate:SetActive(hasGroups)
 
 	display:Refresh(options, hasGroups)
@@ -230,7 +231,7 @@ function M:Init()
 
 	lifecycle = moduleLifecycle:New({
 		GetOptions = GetOptions,
-		-- A previewed group stays on screen even with no groups saved; positioning it is the point.
+		-- A previewed group stays on screen even with no groups saved, so it can be positioned.
 		IsEnabled = function()
 			return HasGroups() or display:HasPreview()
 		end,

@@ -1,13 +1,12 @@
--- Deterministic stand-in for the frame the background sweep rides, for suites that drive it by
--- hand. Nothing runs on its own; a test pumps frames with Frame. One shared copy, because the
--- sweep and pool suites need identical semantics and two private copies had already drifted.
+-- Deterministic stand-in for the frame the background sweep rides, shared so the sweep and pool
+-- suites get identical semantics. Nothing runs on its own, so a test pumps frames with Frame.
 
 local M = {}
 
 -- Every frame handed out, so a pump can find the one the sweep put a script on.
 local frames = {}
 -- Stand-in for the client's millisecond clock, which the sweep reads to bound a frame. Nothing
--- advances on its own; a test that wants to spend the slice calls Advance.
+-- advances on its own. A test that wants to spend the slice calls Advance.
 local clockMs = 0
 local loadingScreen = false
 
@@ -103,7 +102,7 @@ function M.Frames(times, elapsed)
 	end
 end
 
----How many workers are still on the clock; 0 once the sweep has hidden its own.
+---How many workers are still on the clock, 0 once the sweep has hidden its own.
 ---@return number
 function M.ActiveCount()
 	local count = 0

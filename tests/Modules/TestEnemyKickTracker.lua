@@ -10,7 +10,7 @@ local moduleEnv = require("ModuleEnv")
 local env = moduleEnv.build()
 local db = env.db
 
--- The player's own spec drives IsEnabledForPlayer; Always sidesteps it for most of these.
+-- The player's own spec drives IsEnabledForPlayer. Always sidesteps it for most of these.
 local options = db.Modules.EnemyKickTracker
 options.Enabled.Always = true
 
@@ -27,8 +27,8 @@ env.invalidateWorldState()
 
 module:Init()
 
--- The module hears no world event of its own any more: entering an arena reaches it as the
--- addon-wide Refresh that PLAYER_ENTERING_WORLD drives.
+-- The module hears no world event of its own. Entering an arena reaches it as the addon-wide
+-- Refresh that PLAYER_ENTERING_WORLD drives.
 local function enterWorld()
 	module:Refresh()
 end
@@ -97,7 +97,7 @@ fw.describe("EnemyKickTracker - interrupt to icon", function()
 		frame:TriggerEvent("UNIT_SPELLCAST_START", "player")
 
 		local before = usedSlots()
-		-- arg 4 is interruptedBy; without it this is an ordinary cast ending.
+		-- arg 4 is interruptedBy, and without it this is an ordinary cast ending.
 		frame:TriggerEvent("UNIT_SPELLCAST_INTERRUPTED", "player", "cast-1", 0, "arena1")
 		assert(usedSlots() == before + 1, "expected one icon, got " .. (usedSlots() - before))
 	end)

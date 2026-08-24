@@ -36,8 +36,8 @@ function M:Build(panel)
 	creditText:SetWidth(contentWidth)
 	creditText:SetJustifyH("CENTER")
 
-	-- News sits directly under the title (first content block) inside a crimson callout card,
-	-- so it reads as a warning rather than body text; Discord moves below it.
+	-- News sits directly under the title inside a crimson callout card, so it reads as a warning
+	-- rather than body text.
 	local newsDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Important News"],
@@ -57,7 +57,7 @@ function M:Build(panel)
 	newsCard:SetPoint("TOPLEFT", newsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	newsCard:SetPoint("TOPRIGHT", newsDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
 
-	-- Accent stripe down the card's left edge (the standard callout cue).
+	-- Accent stripe down the card's left edge, the standard callout cue.
 	local newsStripe = newsCard:CreateTexture(nil, "BORDER")
 	newsStripe:SetWidth(3)
 	newsStripe:SetPoint("TOPLEFT", newsCard, "TOPLEFT", 1, -1)

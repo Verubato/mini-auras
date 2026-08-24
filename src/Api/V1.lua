@@ -1,5 +1,5 @@
--- MiniAuras External API v1
--- Exposes a stable global (MiniAurasApi.v1) for other addons to register callbacks.
+-- MiniAuras's external API. Exposes a stable global, MiniAurasApi.v1, for other addons to register
+-- callbacks.
 ---@type string, Addon
 local _, addon = ...
 
@@ -9,10 +9,9 @@ local moduleUtil = addon.Utils.ModuleUtil
 local ttsPacks = addon.Core.TtsPacks
 local alertsModule = addon.Modules.AlertsModule
 
----Both cooldown callbacks were fed by the friendly cooldown tracker, which inferred cooldowns from
----ally aura data. 12.1 removed addon access to that data, so the tracker is gone and neither
----callback can ever fire again. The methods stay so a caller written against them still loads;
----each warns once, naming itself, so the addon author can find and drop the call.
+---Neither cooldown callback can fire any more: they were fed by the friendly cooldown tracker, and
+---12.1 removed addon access to the ally aura data it inferred from. The methods stay so a caller
+---written against them still loads, and each warns once, naming itself, so the author can drop it.
 local deprecationWarned = {}
 
 -- On our own next frame rather than in the caller's stack: the alert sounds are registered with a
@@ -44,16 +43,14 @@ local function WarnDeprecated(name)
 	mini:NotifyWithPrefix(("MiniAurasApi.v1:%s is deprecated and no longer fires: cooldown tracking was removed in 12.1."):format(name))
 end
 
----Deprecated no-op. Previously invoked when MiniAuras predicted a friendly cooldown was about to
----start (i.e. the associated buff had been detected on the unit).
+---Deprecated no-op, for the friendly cooldown prediction 12.1 took away.
 ---@deprecated
 ---@param fn MiniAurasPredictedCallback
 function v1:RegisterPredictedCallback(fn) -- luacheck: no unused args
 	WarnDeprecated("RegisterPredictedCallback")
 end
 
----Deprecated no-op. Previously invoked when MiniAuras committed a matched cooldown rule
----(i.e. the aura had ended and the cooldown timer had started).
+---Deprecated no-op, for the matched cooldown rules 12.1 took away.
 ---@deprecated
 ---@param fn MiniAurasMatchedCallback
 function v1:RegisterMatchedCallback(fn) -- luacheck: no unused args

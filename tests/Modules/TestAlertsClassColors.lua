@@ -1,11 +1,11 @@
--- Alerts module, class colouring. The icons are normally tinted by category - red importants,
--- green defensives - and this option swaps that for the owner's class colour instead.
+-- Alerts module, class colouring. The icons are normally tinted by category, red importants and
+-- green defensives, and this option swaps that for the owner's class colour instead.
 --
--- The whole thing turns on a constraint: a button takes its colour in initializeFrame and inside
+-- The whole thing turns on a constraint. A button takes its colour in initializeFrame and inside
 -- an arena C_Secrets.ShouldAurasBeSecret never clears, so no restyle ever gets to correct it. The
 -- colour therefore has to be known before the pair is built, and a pair built for one class can
 -- never be recoloured for another. That is why the pairs are keyed by class, and why arena1
--- holding a rogue one match and a mage the next must not reuse the rogue's pair - it would draw
+-- holding a rogue one match and a mage the next must not reuse the rogue's pair. It would draw
 -- the whole match in the wrong colour with nothing able to fix it.
 --
 -- Asserted on the ring the button actually drew rather than on the stored option, because
@@ -34,8 +34,8 @@ env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 local module = env.addon.Modules.AlertsModule
 module:Init()
--- Init only builds the lifecycle now; a module sets itself up on the first refresh that
--- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+-- Init only builds the lifecycle. A module sets itself up on the first refresh that finds it
+-- enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
 module:Refresh()
 
 local events = assert(acm.lastFrameForEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS"), "alerts event frame")
@@ -215,7 +215,7 @@ fw.describe("Alerts - the test mode preview", function()
 	end)
 
 	fw.it("stands Precognition in as a class that can actually take it", function()
-		-- It is a PvP talent rather than a class spell, so the preview has to pick an owner; a
+		-- It is a PvP talent rather than a class spell, so the preview has to pick an owner. A
 		-- rogue cannot take it, and showing one would teach the wrong thing about the talent.
 		local testSpells = env.addon.Core.TestSpells
 

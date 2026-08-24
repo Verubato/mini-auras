@@ -1,5 +1,5 @@
 -- The Frame Auras module: the buff whitelist it filters on, and the one thing it does to the
--- client outside its own frames - switching Blizzard's raid frame aura rows off while it draws
+-- client outside its own frames, switching Blizzard's raid frame aura rows off while it draws
 -- its own. That cvar is only ever written on an edge, so a player who turned Blizzard's rows off
 -- themselves does not get them handed back by a module they never switched on.
 
@@ -661,7 +661,7 @@ fw.describe("Frame Auras - test mode", function()
 
 		-- Blizzard shows all forty raid frames and five party frames pointed at "player" while it
 		-- lays them out at login, so during that window every one of them looks like a frame worth
-		-- building for. Nothing about the frame can tell them apart; only the timing can.
+		-- building for. Nothing about the frame can tell them apart. Only the timing can.
 		env.loadingScreenUp = true
 
 		partyAuras:Refresh()
@@ -684,9 +684,10 @@ fw.describe("Frame Auras - test mode", function()
 		local frame = NewPartyFrame(5)
 		local realExists = _G.UnitExists
 
-		-- What a loading screen looks like: the client answers about units SECRETLY. Not falsely -
-		-- a secret answer reads as "maybe", and the show path deliberately treats it as occupied.
-		-- Building is a batch of buttons the engine can never free, so it has to mean "not yet".
+		-- What a loading screen looks like: the client answers about units secretly. Not falsely,
+		-- because a secret answer reads as "maybe" and the show path deliberately treats it as
+		-- occupied. Building is a batch of buttons the engine can never free, so it has to mean
+		-- "not yet".
 		local secret = wow.markSecret({})
 
 		_G.UnitExists = function()
@@ -1166,9 +1167,10 @@ local function GlowOn(container, groupKey)
 end
 
 -- The target and focus rows are finished but held back until 12.1.5, when a container can carry
--- its own icon cap; the describes after this one switch them on to test what will ship then. This
--- one has to come first: a container is never destroyed, so once a later describe has built the
--- rows once, "nothing is built" could not be told from "something was built earlier".
+-- its own icon cap. The describes after this one switch them on to test what will ship then.
+-- This one has to come first, because a container is never destroyed, so once a later describe
+-- has built the rows once, "nothing is built" could not be told from "something was built
+-- earlier".
 fw.describe("Frame Auras - the target rows this build holds back", function()
 	fw.before_each(function()
 		module:StopTesting()
@@ -1254,7 +1256,7 @@ fw.describe("Frame Auras - the purge glow on the target row", function()
 		local container = assert(BuffContainer(targetFrame), "the target frame still has its buff row")
 		local purge = container._groups[BUFF_PURGE_GROUP]
 
-		-- The engine hands a group its buttons from the count it was DECLARED with, so a group
+		-- The engine hands a group its buttons from the count it was declared with, so a group
 		-- born closed could never open. This is what says it was born open.
 		assert(purge.maxFrameCountAtCreation == options.TargetFocus.MaxIcons,
 			"it was declared with the full budget, got " .. tostring(purge.maxFrameCountAtCreation))

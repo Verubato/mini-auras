@@ -23,7 +23,7 @@ function M:ShadowedUFFrames(visibleOnly, frames)
 		end
 	end
 
-	-- Party / Raid header buttons (SUFHeaderpartyUnitButton# / SUFHeaderraidUnitButton#) :contentReference[oaicite:2]{index=2}
+	-- Party and raid header buttons: SUFHeaderpartyUnitButton# and SUFHeaderraidUnitButton#.
 	for i = 1, MAX_PARTY do
 		Add(_G["SUFHeaderpartyUnitButton" .. i])
 

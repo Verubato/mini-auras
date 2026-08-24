@@ -22,25 +22,15 @@ addon.Modules.Alerts = addon.Modules.Alerts or {}
 local M = {}
 addon.Modules.Alerts.Display = M
 
--- The alert bars are rows of per-enemy AuraContainers chained off the movable bar frames. A
--- bar can't be a single aggregated list because a container tracks exactly one unit and there is
--- no readable aura data to merge across units - so instead of one bar of N icons, it is N
--- containers laid end to end, and an enemy with no alerts collapses to nothing. Important buffs
--- come from a HELPFUL|IMPORTANT container group. The IconSlotContainer bars stay as drag anchors
--- and test-mode renderers.
---
--- Nothing here cares which tokens it is handed: the module picks between arena and nameplate
--- tokens and this file keys everything by whatever it gets.
+-- Rows of per-enemy AuraContainers chained off the movable bar frames, one container per enemy
+-- because a container tracks a single unit and aura data cannot be merged across units.
 
 -- Category glow tints, used only when the option is on. Importants are the thing to react to, so
--- they take the warning colour; defensives (big and external alike) read as "they are protected"
--- and take the safe one. Each carries both shapes its consumers want and is shared read-only:
--- AuraContainer group specs index [1..3], IconSlotContainer (test mode) reads r/g/b/a.
+-- they take the warning colour and defensives take the safe one.
 local DEFAULT_IMPORTANT_GLOW_COLOR = { R = 1, G = 0.2, B = 0.2 }
 local DEFAULT_DEFENSIVE_GLOW_COLOR = { R = 0.2, G = 1, B = 0.2 }
--- Refilled from the options rather than reallocated. The groups take their own copies, so these
--- can be rewritten freely. Both shapes are needed: the array part is what AuraContainerDisplay
--- reads, the r/g/b keys are what the IconSlotContainer takes for the test icons.
+-- Refilled from the options rather than reallocated, which is safe because the groups take their
+-- own copies. AuraContainerDisplay reads the array part, the test icons read the r/g/b keys.
 local importantGlowColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
 local defensiveGlowColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 -- Refilled per lookup like the two above. One scratch is enough because a colour is read straight
@@ -58,37 +48,33 @@ local inPrepRoom = false
 -- Main alerts bar: enemy defensive cooldowns, plus important spells when combined.
 ---@type IconSlotContainer
 local container
--- Dedicated, separately-movable bar for important enemy buffs (e.g. offensive cooldowns, precog),
--- used only in split mode.
+-- Separately movable bar for important enemy buffs, used only in split mode.
 ---@type IconSlotContainer
 local importantContainer
 
--- Scratch for the test-mode SetSlot calls, plus the per-call invariants PlaceTestIcon reads
--- (hoisted so the test refresh doesn't build a closure per icon).
+-- Scratch for the test-mode SetSlot calls, plus the per-call invariants PlaceTestIcon reads.
+-- Hoisted so the test refresh doesn't build a closure per icon.
 local testSlotScratch = {}
 local testIconCtx = { Now = 0, Glow = false, Reverse = false, ShowTooltips = true }
 
--- Per-token display pairs (Def on the main bar, Imp on the important bar in split
--- mode), drawn from a central pre-created pool: acquired and retargeted
--- with SetUnit when an enemy token starts being tracked, released back when it stops, so plate
--- churn mid-combat never creates containers. Presence in this map means the token is active.
+-- Per-token display pairs: Def draws on the main bar, Imp on the important bar in split mode.
+-- They are retargeted with SetUnit as tokens come and go, so plate churn mid-combat never creates
+-- containers.
 ---@type table<string, {Def: AuraContainerDisplay, Imp: AuraContainerDisplay}>
 local activeDisplays = {}
--- token -> its display pair, kept for the session. activeDisplays holds only the ACTIVE
--- tokens; this keeps every pair that has been built so a token returning reuses its own, since
--- WoW frames can never be freed. Pairs are restyled onto a new look wherever the client allows it,
--- and only rebuilt where it does not (see RestyleStaleDisplayPairs).
+-- token -> its display pair, kept for the session so a token that comes back reuses its own pair.
+-- WoW can never free a frame, so a pair is only rebuilt where the client refuses a restyle. See
+-- RestyleStaleDisplayPairs.
 local displayPairsByToken = {}
 -- Configuration the live pairs were built with; a change rebuilds them.
 local pairGeneration
--- Which groups the built pairs carry, from the mode the options describe; see AlertPairShape.
+-- Which groups the built pairs carry, from the mode the options describe. See AlertPairShape.
 local pairShape
 -- Bumped whenever the module re-applies its options, so a pair can tell a push it has already
 -- taken from one that would change something. See ApplyDisplayOptions.
 local optionsGeneration = 0
--- Queue half of a Coalesced wrapper around ChainAlertDisplays, bound below the function it
--- wraps. A camera sweep in a battleground adds and removes a dozen plates in one frame; one
--- chain pass on the next frame covers the whole burst.
+-- Queue half of a Coalesced wrapper around ChainAlertDisplays, bound below the function it wraps.
+-- A camera sweep churns a dozen plates in one frame, and one chain pass covers the whole burst.
 local QueueChainAlertDisplays
 -- Reused token-set scratch.
 local activeTokensScratch = {}
@@ -101,8 +87,8 @@ local prewarmSweep = sweep:New()
 -- The pair the walker is part way through building, held across its turns. One lane, one build at
 -- a time, so a single field covers it.
 local prewarmBuilding
--- The tinted groups of each display in a pair, and the colour map handed to SetGroupGlowColors;
--- the map is refilled per apply and the setter copies components out.
+-- The tinted groups of each display in a pair, and the colour map handed to SetGroupGlowColors.
+-- The map is refilled per apply and the setter copies the components out.
 local DEF_GROUP_KEYS = {
 	auraFilters.GroupKey.BigDefensive,
 	auraFilters.GroupKey.ExternalDefensive,
@@ -110,31 +96,22 @@ local DEF_GROUP_KEYS = {
 }
 local IMP_GROUP_KEYS = { auraFilters.GroupKey.Important }
 local glowColorsScratch = {}
--- Fallback geometry for a pooled display pair, used only if the db isn't readable yet.
--- CreateAlertDisplayPair otherwise builds at the configured size: a button's size is fixed in
--- initializeFrame, which never re-runs on pool reuse, so a placeholder size would survive any
--- refresh that can't restyle (i.e. the whole of an arena).
 -- The module wears one look, so all its pairs are stamped against a single key.
 local PAIR_STYLE_KEY = "AlertsPair"
+-- Fallback geometry for a pooled display pair, used only if the db isn't readable yet.
 local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
 -- How many nameplate tokens to prepare pairs for where the client will not say how many enemies
--- the place can hold, which is outdoors and in every pve instance. Small on purpose: preparing a
--- pair is milliseconds of frame creation the client can never take back, and a trace of a login
--- put this set above every other thing the addon builds. What it does not cover still builds on
--- first sight, a group per tick down the urgent lane, as it always did. Anywhere with a real
--- enemy count says so through PrewarmTokenTarget instead.
---
--- On the module table rather than a local so the tests can lower it; the shipped default is
--- asserted separately.
+-- the place can hold, which is outdoors and in every pve instance. Kept small because a pair is
+-- frames the client can never take back, and a login trace put this set above everything else the
+-- addon builds. On the module table rather than a local so the tests can lower it.
 M.PrewarmTokenCount = 3
--- The ceiling on what an instance's own size can ask for: the client hands out no more plate
+-- The ceiling on what an instance's own size can ask for. The client hands out no more plate
 -- tokens than this, and a pair is frames it can never free.
 M.MaxPrewarmTokenCount = 40
 -- What an arena gets. It holds three enemies at most, and its own tokens are handed pairs when the
--- client names the opponents, so the plate set only has to cover the window before that. A pair
--- built for a token that never appears is frames the client can never take back.
+-- client names the opponents, so the plate set only has to cover the window before that.
 M.ArenaPrewarmTokenCount = 3
 
 ---Whether any tint is drawn at all. Both the category colours and the class colours ride the
@@ -189,10 +166,9 @@ end
 
 ---The class token of whoever a token is tracking, or nil when the client will not say.
 ---
----An arena opponent is identified through their specialization: a spec belongs to exactly one
----class, and the client hands the spec out in plain numbers for its own prep frames, where the
----unit's own class is a secret value that cannot be read or compared. Everywhere else the unit
----is asked directly, which answers outdoors and goes secret inside an instance.
+---An arena opponent is identified through their specialization, since the client hands the spec
+---out in plain numbers where the unit's own class is a secret value. Everywhere else the unit is
+---asked directly, which answers outdoors and goes secret inside an instance.
 ---@param unitToken string
 ---@return string?
 local function EnemyClassToken(unitToken)
@@ -217,9 +193,8 @@ local function EnemyClassToken(unitToken)
 	return class
 end
 
----The class colour for a class token, refilled into shared scratch. Both shapes are needed for
----the same reason the category tints carry both: the array part is what the aura groups read and
----the r/g/b keys are what the test-mode icons take.
+---The class colour for a class token, refilled into shared scratch. It carries both shapes for the
+---same reason the category tints do.
 ---@param classToken string?
 ---@return table?
 local function ClassColor(classToken)
@@ -240,8 +215,8 @@ local function ClassColor(classToken)
 	return classGlowColor
 end
 
----Whether a ring is drawn. The border stands in for the glow rather than doubling up with it: two
----rings in the same colour around one icon read as a smudge, so an active glow wins.
+---Whether a ring is drawn. Two rings in the same colour around one icon read as a smudge, so an
+---active glow wins and the border stands in only when the glow is off.
 ---@return boolean
 local function AlertBorderShown()
 	local icons = db and db.Modules.Alerts.Icons
@@ -249,9 +224,8 @@ local function AlertBorderShown()
 	return icons ~= nil and icons.Border == true and icons.Glow ~= true
 end
 
--- Effective grow direction for the alert bars. CENTER (the saved default, symmetric growth around
--- the anchor) needs a readable row width to center on, which the chained displays don't have, so
--- anything but LEFT or RIGHT falls back to RIGHT.
+-- Effective grow direction for the alert bars. CENTER needs a readable row width to centre on,
+-- which the chained displays don't have, so anything but LEFT or RIGHT falls back to RIGHT.
 local function GetGrow()
 	local grow = db.Modules.Alerts.Grow
 	if grow ~= "LEFT" and grow ~= "RIGHT" then
@@ -260,12 +234,10 @@ local function GetGrow()
 	return grow
 end
 
----Places a bar from its saved anchor, verbatim. Deliberately no pin rewrite here: converting
----the anchor to the grow edge needs the frame's rect, and outside test mode that rect does not
----match what the bar renders (stale layout, empty row), so every rewrite from this path has
----corrupted freshly reset options one way or another - first re-measuring the dragged position
----back in, then pinning against an unrendered row. A CENTER or TOP anchor works as-is for any
----grow direction; only a drag drop re-pins (SetUpBarDragging), where the rect is real.
+---Places a bar from its saved anchor, verbatim. No pin rewrite here, because converting the anchor
+---to the grow edge needs the frame's rect, and outside test mode that rect does not match what the
+---bar renders. A CENTER or TOP anchor works as-is for any grow direction, and only a drag drop
+---re-pins, where the rect is real.
 ---@param frame table
 ---@param anchorOptions table
 local function PlaceBar(frame, anchorOptions)
@@ -280,13 +252,13 @@ local function PlaceBar(frame, anchorOptions)
 end
 
 ---Initial placement and drag persistence for one movable alert bar. Dragging is armed here but
----only enabled in test mode (SetAnchorInteractive); each drop is re-pinned to the grow edge so
----the saved anchor matches how the row extends.
+---only enabled in test mode. Each drop is re-pinned to the grow edge so the saved anchor matches
+---how the row extends.
 ---@param bar IconSlotContainer
 ---@param anchorOptions table Initial placement.
 ---@param saveTarget (table|fun(): table?)? Where drops save; anchorOptions when omitted. A
----function when the destination depends on runtime state (the main bar writes the Defensives
----anchor in split mode and the module anchor in combined).
+---function when the destination depends on runtime state, as the main bar writes the Defensives
+---anchor in split mode and the module anchor in combined.
 local function SetUpBarDragging(bar, anchorOptions, saveTarget)
 	local relativeTo = _G[anchorOptions.RelativeTo] or UIParent
 
@@ -307,11 +279,10 @@ local function SetUpBarDragging(bar, anchorOptions, saveTarget)
 	end)
 end
 
--- Re-anchors the active per-unit displays into rows. Defensive displays chain
--- off the main bar frame; important displays chain off the important bar in split mode, or
--- continue the main-bar chain when combined. Chaining container-to-container avoids reading
--- their (possibly secret) sizes; empty containers collapse to nothing.
--- (Category overlap is handled by filter negation at group creation, not here.)
+-- Re-anchors the active per-unit displays into rows. Defensive displays chain off the main bar
+-- frame, important displays off the important bar in split mode or the main-bar chain when
+-- combined. Chaining container to container avoids reading their sizes, which may be secret, and
+-- an empty container collapses to nothing.
 local function ChainAlertDisplays()
 	local options = db.Modules.Alerts
 	local spacing = options.IconSpacing or 2
@@ -320,12 +291,12 @@ local function ChainAlertDisplays()
 	-- in the grow direction, offset by the icon spacing.
 	local point, relativePoint, step = growAnchors:GetChain(GetGrow(), spacing)
 
-	-- The rows come out in whatever order the token map yields. The icons say "these enemies
-	-- have alerts"; which enemy comes first carries no meaning, so no ordering is imposed.
+	-- The rows come out in whatever order the token map yields. Which enemy comes first carries no
+	-- meaning, so no ordering is imposed.
 	--
-	-- Note the first display in each row anchors point -> POINT on the bar frame, not
-	-- point -> relativePoint: it starts AT the bar's pinned edge rather than continuing past it,
-	-- since the (zero-width) bar frame is the row's origin and not a preceding icon.
+	-- The first display in each row anchors point -> point on the bar frame rather than
+	-- point -> relativePoint, since the zero-width bar frame is the row's origin and not a
+	-- preceding icon.
 	local prevMain
 	for _, entry in pairs(activeDisplays) do
 		local defFrame = entry.Def.Frame
@@ -338,11 +309,9 @@ local function ChainAlertDisplays()
 		prevMain = defFrame
 	end
 
-	-- Combined mode draws importants from the Def container's own Important group, so there is
-	-- no second frame to place. Each unit's categories therefore stay together (u1 def+imp,
-	-- u2 def+imp) rather than every defensive followed by every important. That grouping is what
-	-- removes the gap - the alternative needs one frame per category per unit, and the engine
-	-- reserves each frame's full icon budget of width.
+	-- Combined mode draws importants from the Def container's own Important group, so there is no
+	-- second frame to place. The engine reserves each frame's full icon budget of width, so keeping
+	-- a unit's categories in one container is what removes the gap.
 	if not splitBars then
 		return
 	end
@@ -398,9 +367,9 @@ local function TestIconColor(entry, categoryColor)
 	return categoryColor
 end
 
----The class a pair's colours come from, or false while the flat palette is in use. Asked on every
----plate add, so it doubles as the part of the applied stamp that a refresh cannot cover: a token's
----class is answered late, and the colours have to follow it when it lands.
+---The class a pair's colours come from, or false while the flat palette is in use. It doubles as
+---the part of the applied stamp a refresh cannot cover, since a token's class is answered late and
+---the colours have to follow it when it lands.
 ---@param unitToken string
 ---@return string|false
 local function TokenColorKey(unitToken)
@@ -408,8 +377,8 @@ local function TokenColorKey(unitToken)
 end
 
 ---The tints for one token's three groups: the owner's class colour when class colouring is on and
----the client will name them, otherwise the per-category colours. Class colouring deliberately
----replaces the categories rather than joining them, since one icon has only one ring to give.
+---the client will name them, otherwise the per-category colours. Class colouring replaces the
+---category colours, since one icon has only one ring to give.
 ---@param colorKey string|false From TokenColorKey.
 ---@return table? bigDefensive
 ---@return table? externalDefensive
@@ -428,11 +397,8 @@ local function TokenGroupColors(colorKey)
 	return defensiveColor, defensiveColor, importantColor
 end
 
--- Which of a pair's displays are live. Kept apart from the rest of the push because parking a
--- pair turns both off: a token that comes back has to be switched on again even when every other
--- value is the one it already wears.
 ---Whether the defensive categories render at all.
----@param options table? The module's settings; read fresh so a pre-creation before the db is
+---@param options table? The module's settings. Read fresh so a pre-creation before the db is
 ---readable still answers.
 ---@return boolean
 local function IncludeDefensives(options)
@@ -440,7 +406,7 @@ local function IncludeDefensives(options)
 end
 
 ---Whether the important category renders on the defensive display, which is what combined mode
----means: one container, so the icons flow tight against the defensive ones.
+---means. One container, so the icons flow tight against the defensive ones.
 ---@param options table?
 ---@return boolean
 local function ImportantOnDef(options)
@@ -471,6 +437,8 @@ local function SetGroupBudget(display, groupKey, maxIcons)
 	end
 end
 
+---Kept apart from the rest of the push because parking a pair turns both displays off, so a token
+---that comes back has to be switched on again even when nothing else has moved.
 ---@param importantOnImp boolean? Whether the important category renders on the second display.
 local function ApplyDisplayVisibility(entry, showBars, importantOnImp)
 	local impShown = showBars and importantOnImp
@@ -481,14 +449,12 @@ local function ApplyDisplayVisibility(entry, showBars, importantOnImp)
 	entry.Imp:SetShown(impShown == true)
 end
 
--- Applies options (size, style, per-category budgets, visibility) to ONE pooled display pair.
--- MaxIcons caps each unit's icons rather than the whole bar, because aura data cannot be read
--- across units.
--- (Important-vs-defensive dedup is handled by filter negation at creation.)
+-- Applies options to one pooled display pair. MaxIcons caps each unit's icons rather than the
+-- whole bar, because aura data cannot be read across units.
 local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	local colorKey = TokenColorKey(unitToken)
-	-- Important renders on whichever display the current mode uses; the other is not built with
-	-- the group at all (see CreateAlertDisplayPair), and a mode change rebuilds the pairs.
+	-- Important renders on whichever display the current mode uses. The other is not built with the
+	-- group at all, and a mode change rebuilds the pairs.
 	local importantOnDef = ImportantOnDef(options)
 	local importantOnImp = ImportantOnImp(options)
 
@@ -509,14 +475,13 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	local spacing = options.IconSpacing or 2
 	local grow = GetGrow()
 
-	-- Both displays take the same style; fill the scratch once and hand it to each (ApplyConfig
-	-- copies it field by field, and one call restyles all three values in a single pass).
+	-- Both displays take the same style, so fill the scratch once and hand it to each. ApplyConfig
+	-- copies it field by field.
 	local style = AlertStyle()
 
-	-- Outside the pair stamp, like the budgets: a recolour goes straight onto the groups the
-	-- buttons already hold. Wherever the client lets a display restyle, that lands on its own;
-	-- inside an arena it never can, which is why a class colour is baked in at creation instead
-	-- (see AlertPairKey) and this call only has to agree with what was baked.
+	-- Outside the pair stamp, like the budgets, because a recolour goes straight onto the groups the
+	-- buttons already hold. Inside an arena no restyle can reach them, which is why a class colour is
+	-- baked in at creation and this call only has to agree with what was baked.
 	local bigDefColor, extDefColor, importantColor = TokenGroupColors(colorKey)
 	wipe(glowColorsScratch)
 	glowColorsScratch[auraFilters.GroupKey.BigDefensive] = bigDefColor
@@ -541,50 +506,40 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	ApplyDisplayVisibility(entry, showBars, importantOnImp)
 end
 
--- Builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
--- because filter-string tokens combine with AND - "HELPFUL|BIG_DEFENSIVE|EXTERNAL_DEFENSIVE"
--- would only match auras flagged as BOTH, i.e. almost nothing; groups on one container are
--- the idiom for OR (they render as one continuous row). The filters themselves are partitioned
--- by negation (see Core/AuraFilters), so a both-important-and-defensive aura is never drawn on
--- both bars. Sizes/budgets are applied per token by
--- RefreshDisplays.
+-- Builds one pooled display pair. Big and external defensives are separate groups because filter
+-- tokens combine with AND, so "HELPFUL|BIG_DEFENSIVE|EXTERNAL_DEFENSIVE" would match almost
+-- nothing. Groups on one container are the idiom for OR. The filters are partitioned by negation
+-- in Core/AuraFilters, so an aura that is both important and defensive is never drawn twice.
 --
--- Def carries an Important group too, so combined mode can render all three categories in one
--- container with no gap. Separate containers are separate frames chained by SetPoint and the
--- engine reserves each one's maxFrameCount worth of width, so an under-filled defensive display
--- left a hole before the important icons; groups inside a single container flow tight instead.
--- Each display carries only the groups the current mode can render: the engine allocates a batch
--- of buttons the moment a group is declared, whatever its budget, so a group the mode has nothing
--- to put in is that batch wasted. Switching mode therefore rebuilds the pairs, which is what the
--- pair generation carries.
+-- Def carries an Important group too, so combined mode renders all three categories in one
+-- container with no gap. Each display carries only the groups the current mode can render, since
+-- the engine allocates a batch of buttons the moment a group is declared, whatever its budget.
+-- Switching mode therefore rebuilds the pairs, which is what the pair generation carries.
 ---@param unitToken string The token this pair is being built for, so the owner's class colour can
 ---be baked into its buttons; see AlertPairKey for why it cannot be applied later.
 ---@param defer boolean? Build both containers with none of their groups, for a caller pacing the
 ---groups in itself.
 local function CreateAlertDisplayPair(unitToken, defer)
-	-- Build at the CONFIGURED size, not a placeholder. A button takes its size in
-	-- initializeFrame, which the frame pool runs once when it creates the button and never
-	-- again on reuse (AcquireFrame does not re-initialise). Correcting it afterwards needs a
-	-- restyle, and inside an arena C_Secrets.ShouldAurasBeSecret never clears, so the restyle
-	-- never gets to run and the icons keep the placeholder size for the whole match. Creating
-	-- them right means the common path needs no restyle at all. The constants stay as
-	-- fallbacks for the pre-creation that can run before the db is read.
+	-- Build at the configured size, not a placeholder. A button takes its size in initializeFrame,
+	-- which the frame pool runs once per button and never again on reuse. Correcting it afterwards
+	-- needs a restyle, and inside an arena C_Secrets.ShouldAurasBeSecret never clears, so the icons
+	-- would keep the placeholder size for the whole match. The constants stay as fallbacks for the
+	-- pre-creation that can run before the db is read.
 	local options = db and db.Modules.Alerts
 	local icons = options and options.Icons
 	local size = (icons and icons.Size) or DEFAULT_PAIR_SIZE
 	local maxIcons = (icons and icons.MaxIcons) or DEFAULT_PAIR_ICONS
 	local spacing = (options and options.IconSpacing) or DEFAULT_PAIR_SPACING
 
-	-- Style is applied at creation for the same reason as the size: StyleButton bakes it into
-	-- each button, and a later restyle can't reach them while auras are secret. The tints are
-	-- only initial values - buttons read them from the group at paint time, and
-	-- ApplyDisplayOptions recolours the groups in place.
+	-- Style is applied at creation for the same reason as the size. StyleButton bakes it into each
+	-- button, and a later restyle can't reach them while auras are secret. The tints are only initial
+	-- values, since buttons read them from the group at paint time.
 	local style = AlertStyle()
 	local bigDefColor, extDefColor, importantColor = TokenGroupColors(TokenColorKey(unitToken))
 
-	-- Own copies: the colour helpers refill shared scratch in place, and a group holding the
-	-- scratch itself would compare equal to any later recolour, so the diff could never fire.
-	-- Taken per group because class colouring hands the same scratch back for all three.
+	-- The colour helpers refill shared scratch in place, and a group holding the scratch itself
+	-- would compare equal to any later recolour, so the diff could never fire. Taken per group
+	-- because class colouring hands the same scratch back for all three.
 	local function OwnCopy(color)
 		return color and { color[1], color[2], color[3] }
 	end
@@ -647,9 +602,9 @@ local function CreateAlertDisplayPair(unitToken, defer)
 	}
 end
 
----Which groups a pair is built with, as one number to diff against. Apart from the look, because
----the two are answered differently: a look a pair no longer wears can be restyled onto it, while
----a group it was not built with can only be had by building another pair.
+---Which groups a pair is built with, as one number to diff against. Kept apart from the look,
+---since a look a pair no longer wears can be restyled onto it while a group it was not built with
+---needs another pair.
 ---@param options table?
 ---@return number
 local function AlertPairShape(options)
@@ -658,12 +613,10 @@ local function AlertPairShape(options)
 		+ (ImportantOnImp(options) and 4 or 0)
 end
 
--- Everything baked into a pair's buttons when it is created. A change means the live pairs have
--- to be rebuilt rather than restyled, because a restyle can't reach the buttons while auras are
--- secret (i.e. for the whole of an arena). Deliberately narrow, since every rebuild abandons
--- the full prewarmed frame set for good: budgets and category tints stay out because both are
--- applied to existing pairs at runtime (SetMaxIcons and SetGroupGlowColors, in
--- ApplyDisplayOptions), so only the size and style that genuinely bake in remain.
+-- Everything baked into a pair's buttons when it is created. A change means the live pairs have to
+-- be rebuilt rather than restyled, because a restyle can't reach the buttons while auras are
+-- secret. Kept narrow, since every rebuild abandons the full prewarmed frame set for good. Budgets
+-- and category tints stay out because ApplyDisplayOptions applies both to existing pairs.
 ---@return number
 local function AlertPairGeneration()
 	local options = db and db.Modules.Alerts
@@ -677,10 +630,9 @@ local function AlertPairGeneration()
 	)
 end
 
--- Parks a display pair (both displays stay parented to UIParent). The anchors are deliberately
--- kept: the re-chain runs a frame later, and a display still chained off one of these frames
--- must keep a resolvable rect until then, or the rest of its row blinks out for that frame. A
--- hidden frame renders nothing either way, and the next chain pass re-points every active frame.
+-- Parks a display pair. The anchors are kept because the re-chain runs a frame later, and a
+-- display still chained off one of these frames must keep a resolvable rect until then, or the
+-- rest of its row blinks out for that frame.
 local function ResetAlertDisplayPair(entry)
 	entry.Def:SetEnabled(false)
 	entry.Def:Hide()
@@ -689,13 +641,11 @@ local function ResetAlertDisplayPair(entry)
 end
 
 -- Drops every built pair so the next Ensure rebuilds it. Used when the configuration baked into
--- the buttons changes; there is no way to restyle in place.
+-- the buttons changes, where there is no way to restyle in place.
 --
--- The frames behind the dropped pairs are gone for good, since WoW cannot free one. Prewarming
--- raised what that costs: the map used to hold only tokens a plate had actually been seen on,
--- and now holds all of them, so a look change abandons the full set rather than a handful. It is
--- once per change rather than per plate, and only a loading screen builds the set back up, so a
--- run of slider steps still abandons one set rather than one per step.
+-- The frames behind the dropped pairs are gone for good, since WoW cannot free one. A look change
+-- abandons the whole prewarmed set, once per change rather than per plate, and only a loading
+-- screen builds it back up.
 local function RebuildDisplayPairs()
 	-- Whatever the walker was part way through went with the rest; it starts again from the next
 	-- prewarm rather than finishing a pair nothing can reach.
@@ -712,16 +662,15 @@ local function RebuildDisplayPairs()
 end
 
 ---Which cached pair a token should be using. Normally just the token, but a class colour is baked
----into the buttons at creation and no restyle can reach them inside an arena - so arena1 holding a
----rogue this match and a mage the next needs a different pair, not the one it used last time.
+---into the buttons at creation and no restyle can reach them inside an arena, so arena1 holding a
+---rogue this match and a mage the next needs a different pair.
 ---
----Keyed rather than rebuilt because a rebuilt pair's frames can never be given back: keying tops
----out at one pair per class per token and settles after a few matches, where rebuilding would
----abandon three pairs every match for as long as the session lasts.
+---Keyed rather than rebuilt because a rebuilt pair's frames can never be given back. Keying tops
+---out at one pair per class per token and settles after a few matches.
 ---
 ---Only the arena tokens take the class in their key. Everywhere else a display can be restyled
----once the client allows it, so one pair per token still tells the truth, and keying forty plate
----tokens by class would multiply the prewarmed set by thirteen.
+---once the client allows it, and keying forty plate tokens by class would multiply the prewarmed
+---set by thirteen.
 ---@param unitToken string
 ---@return string
 local function AlertPairKey(unitToken)
@@ -738,9 +687,8 @@ local function AlertPairKey(unitToken)
 	return unitToken .. "|" .. classToken
 end
 
--- The pair a token owns, built on first ask and kept for the session. Shared by the plate path
--- and the prewarm so neither can build a pair the other would not: whichever gets there first
--- pays, and the second finds it already there.
+-- The pair a token owns, built on first ask and kept for the session. Shared by the plate path and
+-- the prewarm, so whichever gets there first pays and the second finds it already there.
 local function GetOrCreateDisplayPair(unitToken)
 	local key = AlertPairKey(unitToken)
 	local entry = displayPairsByToken[key]
@@ -759,9 +707,9 @@ local function GetOrCreateDisplayPair(unitToken)
 end
 
 -- Builds one token's pair ahead of the plate that will want it, and parks it. Both containers come
--- back with none of their groups declared; the walker adds them a group at a time. Existing pairs
--- are left strictly alone: by the time a prewarm pass reaches a token a plate may already be
--- holding and drawing on it, and parking that one would blank a live bar.
+-- back with none of their groups declared, and the walker adds them a group at a time. Existing
+-- pairs are left alone, since a plate may already be drawing on one and parking it would blank a
+-- live bar.
 ---@return table? entry Nil when the token already had a pair.
 local function PrewarmOnePair(unitToken)
 	local key = AlertPairKey(unitToken)
@@ -781,8 +729,8 @@ end
 ---a group on each turn after. The engine allocates a batch of buttons the moment a group is
 ---declared, so a group is the smallest piece a build can be cut into.
 ---
----The token is re-checked at fire time, which it has to be: the walk runs over seconds, and a
----plate may have claimed the pair by the time its turn comes round.
+---The token is re-checked at fire time, since the walk runs over seconds and a plate may have
+---claimed the pair by then.
 ---@param unitToken string
 ---@return SweepVerdict?
 local function PrewarmQueuedPair(unitToken)
@@ -816,10 +764,9 @@ local function EnsureDisplay(unitToken)
 		end
 
 		activeDisplays[unitToken] = entry
-		-- A pair keeps its anchors while parked (so neighbours chained off it stay resolvable),
-		-- which means a reacquired one still points at the row slot it last sat in. Cleared here,
-		-- at acquire, so it renders nowhere rather than somewhere stale until the queued chain
-		-- pass places it.
+		-- A pair keeps its anchors while parked, so a reacquired one still points at the row slot it
+		-- last sat in. Cleared here so it renders nowhere rather than somewhere stale until the queued
+		-- chain pass places it.
 		entry.Def.Frame:ClearAllPoints()
 		entry.Imp.Frame:ClearAllPoints()
 	end
@@ -835,7 +782,7 @@ end
 ---@param entry table
 ---@return boolean? keepGoing
 local function RestyleParkedPair(entry)
-	-- Nothing can reach the buttons under the restriction; abandon the walk, and the next
+	-- Nothing can reach the buttons under the restriction. Abandon the walk, and the next
 	-- unrestricted refresh queues what is left.
 	if wowEx:IsAuraStylingRestricted() then
 		return false
@@ -871,14 +818,13 @@ end
 
 ---Brings every pair onto the look the options now describe.
 ---
----A restyle reaches the buttons wherever the client allows it, which is every settings change made
----out of combat, and it costs no frames. A rebuild does: the client can never give a frame back,
----so a run of slider steps abandoned the whole prewarmed set once per step.
+---A restyle reaches the buttons wherever the client allows it and costs no frames, while a rebuild
+---abandons the whole prewarmed set, since the client can never give a frame back.
 ---
 ---The rebuild is kept for the one case a restyle cannot serve. Inside an arena the restriction
 ---never clears, so a pair holding the old size would wear it for the whole match, and new buttons
----are the only way out: a button takes its look in initializeFrame, before the restriction stamp
----lands on it.
+---are the only way out, since a button takes its look in initializeFrame before the restriction
+---stamp lands on it.
 ---
 ---Active pairs are restyled by the ApplyDisplayOptions pass that follows this. The parked ones are
 ---off screen and there can be forty of them, so they go through the background walker.
@@ -894,9 +840,8 @@ local function RestyleStaleDisplayPairs()
 	pairGeneration = generation
 	pairShape = shape
 
-	-- A mode change moves which groups a pair is built with, and a group can never be added to a
-	-- container; the same goes for a look change while auras are secret, where no restyle can
-	-- reach the buttons. Both leave rebuilding as the only way to get there.
+	-- A group can never be added to a container, and no restyle can reach the buttons while auras
+	-- are secret. Either way rebuilding is the only way to get there.
 	if shapeMoved or wowEx:IsAuraStylingRestricted() then
 		RebuildTrackedPairs()
 
@@ -980,8 +925,7 @@ function M:SetInPrepRoom(value)
 end
 
 -- Parks a token's display pair when the token stops being tracked. The pair stays in
--- displayPairsByToken for the token's return; only the active map loses it. Deliberately leaves
--- the token's sound registrations warm (see the sound module).
+-- displayPairsByToken for the token's return, and the sound registrations are left warm.
 ---@param unitToken string
 function M:ReleaseDisplay(unitToken)
 	local entry = activeDisplays[unitToken]
@@ -991,9 +935,8 @@ function M:ReleaseDisplay(unitToken)
 	end
 end
 
--- Tracking is stopping entirely (module off, a zone where alerts don't run, or a switch of token
--- source), so the warm sound registrations go too, along with whatever the prewarm walk still
--- owes: those pairs were for the source being dropped.
+-- Tracking is stopping entirely, so the warm sound registrations go too, along with whatever the
+-- prewarm walk still owes, since those pairs were for the source being dropped.
 function M:ReleaseAllDisplays()
 	prewarmSweep:Stop()
 	-- Whatever the walk was part way through keeps the groups it has; whoever takes it finishes
@@ -1014,10 +957,10 @@ end
 ---Prepares a parked display pair for each of prefix1..count, so a token coming into play mid-fight
 ---finds its pair ready instead of paying to build it there and then.
 ---
----Nothing is built here: the whole set is forty pairs, and a loading screen does not pay for it -
----the client draws nothing while the screen is up, so the cost would land on the frame it drops.
----The walker builds them a group at a time instead. Cheap to repeat, since a token that already
----has a pair costs one table lookup.
+---Nothing is built here. The whole set is forty pairs, and a loading screen does not pay for it,
+---because the client draws nothing while the screen is up and the cost would land on the frame it
+---drops. The walker builds them a group at a time instead. Cheap to repeat, since a token that
+---already has a pair costs one table lookup.
 ---@param prefix string
 ---@param count number
 function M:Prewarm(prefix, count)
@@ -1036,7 +979,7 @@ function M:Prewarm(prefix, count)
 	prewarmSweep:Run(queue, PrewarmQueuedPair)
 end
 
----Re-reads one token's auras, for when the token's OCCUPANT changed rather than the token itself.
+---Re-reads one token's auras, for when the token's occupant changed rather than the token itself.
 ---Arena tokens are handed to a different player between solo shuffle rounds, and the container
 ---sees no change in the token string it was given, so the last round's auras would stay up.
 ---@param unitToken string
@@ -1125,8 +1068,8 @@ function M:RefreshTestAlerts()
 	local includeDefensives = db.Modules.Alerts.IncludeDefensives
 
 	-- The preview shows whichever colouring the live bars would use. With class colours on that is
-	-- the class owning each preview spell, which is what makes the row read the way a real one
-	-- does: two icons from the same class come out in the same colour.
+	-- the class owning each preview spell, so two icons from the same class come out in the same
+	-- colour.
 	local importantTestColor, defensiveTestColor = AlertGlowColors()
 
 	testIconCtx.Now = GetTime()
@@ -1135,8 +1078,8 @@ function M:RefreshTestAlerts()
 	testIconCtx.ShowTooltips = db.Modules.Alerts.ShowTooltips ~= false
 	testIconCtx.Border = AlertBorderShown()
 
-	-- Defensives bar test icons. The stagger step only advances when an icon actually landed, so
-	-- a missing texture doesn't leave a hole in the timing spread.
+	-- The stagger step only advances when an icon actually landed, so a missing texture doesn't
+	-- leave a hole in the timing spread.
 	local defSlot = 0
 	if includeDefensives then
 		local stepIndex = 0
@@ -1152,7 +1095,6 @@ function M:RefreshTestAlerts()
 		end
 	end
 
-	-- Important test icons (each test spell shown once). Split -> dedicated bar; combined -> main bar.
 	local splitBars = db.Modules.Alerts.SplitBars
 	local importantEnabled = db.Modules.Alerts.Important and db.Modules.Alerts.Important.Enabled
 	local impTarget = (splitBars and importantContainer) or container
@@ -1166,13 +1108,11 @@ function M:RefreshTestAlerts()
 		end
 	end
 
-	-- Clear leftover slots on the main bar (past defensives, plus combined important).
 	local mainUsed = splitBars and defSlot or impSlot
 	for i = mainUsed + 1, container.Count do
 		container:SetSlotUnused(i)
 	end
 
-	-- Dedicated important bar: trim leftovers when split, otherwise hide it.
 	if importantContainer then
 		if splitBars and importantEnabled then
 			for i = impSlot + 1, importantContainer.Count do
@@ -1188,8 +1128,8 @@ end
 function M:ApplyBarOptions(options)
 	local grow = GetGrow()
 
-	-- Combined mode keeps the single bar on the module anchor (centred by default); split mode
-	-- moves the defensives onto their own anchor, mirrored against the important bar's.
+	-- Combined mode keeps the single bar on the module anchor. Split mode moves the defensives onto
+	-- their own anchor, mirrored against the important bar's.
 	PlaceBar(container.Frame, (options.SplitBars and options.Defensives) or options)
 
 	container:SetIconSize(options.Icons.Size)
@@ -1204,7 +1144,8 @@ function M:ApplyBarOptions(options)
 	end
 
 	local importantOptions = options.Important
-	-- The dedicated important bar only appears in split mode; combined merges into the main bar.
+	-- The dedicated important bar only appears in split mode. Combined mode merges it into the main
+	-- bar.
 	local importantVisible = importantOptions and importantOptions.Enabled and options.SplitBars
 	local impAnchor = importantOptions or options
 
@@ -1229,7 +1170,6 @@ function M:ApplyBarOptions(options)
 
 	if importantVisible then
 		importantContainer.Frame:Show()
-		-- Only draggable while the test bars are up; this runs with the module enabled.
 		importantContainer.Frame:EnableMouse(testModeActive)
 		importantContainer.Frame:SetMovable(testModeActive)
 		moduleUtil:SetTestLabel(importantContainer.Frame, testModeActive and L["Important Spells"] or nil)
@@ -1256,7 +1196,7 @@ function M:SetAnchorInteractive(active)
 		return
 	end
 
-	-- The important bar is only draggable while it is actually on screen (split mode).
+	-- The important bar is only draggable while it is on screen, which is split mode.
 	local moveable = active and importantContainer.Frame:IsShown()
 	importantContainer.Frame:EnableMouse(moveable)
 	importantContainer.Frame:SetMovable(moveable)
@@ -1279,7 +1219,7 @@ function M:CreateFrames()
 	end)
 	container.Frame:Show()
 
-	-- Dedicated important-buff bar (split mode); sized to MaxIcons (Refresh keeps it in sync).
+	-- Dedicated important-buff bar for split mode, sized to MaxIcons.
 	importantContainer = iconSlotContainer:New(UIParent, count, size, options.IconSpacing or 2, "Alerts", nil, "Alerts")
 	SetUpBarDragging(importantContainer, options.Important or options)
 

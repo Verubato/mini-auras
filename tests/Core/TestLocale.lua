@@ -61,7 +61,7 @@ fw.describe("Locale - reading one language out of eleven", function()
 	end)
 
 	fw.it("leaves an English client on the defaults, with nothing registered", function()
-		-- enUS registers no table of its own: the defaults ARE its strings.
+		-- enUS registers no table of its own, so the defaults are its strings.
 		local L = newLocale()
 
 		L:SetDefaultStrings({ Hello = "Hello" })

@@ -22,8 +22,8 @@ addon.Modules.CrowdControl = addon.Modules.CrowdControl or {}
 local M = {}
 addon.Modules.CrowdControl.Display = M
 
--- CC auras render through an AuraContainer per anchor; the IconSlotContainer is kept for the
--- kick icon and test-mode icons only (neither reads aura data).
+-- CC auras render through an AuraContainer per anchor. The IconSlotContainer is kept only for the
+-- kick icon and the test icons, neither of which reads aura data.
 local paused = false
 local testModeActive = false
 ---@type Db
@@ -32,9 +32,8 @@ local db
 -- whole-set operations rather than reaching into it.
 ---@type table<table, CrowdControlWatchEntry>
 local watchers = {}
--- Background walker declaring the aura group of the displays as they are built; see the
--- DeferGroups note where they are created. Urgent: these are on a unit frame the player is
--- looking at, unlike the lanes preparing spares nobody has asked for.
+-- Background walker declaring the aura group of the displays as they are built. Urgent, because
+-- these are on a unit frame the player is looking at.
 local buildSweep = sweep:New(true)
 ---@type TestSpell[]
 local testSpells = {}
@@ -53,8 +52,8 @@ local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
 -- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
 local MASQUE_GROUP = "Crowd Control"
 -- How many frames' worth of containers to have ready before a group turns up. A party is five,
--- which is the size a solo player is most likely to become; past that the walker keeps up with
--- the frames appearing, because a raid fills in over several seconds anyway.
+-- which is the size a solo player is most likely to become. Past that the walker keeps up, since
+-- a raid fills in over several seconds anyway.
 local PREWARM_FRAMES = 5
 -- What a spare tracks until a frame hands it a real token.
 local SPARE_UNIT = "none"
@@ -184,13 +183,13 @@ local function UpdateKickIcon(entry)
 	end)
 end
 
----Budgets the CC group for the entry's CURRENT unit. Outside the player's visible world the
----engine stops evaluating the CROWD_CONTROL token and the group fills with unrelated debuffs
----(the spell-id map is identity-gated off on assistable units, so the token is the only filter
----left), so a unit that far away shows nothing at all. Visibility has no event of its own,
----which is why the unit state poller re-asks this.
----Urgent: the unit a gate zeroes emits no aura events, so a budget flip parked for combat would
----keep showing the garbage until regen.
+---Budgets the CC group for the entry's current unit. The spell-id map is identity-gated off on
+---assistable units, so the CROWD_CONTROL token is the only filter left, and outside the player's
+---visible world the engine stops evaluating it and the group fills with unrelated debuffs. A unit
+---that far away shows nothing at all. Visibility has no event of its own, which is why the unit
+---state poller re-asks this.
+---Urgent, because the unit a gate zeroes emits no aura events, so a budget flip parked for combat
+---would keep showing the garbage until regen.
 ---@param entry CrowdControlWatchEntry
 ---@param options table
 ---@return number crowdControl
@@ -286,10 +285,9 @@ end
 
 ---A spare for the frame that has just asked for one, or nil when none is waiting or none matches.
 ---
----MATCHES, not merely exists. A spare bakes its size, its style and its groups' budgets in when it
----is built, and a restyle is refused outright while auras are secret, so one handed over needing a
----resize would keep the wrong look for the rest of an arena. CarriesConfig is the question every
----other pool here asks before reuse.
+---A spare bakes its size, its style and its groups' budgets in when it is built, and a restyle is
+---refused outright while auras are secret, so one handed over needing a resize would keep the
+---wrong look for the rest of an arena.
 ---@param unit string
 ---@param size number
 ---@param spacing number
@@ -302,8 +300,8 @@ local function TakeSpare(unit, size, spacing, style, maxIcons)
 
 		-- The budget has to match outright: the engine hands out a group's buttons from the count
 		-- it was declared with, so a spare built for a smaller row can never grow into a bigger
-		-- one. The look only has to match while a restyle is refused; outside that the same
-		-- refresh that takes this corrects it, exactly as it would a display built on demand.
+		-- one. The look only has to match while a restyle is refused, since outside that the same
+		-- refresh that takes this corrects it.
 		if spare.MaxIcons == maxIcons
 			and (not wowEx:IsAuraStylingRestricted() or spare.Display:CarriesConfig(size, spacing, style)) then
 			table.remove(spares, index)
@@ -363,8 +361,7 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	if units:IsCompoundUnit(unit) then
-		-- in PvE ignore main tank and assist frames
-		-- you can't scan them for auras
+		-- Main tank and assist frames cannot be scanned for auras.
 		return nil
 	end
 
@@ -440,13 +437,12 @@ local function EnsureWatcher(anchor, unit)
 		-- the next refresh.
 		ApplyUnitGates(entry, options)
 	else
-		-- Check if unit has changed
 		if entry.Unit ~= unit then
 			if not units:IsPetOrMinion(entry.Unit) then
 				kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
 			end
 
-			-- The container tracks the new unit itself; only the unit token changes.
+			-- The container tracks the new unit itself, so only the token changes.
 			entry.Display:SetUnit(unit)
 			entry.Unit = unit
 
@@ -454,7 +450,6 @@ local function EnsureWatcher(anchor, unit)
 			-- about the options moved.
 			ApplyUnitGates(entry, options)
 
-			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
 
 			if not isPet then
@@ -464,7 +459,6 @@ local function EnsureWatcher(anchor, unit)
 				end)
 			end
 
-			-- Force immediate refresh for the new unit
 			UpdateKickIcon(entry)
 		end
 	end
@@ -494,8 +488,8 @@ local function AddPetUnitFrame(frame)
 end
 
 -- Collects the player's standalone pet unit frame from every supported unit-frame addon. The pet
--- has its own frame separate from the party/raid pet frames, and each addon names it differently;
--- whichever addon is active shows its own, so we gather all candidates and filter by visibility.
+-- has its own frame separate from the party and raid pet frames, and each addon names it
+-- differently, so every candidate is gathered and filtered by visibility.
 ---@return table[]
 local function GetPetUnitFrames()
 	wipe(petUnitFrameScratch)
@@ -518,8 +512,8 @@ local function GetPetUnitFrames()
 	return petUnitFrameScratch
 end
 
----Per-entry enabled state and options: pet entries follow the PetCC toggle (plus the
----IncludePetFrame opt-in for standalone pet frames), everything else follows the CC toggle.
+---Per-entry enabled state and options: pet entries follow the PetCC toggle, plus the
+---IncludePetFrame opt-in for standalone pet frames, and everything else follows the CC toggle.
 ---@param entry CrowdControlWatchEntry
 ---@param options CrowdControlInstanceOptions
 ---@param moduleEnabled boolean
@@ -626,7 +620,7 @@ end
 function M:EnsureWatchers()
 	frames:ForEachAnchor(true, testModeActive, EnsureWatcher)
 
-	-- Pet frames never appear in the anchor walk - discover them directly.
+	-- Pet frames never appear in the anchor walk, so they are discovered directly.
 	if testModeActive or moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 		for i = 1, 6 do
 			local frame = _G["CompactPartyFramePet" .. i]
@@ -736,7 +730,7 @@ function M:RefreshTestIcons()
 		end
 
 		if not entryEnabled then
-			-- This frame type is disabled - hide and clear it
+			-- This frame type is disabled, so hide and clear it.
 			entry.Container:ResetAllSlots()
 			entry.Container.Frame:Hide()
 		else
@@ -753,7 +747,7 @@ function M:RefreshTestIcons()
 				Glow = entryOptions.Icons.Glow,
 				ColorByDispelType = entryOptions.Icons.ColorByDispelType,
 				-- Color wins over the palette in FillContainer, and it is nil while the palette
-				-- is on; the live buttons resolve the same way.
+				-- is on. The live buttons resolve the same way.
 				Color = FlatCcColor(entryOptions.Icons),
 				-- The live buttons draw border and glow together, so the preview does too.
 				Border = true,
@@ -798,7 +792,6 @@ function M:OnCufUpdateVisible(frame)
 	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
 	local isPet = units:IsPetOrMinion(entry.Unit)
 
-	-- If this is a pet frame and pet CC is disabled, keep it hidden
 	if isPet and not petEnabled then
 		entry.Container.Frame:Hide()
 		if entry.Display then
@@ -865,7 +858,9 @@ end
 ---@field Container IconSlotContainer Renders the kick icon and the test icons only.
 ---@field Display AuraContainerDisplay? CC auras render through this.
 ---@field KickTimer table? Timer that clears the kick icon on expiry.
----@field KickKey number Kick tracker subscription key for the entry's unit (0 for pets, which never subscribe).
+---@field KickKey number Kick tracker subscription key for the entry's unit, 0 for pets, which
+---never subscribe.
 ---@field Anchor table
 ---@field Unit string
----@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame (opt-in via IncludePetFrame).
+---@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame,
+---opt-in via IncludePetFrame.

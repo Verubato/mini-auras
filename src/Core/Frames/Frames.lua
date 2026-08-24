@@ -62,9 +62,9 @@ local function IsNamePlateFrame(frame)
 end
 
 ---Wraps a unit-frame hook so it only ever sees the frames its owner can use. Blizzard calls these
----hooks for every compact frame it touches, thousands of times during a login, and both owners
----asked the same two questions of every one of them before doing anything: the answers are the
----same for a given frame forever, so asking here costs a memoised lookup and saves the dispatch.
+---hooks for every compact frame it touches, thousands of times during a login, and the
+---IsNamePlateFrame and IsFriendlyCuf answers are the same for a given frame forever, so asking here
+---costs a memoised lookup and saves the dispatch.
 ---@param callback fun(frame: table, ...)
 ---@return fun(frame: table, ...)
 local function OnlyFriendlyUnitFrames(callback)
@@ -270,8 +270,8 @@ end
 ---Whether an anchor is there to hang anything on. A unit frame the client has taken away is not,
 ---and neither is one that is off screen.
 ---
----Technically it can be visible but have an alpha of 0, or even worse a secret alpha of 0, but we
----are going to assume frame addons are sane and properly hide frames instead of doing that.
+---A visible frame can still have an alpha of 0, or a secret one, which this takes as visible on the
+---assumption that a frame addon hides what it means to hide.
 ---@param anchor table
 ---@return boolean
 function M:IsAnchorUsable(anchor)
@@ -335,11 +335,12 @@ function M:ShowHideDisplay(display, anchor, excludePlayer)
 end
 
 ---Installs the unit-frame integration hooks shared by the raid-frame icon modules: the
----CompactUnitFrame set-unit/visibility hooks (never fired for nameplates, and skipped entirely
----when DandersFrames replaces the CUFs),
----the FrameSort and DandersFrames post-sort callbacks, and the Cell spotlight / NDui visibility
----hooks. Install once per module at Init; none of these can be taken back off, so the callbacks
----must gate themselves on the module's enabled state.
+---CompactUnitFrame set-unit and visibility hooks, the FrameSort and DandersFrames post-sort
+---callbacks, and the Cell spotlight and NDui visibility hooks. The CompactUnitFrame hooks never
+---fire for nameplates, and are skipped entirely when DandersFrames replaces those frames.
+---
+---Install once per module at Init. None of these can be taken back off, so the callbacks must gate
+---themselves on the module's enabled state.
 ---@param owner table Frame handed to DandersFrames.RegisterCallback as the callback owner.
 ---@param hooks { OnSetUnit: fun(frame: table, unit: string), OnUpdateVisible: fun(frame: table), OnSorted: fun(), OnVisibilityChanged: fun() }
 function M:InstallUnitFrameHooks(owner, hooks)

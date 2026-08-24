@@ -15,11 +15,9 @@ addon.Modules.Alerts = addon.Modules.Alerts or {}
 local M = {}
 addon.Modules.Alerts.Sound = M
 
--- Sounds work inverted: the addon can't notice "a new aura appeared", but
--- C_UnitAuras.AddAuraSound lets the ENGINE play a sound when a named spell lands on a registered
--- unit. See alertSoundsByToken. TTS rides the same mechanism: instead of speaking a name the
--- addon cannot read, it ships one baked clip per spell name (Core/Auras/AuraTtsSounds)
--- and registers each spell id with its own clip, so the engine says the name for us.
+-- The addon cannot notice a new aura, but C_UnitAuras.AddAuraSound lets the engine play a sound
+-- when a named spell lands on a registered unit. TTS rides the same mechanism with one baked clip
+-- per spell name, registered against its own spell id.
 
 -- The two sound sets the module keeps, stamped so a settings change re-registers them and
 -- anything else leaves them alone.
@@ -33,10 +31,10 @@ local SILENT_ALERT_SPELL_IDS = {
 	[8178] = true, -- Grounding Totem
 }
 
--- The enemy-debuff spells land on the caster's TARGET, so one appearing on an enemy plate
--- means an ally cast it; the plates stay quiet for those and RefreshAllySounds announces the
--- incoming ones. Their TTS clips are already absent from the plate categories (the generator
--- strips the overlap), so this only has the plain alert sound left to cover.
+-- The enemy-debuff spells land on the caster's target, so one appearing on an enemy plate means an
+-- ally cast it. The plates stay quiet for those and RefreshAllySounds announces the incoming ones.
+-- Their TTS clips are already absent from the plate categories, so this only has the plain alert
+-- sound left to cover.
 for spellId in pairs(addon.Core.AuraCategoryIds.EnemyDebuff) do
 	SILENT_ALERT_SPELL_IDS[spellId] = true
 end
@@ -44,25 +42,21 @@ end
 -- Read by the tests, which derive the expected registration count from it.
 M.SilentAlertSpellIds = SILENT_ALERT_SPELL_IDS
 
--- Who the enemy-debuff announcements watch. Those cooldowns sit on whoever they were cast at
--- rather than on the caster, so there is no nameplate to hang them off - they land on your own
--- side. Filled from the roster per pass, with the player kept whatever it says: FriendlyUnits
--- hands back nothing at all while solo, and a duel or a world-PvP opener is exactly when being
--- told about a Deathmark on yourself matters.
+-- Who the enemy-debuff announcements watch. Those cooldowns sit on whoever they were cast at, so
+-- they land on your own side and there is no nameplate to hang them off. Filled from the roster
+-- per pass, with the player always kept, since FriendlyUnits hands back nothing while solo and a
+-- duel is exactly when being told about a Deathmark on yourself matters.
 local allyTokens = {}
 
 ---@type Db
 local db
 local paused = false
 
--- Engine-side alert sounds via Core/Audio/AuraSounds (aura transitions are secret, but the engine can
--- play sounds on them for us - same pattern as HealerCrowdControlModule). Registrations are per
--- (enemy nameplate token, spellId), fed from the generated Core/AuraCategoryIds
--- Important/Defensive lists, plus the baked TTS clips when those are on.
--- token -> pooled list of sound handles for that token. Registrations are kept warm across
--- plate despawns: a token's registration set is identical no matter which enemy holds it, so
--- tearing down and re-adding ~120 sounds per plate churn would be pure API traffic. They are
--- removed only when the token reappears as a non-enemy, the sound settings change, or plate
+-- token -> pooled list of sound handles for that token, one registration per token and spell id,
+-- fed from the generated Core/AuraCategoryIds lists plus the baked TTS clips when those are on.
+-- Registrations are kept warm across plate despawns, since a token's set is identical no matter
+-- which enemy holds it and re-adding ~120 sounds per plate churn would be pure API traffic. They
+-- are removed only when the token reappears as a non-enemy, the sound settings change, or plate
 -- tracking stops entirely.
 local alertSoundsByToken = {}
 local settingsStamp = changeStamp:New()
@@ -87,8 +81,8 @@ local function MutedSpellIds(category)
 	return ttsMutes:EffectiveSet(category, options and options.MutedSpellIds)
 end
 
--- Registers one spell list's sounds for a token, appending to `ids` (nil starts a new pooled
--- list). Hoisted out of RegisterToken so the per-nameplate path doesn't build a closure.
+-- Registers one spell list's sounds for a token, appending to `ids`, or starting a new pooled list
+-- when it is nil. Hoisted out of RegisterToken so the per-nameplate path doesn't build a closure.
 ---@param ids number[]?
 ---@param unitToken string
 ---@param list table<number, boolean> Spell ids to register.
@@ -112,11 +106,10 @@ function M:SetPaused(value)
 	paused = value
 end
 
--- Reconciles the enemy-debuff announcements on the player and party tokens. Kept
--- apart from the nameplate registrations because nothing about it is per-plate: the tokens are
--- fixed, and what invalidates them is the roster rather than a plate coming and going. Cheap to
--- call: unchanged settings do nothing, which is what lets the roster event drive it
--- directly instead of going through the module's whole Refresh.
+-- Reconciles the enemy-debuff announcements on the player and party tokens. Kept apart from the
+-- nameplate registrations because the tokens are fixed, and what invalidates them is the roster
+-- rather than a plate coming and going. Unchanged settings do nothing, which is what lets the
+-- roster event drive it directly.
 ---@param force boolean? Re-register even when the settings have not moved. The tokens never
 ---change, but a registration made against a token nobody was holding is not something the
 ---engine promises to keep, so a roster change redoes them.
@@ -177,9 +170,9 @@ function M:RefreshAllySounds(force)
 	end
 end
 
--- Registers the important/defensive alert sounds for one enemy nameplate token.
--- No-op when already registered (which is what keeps warm registrations cheap on token reuse)
--- or when no alert sound is enabled.
+-- Registers the important/defensive alert sounds for one enemy nameplate token. A no-op when
+-- already registered, which is what keeps warm registrations cheap on token reuse, or when no
+-- alert sound is enabled.
 ---@param unitToken string
 function M:RegisterToken(unitToken)
 	if alertSoundsByToken[unitToken] then
@@ -198,7 +191,7 @@ function M:RegisterToken(unitToken)
 		return
 	end
 
-	-- nil until the first list registers; RegisterSet then hands out a pooled handle list.
+	-- nil until the first list registers. RegisterSet then hands out a pooled handle list.
 	local ids = nil
 	local channel = sound.Channel or "Master"
 	if importantEnabled then
@@ -246,18 +239,16 @@ function M:RemoveAllTokens()
 	end
 end
 
--- Drops the enemy-debuff announcements. Their tokens are not nameplates, so plate
--- teardown never reaches them; the module's own teardown calls this instead.
+-- Drops the enemy-debuff announcements. Their tokens are not nameplates, so plate teardown never
+-- reaches them and the module's own teardown calls this instead.
 function M:RemoveAllySounds()
 	auraSounds:RemoveSet(allySoundIds)
 	allySoundIds = nil
 	allySoundGeneration = nil
 end
 
--- Re-evaluates the sound settings; when they change, every active token's
--- registrations are rebuilt (token add/remove is handled incrementally at the display's
--- acquire/release chokepoints). Called from Refresh, which also runs after the test-mode
--- pause/resume transitions.
+-- Re-evaluates the sound settings, rebuilding every active token's registrations when they change.
+-- Token add and remove are handled incrementally at the display's acquire and release points.
 ---@param activeTokens table<string, any> keys are the tokens currently being drawn
 function M:Refresh(activeTokens)
 	-- Ahead of the nameplate settings check below, which returns early and would otherwise

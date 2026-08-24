@@ -1,11 +1,13 @@
--- The shared background walker's lane model. The failures this guards against: a frame spends a
--- millisecond budget rather than a count of items, so a lane of cheap items drains many at once
--- while a lane of dear ones takes a frame each; a lane is weighed by the worst item it has run
--- lately, so a stretch of cheap ones cannot let a dear one in behind them; one lane replacing or
--- abandoning its run must never touch another lane's; the stop check must not consume a busy
--- lane's round-robin turn; only one item may overrun a frame however many passes want one; and
--- nothing may be spent behind a loading screen, where the client charges it to the frame the
--- screen drops on.
+-- The shared background walker's lane model. The failures this guards against:
+--   * a frame spends a millisecond budget rather than a count of items, so a lane of cheap items
+--     drains many at once while a lane of dear ones takes a frame each,
+--   * a lane is weighed by the worst item it has run lately, so a stretch of cheap ones cannot
+--     let a dear one in behind them,
+--   * one lane replacing or abandoning its run must never touch another lane's,
+--   * the stop check must not consume a busy lane's round-robin turn,
+--   * only one item may overrun a frame however many passes want one,
+--   * nothing may be spent behind a loading screen, where the client charges it to the frame the
+--     screen drops on.
 
 local fw = require("Framework")
 local workerMock = require("WorkerMock")
@@ -29,7 +31,7 @@ local TRICKLE_ELAPSED = 0.05
 -- times what the background one does.
 local STARVED_ELAPSED = 0.01
 -- Dearer than a whole frame slice, which is what a container build really is. One of these may
--- overrun a frame; a second one may not follow it.
+-- overrun a frame. A second one may not follow it.
 local OVERRUN_MS = 3
 
 local function Items(count)
@@ -295,7 +297,7 @@ fw.describe("Sweep - a time budget shared across the lanes", function()
 
 	fw.it("a third busy lane is not starved by the stop check", function()
 		-- The end-of-frame "should the worker stop" question must peek without advancing the
-		-- round-robin cursor; asking through the consuming lookup ate one lane's turn per frame,
+		-- round-robin cursor. Asking through the consuming lookup ate one lane's turn per frame,
 		-- so with three busy lanes the third never ran until the others drained.
 		local seen = {}
 

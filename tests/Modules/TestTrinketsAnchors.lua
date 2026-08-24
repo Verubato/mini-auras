@@ -2,10 +2,10 @@
 --
 -- The anchors are taken from whatever party frames are on screen at the time. In an arena that
 -- moment is the loading screen, and a frame addon builds, sorts and swaps its own frames well
--- after it - some only replace the client's once their own are up. An anchor taken too early
--- points at a frame nobody shows any more, and since a SetPoint follows the frame it was given,
--- the icon then sits at that frame's position for the whole match. That is the report this file
--- exists for: trinket icons out of place on entering an arena, back where they belong after a
+-- after it, with some only replacing the client's once their own are up. An anchor taken too
+-- early points at a frame nobody shows any more, and since a SetPoint follows the frame it was
+-- given, the icon then sits at that frame's position for the whole match. The report this file
+-- exists for is trinket icons out of place on entering an arena, back where they belong after a
 -- reload.
 
 local fw = require("Framework")
@@ -13,7 +13,7 @@ local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 
--- The tracker reads cooldowns straight off the client; nothing here is about the durations.
+-- The tracker reads cooldowns straight off the client. Nothing here is about the durations.
 _G.C_PvP.GetArenaCrowdControlDuration = function()
 	return nil
 end

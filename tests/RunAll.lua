@@ -18,7 +18,6 @@ io.write("MiniAuras - unit tests\n")
 io.write("======================================\n")
 
 local testFiles = {
-    -- Shared machinery under Core.
     "tests/Core/TestAuraContainerDisplay.lua",
     "tests/Core/TestIconSlotColors.lua",
     "tests/Core/TestKickTracker.lua",
@@ -40,14 +39,11 @@ local testFiles = {
     "tests/Core/TestUUFFrames.lua",
     "tests/Core/TestPositionEditor.lua",
 
-    -- Utils.
     "tests/Utils/TestUtils.lua",
 
-    -- Saved variables: migrations and profiles.
     "tests/Config/TestMigrator.lua",
     "tests/Config/TestProfileManager.lua",
 
-    -- Modules, driven end to end against the mocked 12.1 environment.
     "tests/Modules/TestEnemyKickTracker.lua",
     "tests/Modules/TestAllyKickTracker.lua",
     "tests/Modules/TestContainerLifecycle.lua",
@@ -66,7 +62,6 @@ local testFiles = {
     "tests/Modules/TestPersonalAuras.lua",
     "tests/Modules/TestFrameAuras.lua",
 
-    -- Config pages that need the whole addon loaded.
     "tests/Config/TestPersonalAurasPanel.lua",
     "tests/Config/TestPortraitsPanel.lua",
 

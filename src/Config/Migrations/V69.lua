@@ -18,8 +18,7 @@ local SHIPPED_IMPORTANT_COLOR = { R = 1, G = 0.2, B = 0.2, A = 1 }
 local SHIPPED_DEFENSIVE_COLOR = { R = 0.2, G = 1, B = 0.2, A = 1 }
 
 -- The animated glow styles as version 70 offered them. Spelled out rather than read off the
--- catalog, which no longer holds them at all: this step has to keep remapping the same six names
--- whatever the catalog becomes later.
+-- catalog, so this step keeps remapping the same six names whatever the catalog becomes later.
 local DROPPED_GLOW_TYPES = {
 	["Rotation Assist (Clockwise)"] = true,
 	["Rotation Assist (Anti-clockwise)"] = true,
@@ -95,8 +94,8 @@ local function IsShippedColor(color, shipped)
 end
 
 ---Switches class colouring on only where the category tints were left alone. Someone who picked
----their own important and defensive colours chose that scheme, and class colouring throws it away
----- so they keep what they had and can turn this on themselves.
+---their own important and defensive colours chose that scheme, and class colouring throws it away,
+---so they keep what they had and can turn this on themselves.
 local function AdoptClassColors(modules)
 	local icons = modules and modules.AlertsModule and modules.AlertsModule.Icons
 

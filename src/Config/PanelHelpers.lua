@@ -5,9 +5,8 @@ local L = addon.L
 local config = addon.Config
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
--- The text is behind functions rather than stored inline because the locale can change after this
--- file loads, so every lookup has to happen at build time. Spelling each key out in a literal
--- lookup also keeps it visible to the locale checker, which cannot follow an indirect one.
+-- The text sits behind functions because the locale can change after this file loads, so every
+-- lookup has to happen at build time. Literal keys keep them visible to the locale checker.
 local ENABLE_ROW = {
 	{
 		Key = "World",
@@ -285,9 +284,8 @@ function M:BuildOffsetSliders(opts)
 end
 
 ---A dropdown over a shared-media list (sounds, bar textures). The provider refills one table in
----place, so the dropdown re-reads it whenever the media list changes or the page is reshown -
----media addons register their entries whenever they happen to load, which is routinely after
----the dropdown was built.
+---place, so the dropdown re-reads it whenever the media list changes or the page is reshown. Media
+---addons often register their entries after the dropdown was built.
 ---@param opts MediaDropdownOptions
 ---@return table dropdown
 ---@return boolean isModern
@@ -375,7 +373,7 @@ function M:CreateSpellIcon(parent, size)
 	return button
 end
 
----A small remove cross with the standard tooltip; the caller positions it.
+---A small remove cross with the standard tooltip. The caller positions it.
 ---@param parent table
 ---@param onClick fun()
 ---@return table button

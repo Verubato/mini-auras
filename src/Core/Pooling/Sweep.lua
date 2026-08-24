@@ -1,32 +1,12 @@
 ---@type string, Addon
 local _, addon = ...
 
--- Staggered background walker shared by the display caches: a queue of parked items is run
--- through a callback a few at a time, so a look change converges on frames nobody can see
--- without billing any single frame for the lot. Sweeps are warm-ups by contract: whoever owns
--- the items must also correct them lazily on use, because a run can be replaced or abandoned at
--- any point, and callers re-validate each item in the callback - the world moves while it runs.
---
--- Each consumer holds its own lane (New), but the budget is addon-wide: one worker spends it
--- across every lane with work, round-robin, so the total background cost stays flat no matter how
--- many modules queue a sweep at once. A lane's Run only ever replaces that lane's own queue.
---
--- The walker rides a frame's OnUpdate rather than a timer, for two reasons. A budget in
--- milliseconds only means anything against the frame it is spent in, and a frame is the only place
--- to read that. Throughput then follows the headroom the machine actually has, instead of being
--- pinned to whatever interval a timer was given.
---
--- A loading screen is not a window this can use, which was measured rather than assumed. There is
--- no LOADING_SCREEN_ENABLED at login, and the prepared set is queued from the refresh that
--- PLAYER_ENTERING_WORLD drives, which lands a few milliseconds before the screen lifts. A timer
--- put on the queues there got one turn in and found the screen already gone. Anything wanting that
--- window has to be queued earlier, not walked faster.
+-- Staggered background walker shared by the display caches: a queue of parked items is run through
+-- a callback a few at a time, so a look change converges without billing any one frame for the lot.
 
--- The biggest slice of a frame the walker takes on, beyond the one item it is already part way
--- through. Small on purpose. Most of what the lanes carry is well under a millisecond, and a slice
--- this size still gets a run of that through; the dear items cannot be cut up at all, since
--- declaring an aura group allocates its whole batch of buttons in one engine call, so the slice's
--- real job is to stop two of those landing in the same frame.
+-- The biggest slice of a frame the walker takes on, beyond the item it is already part way
+-- through. Declaring an aura group allocates its whole batch of buttons in one engine call and
+-- cannot be cut up, so the slice's real job is to stop two of those landing in the same frame.
 local FRAME_BUDGET_MS = 2
 -- What the on-demand lanes may spend per second. Three times the background rate, because their
 -- items are things already on screen waiting to be finished.
@@ -35,16 +15,17 @@ local URGENT_MS_PER_SECOND = 60
 -- yet, so this one number is what the addon costs in ordinary play.
 local BACKGROUND_MS_PER_SECOND = 20
 -- The most of any frame the on-demand lanes may claim while a background lane is also waiting.
--- Without it a busy on-demand lane takes every frame, and the background lanes are exactly the ones
--- nothing else will ever come back for. With nothing waiting the share does not bind at all.
+-- Without it a busy on-demand lane takes every frame, and nothing else ever comes back for the
+-- background lanes.
 local URGENT_FRAME_SHARE = 0.5
 -- How fast a lane's remembered worst item fades, per item it runs. A lane's work changes shape as
--- it goes - a container, then its groups, then a run of no-ops - so one that has stopped being
--- expensive earns its way back to sharing a frame over the next few dozen items.
+-- it goes, so one that has stopped being expensive earns its way back to sharing a frame over the
+-- next few dozen items.
 local PEAK_DECAY = 0.9
 
--- Every lane ever created. Lanes are one per consumer per session and never removed; a drained
--- lane costs one has-work check per scan.
+-- Every lane ever created, one per consumer and never removed. A drained lane costs one has-work
+-- check per scan. One worker spends the addon-wide budget across all of them, so the total cost
+-- stays flat however many modules queue a sweep at once.
 local lanes = {}
 -- The frame the walker rides, built on first use: an addon whose modules are all switched off
 -- never sweeps and never needs one. Hidden whenever no lane has work, so an idle session runs no
@@ -54,10 +35,10 @@ local worker = nil
 -- One per class of lane, because the two classes are walked in passes of their own.
 local cursor = 1
 local urgentCursor = 1
--- Milliseconds each class has banked and not yet spent. Held as credit rather than granted per
--- frame because an item cannot be split: a lane runs one whenever any credit is left and the
--- overrun is carried into the frames after it, so the average holds however dear the items are.
--- Neither ever banks more than one frame's slice, or a quiet minute would buy one enormous frame.
+-- Milliseconds each class has banked and not yet spent. An item cannot be split, so a lane runs
+-- one whenever any credit is left and the overrun is carried into the frames after it, which holds
+-- the average however dear the items are. Neither ever banks more than one frame's slice, or a
+-- quiet minute would buy one enormous frame.
 local urgentCredit = 0
 local credit = 0
 -- When the frame being run began and how much of it is gone. The slice cannot split an item, so
@@ -99,18 +80,17 @@ local function LaneCanRun(lane, remainingMs)
 	end
 
 	-- The pass's first item runs whatever it costs, or a lane whose items are dearer than the whole
-	-- slice would never run at all. What stops the next pass taking a second one is the slice
-	-- itself: an item that overran it leaves nothing under the limit for anyone to start with.
-	-- Measured live, one group declaration is about four milliseconds against a two millisecond
-	-- slice, so in practice a frame carries one of them.
+	-- slice would never run at all. An item that overran the slice leaves nothing under the limit
+	-- for the next pass to start with. Measured live, one group declaration is about four
+	-- milliseconds against a two millisecond slice, so a frame carries one of them.
 	if passIsEmpty then
 		return true
 	end
 
 	-- Weighed against the worst this lane has been lately rather than its average: a lane part way
 	-- through a run of cheap no-op turns averages cheap right up until its next real container
-	-- build, which is what used to let three of those land in one frame. A lane that has never run
-	-- counts as dear for the same reason.
+	-- build, which would let three of those land in one frame. A lane that has never run counts as
+	-- dear for the same reason.
 	return lane.PeakMs ~= nil and lane.PeakMs <= remainingMs
 end
 
@@ -204,10 +184,9 @@ local function RunPass(urgent, allowanceMs)
 
 		local abandoned = verdict == false
 
-		-- Not finished: give the item its place back, so it completes before anything newer and
-		-- the budget is weighed between its parts. Only into the queue it came from; a processFn
-		-- that replaced its own lane's run would otherwise push the new queue's cursor off the
-		-- front of it.
+		-- Not finished: give the item its place back, so the budget is weighed between its parts.
+		-- Only into the queue it came from. A processFn that replaced its own lane's run would
+		-- otherwise push the new queue's cursor off the front of it.
 		if verdict == M.Verdict.Unfinished and lane.Queue == queue then
 			lane.Next = lane.Next - 1
 		end
@@ -228,6 +207,10 @@ end
 local function OnUpdate(_, elapsed)
 	-- Nothing is drawn behind a loading screen, so anything spent there is charged to the frame the
 	-- screen drops on. No credit accrues either: a two minute zone-in must not buy a hitch.
+	--
+	-- The screen is no window to work in: there is no LOADING_SCREEN_ENABLED at login, and it lifts
+	-- a few milliseconds after the PLAYER_ENTERING_WORLD refresh queues the prepared set. Anything
+	-- wanting that window has to be queued earlier, not walked faster.
 	if addon:IsLoadingScreenUp() then
 		return
 	end
@@ -250,6 +233,8 @@ end
 local function Wake()
 	if not worker then
 		worker = CreateFrame("Frame")
+		-- OnUpdate rather than a timer: a millisecond budget only means anything against the frame
+		-- it is spent in, and throughput then follows the headroom the machine has.
 		worker:SetScript("OnUpdate", OnUpdate)
 	end
 
@@ -267,10 +252,13 @@ function M:New(urgent)
 	return lane
 end
 
----Starts this lane over, replacing any run of its own still in flight; the old queue is
----dropped, never resumed. Other lanes are untouched. processFn(item, ctx) runs per item and
----returns false to abandon the whole run ("cannot do this right now"), or Verdict.Unfinished to
----be handed the same item again on this lane's next turn.
+---Starts this lane over, replacing any run of its own still in flight. The old queue is dropped,
+---never resumed, and other lanes are untouched. processFn(item, ctx) runs per item and returns
+---false to abandon the whole run, or Verdict.Unfinished to be handed the same item again on this
+---lane's next turn.
+---
+---A run can be replaced or abandoned at any point, so a sweep only warms items up. Whoever owns
+---them must still correct them lazily on use, and processFn re-validates each item it is given.
 ---@param queue any[] Items to visit, in order. The lane owns the array from here on.
 ---@param processFn fun(item: any, ctx: any): boolean|string|nil
 ---@param ctx any?

@@ -76,9 +76,9 @@ fw.describe("Alerts TTS - per-spell muting", function()
 	end)
 
 	fw.it("keeps an enemy debuff off the plates and on the allies", function()
-		-- Deathmark lands on the rogue's TARGET, so on an enemy plate it is an ally's cast:
-		-- neither the clip nor the alert sound may come from the plate, only the ally-side
-		-- incoming announcement.
+		-- Deathmark lands on the rogue's target, so on an enemy plate it is an ally's cast. Neither
+		-- the clip nor the alert sound may come from the plate, only the ally-side incoming
+		-- announcement.
 		db.Modules.Alerts.Sound.Important.Enabled = true
 		tts.EnemyDebuff.Enabled = true
 		sound:Refresh({ [PLATE] = true })

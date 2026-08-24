@@ -39,7 +39,7 @@ local RENAMED_MODULE_KEYS = {
 ---the same defaults CleanTable uses on the live db.
 ---
 ---An empty table in the defaults is the schema's way of saying "the user authors this", so those
----are left whole rather than recursed into, matching what CleanTable does on the live db.
+---are left whole rather than recursed into.
 local function PruneToDefaults(value, defaults)
 	if type(value) ~= "table" or type(defaults) ~= "table" or next(defaults) == nil then
 		return
@@ -70,8 +70,8 @@ local function PruneRemovedSettingsFromProfiles(vars)
 
 	for _, payload in pairs(vars.Profiles) do
 		if type(payload) == "table" then
-			-- A snapshot only ever holds payload keys, so one dropped from that list (a retired
-			-- top-level setting) is as stale as a value the defaults no longer describe.
+			-- A snapshot only ever holds payload keys, so one dropped from that list is as stale as
+			-- a value the defaults no longer describe.
 			for key in pairs(payload) do
 				if not isPayloadKey[key] then
 					payload[key] = nil
@@ -85,10 +85,9 @@ local function PruneRemovedSettingsFromProfiles(vars)
 end
 
 ---Seeds MiniAurasDB from the MiniCC-era saved variable the first time the renamed addon runs.
----MiniCCDB is loaded by the stub MiniCC folder we still ship, which the toc lists as an
----optional dependency so it loads first. The old table is copied rather than adopted, so
----rolling back to MiniCC leaves the user's old settings intact.
----TEMPORARY: goes away with the stub folder once MiniCCDB is dropped.
+---MiniCCDB comes from the stub MiniCC folder, which the toc lists as an optional dependency so it
+---loads first. The old table is copied, so rolling back to MiniCC leaves the old settings intact.
+---Temporary, until the stub folder and MiniCCDB are dropped.
 local function AdoptLegacyDb()
 	if MiniAurasDB ~= nil or type(MiniCCDB) ~= "table" then
 		return
@@ -106,10 +105,8 @@ function M:GetAndUpgradeDb()
 	if isFirstTimeSetup then
 		local vars = mini:GetSavedVars(dbDefaults)
 
-		-- Reaching first-time setup means AdoptLegacyDb found no MiniCCDB, and the adoption
-		-- above never runs again once MiniAurasDB exists. If the old table was merely not
-		-- loaded (bridge disabled, out of date or missing), it can still surface on a later
-		-- login; this flag is what lets LegacyAddon offer it for import then.
+		-- Adoption never runs again once MiniAurasDB exists. MiniCCDB can still surface on a later
+		-- login if it was merely not loaded, and this flag is what lets LegacyAddon offer it then.
 		vars.MissedLegacyImport = true
 
 		return vars
@@ -118,7 +115,7 @@ function M:GetAndUpgradeDb()
 	local vars = mini:GetSavedVars()
 
 	if vars.Version and vars.Version > dbDefaults.Version then
-		-- they are running some version ahead of us, let's reset to factory
+		-- A db stamped ahead of what we ship cannot be migrated down.
 		return M:SoftReset()
 	end
 
@@ -151,7 +148,7 @@ function M:GetAndUpgradeDb()
 	vars = mini:GetSavedVars(dbDefaults)
 
 	if vars.Version == dbDefaults.Version then
-		-- if we are running the latest version, clean up any garbage that may have been left over from old versions
+		-- Clean up any garbage left over from old versions.
 		mini:CleanTable(vars, dbDefaults, true, true)
 		PruneRemovedSettingsFromProfiles(vars)
 	end
@@ -269,14 +266,12 @@ function M:SoftReset()
 	-- grab any new keys
 	local vars = mini:GetSavedVars(dbDefaults)
 
-	-- clean up any garbage
 	mini:CleanTable(vars, dbDefaults, true, true)
 	PruneRemovedSettingsFromProfiles(vars)
 
-	-- The default-merge above only fills MISSING keys, so a stale Version (from a corrupt
-	-- migration chain or a db written by a newer addon version) would survive - leaving the
-	-- future-version case soft-resetting on every single login. The data now matches the
-	-- current schema, so stamp it as such.
+	-- The default-merge above only fills missing keys, so a stale Version would survive and leave
+	-- the future-version case soft-resetting on every login. The data matches the current schema
+	-- now, so stamp it as such.
 	vars.Version = dbDefaults.Version
 
 	return vars

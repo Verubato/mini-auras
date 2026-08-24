@@ -7,30 +7,26 @@ local unitUtil = addon.Utils.UnitUtil
 
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
--- Our own casts, which unlike anybody else's arrive with a spell ID we are allowed to read. That
--- is the whole reason the player can have a readiness bar when nobody else can.
+-- Our own casts, which unlike anybody else's arrive with a spell ID we are allowed to read.
 local CAST_EVENT = "UNIT_SPELLCAST_SUCCEEDED"
--- Only nameplates are watched. The client reports one interrupt under every token the mob holds -
--- its nameplate, your target, your soft target - and nothing shared between those tokens can be
--- read to tell the repeats apart: the cast GUID and the mob's own GUID are both secret inside an
--- instance, so neither can be compared or used as a key. One token per mob is the only dedup
--- left, and the nameplate is the one every enemy worth showing has.
+-- Only nameplates are watched. The client reports one interrupt under every token the mob holds,
+-- its nameplate, your target, and your soft target. The cast GUID and the mob's own GUID are both
+-- secret inside an instance, so one token per mob is the only dedup left, and every enemy worth
+-- showing has a nameplate.
 local NAMEPLATE_PREFIX = "^nameplate"
 -- A mob just seen kicked ignores further reports for this long, since the repeats above arrive
 -- spread out rather than all in one frame.
 local REPEAT_WINDOW = 0.5
 -- How close to the player's own interrupt landing a recorded kick has to be to count as that same
--- kick. Whose kick it was cannot be asked directly - the interrupter GUID is secret, so it cannot be
--- compared to the player's own - and time is what is left. The two reports come out of the same
--- server tick, but which of them reaches the client first is not fixed, so the window is checked
--- both ways round. Wide enough for an interrupt with a charge in front of it, narrow enough that an
--- ally kicking at the same moment keeps their row.
+-- kick. The interrupter GUID is secret, so it cannot be compared to the player's own and time is
+-- all that is left. Either report can reach the client first, so the window is checked both ways
+-- round. It is wide enough for an interrupt with a charge in front of it, and narrow enough that
+-- an ally kicking at the same moment keeps their row.
 local OWN_CAST_WINDOW = 0.5
 -- Past this the oldest row goes. More than a screenful is not worth keeping around.
 local MAX_RECORDS = 10
--- How long a history row stays on screen. The kicker's own cooldown cannot be used: identifying
--- them is exactly what is not allowed, so neither their class nor which interrupt they pressed is
--- known. This is a display lifetime and nothing more.
+-- How long a history row stays on screen. The kicker's own cooldown cannot be used because
+-- identifying them is not allowed, so this is a display lifetime and nothing more.
 local RECORD_DURATION = 15
 -- Anything shorter is the global cooldown rather than the interrupt's own.
 local MIN_REPORTED_COOLDOWN = 2
@@ -57,12 +53,12 @@ local records = {}
 -- When each mob's last interrupt was recorded, which is what the repeats are measured against.
 ---@type table<string, number>
 local lastRecordedAt = {}
--- The player's own row, which is a readiness bar rather than a history entry: it stays put and
--- counts down, because their own name, class, interrupt and cooldown are all readable.
+-- The player's own row is a readiness bar rather than a history entry, since their name, class,
+-- interrupt and cooldown are all readable.
 ---@type AllyKickRecord?
 local ownRecord
 -- When the player's own interrupt last landed, and whether their kick belongs in the history at
--- all. Both feed the own-kick dedup: with the readiness row up, their kick is already on screen.
+-- all. With the readiness row up, their kick is already on screen.
 ---@type number?
 local lastOwnCastAt
 local suppressOwnHistory = false
@@ -120,10 +116,9 @@ local function OnInterrupted(unit, interruptedSpellId, interruptedBy)
 		return
 	end
 
-	-- All four are secret inside an instance. Handing a secret to these is fine - they take one
-	-- and hand a secret back. What is not fine is reading the answer, so none of it is compared
-	-- or used as a table key: each goes straight to the widget setter that knows how to take one.
-	-- That is the whole trick - the kicker cannot be identified, but they can be drawn.
+	-- All four are secret inside an instance. Handing a secret to these is fine because they take
+	-- one and hand a secret back. What is not fine is reading the answer, so none of it is
+	-- compared or used as a table key.
 	records[#records + 1] = {
 		Name = UnitNameFromGUID(interruptedBy),
 		Class = select(2, UnitClassFromGUID(interruptedBy)),
@@ -153,8 +148,8 @@ local function ResolvePlayerInterrupt()
 	if specId then
 		local specData = kickData.SpecData[specId]
 
-		-- A resolved spec with no interrupt is authoritative: healers and Augmentation Evokers
-		-- have nothing to show rather than a class-guessed bar.
+		-- A resolved spec with no interrupt is the final answer. Healers and Augmentation Evokers
+		-- have nothing to show.
 		if specData then
 			return specData.SpellId, specData.KickCd
 		end
@@ -187,7 +182,7 @@ end
 ---The real remaining cooldown of one of the player's own spells, which beats the table value
 ---because it already accounts for talents and any reset since. 12.1 hands the fields back as
 ---secret numbers, and this one feeds both a comparison and arithmetic, so a secret means falling
----back to the spec data. Reading them is fine; touching them is what errors.
+---back to the spec data.
 ---@param spellId number
 ---@return number? startTime
 ---@return number? duration
@@ -257,16 +252,15 @@ local function OnOwnCast(spellId)
 	end
 end
 
----The watcher is unit-agnostic - any enemy in the world can be the one interrupted - so it is one
----frame listening broadly rather than one per roster slot.
+---Any enemy in the world can be the one interrupted, so a single frame listens broadly.
 ---@param active boolean
 local function SetInterruptWatchActive(active)
 	if not interruptFrame then
 		interruptFrame = CreateFrame("Frame")
 		interruptFrame:SetScript("OnEvent", function(_, event, ...)
-			-- The stop events also fire for a cast that merely ended - a channel running its
-			-- course, a cast its owner cancelled - and those arrive constantly in a dungeon. The
-			-- interrupter is what separates a real kick; it is tested for nil, never read.
+			-- The stop events also fire for a cast that merely ended, and those arrive constantly
+			-- in a dungeon. The interrupter separates a real kick, and it is tested for nil,
+			-- never read.
 			local interruptedBy, interruptedSpellId = kickEvents:GetInterrupter(event, ...)
 			if interruptedBy == nil then
 				return
@@ -309,9 +303,8 @@ function M:SetRecordCallback(fn)
 	recordCallback = fn
 end
 
----Whether the player's own kick should stay out of the history, which it should while their
----readiness row is on screen carrying the same kick. With that row off, the history is the only
----place their kick would show, so it is left in.
+---Whether the player's own kick stays out of the history, which it should while their readiness
+---row is on screen carrying the same kick.
 ---@param suppress boolean
 function M:SetSuppressOwnHistory(suppress)
 	suppressOwnHistory = suppress
@@ -331,8 +324,7 @@ function M:GetOwnRecord()
 end
 
 ---Rebuilds what the player's own row says about them, keeping a cooldown already running as long
----as it is still the same interrupt. Their spec arrives after login and can change, and it decides
----both whether they have one and which it is.
+---as it is still the same interrupt.
 function M:RefreshOwn()
 	local spellId, cooldown = ResolvePlayerInterrupt()
 
@@ -410,9 +402,9 @@ function M:Stop()
 	ownRecord = nil
 end
 
----One row in the list. A history row's Name, Class, Icon and Marker can all be secret values: they
----are only ever handed to a widget setter, never read, compared or used as a key. The player's own
----row is the exception - everything about them is readable - and it carries the extra fields.
+---One row in the list. A history row's Name, Class, Icon and Marker can all be secret values, and
+---they are only ever handed to a widget setter, never read, compared or used as a key. Everything
+---about the player's own row is readable, and it carries the extra fields.
 ---@class AllyKickRecord
 ---@field Name string?  the kicker's name
 ---@field Class string?  the kicker's class token

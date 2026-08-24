@@ -1,25 +1,8 @@
 ---@type string, Addon
 local addonName, addon = ...
 
--- The texture-based glow catalog shared by both icon backends: AuraContainerDisplay styles the
--- 12.1 AuraButtons from it, and IconSlotContainer draws the same overlays on kick and test
--- icons, so both ways of rendering an icon glow identically and a new style is one entry here.
---
--- Only texture overlays belong in the catalog. LibCustomGlow cannot attach to AuraButtons (it
--- re-parents pooled frames onto its target, and 12.1 disallows SetParent onto AuraButtons), so
--- anything the 12.1 path cannot draw is left out.
---
--- Spec fields:
---   Texture/Atlas - the asset; exactly one is set.
---   BlendMode     - texture blend mode.
---   Desaturated   - strip the asset's own colour so tints apply uniformly.
---   PaddingFactor - how far the overlay extends past the icon, as a multiple of its size.
---
--- Every style here is static. The looping flipbook styles were dropped: a REPEAT animation is
--- evaluated every frame even on a hidden one, the containers create buttons far beyond the auras
--- actually showing, and Blizzard leaves no way to gate an animation per icon - AuraButtons forbid
--- untrusted scripts, their shown state is secret, and the frame count deliberately reports frames
--- created rather than active. So the cost could never be limited to icons anyone can see.
+-- The texture-based glow catalog shared by both icon backends, so an icon glows the same whichever
+-- one draws it and a new style is one entry here.
 
 -- Every overlay in the catalog has rounded inner corners, so an icon showing one is masked to the
 -- same shape. A square icon's corners otherwise poke out past the glow, and so does its swipe.
@@ -35,7 +18,21 @@ local M = {}
 
 addon.Core.GlowStyles = M
 
--- Keys are user-facing db.GlowType values; renaming one orphans saved configs.
+-- Texture overlays only. LibCustomGlow re-parents pooled frames onto its target and 12.1 disallows
+-- SetParent onto AuraButtons, so anything the 12.1 path cannot draw is left out.
+--
+-- Every style is static, and no animated one may come back. A REPEAT animation is evaluated every
+-- frame even on a hidden icon, the containers create buttons far beyond the auras actually showing,
+-- and there is no way to gate an animation per icon: AuraButtons forbid untrusted scripts, their
+-- shown state is secret, and the frame count reports frames created rather than active.
+--
+-- Keys are user-facing db.GlowType values, and renaming one orphans saved configs.
+--
+-- A spec sets:
+--   Texture/Atlas - the asset, exactly one of the two.
+--   BlendMode     - texture blend mode.
+--   Desaturated   - strip the asset's own colour so tints apply uniformly.
+--   PaddingFactor - how far the overlay extends past the icon, as a multiple of its size.
 M.Specs = {
 	-- The halo needs to extend well past the icon edges to read correctly, hence the larger
 	-- padding share.

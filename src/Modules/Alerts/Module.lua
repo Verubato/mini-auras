@@ -38,9 +38,9 @@ local lifecycle
 local moduleGate
 ---@type EventGate?
 local plateGate
--- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
--- at duel end), so the shared UnitStatePoller re-registers plates whose enemy status flips.
--- Baselines are seeded on plate add and cleared on plate remove.
+-- No event fires when a friendly unit turns attackable at a duel start or end, so the shared
+-- UnitStatePoller re-registers plates whose enemy status flips. Baselines are seeded on plate add
+-- and cleared on plate remove.
 ---@type UnitStatePollerSubscriber
 local stateSub
 -- Reused enemy-token set for the two rebuild paths.
@@ -49,14 +49,13 @@ local activeTokensScratch = {}
 -- state-poll baselines, since they belong to the tokens of whichever source is live.
 ---@type string?
 local activeSource
--- Highest opponent count this arena has reported. A high-water mark rather than the live answer
--- because the client says zero at points in a match (before the gates open, and again once an
--- opponent's token is released), and a source that flipped on that would tear the bars down
--- mid-fight. Cleared on every world load.
+-- Highest opponent count this arena has reported. The client says zero before the gates open and
+-- again once an opponent's token is released, and a source that flipped on the live answer would
+-- tear the bars down mid-fight. Cleared on every world load.
 local arenaOpponentsSeen = 0
 -- The world load the high-water mark above was last cleared for.
 local seenWorldGeneration = 0
--- Coalesces the noisy ARENA_OPPONENT_UPDATE onto one reconcile a frame; assigned below, once the
+-- Coalesces the noisy ARENA_OPPONENT_UPDATE onto one reconcile a frame. Assigned below, once the
 -- pass it runs exists.
 local QueueArenaOpponentUpdate
 
@@ -67,7 +66,7 @@ local function SetPaused(value)
 end
 
 ---How many opponents the client is exposing. The prep room answers through the spec list and the
----live match through the opponent list, and neither covers both halves on its own; both are
+---live match through the opponent list, and neither covers both halves on its own. Both are
 ---feature-checked because they only exist on clients with the arena UI.
 ---@return number
 local function ArenaOpponentCount()
@@ -108,9 +107,9 @@ local function OnMatchStateChanged()
 
 	display:SetInPrepRoom(inPrepRoom)
 
-	-- Prep-room garbage handling: RefreshDisplays hides the displays while inPrepRoom is set and
-	-- re-shows them when the match starts. The re-show re-enables the containers, which is a full
-	-- re-read, so it also clears the last solo shuffle round off the arena tokens.
+	-- RefreshDisplays hides the displays while inPrepRoom is set and re-shows them when the match
+	-- starts. The re-show re-enables the containers, which is a full re-read, so it also clears the
+	-- last solo shuffle round off the arena tokens.
 	display:RefreshDisplays()
 
 	if not inPrepRoom then
@@ -137,39 +136,39 @@ local function OnNamePlateAdded(unitToken)
 	-- other team, its aura list becomes the controller's own buffs, and the containers would
 	-- announce and draw those as alerts. The poll routes back here when the charm ends.
 	if not isEnemy or units:IsCharmed(unitToken) then
-		-- The token now belongs to a non-enemy (recycled plate or duel ending), so its warm
-		-- sound registrations are dropped along with the display.
+		-- The token now belongs to a non-enemy, so its warm sound registrations are dropped along
+		-- with the display.
 		sound:RemoveToken(unitToken)
 		display:ReleaseDisplay(unitToken)
 		return
 	end
 
-	-- Configure only the new entry (styling every pooled pair per plate spawn adds up in
-	-- busy fights); the chain re-anchor is cheap and covers the row shift.
+	-- Configure only the new entry, since styling every pooled pair per plate spawn adds up in busy
+	-- fights. The chain re-anchor is cheap and covers the row shift.
 	display:ApplyOneAndChain(unitToken)
 end
 
 ---Whether an arena token can be drawn on right now. A buff on an enemy has no working spell-id
----filter (the map is identity-gated off, see Core/AuraFilters), so the category token is the only
----one left, and the engine stops evaluating it for a unit outside the visible world - the group
----then fills with buffs that belong to somebody else. Plates never hit this because a plate only
----exists for a unit the client is drawing; an arena token exists for the whole match, including
----the prep room and the gap between solo shuffle rounds where the client has no unit behind it.
+---filter, since the map is identity-gated off, so the category token is the only one left. The
+---engine stops evaluating it for a unit outside the visible world, and the group then fills with
+---buffs that belong to somebody else. Plates never hit this because a plate only exists for a unit
+---the client is drawing, while an arena token exists for the whole match, including the prep room
+---and the gap between solo shuffle rounds where the client has no unit behind it.
 ---@param unitToken string
 ---@return boolean
 local function IsArenaTokenDrawable(unitToken)
 	return units:IsVisible(unitToken) and not units:IsCharmed(unitToken)
 end
 
--- An arena token is an opponent for the whole match, so unlike a plate there is nothing to add or
--- remove; only a mind control or a unit the client cannot answer for takes one away. While charmed
--- the unit is on your team and its aura list becomes the controller's own buffs, which the bars
--- would announce and draw as alerts.
+-- An arena token is an opponent for the whole match, so there is nothing to add or remove. Only a
+-- mind control or a unit the client cannot answer for takes one away. While charmed the unit is on
+-- your team and its aura list becomes the controller's own buffs, which the bars would announce
+-- and draw as alerts.
 local function OnArenaUnitChanged(unitToken)
 	if not IsArenaTokenDrawable(unitToken) then
 		-- A charmed opponent's aura list is the controller's, so its warm sound registrations go
-		-- too. A unit merely outside the visible world keeps them: they match on spell id, which
-		-- no gate skips, so they stay right while the icons cannot be trusted.
+		-- too. A unit merely outside the visible world keeps them, since they match on spell id,
+		-- which no gate skips, so they stay right while the icons cannot be trusted.
 		if units:IsCharmed(unitToken) then
 			sound:RemoveToken(unitToken)
 		end
@@ -204,10 +203,9 @@ local function ClearDisplays()
 	display:ReleaseAllDisplays()
 end
 
--- Binds one display pair per arena token the client can answer for. That is the point of the
--- source: a container on arena2 keeps reporting through a pillar or a stealth, where the plate it
--- used to read from is simply gone. It stops at the visible world, though - see
--- IsArenaTokenDrawable.
+-- Binds one display pair per arena token the client can answer for. A container on arena2 keeps
+-- reporting through a pillar or a stealth, where a nameplate is simply gone. It stops at the
+-- visible world. See IsArenaTokenDrawable.
 local function RebuildArenaDisplays()
 	local activeTokens = activeTokensScratch
 	wipe(activeTokens)
@@ -215,9 +213,9 @@ local function RebuildArenaDisplays()
 	for index = 1, arenaOpponentsSeen do
 		local unitToken = SOURCE_ARENA .. index
 
-		-- Seeded for the charm and visibility halves of the poll; the duel half never applies in
-		-- here. A charm has nothing but the poll to announce it, and the poll is also the backstop
-		-- behind ARENA_OPPONENT_UPDATE for a token the client stops answering for.
+		-- Seeded for the charm and visibility halves of the poll. A charm has nothing but the poll to
+		-- announce it, and the poll is also the backstop behind ARENA_OPPONENT_UPDATE for a token the
+		-- client stops answering for.
 		stateSub:Seed(unitToken)
 
 		if IsArenaTokenDrawable(unitToken) then
@@ -229,14 +227,13 @@ local function RebuildArenaDisplays()
 end
 
 local function RebuildNameplateDisplays()
-	-- Build a set of currently active enemy unit tokens
 	local activeTokens = activeTokensScratch
 	wipe(activeTokens)
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 		local unitToken = nameplate.unitToken
 		if unitToken then
-			-- Seed the state-poll baseline here too: plates that existed before Init/enable
-			-- never fire NAME_PLATE_UNIT_ADDED. Charmed units are skipped for the same
+			-- Seed the state-poll baseline here too, since plates that existed before Init or
+			-- enable never fire NAME_PLATE_UNIT_ADDED. Charmed units are skipped for the same
 			-- reason as the add path.
 			if stateSub:Seed(unitToken) and not units:IsCharmed(unitToken) then
 				activeTokens[unitToken] = true
@@ -262,7 +259,7 @@ local function IsEnabled()
 end
 
 ---Settles the token source and gates the events that feed it. Plate events stay unregistered
----unless nameplates are the source; ZONE_CHANGED_NEW_AREA, PLAYER_ENTERING_WORLD, the two arena
+---unless nameplates are the source. ZONE_CHANGED_NEW_AREA, PLAYER_ENTERING_WORLD, the two arena
 ---opponent events, and PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
 ---@param active boolean
 local function SettleSource(active)
@@ -270,10 +267,9 @@ local function SettleSource(active)
 
 	if source ~= activeSource then
 		-- Everything the old source left behind goes with it. The poll baselines belong to its
-		-- tokens, and so do the engine sound registrations, which are otherwise deliberately kept
-		-- warm across a token coming and going - releasing a display does not touch them. Left
-		-- alone in an arena they would announce the same opponent twice, once through the plate
-		-- token it used to be tracked on and once through its arena token.
+		-- tokens, and so do the engine sound registrations, which are otherwise kept warm across a
+		-- token coming and going. Left alone in an arena they would announce the same opponent twice,
+		-- once through its plate token and once through its arena token.
 		stateSub:ClearAll()
 		display:ReleaseAllDisplays()
 		activeSource = source
@@ -330,9 +326,9 @@ local function SetTestMode(active)
 end
 
 -- A new world knows nothing about the last one's bracket, so the high-water mark starts over.
--- Keyed on the world load rather than the zone: ZONE_CHANGED_NEW_AREA fires on subzone moves
--- inside an arena, and clearing the mark there would put the module back on nameplates for any
--- moment the client answers zero.
+-- Keyed on the world load rather than the zone, because ZONE_CHANGED_NEW_AREA fires on subzone
+-- moves inside an arena, and clearing the mark there would put the module back on nameplates for
+-- any moment the client answers zero.
 local function ClearMarkOnNewWorld()
 	local generation = addon:WorldGeneration()
 
@@ -344,9 +340,9 @@ local function ClearMarkOnNewWorld()
 	arenaOpponentsSeen = 0
 end
 
--- The opponent count decides the source, so learning it can move the whole module from
--- nameplates to arena tokens; only then is the full refresh worth it. The count climbing while
--- the arena source is already in play just binds the tokens that were missing.
+-- The opponent count decides the source, so learning it can move the whole module from nameplates
+-- to arena tokens, and only then is the full refresh worth it. The count climbing while the arena
+-- source is already in play just binds the tokens that were missing.
 local function ReconcileArenaSource()
 	local previousSource = activeSource
 	local previousCount = arenaOpponentsSeen
@@ -364,8 +360,8 @@ local function ReconcileArenaSource()
 	end
 end
 
--- Re-checked at fire time rather than when the event landed: a coalesced pass runs a frame late,
--- and the module can be switched off or moved back onto plates in between.
+-- Re-checked at fire time because a coalesced pass runs a frame late, and the module can be
+-- switched off or moved back onto plates in between.
 local function FlushArenaOpponentUpdate()
 	if not IsEnabled() or activeSource ~= SOURCE_ARENA then
 		return
@@ -377,14 +373,13 @@ end
 QueueArenaOpponentUpdate = moduleUtil:Coalesced(FlushArenaOpponentUpdate)
 
 -- The event half of the visibility gate. The shared poll catches the same flip, but only on its
--- next tick, and a quarter of a second of somebody else's buffs on the bar is the whole of the
--- bug the gate exists for.
+-- next tick, and a quarter of a second of somebody else's buffs on the bar is the whole of the bug
+-- the gate exists for.
 --
--- Coalesced because the event is noisy: it fires for every opponent walking into or out of the
--- client's world, which around pillars is several times a second, and a burst of them all say
--- the same thing. The named token is dropped with it - the whole set is three, so reconciling
--- them costs the same as reconciling the one, and the rebuild re-seeds every baseline, which
--- keeps the poll from repeating a flip this has already handled.
+-- Coalesced because the event is noisy: around pillars it fires several times a second and a burst
+-- of them all say the same thing. The named token is dropped with it, since the whole set is three
+-- and the rebuild re-seeds every baseline, which keeps the poll from repeating a flip this has
+-- already handled.
 local function OnArenaOpponentUpdate()
 	if not IsEnabled() or activeSource ~= SOURCE_ARENA then
 		return
@@ -446,12 +441,11 @@ local function Setup()
 		end
 	end)
 
-	-- Registered while the module is enabled. ARENA_OPPONENT_UPDATE is the one thing that
-	-- announces an opponent coming into or leaving the client's world, which is what the
-	-- visibility gate turns on; it only fires inside an arena, so it costs nothing elsewhere.
-	-- The enemy-debuff announcements sit on the party tokens, so they follow the roster rather
-	-- than the nameplates: the handler only reconciles those registrations, which is far cheaper
-	-- than a full Refresh on every roster event in a battleground.
+	-- Registered while the module is enabled. ARENA_OPPONENT_UPDATE is the one thing that announces
+	-- an opponent coming into or leaving the client's world, and it only fires inside an arena, so
+	-- it costs nothing elsewhere. The enemy-debuff announcements sit on the party tokens, so they
+	-- follow the roster rather than the nameplates, and the handler only reconciles those
+	-- registrations.
 	moduleGate = eventGate:New(eventsFrame, {
 		"PVP_MATCH_STATE_CHANGED",
 		"ARENA_PREP_OPPONENT_SPECIALIZATIONS",
@@ -473,9 +467,9 @@ end
 local function OnEnable()
 	moduleGate:SetActive(true)
 
-	-- The match state is only heard while the gate is up, so the module reads where it stands
-	-- as it wakes. Reading rather than running the handler: the prep-room transition clears the
-	-- bars, and waking up is not that transition.
+	-- The match state is only heard while the gate is up, so the module reads where it stands as it
+	-- wakes. Reading rather than running the handler, because the prep-room transition clears the
+	-- bars and waking up is not that transition.
 	display:SetInPrepRoom(C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp)
 end
 
@@ -499,22 +493,21 @@ local function Apply(options)
 	ApplyOptions(options)
 	UpdateContent()
 
-	-- Only behind a loading screen, which is the once-per-world-load trigger rather than the
-	-- window the work runs in: Display:Prewarm builds one pair and paces the rest through the
-	-- background walker. Outside one, tokens build their own on first sight as they always did.
+	-- Only behind a loading screen, which is the once-per-world-load trigger rather than the window
+	-- the work runs in. Display:Prewarm builds one pair and paces the rest through the background
+	-- walker, and outside one a token builds its own on first sight.
 	--
-	-- And only where the module tracks anything at all: in a dungeon or raid its events are
+	-- And only where the module tracks anything at all. In a dungeon or raid its events are
 	-- unregistered, so a set built on the way in is forty pairs of frames that content can never
 	-- use, and frames cannot be given back.
 	--
 	-- Nameplates only. The arena set is three pairs, built when the source settles onto those
-	-- tokens, which is when the client names the opponents. Building them a loading screen
-	-- earlier buys nothing and costs the one chance to bake anything opponent-specific into
-	-- their buttons: a button takes its look in initializeFrame, and inside an arena
-	-- C_Secrets.ShouldAurasBeSecret never clears, so no restyle ever gets to correct it.
+	-- tokens, which is when the client names the opponents. Building them earlier costs the one
+	-- chance to bake anything opponent-specific into their buttons, since a button takes its look in
+	-- initializeFrame and inside an arena C_Secrets.ShouldAurasBeSecret never clears.
 	--
-	-- After UpdateContent, which is what rebuilds the pairs when the look baked into their buttons
-	-- has changed: prewarming before it would build a set this refresh then throws away.
+	-- After UpdateContent, which rebuilds the pairs when the look baked into their buttons has
+	-- changed, so prewarming before it would build a set this refresh then throws away.
 	if addon:IsLoadingScreenUp() and activeSource == SOURCE_NAMEPLATE then
 		display:Prewarm(SOURCE_NAMEPLATE, display:PrewarmTokenTarget())
 	end

@@ -1,7 +1,7 @@
 -- The personal aura module. The rule the whole design hangs off is that 12.1 only honours a
 -- spell-id filter for helpful auras on assistable units and harmful auras on the rest, and
--- silently drops it otherwise - so the sharp end of these tests is the icon budget: a group
--- pointed at the wrong side of that rule must be budgeted to ZERO, never left running on a bare
+-- silently drops it otherwise. The sharp end of these tests is the icon budget: a group pointed
+-- at the wrong side of that rule must be budgeted to zero, never left running on a bare
 -- HELPFUL/HARMFUL token that would match every aura on the unit.
 
 local fw = require("Framework")
@@ -90,7 +90,7 @@ end
 ---@param token string
 ---@return table?
 local function ContainerFor(token)
-	-- An entry is handed over without its groups; the walker declares them a group per turn, so
+	-- An entry is handed over without its groups. The walker declares them a group per turn, so
 	-- reading them back means letting it run.
 	acm.tickAll(20)
 
@@ -662,7 +662,7 @@ fw.describe("PersonalAuras - spells on the wrong side of the group", function()
 	end)
 
 	fw.it("warns rather than refusing the group", function()
-		-- The client answers about what a spell can be CAST at, which is a hair off what its aura
+		-- The client answers about what a spell can be cast at, which is a hair off what its aura
 		-- counts as, so a wrong verdict must never be able to switch a working group off.
 		local group = groups:Normalise({ Unit = "player", Spells = { A_DEBUFF } })
 
@@ -807,7 +807,7 @@ fw.describe("PersonalAuras - spell filters", function()
 
 		group.AuraType = "HARMFUL"
 
-		-- Against the reading taken after the spell landed, not the first one; comparing with that
+		-- Against the reading taken after the spell landed, not the first one. Comparing with that
 		-- passes on the spell alone and says nothing about the aura type.
 		assert(groups:GetFilterGeneration(group) ~= withSpell, "so is flipping the aura type")
 	end)
@@ -908,7 +908,7 @@ fw.describe("PersonalAuras - screen anchored displays", function()
 			"a visible unit can be filtered by caster")
 
 		-- The engine cannot attribute casters on a member in another instance or phase, and a
-		-- check it cannot evaluate is skipped rather than failed - the group would show the aura
+		-- check it cannot evaluate is skipped rather than failed. The group would show the aura
 		-- from everyone.
 		env.phased.target = true
 		display:OnUnitChanged("target")
@@ -1129,7 +1129,7 @@ fw.describe("PersonalAuras - options page preview", function()
 	end)
 
 	fw.it("skips a group with nothing to draw", function()
-		-- The stand-in icons ARE the drag handle now that the anchor has no backdrop, so a group
+		-- The stand-in icons are the drag handle when the anchor has no backdrop, so a group
 		-- with no spells yet would be an invisible frame sitting over whatever is behind it.
 		ClearGroups()
 
@@ -1723,7 +1723,7 @@ fw.describe("PersonalAuras - stand-in frames while a group is being placed", fun
 		Reset()
 		SetTokensAbsent("arena", true)
 
-		-- The default arena frames exist from login and sit hidden outside an arena; a copy
+		-- The default arena frames exist from login and sit hidden outside an arena. A copy
 		-- anchored to one would be invisible, which is exactly what the stand-ins exist to avoid.
 		local hidden = acm.NewFrame("Frame", "CompactArenaFrameMember1")
 		hidden:Hide()
@@ -2282,7 +2282,7 @@ fw.describe("PersonalAuras - sounds from media addons", function()
 		assert(env.auraSoundAdds == 0,
 			"a sound nothing can resolve registers nothing, rather than the fallback")
 
-		-- The pack loads and registers its sounds; the next refresh must notice.
+		-- The pack loads and registers its sounds. The next refresh must notice.
 		local registered = { [PACK_SOUND] = PACK_PATH }
 
 		InstallMedia(registered)
@@ -2709,7 +2709,7 @@ fw.describe("PersonalAuras - sound only groups", function()
 	local SOUND_ONLY = groups.DisplayStyle.SoundOnly
 
 	fw.it("allows debuffs by spell id where a drawn group cannot have them", function()
-		-- The engine drops the spell-id filter for a DISPLAY on an assistable unit, but keys
+		-- The engine drops the spell-id filter for a display on an assistable unit, but keys
 		-- AddAuraSound on the bare id, so a group that draws nothing is free of the rule.
 		assert(not groups:SupportsAuraType("unitframes", "HARMFUL", groups.TrackingMode.Spells),
 			"a drawn group still cannot")
@@ -2816,7 +2816,7 @@ end)
 
 fw.describe("PersonalAuras - sound only ignores the aura type split", function()
 	-- Every split in UNIT_INFO is there because the engine drops a spell-id filter for the
-	-- DISPLAY on the wrong side of the identity gate. A registration has no such side.
+	-- display on the wrong side of the identity gate. A registration has no such side.
 	local CASES = {
 		{ Unit = "healer", Type = "HARMFUL", Why = "a debuff on the healer" },
 		{ Unit = "targetfriendly", Type = "HARMFUL", Why = "a debuff on a friendly target" },
@@ -3094,7 +3094,7 @@ fw.describe("PersonalAuras - coalescing the sound rebuild", function()
 		module:Refresh()
 
 		-- The suite's C_Timer.After runs its callback on the spot, which would hide the
-		-- coalescing entirely; this holds the callbacks so the burst can settle first.
+		-- coalescing entirely. This holds the callbacks so the burst can settle first.
 		local queued = {}
 		local realAfter = _G.C_Timer.After
 		_G.C_Timer.After = function(_, callback)

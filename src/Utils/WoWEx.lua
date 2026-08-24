@@ -23,7 +23,7 @@ function M:HasPandemicRegions()
 end
 
 ---True while AuraButton styling is blocked: button APIs Lua-error from addon code whenever
----auras are secret, which covers combat but ALSO out-of-combat moments inside M+/encounters/
+---auras are secret, which covers combat but also out-of-combat moments inside M+, encounters and
 ---PvP matches, so InCombatLockdown alone is not a sufficient guard.
 ---@return boolean
 function M:IsAuraStylingRestricted()

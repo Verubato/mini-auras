@@ -1,7 +1,7 @@
--- The spell picker's index. Two things matter: a user typing part of an ability name has to find
--- it, and an ability whose id list carries several variants must be offered ONCE while still
--- expanding back to every variant when it is tracked (aura filters match the id the game applied,
--- which is frequently not the one in the spellbook).
+-- The spell picker's index. A user typing part of an ability name has to find it, and an ability
+-- whose id list carries several variants must be offered once while still expanding back to every
+-- variant when it is tracked (aura filters match the id the game applied, which is frequently not
+-- the one in the spellbook).
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
@@ -150,7 +150,7 @@ end)
 
 fw.describe("SpellSearch - sources", function()
 	fw.it("covers a defensive the generated scan misses", function()
-		-- Fortifying Brew is not in the aura category lists; the picker carries it itself rather
+		-- Fortifying Brew is not in the aura category lists. The picker carries it itself rather
 		-- than reaching into the cooldown tracker, which is 12.0-only.
 		local fortifyingBrew = 115203
 
@@ -266,8 +266,8 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	end)
 
 	-- The regression the store exists around. The generated index carries ids this build has
-	-- dropped, and storing waits for every pending id to name. One dropped id used to wait for
-	-- ever, so the cache persisted empty and every login paid the naming pass again.
+	-- dropped, and storing waits for every pending id to name. A dropped id never names, so without
+	-- the guard the cache stays empty and every login pays the naming pass again.
 	local DROPPED_IDS = { 999000001, 999000002 }
 
 	---Runs `body` against an index carrying one group beyond the client's reach. The shared stand-in
@@ -348,7 +348,7 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 
 	fw.it("waits for an id the client has but has not loaded, then keeps the lot", function()
 		-- The distinction the whole guard rests on. An id the client admits to may still name
-		-- later and widen the answer, so nothing is stored while one is waiting; once it names,
+		-- later and widen the answer, so nothing is stored while one is waiting. Once it names,
 		-- what was worked out in the meantime is settled and goes to the store.
 		local store = {}
 
@@ -498,7 +498,7 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 	local SILENT = { LATE_CAST, LATE_AURA, GROUP_A, GROUP_B, LATE_CURATED, LATE_TORRENT }
 
 	---Runs `body` against a fresh SpellSearch whose client cannot name any of SILENT. Filling
-	---`names` from inside the body is what makes that spell's data arrive; doing it before the
+	---`names` from inside the body is what makes that spell's data arrive. Doing it before the
 	---first lookup is data that was there all along, which is what the assertions compare to.
 	---@param body fun(late: SpellSearch, names: table<number, string>)
 	local frameTime = 0
@@ -532,12 +532,12 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 			return realGetSpellName(spellId)
 		end
 
-		-- Its own session; see WithClientNames.
+		-- Its own session. See WithClientNames.
 		local previousStore = _G.MiniAurasSpellCache
 		_G.MiniAurasSpellCache = nil
 
 		-- The retry throttle keys on the clock moving between frames, so the clock is the
-		-- test's to move; the shared mock's needs an install this file never does.
+		-- test's to move. The shared mock's needs an install this file never does.
 		local realGetTime = _G.GetTime
 		_G.GetTime = function()
 			return frameTime

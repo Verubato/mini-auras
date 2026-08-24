@@ -6,21 +6,17 @@ local fontUtil = addon.Utils.FontUtil
 
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
--- Resolved from the client's own font object on first layout: non-Latin locales substitute a
+-- Resolved from the client's own font object on first layout. Non-Latin locales substitute a
 -- file that actually has their glyphs, where a hardcoded western Friz Quadrata renders boxes.
 local fontFile
 local FONT_FLAGS = "OUTLINE"
--- Everything inside a bar is derived from its height, so one slider sizes the whole thing: the
--- name font is a fraction of it, the countdown is a touch larger again, and the icon column is
--- the height itself plus a hair of padding.
+-- Everything inside a bar is derived from its height, so one slider sizes the whole row.
 local NAME_FONT_COEFFICIENT = 0.42
 local COUNTDOWN_FONT_SCALE = 1.25
 local ICON_PADDING_FACTOR = 1 / 10
 local TEXT_INSET = 4
--- Icon art carries a transparent border; trimming it by the same amount the config previews do
--- squares the icon up with the bar's edges.
--- Below this the countdown reads better with a decimal, above it whole seconds are enough - the
--- same threshold the icon cooldowns use for their own millisecond text.
+-- Below this the countdown reads better with a decimal. It is the same threshold the icon
+-- cooldowns use for their own millisecond text.
 local MILLISECONDS_THRESHOLD = 3
 -- The raid marker sheet is 4x4, indexed the same way the raid target indices run.
 local MARKER_TEXTURE = "Interface\\TargetingFrame\\UI-RaidTargetingIcons"
@@ -44,10 +40,9 @@ local function CountdownText(seconds)
 	return tostring(math.ceil(seconds))
 end
 
----The kicker's class colour. The class token is secret inside an instance, where indexing
----RAID_CLASS_COLORS with it would throw - a table cannot be keyed by a secret - so the colour
----comes from the API call, which takes one. The colour handed back is itself secret, which the
----status bar's setter accepts and arithmetic on it does not.
+---The kicker's class colour. The class token is secret inside an instance and a table cannot be
+---keyed by a secret, so the colour comes from the API call, which takes one. The colour handed
+---back is itself secret, which the status bar's setter accepts and arithmetic on it does not.
 ---@param class string?
 ---@return table?
 local function ClassColor(class)
@@ -100,10 +95,8 @@ end
 local function LayoutBar(bar, options)
 	local height = options.Height
 	local padding = math.max(1, math.floor(height * ICON_PADDING_FACTOR))
-	-- The marker keeps its column whether or not this particular row has one to show, so one
-	-- appearing never shoves everything else sideways. It leads the row rather than sitting
-	-- between the icon and the bar, so an empty column falls outside the pair and the spell icon
-	-- stays flush against the fill it belongs to.
+	-- The marker keeps its column whether or not this row has one to show, so one appearing never
+	-- shoves everything else sideways.
 	local markerWidth = height + padding
 
 	bar.Frame:SetSize(options.Width, height)
@@ -112,10 +105,12 @@ local function LayoutBar(bar, options)
 	bar.Marker:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", 0, 0)
 	bar.Marker:SetSize(height, height)
 
-	-- Flush against the fill: the icon reads as the bar's own head rather than a separate thing.
+	-- Flush against the fill so the icon reads as the bar's own head.
 	bar.Icon:ClearAllPoints()
 	bar.Icon:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", markerWidth, 0)
 	bar.Icon:SetSize(height, height)
+	-- Icon art carries a transparent border. Trimming it by the same amount the config previews do
+	-- squares the icon up with the bar's edges.
 	bar.Icon:SetTexCoord(iconUtil:TexCoord())
 
 	bar.Bar:ClearAllPoints()
@@ -218,8 +213,8 @@ end
 
 ---Paints everything about a row that does not move: the kicker's name and class colour, the
 ---interrupted spell's icon and the mob's marker. All four can be secret, so this runs once when
----the row is assigned rather than on every tick - the repaint loop compares what it last pushed
----to a widget, and comparing a secret is exactly what is not allowed.
+---the row is assigned. The repaint loop compares what it last pushed to a widget, and comparing
+---a secret is not allowed.
 ---@param bar AllyKickBar
 ---@param record AllyKickRecord
 local function PaintRecord(bar, record)
@@ -249,8 +244,8 @@ local function RenderTimer(instance, bar, record, now)
 	local remaining = record.ExpireAt - now
 
 	if remaining <= 0 then
-		-- Only the player's own row gets here: a history row leaves the list the moment it
-		-- expires. A ready row is completely static, so it is painted once and then left alone.
+		-- Only the player's own row gets here, since a history row leaves the list the moment it
+		-- expires. A ready row is static, so it is painted once and then left alone.
 		if bar.Applied.Countdown ~= false then
 			bar.Bar:SetValue(1)
 			bar.Time:SetText(instance.ReadyLabel)
@@ -262,9 +257,8 @@ local function RenderTimer(instance, bar, record, now)
 
 	bar.Bar:SetValue(remaining / record.Duration)
 
-	-- The text is compared as the number it will render as, not as the string: whole seconds above
-	-- the threshold and tenths below it. That way the string is only built on the ticks where it
-	-- actually changes, which is once a second for most of a row's life.
+	-- The text is compared as the number it will render as, so the string is only built on the
+	-- ticks where it actually changes.
 	local countdown = remaining < MILLISECONDS_THRESHOLD and math.floor(remaining * 10) or math.ceil(remaining)
 
 	if bar.Applied.Countdown ~= countdown then
@@ -273,7 +267,7 @@ local function RenderTimer(instance, bar, record, now)
 	end
 end
 
----Creates a row list. The instance owns its frame; the caller positions and shows it.
+---Creates a row list. The instance owns its frame, and the caller positions and shows it.
 ---@param parent table
 ---@param readyLabel string  shown instead of a countdown once the player's own interrupt is up
 ---@return AllyKickDisplayInstance

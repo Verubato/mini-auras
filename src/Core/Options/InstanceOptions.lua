@@ -7,9 +7,8 @@ local M = {}
 
 addon.Core.InstanceOptions = M
 
----Returns true if the current context is a raid.
----Returns false in arena (which reports as a raid group but is not a raid).
----During test mode, returns the overridden value if one was set.
+---Whether the current context is a raid. False in arena, which reports as a raid group but is not
+---a raid. Test mode answers with the override when one is set.
 ---@return boolean
 function M:IsRaid()
 	if testIsRaid ~= nil then

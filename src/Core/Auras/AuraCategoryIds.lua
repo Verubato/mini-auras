@@ -4,12 +4,13 @@ local _, addon = ...
 -- The addon's central spell-ID list: every tracked spell, grouped by aura category.
 --
 -- GENERATED DATA - do not hand-edit. Produced from an in-game /miniaurasscan (build 120100, PTR)
--- filtered offline to player-PvP ability names; every spell-ID variant of each named ability
--- is included. Regenerate with scripts/ScanSpellFlags.lua + scripts/GenerateAuraCategoryIds.lua
--- (see their headers). Two consumers on 12.1: C_UnitAuras.AddAuraSound registrations (aura
--- presence itself is unreadable there, but the engine can play sounds on aura transitions for
--- us), and the includeSpellIDs candidate filters every AuraContainer group carries (see
--- Core/AuraFilters) - so a gap in these lists now costs a missing ICON, not just a missing sound.
+-- filtered offline to player-PvP ability names, with every spell-ID variant of each named ability
+-- included. Regenerate with scripts/ScanSpellFlags.lua + scripts/GenerateAuraCategoryIds.lua.
+--
+-- Two consumers on 12.1. C_UnitAuras.AddAuraSound registrations, which work because the engine can
+-- play sounds on aura transitions even though aura presence itself is unreadable. And the
+-- includeSpellIDs candidate filters every AuraContainer group carries, where a gap in these lists
+-- costs a missing icon rather than just a missing sound.
 
 addon.Core.AuraCategoryIds = {
 	-- CC (1033 ids)
@@ -1048,14 +1049,10 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Spells Blizzard flags as NEITHER defensive nor important, but that are still worth showing.
-	-- Usable only where the spell id IS the filter - the Auras module's bare HELPFUL group.
-	-- Anywhere a category token is in play the engine rejects them, since includeSpellIDs can only
-	-- narrow a group and never widen it.
-	-- Curated spells that ship switched OFF. They stay in the lists above so they can be found
-	-- and enabled, but are not tracked until the user asks for them. Expressed here rather than
-	-- as default Disabled entries because the saved-variable merge re-adds any default key, so a
-	-- user who enabled one would find it off again on the next reload.
+	-- Curated spells that ship switched off. They stay in the lists above so they can be found and
+	-- enabled, but are not tracked until the user asks for them.
+	-- They cannot be default Disabled entries, because the saved-variable merge re-adds any default
+	-- key and a user who enabled one would find it off again on the next reload.
 	DefaultOff = {
 		[378078] = true, -- Spiritwalker's Aegis
 		[79206] = true, -- Spiritwalker's Grace
@@ -1069,11 +1066,16 @@ addon.Core.AuraCategoryIds = {
 	},
 
 	-- Spells the game flags as neither important nor defensive. Only a display that filters by
-	-- spell id can track them at all (the raid frames), and that display still has a toggle per
-	-- category, so they are split the same way the flagged lists are. TTS keys on the bare spell
-	-- id, so the missing flag costs nothing there and scripts/GenerateTtsAudio.py voices both
-	-- halves under the matching toggle. The bottom of this file merges them into Unflagged,
-	-- which is what the spell pickers and the search read.
+	-- spell id can track them, which is the raid frames and the Auras module's bare HELPFUL group.
+	-- A group carrying a category token rejects them, because includeSpellIDs can only narrow a
+	-- group and never widen it.
+	--
+	-- The raid frame display has a toggle per category, so these are split the same way the
+	-- flagged lists are. The bottom of this file merges them into Unflagged, which is what the
+	-- spell pickers and the search read.
+	--
+	-- TTS keys on the bare spell id, so the missing flag costs nothing there and
+	-- scripts/GenerateTtsAudio.py voices both halves under the matching toggle.
 	UnflaggedImportant = {
 		[1784] = true, -- Stealth
 		[5215] = true, -- Stealth
@@ -1130,14 +1132,16 @@ addon.Core.AuraCategoryIds = {
 		[1309793] = true, -- Refractive Images
 	},
 
-	-- HAND-MAINTAINED, unlike everything above it. Enemy cooldowns that land on your side as a
-	-- debuff rather than on the caster as a buff. Announced on the player and the party by
-	-- their own toggle. The scan can still pick one up when the game flags the debuff itself
-	-- important (Deathmark), so scripts/GenerateTtsAudio.py strips these ids from the plate
-	-- clip maps and Modules/Alerts/Sound.lua keeps them out of the plate sound registrations:
-	-- a plate gaining one of these means an ally cast it.
+	-- Hand-maintained, not produced by the scan. Enemy cooldowns that land on your side as a debuff
+	-- rather than on the caster as a buff, announced on the player and the party by their own
+	-- toggle.
 	--
-	-- One id per ability, not every variant the name index knows: two variants landing together
+	-- The scan can still pick one up when the game flags the debuff itself important, so
+	-- scripts/GenerateTtsAudio.py strips these ids from the plate clip maps and
+	-- Modules/Alerts/Sound.lua keeps them out of the plate sound registrations. A plate gaining one
+	-- of these means an ally cast it.
+	--
+	-- One id per ability, not every variant the name index knows. Two variants landing together
 	-- would speak the name twice.
 	EnemyDebuff = {
 		[208086] = true, -- Colossus Smash
@@ -1168,9 +1172,9 @@ addon.Core.AuraCategoryIds = {
 		[1309793] = true, -- Refractive Images
 	},
 
-	-- Spell id -> the class that owns it, for grouping in the options UI only. Never used
-	-- for filtering: the category tables above are what reach the engine. GENERAL covers
-	-- anything not tied to a class, such as PvP gem effects.
+	-- Spell id -> the class that owns it, for grouping in the options UI only. It is never used for
+	-- filtering, since the category tables above are what reach the engine. GENERAL covers anything
+	-- not tied to a class, such as PvP gem effects.
 	Classes = {
 		-- Deathknight
 		[42650] = "DEATHKNIGHT", -- Army of the Dead

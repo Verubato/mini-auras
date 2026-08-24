@@ -9,13 +9,11 @@ function M:UpgradeToVersion19(vars)
 		return false
 	end
 
-	-- Rename CcModule to CCModule
 	if vars.Modules and vars.Modules.CcModule then
 		vars.Modules.CCModule = vars.Modules.CcModule
 		vars.Modules.CcModule = nil
 	end
 
-	-- Rename HealerCcModule to HealerCCModule
 	if vars.Modules and vars.Modules.HealerCcModule then
 		vars.Modules.HealerCCModule = vars.Modules.HealerCcModule
 		vars.Modules.HealerCcModule = nil
@@ -30,7 +28,7 @@ function M:UpgradeToVersion20(vars)
 		return false
 	end
 
-	-- accident, update db migration to the same value as db defaults
+	-- Nothing to migrate, the bump only lines the db up with the defaults.
 	vars.Version = 20
 	return true
 end
@@ -655,8 +653,8 @@ function M:UpgradeToVersion31(vars)
 		return false
 	end
 
-	-- Add ScaleWithNameplate to NameplatesModule. Existing installs default to false
-	-- to preserve their current behaviour (icons were previously not scaling with the nameplate).
+	-- Add ScaleWithNameplate to NameplatesModule. Existing installs default to false to keep the
+	-- behaviour they have.
 	if vars.Modules and vars.Modules.NameplatesModule then
 		vars.Modules.NameplatesModule.ScaleWithNameplate = false
 	end
@@ -688,11 +686,8 @@ function M:UpgradeToVersion33(vars)
 		return false
 	end
 
-	-- If the CC module is enabled in battlegrounds AND the friendly indicator is also
-	-- showing CC icons for groups greater than 5 members, disable the latter to avoid
-	-- both modules displaying CC icons simultaneously in battlegrounds.
-	-- this is to fix a migration where the CC module used to be enabled "always"
-	-- and Show CC is defaulted to true for the indicator module in bgs, which would result in both modules showing CC icons in bgs after the migration
+	-- The version 27 migration switched every context on, so a CC module enabled in battlegrounds
+	-- would draw the same icons as the friendly indicator. The indicator's row is switched off.
 	local mods = vars.Modules
 	if mods and mods.CCModule and mods.FriendlyIndicatorModule then
 		local ccEnabledBGs = mods.CCModule.Enabled and mods.CCModule.Enabled.BattleGrounds
@@ -791,7 +786,7 @@ end
 function M:UpgradeToVersion38(vars)
 	if vars.Version ~= 37 then return false end
 
-	-- Add ShowTooltips to each NameplateSpellTypeOptions section. Existing installs default to true.
+	-- Add ShowTooltips to each NameplateSpellTypeOptions section, off for existing installs.
 	if vars.Modules and vars.Modules.NameplatesModule then
 		local nm = vars.Modules.NameplatesModule
 		for _, faction in ipairs({ nm.Friendly, nm.Enemy }) do

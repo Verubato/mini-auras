@@ -1,12 +1,12 @@
 -- Alerts module, token source selection. The bars read one AuraContainer per enemy, and which
 -- token that container is pointed at decides whether the alerts survive an enemy going out of
--- sight: a nameplate is released the moment the unit is hidden, behind a pillar or out of range,
+-- sight. A nameplate is released the moment the unit is hidden, behind a pillar or out of range,
 -- and the display goes with it, while an arena token stays valid for the whole match.
 --
--- So inside a 2v2 or 3v3 the module reads arena1..3, and everywhere else - bigger brackets,
--- battlegrounds, the open world - it falls back to nameplates. The failure this guards is silent
--- either way round: arena tokens in a bracket they do not cover means opponents with no alerts at
--- all, and nameplates in a 3v3 means the flicker the change was made to remove.
+-- Inside a 2v2 or 3v3 the module reads arena1..3, and in bigger brackets, battlegrounds and the
+-- open world it falls back to nameplates. The failure this guards is silent either way round.
+-- Arena tokens in a bracket they do not cover means opponents with no alerts at all, and
+-- nameplates in a 3v3 means the flicker the change was made to remove.
 
 local fw = require("Framework")
 local acm = require("AuraContainerMock")
@@ -20,7 +20,7 @@ alerts.Enabled.Always = true
 alerts.Icons.Enabled = true
 alerts.SplitBars = false
 alerts.Important.Enabled = true
--- On so the engine sound registrations exist; they follow the tracked tokens and are the half of
+-- On so the engine sound registrations exist. They follow the tracked tokens and are the half of
 -- a source switch that a released display does not clean up on its own.
 alerts.Sound.Important.Enabled = true
 alerts.Sound.Defensive.Enabled = true
@@ -30,8 +30,8 @@ env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 local module = env.addon.Modules.AlertsModule
 module:Init()
--- Init only builds the lifecycle now; a module sets itself up on the first refresh that
--- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+-- Init only builds the lifecycle. A module sets itself up on the first refresh that finds it
+-- enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
 module:Refresh()
 
 local events = assert(acm.lastFrameForEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS"), "alerts event frame")
@@ -81,15 +81,15 @@ local function removePlate(token)
 	env.enemies[token] = nil
 end
 
--- Runs FIRST, and has to: a display pair is kept for the rest of the session once built, so a
--- later test entering an arena would leave the arena pairs standing and "nothing was built yet"
--- could never fail.
+-- Runs first, and has to, because a display pair is kept for the rest of the session once built,
+-- so a later test entering an arena would leave the arena pairs standing and "nothing was built
+-- yet" could never fail.
 fw.describe("Alerts - when the arena pairs get built", function()
 	local alertsDisplay = env.addon.Modules.Alerts.Display
 
 	fw.it("builds none of them behind the loading screen", function()
 		-- A button takes its look once, in initializeFrame, and inside an arena
-		-- C_Secrets.ShouldAurasBeSecret never clears - so no restyle ever gets to correct it.
+		-- C_Secrets.ShouldAurasBeSecret never clears, so no restyle ever gets to correct it.
 		-- Building a pair before the client will say who it is tracking spends that one chance
 		-- on an unknown opponent.
 		local prewarmed = {}
@@ -139,8 +139,8 @@ fw.describe("Alerts - picking the token source", function()
 	end)
 
 	fw.it("binds a token whose opponent is nowhere to be seen", function()
-		-- The whole point of the source. Nothing has been said about arena3 - no plate, no
-		-- roster entry - and its display is up regardless, ready for the moment the client can
+		-- The whole point of the source. Nothing has been said about arena3, no plate and no
+		-- roster entry, and its display is up regardless, ready for the moment the client can
 		-- answer for it.
 		assert(env.plates.arena3 == nil, "precondition: no plate ever existed for it")
 		assert(tracked("arena3"), "the display is bound anyway")
@@ -224,8 +224,8 @@ fw.describe("Alerts - moving between the two sources", function()
 	fw.it("takes the plate sound registrations with them", function()
 		-- Releasing a display deliberately leaves its engine sound registrations warm, because a
 		-- plate token comes and goes constantly and re-registering ~80 sounds per churn is pure
-		-- API traffic. A source switch is the one case where that is wrong: in the arena the
-		-- plate token is one of the same three opponents, so every alert would sound twice and
+		-- API traffic. A source switch is the one case where that is wrong, because in the arena
+		-- the plate token is one of the same three opponents, so every alert would sound twice and
 		-- TTS would say the name twice.
 		local live = {}
 		for _, registration in pairs(env.auraSounds) do
@@ -327,10 +327,9 @@ fw.describe("Alerts - arena tokens outside the visible world", function()
 
 	-- A buff on an enemy has no working spell-id filter, so the category token carries the group
 	-- on its own, and the engine stops evaluating that token for a unit it cannot answer for. The
-	-- group then fills with buffs belonging to somebody else - reported in 5.19.0 as the player's
+	-- group then fills with buffs belonging to somebody else. Reported in 5.19.0 as the player's
 	-- own buffs appearing on the alert bar at the start of every solo shuffle round, where the
-	-- teams are re-dealt and the arena tokens are briefly empty. A plate never reaches this state,
-	-- which is why nothing guarded it before the arena source existed.
+	-- teams are re-dealt and the arena tokens are briefly empty. A plate never reaches this state.
 
 	fw.it("parks the pair while the client has no unit behind the token", function()
 		enterArena(3)
@@ -367,8 +366,8 @@ fw.describe("Alerts - arena tokens outside the visible world", function()
 	end)
 
 	fw.it("ignores an opponent past the count it bound", function()
-		-- The event names a token the module drops, since a burst of them all say the same thing;
-		-- what it reconciles is the bracket it bound, so a 2v2 stays on arena1 and arena2 however
+		-- The event names a token the module drops, since a burst of them all say the same thing.
+		-- What it reconciles is the bracket it bound, so a 2v2 stays on arena1 and arena2 however
 		-- the client numbers the unit it announced.
 		enterArena(2)
 		assert(not tracked("arena3"), "precondition: outside the bracket")

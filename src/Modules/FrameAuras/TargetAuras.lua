@@ -18,11 +18,10 @@ local BUFF_GROUP = "TargetBuffs"
 local BUFF_PURGE_GROUP = "TargetBuffsPurge"
 local DEBUFF_FILTER = "HARMFUL"
 local BUFF_FILTER = "HELPFUL"
--- The buffs worth purging, and the rest. The token means "carries a dispel type this player can
--- remove", which is the whole of the question: a class with no purge matches nothing here, and a
--- friendly target matches nothing either, since a helpful aura is not something you dispel off a
--- friend. An aura's own dispel type is secret, so the split can only be made by the filter string
--- and shown by which group an icon lands in.
+-- The buffs worth purging, and the rest. The token means the aura carries a dispel type this
+-- player can remove, so a class with no purge matches nothing and a friendly target matches
+-- nothing either. An aura's own dispel type is secret, so the split can only be made by the
+-- filter string and shown by which group an icon lands in.
 local PURGE_FILTER = "HELPFUL|RAID_PLAYER_DISPELLABLE"
 local PLAIN_BUFF_FILTER = "HELPFUL|!RAID_PLAYER_DISPELLABLE"
 -- What counts as a buff worth seeing on a target: anything the fight could plausibly turn on. Past
@@ -62,18 +61,18 @@ addon.Modules.FrameAuras.TargetAuras = M
 M.Available = false
 
 local active = false
--- What active was on the last pass, so the switch going off can hand back what only that edge knows
--- to hand back. Every refresh runs while the rows are off, and putting Blizzard's cast bar anchor
--- back on each of them would be meddling with a bar the module no longer touches.
+-- What active was on the last pass, so the switch going off can hand back what only that edge
+-- knows to hand back. Every refresh runs while the rows are off, and putting Blizzard's cast bar
+-- anchor back on each of them would be meddling with a bar this module does not touch.
 local wasActive = false
 local testModeActive = false
--- Host frame -> its two displays. The frames are Blizzard's own and live for the session, so an
--- entry lives as long as they do; there is nothing to clear.
+-- Host frame -> its two displays. The frames are Blizzard's own and live for the session, so there
+-- is nothing to clear.
 local hosts = {}
 -- Frame -> its host entry, so discovery can tell a frame it already has from a new one.
 local hostsByFrame = {}
--- Which hosts have had their aura container hook installed. Per host rather than one flag: the
--- focus frame can turn up long after the target frame did, and the hook cannot be added later.
+-- Which hosts have had their aura container hook installed. The focus frame can turn up long after
+-- the target frame did, and the hook cannot be added later.
 local hooked = {}
 ---@type EventGate?
 local watcher
@@ -81,12 +80,11 @@ local eventsFrame
 -- Which hosts' own containers have been taken over, by frame. Only one that was suppressed is ever
 -- handed back, so a profile that never switched the rows on leaves the client alone.
 local suppressed = {}
--- Refilled per pass rather than built per pass: Apply runs on every settings change and on every
--- unit change, and the pair it walks is the same shape every time.
+-- Refilled per pass because Apply runs on every settings change and every unit change, and the
+-- pair it walks is the same shape every time.
 local rowScratch = { {}, {} }
--- The shapes SetGroupGlowColors wants, refilled per pass for the same reason. One group and one
--- colour, but the setter takes the whole palette a display could carry. The colour carries both
--- spellings, because the preview row reads .r/.g/.b where the aura style reads [1..3].
+-- The shapes SetGroupGlowColors wants, refilled per pass for the same reason. The colour carries
+-- both spellings, because the preview row reads .r/.g/.b where the aura style reads [1..3].
 local purgeGroupKeys = { BUFF_PURGE_GROUP }
 local purgeColorsByKey = {}
 local purgeColorScratch = {}
@@ -102,8 +100,8 @@ local function Options()
 end
 
 ---Adds any host frame that now exists and is not already tracked. Blizzard builds these with the
----world, so a refresh that runs before it has finished sees one of them or neither; the ones it
----does see keep the displays they were given, which is why this appends rather than rebuilds.
+---world, so a refresh that runs before it has finished sees one of them or neither, and the ones
+---it does see keep the displays they were given.
 local function DiscoverHosts()
 	for _, candidate in ipairs(HOST_SPECS) do
 		local frame = _G[candidate.Global]
@@ -118,8 +116,7 @@ local function DiscoverHosts()
 end
 
 ---Whether the player can help this unit, or nil when the client will not say. An unreadable answer
----filters nothing: a row that hid what it could not reason about reads as broken rather than
----filtered.
+---filters nothing, since a row that hid what it could not reason about reads as broken.
 ---@param unit string
 ---@return boolean?
 local function CanAssist(unit)
@@ -150,9 +147,8 @@ local function Candidates(host)
 	local buffs, debuffs
 
 	if options.Filtered then
-		-- Only bites on a unit you can help. A spell-id map is identity-gated: the engine honours
-		-- it for a helpful aura on an assistable unit and skips it everywhere else, so on an enemy
-		-- target this quietly does nothing and the row shows what it always did.
+		-- The engine honours a spell-id map for a helpful aura on an assistable unit and skips it
+		-- everywhere else, so on an enemy target this quietly does nothing.
 		buffs = { includeSpellIDs = spells:BuildSpellMap() }
 	end
 
@@ -186,9 +182,8 @@ local function ArtOf(frame)
 end
 
 ---Blizzard draws its own auras on these frames and there is no setting that turns them off, so the
----container is switched off and hidden instead. Only those two, because they are the only ones that
----can be taken back: the counts and the unit have no getter to read the old value from, and a
----container handed back holding none of them draws nothing at all.
+---container is switched off and hidden instead. Only those two can be taken back, since the counts
+---and the unit have no getter to read the old value from.
 ---@param frame table
 local function SuppressBlizzardAuras(frame)
 	local container = frame.GetAuraContainer and frame:GetAuraContainer()
@@ -201,8 +196,7 @@ local function SuppressBlizzardAuras(frame)
 
 	if not active then
 		-- Only where this actually took the container over, and only back to what it found. A
-		-- profile that never switched the rows on, or a player who had these off already, has no
-		-- business getting a container handed back on, the same edge the raid frame cvars watch.
+		-- profile that never switched the rows on has no business getting a container handed back.
 		if taken then
 			suppressed[frame] = nil
 			-- On before shown, so the refresh that showing brings lands on a live container and
@@ -231,8 +225,7 @@ local function BuildStyle()
 	style.Stacks = true
 	style.ReverseCooldown = true
 
-	-- No dispel-type colouring, matching the two group rows: these stand in for Blizzard's own,
-	-- and its target frame auras draw a plain icon.
+	-- No dispel-type colouring. These stand in for Blizzard's own rows, which draw a plain icon.
 	return style
 end
 
@@ -257,24 +250,22 @@ local function Build(host)
 		PerLine = perRow,
 	})
 
-	-- The purgeable buffs lead the row, in a group of their own so they can carry the glow: which
-	-- icons light up can only be decided by which group they land in.
+	-- The purgeable buffs lead the row, in a group of their own so they can carry the glow, since
+	-- which icons light up can only be decided by which group they land in.
 	--
 	-- Declared whatever the switch says, and both budgeted in full. A group is a batch of buttons
 	-- the engine hands out when it is declared and never takes back, so one left out at build time
-	-- could not be added when the switch moved. The cost of that is two budgets rather than one, so
-	-- a target carrying both kinds can fill the row past the icon limit; the alternative is losing
-	-- purgeable buffs to a shared budget, which is the wrong way round for a row that exists to
-	-- show them.
+	-- could not be added when the switch moved. The cost is two budgets, so a target carrying both
+	-- kinds can fill the row past the icon limit.
 	local glowing = options.PurgeGlow == true
 
 	host.Buffs = auraContainerDisplay:New(host.Frame, host.Unit, {
 		{
 			Key = BUFF_PURGE_GROUP,
 			FilterString = PURGE_FILTER,
-			-- Declared with the full budget even when the switch is off, because the engine hands a
-			-- group its buttons from the count it is DECLARED with and raising it later conjures
-			-- none. Apply closes the budget straight after, which is what the switch really does.
+			-- Declared with the full budget even when the switch is off, because raising the count
+			-- later conjures no buttons. Apply closes the budget straight after, which is what the
+			-- switch really does.
 			MaxIcons = maxIcons,
 			CandidateFilters = buffFilters,
 			Glow = glowing,
@@ -312,8 +303,8 @@ local function CanAnchorTo(frame, container)
 	return frame.HasAnyForbiddenAspects ~= nil and frame:HasAnyForbiddenAspects(aspect) == true
 end
 
----Puts the cast bar under the aura rows, where it no longer overlaps them. Blizzard anchors it to
----the frame, which is where the rows now are.
+---Puts the cast bar under the aura rows, clear of them. Blizzard anchors it to the frame, which is
+---where the rows now are.
 ---@param host table
 local function AnchorCastBar(host)
 	local bar = host.Frame.spellbar
@@ -347,7 +338,7 @@ local function RestoreCastBar(host)
 	local bar = host.Frame.spellbar
 	local saved = host.BarPoints
 
-	-- Nothing read means nothing to give: clearing the bar's points and putting none back would
+	-- Nothing read means nothing to give. Clearing the bar's points and putting none back would
 	-- leave it anchored nowhere at all.
 	if not bar or not saved or #saved < 1 then
 		return
@@ -361,11 +352,11 @@ local function RestoreCastBar(host)
 end
 
 ---Remembers where Blizzard has the cast bar, which is what switching the rows off puts back. Read
----here rather than at the first move: this runs before anything of this module's has touched the
----bar, and outside the hook, so it never reads a half-finished set of points.
+---before anything of this module's has touched the bar, and outside the hook, so it never reads a
+---half-finished set of points.
 ---
----A bar the client has not anchored yet leaves the empty list, which nothing is handed back from.
----Blizzard anchors it itself the next time it raises a cast, so there is nothing to invent here.
+---A bar the client has not anchored yet leaves the empty list, and Blizzard anchors it itself the
+---next time it raises a cast.
 ---@param host table
 ---@param bar table
 local function RememberCastBar(host, bar)
@@ -432,10 +423,8 @@ local function AnchorRows(host)
 	local buffs = host.Buffs.Frame
 
 	for _, containerFrame in ipairs({ debuffs, buffs }) do
-		-- Scales with the frame rather than the screen, like the group rows. It is also what puts
-		-- these rows in the same coordinate space as the cast bar that anchors below them, which is
-		-- what the bar was missing: anchored to a container drawing at scale 1 while the frame it
-		-- belongs to sits at the UI scale, it landed nowhere near the bottom of the rows.
+		-- Scales with the frame rather than the screen, like the group rows. It also puts these
+		-- rows in the same coordinate space as the cast bar that anchors below them.
 		containerFrame:SetIgnoreParentScale(false)
 		containerFrame:SetFrameStrata(frames:GetNextStrata(frame:GetFrameStrata()))
 
@@ -606,8 +595,7 @@ local function Apply(host)
 	end
 
 	SuppressBlizzardAuras(host.Frame)
-	-- Filled here rather than in each reader: the preview row and the live one take the same colour,
-	-- and both are reached from this one pass.
+	-- The preview row and the live one take the same colour, and both are reached from this pass.
 	moduleUtil:FillColor(purgeColorScratch, options.PurgeColor, DEFAULT_PURGE_COLOR)
 	ApplyTestRows(host, options)
 
@@ -650,12 +638,12 @@ local function ApplyToAll()
 	end
 end
 
----Switching target keeps the token: it is still "target", so the engine never sees a unit change
----and the last target's auras stay on the buttons. The change has to be told to the display.
+---Switching target keeps the token, so the engine never sees a unit change and the last target's
+---auras stay on the buttons. The change has to be told to the display.
 ---
----A faction change is the other way the rows move without the token doing anything: mind control, a
----duel or a phase leaves the same unit on the frame on the other side of the "can I help this"
----question, which is what both of the "mine" switches answer to.
+---A faction change moves the rows the same way. Mind control, a duel or a phase leaves the same
+---unit on the frame on the other side of the "can I help this" question, which is what both of the
+---"mine" switches answer to.
 ---@return EventGate
 local function Watcher()
 	if watcher then
@@ -668,8 +656,8 @@ local function Watcher()
 			local moved = event == "UNIT_FACTION" and host.Unit == unit
 
 			if (moved or host.Event == event) and host.Debuffs then
-				-- Before the re-point: SetUnit is what makes the display re-read the unit, and it
-				-- should read it through the new target's filters.
+				-- SetUnit is what makes the display re-read the unit, so the new target's filters
+				-- have to be in place first.
 				Refilter(host)
 				host.Debuffs:SetUnit(host.Unit)
 				host.Buffs:SetUnit(host.Unit)

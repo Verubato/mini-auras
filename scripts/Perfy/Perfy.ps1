@@ -8,11 +8,11 @@ param(
     [string] $Flavor = "_ptr_",
 
     # Perfy was last touched in Feb 2025 and assigns to for-loop variables, which
-    # lua-language-server rejects from 3.14 on, so the version is pinned rather than latest.
+    # lua-language-server rejects from 3.14 on, so the version is pinned here.
     [string] $LuaLsVersion = "3.13.6",
 
     # Trace the login loading screen instead of waiting for /perfy start. Perfy ships this
-    # switched off behind a comment; the tracer stops itself once the first frame is drawn.
+    # switched off behind a comment. The tracer stops itself once the first frame is drawn.
     [switch] $LoginTrace,
 
     # Passed through to Perfy's analyzer, e.g. --split-frames or --frames 3-7.
@@ -134,10 +134,10 @@ function Invoke-Instrument {
             Remove-Item -Recurse -Force $targetDir
         }
         else {
-            # A redeploy over the instrumented copy lands here: the install is clean again, and
-            # the backup is the same clean tree it was taken from. Nothing to sort out then, so
-            # the leftover goes and the fresh install is backed up in its place. Anything else is
-            # a real conflict and stays for a human.
+            # A redeploy over the instrumented copy lands here. The install is clean again and the
+            # backup is the same clean tree it was taken from, so the leftover goes and the fresh
+            # install is backed up in its place. Anything else is a real conflict and stays for a
+            # human.
             if (Test-Path $backupDir) {
                 if (Test-SameTree $targetDir $backupDir) {
                     Write-Host "$backupDir is the same tree as the install; dropping the leftover"
@@ -174,9 +174,9 @@ function Invoke-Instrument {
     [System.IO.File]::WriteAllText($perfyToc, $text, $noBom)
 
     if ($LoginTrace) {
-        # The one loading screen no slash command can reach: tracing has to be running before the
-        # addon files are, so Perfy starts itself from its own file and stops on the second
-        # OnUpdate, which is as close to "the first frame is drawn" as it can get.
+        # No slash command can reach this loading screen, since tracing has to be running before
+        # the addon files are. Perfy starts itself from its own file and stops on the second
+        # OnUpdate, which is as close to the first frame being drawn as it can get.
         $tracer = Join-Path $perfyAddonDir "TraceLoadingScreen.lua"
         $text = [System.IO.File]::ReadAllText($tracer) -replace "(?m)^--Perfy_Start\(\)", "Perfy_Start()"
         [System.IO.File]::WriteAllText($tracer, $text, $noBom)
@@ -185,8 +185,8 @@ function Invoke-Instrument {
     # A trace carries the ids of the build that wrote it, and Perfy reuses the name map it finds
     # while restarting its id counter, so a trace kept across a rebuild ends up with two functions
     # under one id and the analyzer rejects it. Deleting the file only helps while the client is
-    # closed: a running one holds that table in memory and writes it back on exit, which is what
-    # "/perfy clear" is for.
+    # closed, because a running one holds that table in memory and writes it back on exit. That is
+    # what "/perfy clear" is for.
     foreach ($saved in @(Get-ChildItem -Path (Join-Path $WowPath "$Flavor\WTF\Account") -Recurse -Filter "!!!Perfy.lua*" -ErrorAction SilentlyContinue)) {
         Write-Host "Clearing the trace left by the previous build: $($saved.FullName)"
         Remove-Item $saved.FullName -Force

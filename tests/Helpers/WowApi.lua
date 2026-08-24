@@ -5,8 +5,8 @@ local M = {}
 
 -- Module-level state reset on each M.reset() call.
 local _time          = 0
-local _buildNumber   = 120005  -- default: 12.0.5 (TOC 120005)
-local _instanceType  = "none"  -- default: not in any instance (PvE)
+local _buildNumber   = 120005  -- 12.0.5
+local _instanceType  = "none"  -- not in any instance
 local _unitClasses   = {}   -- unit -> { name, token }
 local _feignDeath    = {}   -- unit -> bool
 local _pvpUnits      = {}   -- unit -> bool (pvp-flagged, e.g. War Mode in open world)
@@ -20,8 +20,7 @@ local _inRaid        = false
 local _inVehicle     = false
 
 function M.setup()
-	-- Build info
-	-- Blizzard's own deep copy, which addons use rather than writing their own.
+	-- Blizzard's own deep copy, which addons rely on.
 	_G.CopyTable = function(source)
 		local out = {}
 
@@ -32,23 +31,18 @@ function M.setup()
 		return out
 	end
 
-	-- Returns the current fake build number as the 4th return value (the one
-	-- Brain.lua reads via  select(4, GetBuildInfo()) >= 120005).
+	-- The build number is the 4th return value, tested as select(4, GetBuildInfo()) >= 120005.
 	_G.GetBuildInfo = function()
 		return "0.0.0", "0", "Jan 1 2020", _buildNumber
 	end
 
-	-- Instance type
-	-- Returns (isInInstance, instanceType). instanceType values: "none", "party", "raid",
-	-- "scenario", "arena", "pvp". Default "none" = PvE overworld (not in any instance).
+	-- instanceType is "none", "party", "raid", "scenario", "arena", or "pvp".
 	_G.IsInInstance = function()
 		return _instanceType ~= "none", _instanceType
 	end
 
-	-- Time
 	_G.GetTime = function() return _time end
 
-	-- Unit queries
 	_G.UnitExists = function(unit)
 		return _unitExists[unit] == true
 	end
@@ -66,10 +60,9 @@ function M.setup()
 		return _pvpUnits[unit] == true
 	end
 
-	-- UnitCanAttack: default false (units are friendly) unless overridden per test.
+	-- Units are friendly unless a test overrides this.
 	_G.UnitCanAttack = function(a, b) return false end
 
-	-- UnitIsUnit: simple string equality (sufficient for tests).
 	_G.UnitIsUnit = function(a, b) return a == b end
 
 	-- Group and roles. A unit counts as grouped once it has been given a role, which is the
@@ -82,7 +75,7 @@ function M.setup()
 		return _inRaid
 	end
 
-	-- A vehicle takes over the player unit; only the player can be in one here.
+	-- Only the player can be in a vehicle here.
 	_G.UnitHasVehicleUI = function(unit)
 		return unit == "player" and _inVehicle
 	end
@@ -91,27 +84,21 @@ function M.setup()
 		return _roles[unit] or "NONE"
 	end
 
-	-- UnitGUID: returns an override if set, otherwise the unit string itself.
-	-- Each unit is unique by default; use M.setUnitGUID to alias two units to
-	-- the same player (simulating "raid2" and "party1" being the same person).
+	-- Each unit gets a unique GUID unless setUnitGUID aliases two of them to one player.
 	_G.UnitGUID = function(unit)
 		return _unitGuids[unit] or unit
 	end
 
-	-- UnitIsConnected: default true (all units online unless overridden).
 	_G.UnitIsConnected = function(unit) return true end
 
-	-- Aura filter
-	-- Returns true when the aura is NOT present under that filter (i.e. filtered out).
-	-- Default: HELPFUL filters pass (not filtered out); HARMFUL|CROWD_CONTROL is filtered
-	-- out by default (auras are not CC unless explicitly marked with setAuraFiltered(..., false)).
+	-- Returns true when the aura is absent under that filter.
 	_G.C_UnitAuras = {
 		IsAuraFilteredOutByInstanceID = function(unit, id, filter)
 			local key = unit .. ":" .. tostring(id) .. ":" .. filter
 			local v = _auraFiltered[key]
 			if v ~= nil then return v == true end
-			-- Both CC filter variants default to filtered-out (not CC) so tests don't need to
-			-- explicitly exclude non-CC auras.  Use setAuraFiltered(..., false) to mark as CC.
+			-- Both CC filter variants default to filtered out, so setAuraFiltered(..., false) is what
+			-- marks an aura as CC.
 			-- HARMFUL|CROWD_CONTROL: hostile self-CCs (e.g. Dispersion).
 			-- HELPFUL|CROWD_CONTROL: friendly CCs applied to an ally (e.g. Time Stop).
 			if filter == "HARMFUL|CROWD_CONTROL" or filter == "HELPFUL|CROWD_CONTROL" then return true end
@@ -119,28 +106,25 @@ function M.setup()
 		end,
 	}
 
-	-- Secret values
 	-- In a test environment all values are non-secret unless explicitly marked.
 	_G.issecretvalue = function(v)
 		return _secretValues[v] == true
 	end
 
-	-- wipe: WoW global that empties a table in-place (all keys set to nil).
+	-- WoW's global for emptying a table in place.
 	_G.wipe = function(t)
 		for k in next, t do t[k] = nil end
 		return t
 	end
 
-	-- Timer: execute deferred callbacks synchronously
+	-- Deferred callbacks run straight away.
 	_G.C_Timer = {
 		After = function(delay, fn) fn() end,
 	}
 
-	-- The client's millisecond clock, which the background sweep bounds a tick against. Frozen:
-	-- nothing in a test takes measurable time, so no tick ever runs out of budget.
+	-- The clock the background sweep bounds a tick against. Frozen, so no tick runs out of budget.
 	_G.debugprofilestop = function() return 0 end
 
-	-- Frame stub
 	_G.CreateFrame = function(frameType, name, parent)
 		local f = {}
 		local _events = {}
@@ -168,8 +152,6 @@ function M.setup()
 	end
 end
 
--- Control helpers
-
 function M.setTime(t)          _time = t          end
 function M.advanceTime(dt)     _time = _time + dt end
 function M.getTime()           return _time       end
@@ -193,15 +175,14 @@ function M.setFeignDeath(unit, state)
 	_feignDeath[unit] = state == true
 end
 
----Mark aura `id` on `unit` as filtered out (= absent) for the given filter string.
----Passing filtered=false (or omitting) makes it visible (= present).
+---Mark aura `id` on `unit` as absent for the given filter string.
+---Passing filtered=false or omitting it makes the aura present.
 function M.setAuraFiltered(unit, id, filter, filtered)
 	local key = unit .. ":" .. tostring(id) .. ":" .. filter
 	_auraFiltered[key] = filtered ~= false and filtered ~= nil
 end
 
----Mark a Lua value as a secret (issecretvalue returns true for it) and hand it back, so it can
----be marked inline where it is used.
+---Mark a Lua value as secret and hand it back, so it can be marked inline where it is used.
 function M.markSecret(v)
 	_secretValues[v] = true
 	return v
@@ -220,8 +201,7 @@ function M.setUnitExists(unit, exists)
 	_unitExists[unit] = exists ~= false
 end
 
----Override the GUID for a unit.  Pass the same guid to two unit strings to
----simulate a single player appearing under multiple IDs (e.g. "raid2"/"party1").
+---Pass the same guid to two unit strings to simulate one player under several unit IDs.
 function M.setUnitGUID(unit, guid)
 	_unitGuids[unit] = guid
 end
@@ -256,8 +236,6 @@ function M.clearRoles()
 	_inVehicle = false
 end
 
----Set the instance type returned by IsInInstance().
----Values: "none" (overworld/PvE), "party", "raid", "scenario", "arena", "pvp".
 function M.setUnitPvp(unit, state)
 	_pvpUnits[unit] = state == true or nil
 end
@@ -268,8 +246,6 @@ function M.setInstanceType(t)
 		return t ~= "none", t
 	end
 end
-
--- Reset
 
 function M.reset()
 	_time          = 0

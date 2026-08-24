@@ -21,30 +21,21 @@ addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
 local M = {}
 addon.Modules.HealerCrowdControl.Display = M
 
--- Healer CC icons render through one AuraContainer per healer, and the warning text through a
--- second, label-only container per healer (the engine shows the label button while a CC aura is
--- present, so no aura read is needed). Every healer's label anchors to the same point: identical
--- overlapping texts read as one label, which acts as an OR across healers. The IconSlotContainer
--- is kept for test mode.
---
--- There is no battleground 40-yard range gate: skipping merely-far healers would have to happen
--- while rendering, and rendering is the engine's job. Every healer in the raid gets a container,
--- not just the nearby ones. Healers outside the player's visible world are the exception:
--- ApplyUnitGates zeroes their budgets, because the engine cannot filter their auras at all
--- (see Core/AuraFilters).
+-- Healer CC icons render through one AuraContainer per healer, with a second label-only container
+-- carrying the warning text. The IconSlotContainer is kept for test mode.
 
 -- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
 local MASQUE_GROUP = "Healer Crowd Control"
--- Ceiling on the per-healer icon budget, and the one label slot: one CC aura is enough to warrant
--- the text. Containers are built at the ceiling, so the slider only re-budgets what is there.
 -- One look per module, so one key each for the icons and for the whole parked-entry test.
 local PARKED_STYLE_KEY = "HealerCcParkedStyle"
 local PARKED_OPTIONS_KEY = "HealerCcParkedOptions"
+-- Containers are built at this ceiling, so the slider only re-budgets what is already there.
 local MAX_CC_ICONS = 5
+-- One CC aura is enough to warrant the warning text.
 local LABEL_MAX_ICONS = 1
 local testModeActive = false
--- Sorted healer-unit scratch so the display chain has a stable order (pairs order would let the
--- healer rows swap places between refreshes).
+-- Sorted healer-unit scratch so the display chain has a stable order. In pairs order the healer
+-- rows would swap places between refreshes.
 local healerOrderScratch = {}
 
 ---@type Db
@@ -89,8 +80,8 @@ local function UpdateAnchorSize()
 
 	local options = db.Modules.HealerCrowdControl
 	local iconSize = tonumber(options.Icons.Size) or 32
-	-- The anchor's own fontstring stands in for the live text: the label containers carry the
-	-- same string at the same size, and their (possibly secret) frames must never be read.
+	-- The anchor's own fontstring stands in for the live text. The label containers carry the same
+	-- string at the same size, and their frames may be secret, so they must never be read.
 	local text = healerAnchor.HealerWarning
 	local stringWidth = text and text:GetStringWidth() or 0
 	local showText = options.ShowWarningText
@@ -101,9 +92,9 @@ local function UpdateAnchorSize()
 	healerAnchor:SetSize(width, height)
 end
 
----Lays the per-healer aura containers out in a chain under the anchor. Chaining containers to
----each other avoids reading their (possibly secret) sizes; empty containers collapse so the row
----only occupies space for healers that are actually CC'd.
+---Lays the per-healer aura containers out in a chain under the anchor. Chaining containers to each
+---other avoids reading their sizes, which may be secret, and an empty container collapses so the
+---row only takes space for healers that are actually CC'd.
 local function LayoutHealerDisplays()
 	local options = db.Modules.HealerCrowdControl
 	local spacing = options.IconSpacing or 2
@@ -185,7 +176,7 @@ local function RefreshHealerDisplays()
 	for _, item in pairs(activePool) do
 		local display = item.Display
 		if display then
-			-- One pass for all three values; the individual setters would each restyle every button.
+			-- One pass for all three values, so the buttons are walked once.
 			display:ApplyConfig(iconSize, options.IconSpacing or 2, BuildStyle(options))
 			display:SetEnabled(options.Icons.Enabled ~= false)
 			display:SetShown(options.Icons.Enabled ~= false and not testModeActive)
@@ -200,13 +191,11 @@ local function RefreshHealerDisplays()
 	end
 
 	-- Parked entries converge on the current look too, so a healer joining under restriction can
-	-- reuse one that already matches (ItemCarriesOptions) instead of forcing a mid-combat build.
-	-- A handful at most, all hidden, so on the spot rather than staggered. Gated on the options
-	-- actually moving, since this runs on every roster event; and skipped, with the latch left
-	-- stale, while restricted - the restyle could not land, an unchanged entry may still match
-	-- as it is, and the next unrestricted refresh retries.
-	-- The label's font rides in the same stamp: it is baked into the parked entries too, and a
-	-- change to it has to convert them exactly like a change to the icons.
+	-- reuse one that already matches instead of forcing a mid-combat build. A handful at most, all
+	-- hidden, so on the spot rather than staggered. Gated on the options actually moving, since this
+	-- runs on every roster event, and skipped with the latch left stale while restricted, where the
+	-- restyle could not land and the next unrestricted refresh retries.
+	-- The label's font rides in the same stamp, since it is baked into the parked entries too.
 	optionsStamp:Begin(PARKED_OPTIONS_KEY)
 	optionsStamp:Add(auraContainerDisplay:GetStyleGeneration(PARKED_STYLE_KEY, BuildStyle(options),
 		iconSize, options.IconSpacing or 2))
@@ -257,13 +246,13 @@ local function EnableWatchers()
 	end
 end
 
----Budgets one healer's containers for the unit's current state. Outside the player's visible
----world the engine stops evaluating the CROWD_CONTROL token and both containers fill with
----unrelated debuffs (the spell-id map is identity-gated off on assistable units, so the token is
----the only filter left), so a healer that far away shows nothing - icons and warning text both.
----Visibility has no event of its own, which is why the unit state poller re-asks this.
----Urgent: the unit a gate zeroes emits no aura events, so a budget flip parked for combat would
----keep showing the garbage until regen.
+---Budgets one healer's containers for the unit's current state. The spell-id map is identity-gated
+---off on assistable units, so the CROWD_CONTROL token is the only filter left, and outside the
+---player's visible world the engine stops evaluating it and both containers fill with unrelated
+---debuffs. A healer that far away shows nothing, icons and warning text both. Visibility has no
+---event of its own, which is why the unit state poller re-asks this.
+---Urgent, because the unit a gate zeroes emits no aura events, so a budget flip parked for combat
+---would keep showing the garbage until regen.
 ---@param item HealerWatchEntry
 local function ApplyUnitGates(item)
 	local visible = units:IsVisible(item.Unit)
@@ -278,6 +267,8 @@ local function ApplyUnitGates(item)
 	end
 end
 
+-- Every healer in the raid gets a container. Skipping the far ones would have to happen while
+-- rendering, which is the engine's job.
 local function RefreshHealers()
 	-- Everyone goes back to the discard pool first, so a healer that stayed is re-acquired
 	-- rather than duplicated.
@@ -287,7 +278,6 @@ local function RefreshHealers()
 	local options = db.Modules.HealerCrowdControl
 	local restricted = wowEx:IsAuraStylingRestricted()
 
-	-- Re-add healers from the new set
 	for _, healer in ipairs(healers) do
 		local item = discardPool[healer]
 
@@ -304,11 +294,10 @@ local function RefreshHealers()
 		end
 
 		-- Container entries are interchangeable: same groups, retargeted by SetUnit. Taking any
-		-- parked one caps the display count at the largest healer set seen at once, where the
-		-- same-token match alone builds a new display for every token that ever held a healer
-		-- (containers can never be freed). While styling is restricted only an entry already
-		-- carrying the current look is taken: a reused one cannot be restyled, so a mismatch
-		-- would keep its old look for the whole match.
+		-- parked one caps the display count at the largest healer set seen at once, and a
+		-- container can never be freed. While styling is restricted only an entry already
+		-- carrying the current look is taken, since a reused one cannot be restyled and a
+		-- mismatch would keep its old look for the whole match.
 		if not item then
 			for token, parked in pairs(discardPool) do
 				if not restricted or ItemCarriesOptions(parked, options) then
@@ -352,8 +341,8 @@ local function RefreshHealers()
 				),
 			}
 			-- The warning text: a label-only container on the same CC filter, so the engine
-			-- shows the text exactly while this healer has a CC aura. maxIcons 1 - one aura is
-			-- enough to warrant the label, and more would repeat it.
+			-- shows the text exactly while this healer has a CC aura. One aura is enough to
+			-- warrant the label, and more would repeat it.
 			item.LabelDisplay = auraContainerDisplay:New(
 				healerAnchor,
 				healer,
@@ -363,7 +352,8 @@ local function RefreshHealers()
 				MASQUE_GROUP,
 				{ Label = L["Healer in CC!"], Style = BuildLabelStyle(options) }
 			)
-			-- Every healer's label lands on this same point on purpose - see the header comment.
+			-- Every healer's label lands on this same point: identical overlapping texts read as
+			-- one label, which acts as an OR across healers.
 			item.LabelDisplay.Frame:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
 			activePool[healer] = item
 			-- The groups above are built with the full budget; ask the gate right away, or a
@@ -400,7 +390,7 @@ local function CreateFrames()
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
 	-- The template's face is the base Apply keeps, so every language renders when no font is
-	-- picked (e.g. Chinese).
+	-- picked.
 	fontUtil:Apply(text, options.Font.Size, options.Font.Flags)
 	text:SetText(L["Healer in CC!"])
 	text:SetTextColor(1, 0.1, 0.1)
@@ -410,7 +400,7 @@ local function CreateFrames()
 
 	healerAnchor.HealerWarning = text
 
-	-- give the anchor an initial size so masque borders don't go crazy
+	-- An initial size, so the Masque borders lay out correctly.
 	UpdateAnchorSize()
 
 	-- Icons sit at the bottom of the anchor, text sits at the top.
@@ -478,9 +468,9 @@ function M:EnsureFrames()
 
 	if testModeActive then
 		-- Test icons render through the IconSlotContainer and the test text through the anchor's
-		-- own fontstring; the live displays are hidden so real and fake don't mix. They are
-		-- restyled on the way, or a look they were never told about - a font swapped while the
-		-- test was up - would be waiting on them when the test stops.
+		-- own fontstring, and the live displays are hidden so real and fake don't mix. They are
+		-- restyled on the way, or a font swapped while the test was up would be waiting on them
+		-- when the test stops.
 		RefreshHealerDisplays()
 
 		for _, item in pairs(activePool) do
@@ -520,7 +510,7 @@ function M:ApplyOptions(options)
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 	iconsContainer:SetSpacing(options.IconSpacing or 2)
 
-	-- The live warning text renders through the per-healer label containers; the anchor's own
+	-- The live warning text renders through the per-healer label containers. The anchor's own
 	-- fontstring only serves the test-mode preview.
 	if options.ShowWarningText and testModeActive then
 		healerAnchor.HealerWarning:Show()

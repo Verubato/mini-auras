@@ -2,37 +2,10 @@
 local _, addon = ...
 local units = addon.Utils.UnitUtil
 
--- The states that change with no event to announce them, polled because there is no alternative:
--- a friendly unit turning attackable at duel start (or back at the end), a unit leaving or
--- re-entering the player's visible world, a unit becoming charmed (mind control flips it to the
--- other team's control), and whether the player can assist it. All decide what the engine will do
--- with an aura filter, so a display that ignores them shows the wrong thing until something
--- unrelated refreshes it.
---
--- Assistability is polled alongside the rest because it IS the identity gate: a spell-ID filter
--- applies to helpful auras only on a unit the player can assist and to harmful auras only on one
--- it cannot (see Core/Auras/AuraFilters). A unit that changes sides keeps the groups it was built
--- with, and the ones whose map the gate now skips fall back to their filter string alone - which
--- for the disarm group is every non-CC debuff the unit has.
---
--- The baseline is per token, not per subscriber. Modules watch overlapping sets - the three raid
--- frame modules all watch the same group units, and the two nameplate modules the same plate
--- tokens - so a baseline per subscriber read the same unit three times a tick. Here a token is
--- read once and the flip is handed to every subscriber watching it; a subscriber holds only its
--- membership. Baselines are reference counted so one subscriber dropping a token cannot strand
--- another with a missing baseline, which would read as a flip on the next poll.
---
--- Enemy status is read everywhere, not just outdoors where duels happen: mind control flips a
--- unit to the other team's side mid-arena, and that flip is the only signal a display gets that
--- the identity gate now answers the other way for it.
---
--- The poll is the backstop, not the whole story. Some of these moves do announce themselves -
--- a unit changing sides fires UNIT_FACTION, its flags UNIT_FLAGS, a phase change UNIT_PHASE -
--- and none of them answers the question on its own, since the same events fire for units nothing
--- watches and stay silent when a unit simply walks out of range. So they are not read for their
--- payload: any of them just brings the next poll forward to the following frame, which turns a
--- mind control landing on a plate from a quarter second of wrong icons into one frame of them.
--- Coalesced, because getting controlled fires UNIT_FACTION once per unit in the group.
+-- The states that change with no event to announce them: a friendly unit turning attackable at a
+-- duel, a unit leaving or re-entering the visible world, a unit becoming charmed, and whether the
+-- player can assist it. All four decide what the engine does with an aura filter, so a display that
+-- ignores them shows the wrong thing until something unrelated refreshes it.
 
 ---@class UnitStatePoller
 local M = {}
@@ -41,13 +14,30 @@ addon.Core.UnitStatePoller = M
 local POLL_INTERVAL = 0.25
 -- Events that can only ever mean "read the states again now". Registered while the poll runs and
 -- dropped with it, so an addon that watches nothing pays nothing for them.
+--
+-- None of them answers the question on its own, since they fire for units nothing watches and stay
+-- silent when a unit walks out of range. They are not read for their payload: one just brings the
+-- next poll forward a frame, turning a mind control landing on a plate from a quarter second of
+-- wrong icons into one frame of them.
 local WAKE_EVENTS = { "UNIT_FACTION", "UNIT_FLAGS", "UNIT_PHASE" }
 
--- Shared baselines, keyed by unit token and alive while any subscriber watches the token.
+-- Shared baselines, keyed by unit token and alive while any subscriber watches the token. Modules
+-- watch overlapping sets, so a baseline per subscriber read the same unit three times a tick. Here
+-- a token is read once and the flip is handed to every subscriber watching it.
+--
+-- Enemy status is read everywhere, not just outdoors where duels happen: mind control flips a unit
+-- to the other team mid-arena, and that flip is the only signal a display gets that the identity
+-- gate now answers the other way for it.
 local enemyState = {}
 local visibleState = {}
 local charmedState = {}
+-- Assistability is the identity gate: a spell-ID filter applies to helpful auras only on a unit the
+-- player can assist, and to harmful auras only on one it cannot (see Core/Auras/AuraFilters). A unit
+-- that changes sides keeps the groups it was built with, and one whose map the gate now skips falls
+-- back to its filter string alone, which for the disarm group is every non-CC debuff it has.
 local assistState = {}
+-- Reference counted, so one subscriber dropping a token cannot strand another with a missing
+-- baseline, which would read as a flip on the next poll.
 local tokenRefs = {}
 -- Reused buffers, each read through a count rather than #: the entries past it are whatever the
 -- last write left there.
@@ -66,7 +56,8 @@ local activeCount = 0
 local subscriberActive = {}
 local ticker
 local wakeFrame
--- One brought-forward poll in flight at a time; see the header.
+-- One brought-forward poll in flight at a time, since getting controlled fires UNIT_FACTION once
+-- per unit in the group.
 local wakeQueued = false
 
 ---@class UnitStatePollerSubscriber

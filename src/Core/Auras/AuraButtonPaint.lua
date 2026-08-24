@@ -4,11 +4,6 @@ local glowStyles = addon.Core.GlowStyles
 
 -- What colour a 12.1 aura button's ring, glow and fill take, and which of those the engine paints
 -- rather than the addon.
---
--- Split out of AuraContainerDisplay because the rule is subtle and self-contained: an aura's own
--- dispel type is unreadable here, so the border and glow textures are REGISTERED with the engine
--- and it tints them, while a group carrying its own category colour opts out and is painted
--- directly. Everything below is that one decision.
 
 ---@class AuraButtonPaint
 local M = {}
@@ -16,7 +11,7 @@ local M = {}
 addon.Core.AuraButtonPaint = M
 
 ---Applies a glow style's asset to a button's glow frame. Only re-skins when the style actually
----changed - this runs per button on every restyle.
+---changed, since this runs per button on every restyle.
 ---@param widgets table
 ---@param button table
 ---@param styleName string
@@ -41,8 +36,8 @@ function M:ApplyGlowStyle(widgets, button, styleName, size)
 	end
 end
 
----Whether this button's glow shows at all. A group may carry its own answer, so one display can
----glow a single category and leave the rest plain; without one the display-wide switch stands.
+---Whether this button's glow shows at all. A group's own answer wins over the display-wide switch,
+---so one display can glow a single category and leave the rest plain.
 ---@param instance AuraContainerDisplay
 ---@param widgets table
 ---@return boolean
@@ -57,11 +52,9 @@ function M:GlowWanted(instance, widgets)
 end
 
 ---The tint a button's border, glow and bar fill take. The group's own colour wins over the
----display-wide one: alerts colour by category, while a single-category display just takes the
----user's picked colour.
----The button holds its group rather than a copy of the colour, so SetGroupGlowColor can recolour
----a display that already exists - buttons can only be built once, and rebuilding one to change a
----tint is impossible while auras are secret.
+---display-wide one, so alerts can colour by category.
+---The button holds its group rather than a copy of the colour so SetGroupGlowColor can recolour a
+---display that already exists. A button cannot be rebuilt while auras are secret.
 ---@param instance AuraContainerDisplay
 ---@param widgets table
 ---@return number?, number?, number?
@@ -78,14 +71,13 @@ function M:ButtonColor(instance, widgets)
 end
 
 ---Registers (or unregisters) the button's dispel-type textures. The engine tints registered
----textures by dispel type and drives their per-aura visibility (PreserveAsset style keeps our
----asset and only colours it). The border participates when ColorByDispelType is on; the glow's
----texture ALSO registers when the glow is enabled, which is how the glow inherits the border
----colour - the legacy paths tinted the glow with the aura's dispel colour, which is unreadable
----here, so the engine applies it instead. showWithoutDispelType keeps the glow visible for
----physical CC, tinted with the "None" palette colour like legacy.
----The border is a list rather than one texture because a bar's is built from four flat edges;
----an icon's is a single ring asset, so its list holds one.
+---textures by dispel type and drives their per-aura visibility, and the PreserveAsset style leaves
+---our asset alone so it only colours it.
+---The border registers when ColorByDispelType is on, and the glow's texture registers with it so
+---the glow inherits the border colour. The aura's own dispel colour cannot be read here, so only
+---the engine can apply it.
+---The border is a list because a bar's is built from four flat edges, while an icon's is a single
+---ring asset.
 ---@param instance AuraContainerDisplay
 ---@param button table
 ---@param widgets table
@@ -93,14 +85,14 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	local style = instance.Style
 	local borders = widgets.BorderTextures
 	local group = widgets.Group
-	-- A group carrying its own tint opts out of dispel colouring: the engine's palette has nothing
-	-- to say about a buff, so the categories the user picked a colour for (defensives, importants)
-	-- keep that colour while CC still takes the dispel type's.
+	-- A group carrying its own tint opts out of dispel colouring. The engine's palette has nothing
+	-- to say about a buff, so the categories the user picked a colour for keep that colour while CC
+	-- still takes the dispel type's.
 	local tinted = group ~= nil and group.GlowColor ~= nil
 	local wantBorder = style.ColorByDispelType == true and borders ~= nil and not tinted
-	-- Whether the border also shows on auras with NO dispel type (stuns, disarms), tinted with the
-	-- "None" palette colour like the glow below. Opt-in per display: on a CC-only group every aura
-	-- deserves the ring, but on a generic debuff display it would ring every physical debuff.
+	-- Whether the border also shows on auras with no dispel type, tinted with the "None" palette
+	-- colour. It is opt-in per display because on a generic debuff display it would ring every
+	-- physical debuff.
 	local wantTypelessBorder = wantBorder and style.BorderWithoutDispelType == true
 	local wantGlowTint = wantBorder and M:GlowWanted(instance, widgets) and widgets.Glow ~= nil
 	-- A tinted group draws the border the dispel registration would have drawn, in its own colour,
@@ -108,9 +100,8 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	local wantPlainBorder = style.Border == true or (tinted and style.ColorByDispelType == true)
 	local colorR, colorG, colorB = M:ButtonColor(instance, widgets)
 
-	-- Compared field by field rather than through a joined string: this runs per button on
-	-- every restyle, and the retry ticker restyles every stale display once a second. The colour
-	-- is part of it so a colour-only change still repaints.
+	-- This runs per button on every restyle, and the retry ticker restyles every stale display once
+	-- a second. The colour is part of the check so a colour-only change still repaints.
 	if wantBorder == widgets.DispelBorder
 		and wantTypelessBorder == widgets.DispelTypelessBorder
 		and wantGlowTint == widgets.DispelGlowTint
@@ -140,9 +131,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 			})
 		end
 	elseif borders then
-		-- Not registered for dispel colouring, so their visibility is ours to drive: draw the
-		-- plain border only when the module asked for one, tinted with the same colour the glow
-		-- would take.
+		-- Not registered for dispel colouring, so their visibility is ours to drive.
 		for _, texture in ipairs(borders) do
 			if wantPlainBorder then
 				texture:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
@@ -154,6 +143,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	end
 
 	if wantGlowTint then
+		-- showWithoutDispelType keeps the glow on physical CC, tinted with the "None" palette colour.
 		button:AddDispelTypeTexture(widgets.Glow.Texture, {
 			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
 			showWhenHarmful = true,
@@ -161,11 +151,8 @@ function M:ApplyDispelTextures(instance, button, widgets)
 			showWithoutDispelType = true,
 		})
 	elseif widgets.Glow then
-		-- Unregistered again: restore the glow's own colour and make sure the engine's
-		-- last hidden state doesn't linger on the texture. GlowColor is the group's category
-		-- tint (e.g. red importants, green defensives) and is nil unless the caller asked for
-		-- one, in which case this is the plain white glow. Dispel colouring wins when both are
-		-- on, since that branch hands the texture to the engine.
+		-- Restore the glow's own colour, and show it so the engine's last hidden state cannot
+		-- linger on the texture.
 		widgets.Glow.Texture:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
 		widgets.Glow.Texture:Show()
 	end

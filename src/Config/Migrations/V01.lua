@@ -59,7 +59,6 @@ function M:UpgradeToVersion1(vars)
 end
 
 function M:UpgradeToVersion2(vars)
-	-- allow nil vars.Version as the 1st version didn't have one
 	if vars.Version ~= 1 then
 		return false
 	end
@@ -76,7 +75,6 @@ function M:UpgradeToVersion3(vars)
 		return false
 	end
 
-	-- made some strucure changes
 	local v3Defaults = {
 		Version = 3,
 
@@ -601,7 +599,6 @@ function M:UpgradeToVersion12(vars)
 	table.insert(vars.WhatsNew, " - Separated CC and important spell positions on nameplates.")
 	vars.NotifiedChanges = false
 
-	-- clean up old values
 	mini:CleanTable(vars, v12Defaults, true, true)
 	vars.Version = 12
 

@@ -21,7 +21,7 @@ function M:GW2UIFrames(visibleOnly, frames)
 	for _, header in ipairs(GW2_ADDON.GridHeaders) do
 		for _, child in ipairs(M:Children(childScratch, header)) do
 			if not M:AppendUnitChild(child, visibleOnly, frames, seen) then
-				-- sub-group frame - walk one level deeper
+				-- A sub-group frame, so walk one level deeper.
 				M:AppendUnitChildren(grandchildScratch, child, visibleOnly, frames, seen)
 			end
 		end

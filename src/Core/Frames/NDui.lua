@@ -27,7 +27,6 @@ function M:NDuiFrames(visibleOnly, frames)
 
 	wipe(seen)
 
-	-- Party header
 	AddHeader(_G["oUF_Party"], visibleOnly, frames)
 
 	-- Raid: simple mode uses oUF_Raid; per-group mode uses oUF_Raid1..8

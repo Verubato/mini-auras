@@ -18,8 +18,8 @@ local WATCHED_UNITS = {
 
 ---@type table<string, table>
 local eventFrames = {}
--- One kick per cast: the stop events fire more than once for the same interrupted cast, so the
--- first one to arrive claims it and the rest are ignored until the unit starts casting again.
+-- The stop events fire more than once for the same interrupted cast, so the first to arrive
+-- claims it and the rest are ignored until the unit starts casting again.
 ---@type table<string, boolean>
 local kickedByUnits = {}
 ---@type fun()[]

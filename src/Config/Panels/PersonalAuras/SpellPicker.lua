@@ -22,7 +22,7 @@ function ui.CreateSpellPicker(parent)
 	mini:FlattenEditBox(box)
 	box:SetSize(PICKER_WIDTH, PICKER_HEIGHT)
 	box:SetAutoFocus(false)
-	-- Per picker, NOT shared: the rows are children of this picker's own popup, so a second
+	-- Per picker rather than shared: the rows are children of this picker's own popup, so a second
 	-- picker reusing them would show its suggestions inside the first one's popup.
 	local suggestionRows = {}
 
@@ -206,7 +206,7 @@ function ui.CreateSpellPicker(parent)
 	box:SetScript("OnEditFocusLost", function()
 		UpdatePlaceholder()
 
-		-- A click pulls focus on mouse DOWN, before the row sees it on mouse up. Hiding here
+		-- A click pulls focus on mouse down, before the row sees it on mouse up. Hiding here
 		-- would take the row out from under the cursor. The row closes the popup itself.
 		if popup:IsMouseOver() then
 			return

@@ -20,37 +20,21 @@ addon.Modules.Portrait = addon.Modules.Portrait or {}
 local M = {}
 addon.Modules.Portrait.Display = M
 
--- A portrait shows ONE icon, but which aura wins has to be decided by the engine (aura presence
--- is secret), so it gets FIVE single-icon containers stacked on top of each other - one per
--- category, cc / disarm / big defensive / external defensive / important - plus a sixth under
--- them on the player's own portrait for the user's spell list. Priority rides on frame levels:
--- kick (IconSlotContainer, topmost) > cc > disarm > big > external > important > custom. A
--- higher-priority container's button simply covers the ones below it, and a container with no
--- matching aura hides its own button secretly, revealing the next one down.
--- The levels have to differ: same-level siblings draw in an ARBITRARY order (verified live
--- 2026-08-07, WoW picked a random winner), so priority cannot ride on creation order.
---
--- Not AuraSlots, despite those being the documented fit for "one icon, top-priority aura":
--- a 4-slot portrait container rendered NOTHING on the 12.1 PTR - no errors, AddAuraSlot existed
--- and returned buttons, and groups worked on the same client. No known addon uses slots, so
--- there is no outside verification either. RULE: don't reach for AuraSlots until they are proven
--- on a live build; a group with maxFrameCount = 1 is the same thing on the verified API.
+-- A portrait shows one icon and aura presence is secret, so the engine has to pick the winner.
+-- Each category gets its own single-icon container and they stack on top of each other.
 
--- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
--- the ones below it, and an empty one hides its button secretly. The filters are the shared
--- partitioned ones, so an aura that qualifies for several categories only ever lands in the
--- highest of them.
+-- Priority stack for the portrait icon, lowest first. A higher-priority display covers the ones
+-- below it, and an empty one hides its button secretly. The filters are the shared partitioned
+-- ones, so an aura that fits several categories only ever lands in the highest of them.
 local PORTRAIT_CATEGORIES = { "Important", "ExternalDefensive", "BigDefensive", "Disarm", "CrowdControl" }
--- Background walker declaring the aura groups of the displays as they are built; see the
--- DeferGroups note where they are created. Urgent: a portrait is on screen already, unlike the
--- lanes preparing spares nobody has asked for.
+-- Background walker declaring the aura groups of the displays as they are built. It is urgent
+-- because a portrait is on screen already.
 local buildSweep = sweep:New(true)
 
--- The user's own spell list, drawn under every flagged category so a stun or a defensive always
--- covers it. Player only, and buffs only: the engine honours a helpful spell-id map only on a
--- unit you can assist, and the harmful side of that rule is the other way round, so a debuff
--- list would be dropped and the layer would match every debuff on you. Only the player token is
--- always assistable, which is also what keeps this clear of the zone-transfer gate leak.
+-- The user's own spell list. The engine honours a helpful spell-id map only on a unit you can
+-- assist, and a harmful one only where you cannot, so a debuff list would be dropped and the
+-- layer would match every debuff on you. Only the player token is always assistable, which is
+-- also what keeps this clear of the zone-transfer gate leak.
 local CUSTOM_UNIT = "player"
 local CUSTOM_GROUP_KEY = "portraitcustom"
 local CUSTOM_FILTER = "HELPFUL"
@@ -72,8 +56,8 @@ local STRATA_BELOW = {
 ---@type Db
 local db
 local testModeActive = false
--- True whenever the module is off or paused; the live render paths bail on it. Starts true:
--- the module is not enabled until its first Refresh.
+-- True whenever the module is off or paused, and the live render paths bail on it. It starts true
+-- because the module is not enabled until its first Refresh.
 local suspended = true
 ---@type IconSlotContainer[]
 local containers = {}
@@ -92,7 +76,7 @@ end
 ---straight to SetStyle.
 ---@return AuraDisplayStyle
 local function BuildPortraitStyle()
-	-- No Icons options table here: the cooldown direction lives on the module options root.
+	-- The cooldown direction lives on the module options root, so there is no Icons table to pass.
 	local style = auraContainerDisplay:BuildStandardStyle(nil)
 	style.ReverseCooldown = db.Modules.Portrait.ReverseCooldown or false
 	style.ShowTooltips = false
@@ -101,7 +85,7 @@ local function BuildPortraitStyle()
 end
 
 ---The disarm layer's only real filter is its spell-ID map, which the engine skips for debuffs on
----assistable units - the layer would then show whatever debuff is newest. Budgeted away while the
+---assistable units, leaving the layer showing whatever debuff is newest. Budgeted away while the
 ---occupant is assistable, and re-checked whenever the token's occupant changes.
 ---@param auraDisplay { DisarmDisplay: AuraContainerDisplay }
 ---@param unit string
@@ -109,9 +93,9 @@ local function ApplyDisarmBudget(auraDisplay, unit)
 	auraDisplay.DisarmDisplay:SetMaxIcons(auraFilters.GroupKey.Disarm, units:CanAssist(unit) and 0 or 1)
 end
 
----One display's next group, from the walker. A portrait's displays are created with none of
----them: a unit frame turning up builds the whole stack in one pass, and each group costs a batch
----of buttons the engine allocates on the spot.
+---One display's next group, from the walker. A portrait's displays are created with none of them
+---because a unit frame turning up builds the whole stack in one pass, and each group costs a
+---batch of buttons the engine allocates on the spot.
 ---@param display AuraContainerDisplay
 ---@return SweepVerdict?
 local function DeclareNextGroup(display)
@@ -121,13 +105,13 @@ local function DeclareNextGroup(display)
 end
 
 ---Every id the custom list covers, each expanded to the ids sharing its name, because the aura
----the game applies is often not the one in the spellbook. Fresh table each call: the engine keeps
----the reference it is handed.
+---the game applies is often not the one in the spellbook. A fresh table each call, since the
+---engine keeps the reference it is handed.
 ---@return table? candidateFilters nil while the list is empty.
 local function BuildCustomFilters()
 	local spells = db.Modules.Portrait.CustomSpells
 
-	-- next, not #: the ticked spells are a hash, whose length is always zero.
+	-- The ticked spells are a hash, whose length is always zero.
 	if not spells or next(spells) == nil then
 		return nil
 	end
@@ -159,34 +143,29 @@ local function ApplyCustomSpells(auraDisplay)
 	display:SetMaxIcons(CUSTOM_GROUP_KEY, filters and 1 or 0)
 end
 
----Builds the layered single-icon display stack over a portrait. Each display is
----parented to the kick container's frame so it follows the per-addon frame level adjustments the
----attach functions apply afterwards (child levels shift with the parent).
----@param kickFrame table The kick IconSlotContainer's frame (already anchored over the portrait).
+---Builds the layered single-icon display stack over a portrait. Each display is parented to the
+---kick container's frame so it follows the per-addon frame level adjustments the attach functions
+---apply afterwards.
+---@param kickFrame table The kick IconSlotContainer's frame, already anchored over the portrait.
 ---@param unit string
 ---@param texCoord table? {left, right, top, bottom} icon crop, per unit-frame addon.
 ---@param mask table? MaskTexture for round portraits (Blizzard frames).
 ---@param iconSize number
 ---@return { Displays: AuraContainerDisplay[], DisarmDisplay: AuraContainerDisplay, CustomDisplay: AuraContainerDisplay? }
 local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSize)
-	-- One single-icon aura GROUP container per category. AuraSlots would be the natural fit,
-	-- but they silently failed to render on the 12.1 PTR and no known addon exercises them -
-	-- single-icon groups are the same thing ("slots" are documented as groups with
-	-- maxFrameCount 1) built on the verified-working group API.
+	-- One single-icon aura group container per category. AuraSlots would be the natural fit, but
+	-- they silently failed to render on the 12.1 PTR even though AddAuraSlot returned buttons and
+	-- groups worked on the same client, and no known addon exercises them. Slots are documented as
+	-- groups with maxFrameCount 1, so single-icon groups are the same thing on an API that works.
 	--
-	-- Levels stack UP from the kick frame, two above it. The buttons render at the display's
-	-- OWN level, so the lowest display has to clear whatever the portrait itself draws at, or
-	-- the portrait hides the icons entirely (PTR: TargetFrame at 500 hid displays at 494-497).
-	-- Distinct levels are the only reliable priority - same-level siblings draw in an arbitrary
-	-- order - so the top category ends up five above the bottom one on the player's portrait and
-	-- four elsewhere. On a demoted portrait layer that whole range still sits under the unit
-	-- frame's border art, since the layer is a strata below it. Displays are children of the kick
-	-- frame so per-addon level adjustments shift the whole stack together.
+	-- Levels stack up from the kick frame, two above it. The buttons render at the display's own
+	-- level, so the lowest display has to clear whatever the portrait itself draws at, where on
+	-- the PTR TargetFrame at 500 hid displays at 494-497. Distinct levels are the only reliable
+	-- priority, since same-level siblings draw in an arbitrary order, verified live on 2026-08-07.
 	--
-	-- These go through AuraContainerDisplay like every other container in the addon: it owns
-	-- the Edit Mode placeholder-aura suppression (a hand-rolled container would happily show
-	-- Blizzard's fake auras over the portrait) and the deferred restyling that re-applies
-	-- option changes made while aura styling was restricted.
+	-- These go through AuraContainerDisplay because it owns the Edit Mode placeholder-aura
+	-- suppression and the deferred restyling that re-applies option changes made while aura
+	-- styling was restricted.
 	local baseLevel = (kickFrame:GetFrameLevel() or 0) + 2
 	local displays = {}
 	local disarmDisplay
@@ -197,21 +176,18 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 		IconMask = mask,
 		-- Portrait icons carry no dispel border and no glow.
 		Minimal = true,
-		-- One group each, and a unit frame turning up builds the whole stack at once. The engine
-		-- allocates a batch of buttons the moment a group is declared, so the walker declares them
-		-- one per turn instead; the icons of a portrait appear within a second or two of it.
+		-- The engine allocates a batch of buttons the moment a group is declared, so the walker
+		-- declares them one per turn.
 		DeferGroups = true,
-		-- Seeded rather than styled afterwards. A portrait display is built the moment its
-		-- unit frame turns up, and a restyle is refused for as long as auras are secret, so
-		-- one created mid-arena would keep the unstyled look, mouse input and all.
+		-- A portrait display is built the moment its unit frame turns up, and a restyle is
+		-- refused for as long as auras are secret, so one created mid-arena would keep the
+		-- unstyled look, mouse input and all.
 		Style = BuildPortraitStyle(),
 	}
 
-	-- Bottom of the stack, so every flagged category covers it. Created with a budget of one
-	-- whatever the list holds, because the client allocates a group's buttons from the count it
-	-- was born with and raising that later conjures none; ApplyCustomSpells below closes it
-	-- again while the list is empty, which it has to be or a bare HELPFUL filter would match
-	-- every buff on the unit.
+	-- Bottom of the stack, so every flagged category covers it. The client allocates a group's
+	-- buttons from the count it was born with and raising that later conjures none, so this is
+	-- created with a budget of one whatever the list holds.
 	if unit == CUSTOM_UNIT then
 		customDisplay = auraContainerDisplay:New(kickFrame, unit, {
 			{
@@ -229,9 +205,9 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 
 	for _, category in ipairs(PORTRAIT_CATEGORIES) do
 		local display = auraContainerDisplay:New(kickFrame, unit, {
-			-- No spell-ID map: a portrait shows your own unit or one you picked, so the
-			-- out-of-range filter bug the maps work around has almost nowhere to bite, and the
-			-- group then covers every flagged aura rather than the curated subset.
+			-- A portrait shows your own unit or one you picked, so the out-of-range filter bug
+			-- the spell-ID maps work around has almost nowhere to bite, and the group covers
+			-- every flagged aura instead of the curated subset.
 			auraFilters:GroupSpec(category, 1, {
 				-- Reverse instance-id order = newest aura first.
 				SortDirection = AuraContainerSortDirection.Reverse,
@@ -298,8 +274,8 @@ function M:ApplyMaskToLayer(layer, mask)
 		return
 	end
 
-	-- Keeps the container off this layer's icon shape: a portrait is round already, so it must not
-	-- also pick up the rounded-square corners a glow asks for.
+	-- A portrait is round already, so its icon must not also pick up the rounded-square corners a
+	-- glow asks for.
 	layer.CustomShape = true
 
 	if layer.Icon then
@@ -318,7 +294,7 @@ end
 
 ---Moves a portrait into a frame one strata below the rest of its unit frame, so anything drawn
 ---over the portrait stays under the frame's border art however its levels come out. The portrait
----has to come along: left where it was it would cover the icons from the strata above.
+---has to come along, since left where it was it would cover the icons from the strata above.
 ---@param portrait table
 ---@return table? layer nil when the portrait's anchoring cannot be reproduced
 function M:CreatePortraitLayer(portrait)
@@ -347,8 +323,8 @@ function M:CreatePortraitLayer(portrait)
 	local layer = CreateFrame("Frame", nil, parent)
 	layer:SetAllPoints(parent)
 	layer:SetFrameStrata(STRATA_BELOW[parent:GetFrameStrata()] or "BACKGROUND")
-	-- Level 1, not 0: level 0 of this strata is reserved for portrait effects that have to
-	-- stay behind the portrait (the insanity bar's Voidform glow, see AttachBlizzardFrame).
+	-- Level 0 of this strata is reserved for portrait effects that have to stay behind the
+	-- portrait, such as the insanity bar's Voidform glow.
 	layer:SetFrameLevel(1)
 
 	portrait:SetParent(layer)
@@ -364,12 +340,11 @@ end
 ---it and matches the portrait rect exactly, since the border art now covers the icon's edges.
 ---@return IconSlotContainer?
 function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLayer)
-	-- Only 1 slot, multiple layers; no border for portrait icons
+	-- One slot with multiple layers, and no border for portrait icons.
 	local container = iconSlotContainer:New(portraitLayer or unitFrame, 1, 0, 0, nil, true, "Portraits")
 
 	-- Portrait icons are masked, and the mask texture lives on the unit frame's subtree. A
 	-- flattened slot composites only its own subtree, which renders the masked icon invisible.
-	-- One icon per portrait, so the composite saved nothing here anyway.
 	local slot = container.Slots[1]
 	if slot and slot.Frame then
 		slot.Frame:SetFlattensRenderLayers(false)
@@ -381,26 +356,23 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLa
 		container.Frame:SetAllPoints(portrait)
 		container.Frame:SetFrameLevel(portraitLayer:GetFrameLevel() + 1)
 	else
-		-- Position the container over the portrait with inset
 		container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
 		container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
 		container.Frame:SetFrameLevel(math.max(0, (unitFrame:GetFrameLevel() or 0) - 1))
 	end
 
-	-- match the frame strata of the portrait parent
-	-- some addons like ClassicFrames adjust this from LOW to MEDIUM
-	-- so we want to follow it to ensure the icons are visible
+	-- Addons like ClassicFrames move the portrait parent from LOW to MEDIUM, so following its
+	-- strata is what keeps the icons visible.
 	container.Frame:SetFrameStrata(portrait:GetParent():GetFrameStrata())
 
-	-- inherit scale from portrait so icons scale with it
+	-- Inherit scale from the portrait so the icons scale with it.
 	container.Frame:SetIgnoreParentScale(false)
 
-	-- Portrait icons do not fade with the parent unit frame (e.g. out of range);
-	-- ignore the parent's alpha so they stay fully opaque.
+	-- Portrait icons stay fully opaque when the parent unit frame fades out of range.
 	container.Frame:SetIgnoreParentAlpha(true)
 
-	-- Skip attachment if the portrait dimensions are secret (tainted frame)
-	-- seems to happen with ElvUI when their portraits are disabled
+	-- A tainted frame reports secret dimensions, which turns up with ElvUI when its own portraits
+	-- are switched off.
 	local w = portrait:GetWidth()
 	local h = portrait:GetHeight()
 	if issecretvalue(w) or issecretvalue(h) then return nil end
@@ -414,12 +386,10 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLa
 	container:SetIconSize(size)
 
 	if unit then
-		-- Lift the kick slot above the whole aura display stack (displays at kick+2..+7 on the
-		-- player's portrait, +2..+6 elsewhere, buttons at the display's own level) so an active
-		-- kick lockout covers any aura icon. +8 leaves one level of margin in case a future
-		-- build moves the buttons one above their container; the icon layer renders at slot+1.
-		-- The slot frame is a child of the kick frame, so later per-addon level adjustments
-		-- shift everything together and the ordering holds.
+		-- Lift the kick slot above the whole aura display stack, which runs kick+2 to +7 on the
+		-- player's portrait and +2 to +6 elsewhere, so an active kick lockout covers any aura
+		-- icon. +8 leaves one level of margin in case a future build moves the buttons one above
+		-- their container. The icon layer renders at slot+1.
 		if slot and slot.Frame then
 			slot.Frame:SetFrameLevel(container.Frame:GetFrameLevel() + 8)
 		end
@@ -447,9 +417,8 @@ function M:GetContainers()
 	return result
 end
 
----Renders the kick icon into the kick container (the aura slots underneath handle
----everything else). Schedules a follow-up when the kick expires, since no aura event will fire
----to clear it.
+---Renders the kick icon into the kick container. Schedules a follow-up when the kick expires,
+---since no aura event will fire to clear it.
 ---@param unit string
 ---@param container IconSlotContainer
 function M:UpdateKickIcon(unit, container)
@@ -549,9 +518,8 @@ function M:EnsureFrames()
 end
 
 function M:ApplyOptions()
-	-- Re-apply the button style (the wrapper defers it if aura styling is currently restricted and
-	-- retries once it lifts) and hide the live displays in test mode so real and fake icons don't
-	-- mix.
+	-- The wrapper defers a restyle while aura styling is restricted and retries once it lifts.
+	-- Live displays are hidden in test mode so real and fake icons do not mix.
 	local style = BuildPortraitStyle()
 
 	for _, container in pairs(containers) do

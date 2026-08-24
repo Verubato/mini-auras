@@ -1,9 +1,8 @@
 -- Tests for the 12.1 AuraContainer display wrapper (Core/AuraContainerDisplay.lua) and the Core
--- modules it leans on, driven through the aura_container_mock environment. Focus areas are the
--- real bug classes from the 12.1 bring-up: style-signature skipping (and its staleness edge
--- cases), the restriction model (button children are forbidden while auras are secret) and the
--- deferred restyle that has to settle once the restriction lifts, pool pre-creation/reuse, the
--- kick chain anchoring math, and the kick expiry timer.
+-- modules it leans on, driven through the aura_container_mock environment. The focus is the real
+-- bug classes from the 12.1 bring-up: style-signature skipping, the restriction model where
+-- button children are forbidden while auras are secret, the deferred restyle that has to settle
+-- once the restriction lifts, pool reuse, the kick chain anchoring, and the kick expiry timer.
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -52,7 +51,7 @@ local function anyGlowFrames(instance)
 	return false
 end
 
--- The wrapper creates ONE shared event frame, on the first display ever built. Capture it here,
+-- The wrapper creates one shared event frame, on the first display ever built. Capture it here,
 -- before any acm.reset() empties the frame registry.
 newInstance()
 local displayEvents = assert(acm.lastFrameForEvent("PLAYER_REGEN_ENABLED"),
@@ -296,11 +295,11 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 	end)
 
 	fw.it("a size change while restricted keeps the layout and the buttons in step", function()
-		-- The engine only POSITIONS aura buttons: CustomAuraContainerFlowLayoutMixin's
+		-- The engine only positions aura buttons. CustomAuraContainerFlowLayoutMixin's
 		-- ApplyElementLayout discards the width/height it is handed, and spaces the row by
 		-- group.elementWidth instead. The button's real size comes from the restyle, which is
 		-- skipped while restricted. Publishing the layout early therefore spaces the row for a
-		-- size the buttons have not taken - gaps when sizing up, overlap when sizing down.
+		-- size the buttons have not taken, with gaps when sizing up and overlap when sizing down.
 		local instance = newInstance()
 		local startSize = instance.Frame._groups.cc.layout.elementWidth
 
@@ -445,7 +444,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 	end)
 
 	fw.it("draws the plain border only when the style asks for one", function()
-		-- Dispel colouring hands the border to the engine; without it the border is ours to
+		-- Dispel colouring hands the border to the engine. Without it the border is ours to
 		-- show or hide, and it stays hidden unless a module opts in.
 		local instance = newInstance()
 		instance:SetStyle({ Glow = false })
@@ -464,7 +463,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 
 	fw.it("tints each group's glow with its own category colour", function()
 		-- One container renders importants and defensives as separate aura groups, so a
-		-- per-group tint is the only way to colour them differently - the button can only be
+		-- per-group tint is the only way to colour them differently. The button can only be
 		-- styled in initializeFrame, which runs per group.
 		local instance = display:New(_G.UIParent, "target", {
 			{ Key = "imp", FilterString = "HELPFUL", MaxIcons = 3, GlowColor = { 1, 0.2, 0.2 } },
@@ -546,7 +545,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 
 	fw.it("the style generation covers the global glow type", function()
 		-- Displays are cached by this number, and the glow style is a global db value the caller
-		-- never passes in; leaving it out meant changing it in the options never reached the
+		-- never passes in. Leaving it out meant changing it in the options never reached the
 		-- already-built buttons.
 		local style = display:GetStyleScratch()
 		style.Glow = true
@@ -574,7 +573,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 
 	fw.it("notices a look that goes back to a shorter one", function()
 		-- The stamp keeps the values it was last given, so a list that shrinks has to clear the
-		-- tail; otherwise the leftovers would read as a match.
+		-- tail, or the leftovers would read as a match.
 		local style = display:GetStyleScratch()
 		style.GlowColor = { 1, 0, 0 }
 
@@ -844,8 +843,8 @@ fw.describe("Pool", function()
 			"a mismatch builds on demand even though free items remain")
 	end)
 
-	-- Prewarm used to build with no arguments at all, which for aura displays meant buttons
-	-- baked with an empty style that no restricted acquire could ever match.
+	-- Without the arguments, an aura display's buttons bake an empty style that no restricted
+	-- acquire could ever match.
 	fw.it("Prewarm asks argsFn for each pre-created item's creation arguments", function()
 		local seen = {}
 		local pool = objectPool:New(function(arg)
@@ -1130,7 +1129,7 @@ fw.describe("AuraContainerDisplay - deferred restyle", function()
 
 	fw.it("settles a pending restyle when combat ends", function()
 		-- Without this the buttons keep the old style for the rest of the fight: nothing else
-		-- calls SetStyle again, and the container-level layout has ALREADY taken the new size.
+		-- calls SetStyle again, and the container-level layout has already taken the new size.
 		local instance, styled = newPendingInstance()
 
 		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
@@ -1239,9 +1238,9 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		assert(button._calls.AddPandemicRegion == 1, "one region registered per button")
 		assert(widgets.Pandemic and widgets.Pandemic.Textures[1], "the holder carries the ring texture")
 		local ring = widgets.Pandemic.Textures[1]
-		-- Off by default: the engine decides when the HOLDER shows, but the ring only draws for a
-		-- group that turned the reveal on. Hidden, not just transparent - alpha alone left an amber
-		-- ring on every icon of every group that had the reveal switched off.
+		-- Off by default, because the engine decides when the holder shows but the ring only draws
+		-- for a group that turned the reveal on. Hidden, not just transparent. Alpha alone left an
+		-- amber ring on every icon of every group that had the reveal switched off.
 		assert(ring._shown == false, "ring starts hidden")
 		assert(ring._lastArgs.SetAlpha[1] == 0, "and transparent with it")
 
@@ -1388,9 +1387,9 @@ end)
 
 fw.describe("AuraContainerDisplay - Edit Mode preview suppression", function()
 	-- Blizzard force-feeds every AuraContainer placeholder auras while Edit Mode is open, with no
-	-- opt-out; hiding the container is the only escape. That makes visibility a two-input state
-	-- machine (what the module asked for x whether the preview is running), and getting it wrong
-	-- paints fake auras over portraits and nameplates.
+	-- opt-out, so hiding the container is the only escape. That makes visibility a two-input state
+	-- machine, what the module asked for against whether the preview is running, and getting it
+	-- wrong paints fake auras over portraits and nameplates.
 
 	local function setPreview(active)
 		displayEvents:TriggerEvent("AURA_DATA_PROVIDER_SWITCH", not active)
@@ -1415,7 +1414,7 @@ fw.describe("AuraContainerDisplay - Edit Mode preview suppression", function()
 
 	fw.it("a display created during the preview starts hidden", function()
 		-- Modules build containers on roster/plate events, which keep firing while Edit Mode is
-		-- open; one created then must not miss the suppression.
+		-- open. One created then must not miss the suppression.
 		setPreview(true)
 		local instance = newInstance()
 		assert(not instance.Frame:IsShown(), "created hidden while the preview runs")
@@ -1538,7 +1537,7 @@ fw.describe("AuraFilters - category partitioning", function()
 	end)
 
 	fw.it("the built groups are exactly the keys ApplyCategoryBudgets drives", function()
-		-- The two halves are written in different files; a key renamed in one and not the other
+		-- The two halves are written in different files. A key renamed in one and not the other
 		-- would silently disable a whole category (SetMaxIcons only warns).
 		local instance = display:New(_G.UIParent, "target", auraFilters:BuildCategoryGroups(5), 30, 2, "Test")
 		acm.notifications = {}
@@ -1604,7 +1603,7 @@ fw.describe("AuraContainerDisplay - bar buttons", function()
 		local widgets = instance.ButtonWidgets[button]
 
 		assert(button._calls.SetDurationBar == 1, "the fill is registered once")
-		-- The engine's value grows towards expiry, so the registered fill is the SPENT part,
+		-- The engine's value grows towards expiry, so the registered fill is the spent part,
 		-- eating into the coloured strip from the right. Without that the bar would fill up.
 		assert(widgets.Bar._reverseFill, "the spent block grows in from the far end")
 		assert(button._calls.SetSpellName == 1, "the name is registered once")
@@ -1666,7 +1665,7 @@ fw.describe("AuraContainerDisplay - bar buttons", function()
 	end)
 
 	fw.it("builds no glow frame, whatever the style asks for", function()
-		-- Every glow in the catalog is art drawn for a square; stretched around a row three times
+		-- Every glow in the catalog is art drawn for a square. Stretched around a row three times
 		-- as wide as it is tall it reads as a mistake. The editor hides the option to match, so a
 		-- group carrying Glow from its icon days must not resurrect one here.
 		local instance = newBarInstance({ Glow = true })
@@ -1772,7 +1771,7 @@ fw.describe("AuraContainerDisplay - refreshing a token whose occupant changed", 
 
 	fw.it("settles a parked bounce once, however many times it was asked for", function()
 		-- The pending displays are queued rather than found by walking them all, so a display
-		-- parked by combat has to go back on that queue exactly once - twice and it would bounce
+		-- parked by combat has to go back on that queue exactly once. Twice and it would bounce
 		-- again for a change already settled.
 		local instance = newInstance()
 		local frame = instance.Frame
@@ -1919,7 +1918,7 @@ fw.describe("AuraContainerDisplay - vehicles the client will not admit to", func
 			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5 },
 		}, 30, 2, "Test")
 
-		-- Some seats have no vehicle UI and answer false to everything; the event is the only
+		-- Some seats have no vehicle UI and answer false to everything. The event is the only
 		-- thing that knows, so it is taken at its word.
 		wow.setInVehicle(false)
 		displayEvents:TriggerEvent("UNIT_ENTERED_VEHICLE", "player")

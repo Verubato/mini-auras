@@ -7,7 +7,6 @@ local seen = {}
 ---@param visibleOnly boolean
 ---@param frames table Frames are appended here.
 function M:PlexusFrames(visibleOnly, frames)
-	-- Plexus must be loaded
 	if not PlexusLayoutHeader1 then
 		return
 	end

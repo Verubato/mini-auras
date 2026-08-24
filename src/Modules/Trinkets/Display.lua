@@ -15,7 +15,7 @@ addon.Modules.Trinkets = addon.Modules.Trinkets or {}
 local M = {}
 addon.Modules.Trinkets.Display = M
 
--- track self + party for test mode; arena is a raid, so also raid units
+-- An arena counts as a raid, so party members answer to raid tokens as well.
 local TRACKED_UNITS = {
 	"player",
 	"party1",
@@ -26,13 +26,11 @@ local TRACKED_UNITS = {
 	"raid3",
 }
 local testModeActive = false
--- Anchor frame -> its trinket slot. Owned here: the module asks for whole-set operations
--- rather than reaching into it.
+-- Anchor frame -> its trinket slot.
 ---@type { [table]: TrinketWatcher }
 local watchers = {}
--- Anchor frame -> its container, kept for the session: WoW frames can never be freed, so a
--- released anchor's container is parked (hidden, unanchored) and reused when the anchor returns
--- instead of building a replacement per roster flip.
+-- Anchor frame -> its container. WoW frames can never be freed, so a released anchor's container
+-- is parked and reused when the anchor comes back.
 ---@type { [table]: IconSlotContainer }
 local containersByAnchor = {}
 -- Anchors met during one walk, wiped at the top of it.
@@ -110,7 +108,7 @@ local function EnsureWatcher(anchorFrame, unit)
 	return watcher
 end
 
----Parks the anchor's container rather than discarding it (see containersByAnchor).
+---Parks the anchor's container so the anchor can reuse it later.
 local function ReleaseWatcher(anchorFrame)
 	local watcher = watchers[anchorFrame]
 	if not watcher then
@@ -163,7 +161,7 @@ local function RefreshUnit(unit)
 		return
 	end
 
-	-- Every watcher on the unit, not just the first: two frame addons on screen at once, or a
+	-- Every watcher on the unit, not just the first. Two frame addons on screen at once, or a
 	-- custom anchor beside a party frame, give the same unit more than one icon.
 	for _, watcher in pairs(watchers) do
 		if watcher.Container and watcher.Unit == unit then
@@ -180,7 +178,6 @@ local function RefreshAll()
 		if container and unit and UnitExists(unit) then
 			SetIconState(container, trinketsTracker:GetUnitDuration(unit))
 		elseif container then
-			-- Show default icon when unit doesn't exist
 			SetIconState(container, nil)
 		end
 	end
@@ -301,8 +298,8 @@ function M:ClearAll()
 	end
 end
 
----Anchor discovery and visibility only, for the paused case: the frames still have to follow
----the unit frames around so they can be positioned while the module is asleep.
+---Anchor discovery and visibility only. A paused module still has to follow the unit frames
+---around so the icons can be positioned.
 function M:RefreshAnchorsOnly()
 	RebuildAnchors()
 	UpdateVisibility()

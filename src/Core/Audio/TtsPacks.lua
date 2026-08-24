@@ -2,8 +2,7 @@
 local addonName, addon = ...
 
 -- Voice packs for the baked TTS clips: the ones shipped under Sounds/TTS plus any another addon
--- registers through the public API. One owner for names, paths and validation, so the dropdown,
--- the saved value and the clip paths can never drift apart.
+-- registers through the public API. One owner for names, paths and validation.
 
 -- Shipped packs live one folder per pack under here; an external pack brings its own path.
 local BASE_PATH = "Interface\\AddOns\\" .. addonName .. "\\Sounds\\TTS\\"

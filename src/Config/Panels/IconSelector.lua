@@ -33,8 +33,8 @@ local M = {}
 
 config.IconSelector = M
 
----Every icon the client will hand over. Three APIs have carried this list over the years, so
----each is tried in turn. Built once; it never changes during a session.
+---Every icon the client will hand over. Three APIs have carried this list, so each is tried in
+---turn. Built once, since it never changes during a session.
 ---@return (string|number)[]
 local function BuildIconList()
 	local list = {}

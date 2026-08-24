@@ -1,7 +1,6 @@
--- Tests for Config/Migrator.lua running against the REAL MiniFramework table utilities
+-- Tests for Config/Migrator.lua running against the real MiniFramework table utilities
 -- (GetSavedVars/CopyTable/CleanTable), since the migration semantics live in that combination.
--- The Migrator transforms every user's saved variables on upgrade - the black-box invariant is
--- "any input produces a valid current-version db".
+-- The black-box invariant is "any input produces a valid current-version db".
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -439,7 +438,7 @@ fw.describe("Migrator - full chain from a v37-era db preserves settings", functi
 		assert(enemy.Bar2.ShowImportant == true, "important surfaced on the defensives bar")
 
 		-- The cooldown trackers are gone, so their whole customized table is cleaned away rather
-		-- than migrated. The v48 Split -> Linear step still runs against it; nothing survives it.
+		-- than migrated. The v48 Split -> Linear step still runs against it. Nothing survives it.
 		assert(db.Modules.EnemyCooldownTrackerModule == nil, "removed tracker settings cleaned away")
 
 		-- v54/v55: per-module icon padding seeded from the old global IconSpacing.
@@ -1320,7 +1319,7 @@ end)
 
 fw.describe("Migrator - opaque user data", function()
 	-- Personal aura groups are authored entirely by the user, so the schema ships an empty array to
-	-- compare them against - which is exactly the shape CleanTable strips everything out of.
+	-- compare them against, which is exactly the shape CleanTable strips everything out of.
 	fw.it("keeps personal aura groups through the final CleanTable", function()
 		_G.MiniAurasDB = nil
 

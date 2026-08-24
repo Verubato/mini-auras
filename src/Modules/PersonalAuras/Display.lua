@@ -19,17 +19,17 @@ local groups = addon.Modules.PersonalAuras.Groups
 local sound = addon.Modules.PersonalAuras.Sound
 
 -- One AuraContainer per group, or per group per visible nameplate, unit frame or arena enemy
--- frame. Preview stand-ins go through an IconSlotContainer or a BarSlotContainer, whichever shape
--- the group draws, so they need no aura data.
+-- frame. Preview stand-ins go through the slot container matching the shape the group draws, so
+-- they need no aura data.
 --
--- Every container carries BOTH a helpful and a harmful group, only one ever budgeted above zero.
+-- Every container carries both a helpful and a harmful group, only one ever budgeted above zero.
 -- The engine drops a spell-id filter silently on the wrong-sided one, and the bare token left
 -- behind matches every aura on the unit. Both are pre-registered because aura groups can be
 -- reconfigured but never removed.
 
 addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
--- Group keys on every container. Both always exist; only one is ever budgeted above zero.
+-- Group keys on every container, only one of which is ever budgeted above zero.
 local HELPFUL_KEY = "helpful"
 local HARMFUL_KEY = "harmful"
 -- The MiniCCModule tag other addons read off our frames, and the Masque sub-group name for both
@@ -37,31 +37,30 @@ local HARMFUL_KEY = "harmful"
 local MODULE_TAG = "Personal Auras"
 -- Ten covers a normal plate count without building forty for a group that may never fire.
 local PLATE_PREALLOCATE = 10
--- Background walker declaring the groups of entries as they are handed out. Urgent: an entry
--- being acquired is going on screen, unlike the pool's own fill.
+-- Background walker declaring the groups of entries as they are handed out, urgent because an
+-- entry being acquired is going on screen.
 local buildSweep = sweep:New(true)
 -- Arena enemy frames are fixed at three, so the copies are walked by index rather than discovered.
 local ARENA_OPPONENTS = 3
 -- Container sizes can be secret, so a draggable anchor's size is guessed from the budget.
 local MIN_ANCHOR_SIZE = 20
--- Fallback geometry for a pooled display built without a group to copy; ConfigureDisplay
--- corrects it on acquisition wherever a restyle is allowed to.
 -- What a container watches when the group's unit cannot be resolved, which is a role choice
 -- nobody in the group is filling. Never a real token, so nothing is ever tracked on it.
 local NO_UNIT = "none"
+-- Fallback geometry for a pooled display built without a group to copy. ConfigureDisplay corrects
+-- it on acquisition wherever a restyle is allowed to.
 local DEFAULT_SIZE = 40
 local DEFAULT_SPACING = 2
 -- Read-only stand-in so a pooled display always has a candidate-filter table, holding an id
--- nothing will ever have rather than no ids at all. An EMPTY includeSpellIDs map reads as "no
--- ids required", so a container created with one matches every aura on its unit the moment it
--- is shown - and THAT parse is what stays on screen until something re-arms the engine's dirty
--- processing, which is how a group tracking one spell ended up showing forty. A display waiting
+-- nothing will ever have rather than no ids at all. An empty includeSpellIDs map reads as "no ids
+-- required", so the container would match every aura on its unit instead of none of them, and that
+-- parse stays on screen until something re-arms the engine's dirty processing. A display waiting
 -- for its real spell list has to show nothing, never everything.
 local NEVER_MATCHED_SPELL_ID = 2147483647
 local PLACEHOLDER_FILTERS = { includeSpellIDs = { [NEVER_MATCHED_SPELL_ID] = true } }
 -- Scratch for a bar stand-in's fill colour, refilled per slot and never retained.
 local barColorScratch = {}
--- Scratch for a group's text colour, in both shapes the two icon backends read; refilled per
+-- Scratch for a group's text colour, in both shapes the two icon backends read. Refilled per
 -- style build and copied out by whoever takes it.
 local textColorScratch = {}
 -- Scratch for the stand-in texture's settings, refilled per preview render and never retained.
@@ -110,9 +109,8 @@ local dragContext = {}
 ---@type fun(groupId: string)[]
 local positionChangedCallbacks = {}
 -- One pool per display shape, each covering every anchor. Aura containers can never be destroyed,
--- so a deleted group hands its frames back; and a button's shape is baked in when it is created,
--- so an icon display can never be handed to a group drawing bars. Built below, once the create and
--- reset functions exist.
+-- so a deleted group hands its frames back, and a button's shape is baked in when it is created,
+-- so an icon display can never be handed to a group drawing bars.
 ---@type table<string, Pool>
 local displayPools
 
@@ -162,12 +160,11 @@ local function BuildStyle(group)
 		style.TextureAlpha = art.Opacity / 100
 	end
 
-	-- Always on: a stack count is only ever drawn when there is one to draw, so there is
-	-- nothing to turn off and nothing to explain in the options.
+	-- Always on, since a stack count is only ever drawn when there is one to draw.
 	style.Stacks = true
-	-- Icons only: a bar's countdown sits at the end of the fill, where the count never goes.
+	-- Icons only, because a bar's countdown sits at the end of the fill where the count never goes.
 	style.CenterStacks = not groups:DrawsBars(group) and icons.CenterStacks
-	-- Only while the toggle is on: a set TextColor replaces every default text colouring, the
+	-- Only while the toggle is on. A set TextColor replaces every default text colouring, the
 	-- colour-by-time countdown included, so the off state has to be nil rather than white.
 	style.TextColor = icons.ColorText
 		and moduleUtil:FillColor(textColorScratch, icons.TextColor, DEFAULT_TEXT_COLOR) or nil
@@ -216,8 +213,8 @@ local function CreateEntry(shape, style, size, spacing)
 			MaxIcons = maxIcons,
 			CandidateFilters = PLACEHOLDER_FILTERS,
 		},
-		-- Every pooled entry carries pandemic regions: they can only be created with the buttons,
-		-- and any group the pool later hands this entry to may have the reveal turned on.
+		-- Every pooled entry carries pandemic regions, since they can only be created with the
+		-- buttons and any group the pool later hands this entry to may have the reveal turned on.
 	}, size or DEFAULT_SIZE, spacing or DEFAULT_SPACING, MODULE_TAG, {
 		Style = style,
 		-- Art has no ring to reveal and no square for a skin to fit, so the texture pool skips
@@ -228,8 +225,7 @@ local function CreateEntry(shape, style, size, spacing)
 		MasqueGroup = not texture and MODULE_TAG or nil,
 		-- The engine allocates a batch of buttons the moment a group is declared, and a login
 		-- builds one of these per screen group in the same frame. The walker declares them a
-		-- group per turn instead; the icons of a group follow within a tick or two of the frame
-		-- it is anchored to.
+		-- group per turn instead.
 		DeferGroups = true,
 	})
 
@@ -273,7 +269,7 @@ local function DeclareNextGroup(display)
 	end
 end
 
--- A closure per shape rather than one pool taking it as an argument: Prewarm builds entries with
+-- A closure per shape rather than one pool taking it as an argument. Prewarm builds entries with
 -- no shape of its own to pass, so a shape handed through Acquire would only reach the on-demand
 -- path and every pre-built bar entry would come out as icons.
 displayPools = {
@@ -320,10 +316,10 @@ local function AcquireEntry(state)
 	local size = groups:GetSize(group)
 	local spacing = group.Icons.Spacing
 
-	-- While styling is restricted (a whole arena, not just combat) a reused entry keeps whatever
-	-- look its buttons were built with, so only one already carrying this group's look will do.
-	-- Building fresh is the fallback: initializeFrame may style buttons even then, and a frame
-	-- spike beats a match spent showing another group's style.
+	-- While styling is restricted, which is a whole arena rather than just combat, a reused entry
+	-- keeps whatever look its buttons were built with, so only one already carrying this group's
+	-- look will do. Building fresh is the fallback, since initializeFrame may style buttons even
+	-- then.
 	if wowEx:IsAuraStylingRestricted() then
 		return Queued(displayPools[shape]:AcquireMatching(EntryCarriesStyle, style, size, spacing))
 	end
@@ -331,9 +327,9 @@ local function AcquireEntry(state)
 	return Queued(displayPools[shape]:Acquire(style, size, spacing))
 end
 
----Hands an entry back to the pool that built it. Always go through this: releasing a bar display
----into the icon pool would hand it to a group that then draws bars it never asked for, and no
----restyle can undo it.
+---Hands an entry back to the pool that built it. Always go through this, or a bar display
+---released into the icon pool would hand a group bars it never asked for, and no restyle can
+---undo it.
 ---@param entry PersonalAuraDisplayEntry
 local function ReleaseEntry(entry)
 	displayPools[entry.Shape or groups.DisplayStyle.Icons]:Release(entry)
@@ -349,8 +345,8 @@ end
 
 ---Pre-builds displays of the shape a group needs, baked with that group's look. Containers are
 ---expensive and cannot be made mid-combat without a hitch, so a group that will want one per
----nameplate says so up front - and since a restricted acquire only reuses an entry whose baked
----look matches, an unstyled pre-build would sit useless for exactly the matches it was made for.
+---nameplate says so up front. A restricted acquire only reuses an entry whose baked look matches,
+---so an unstyled pre-build would sit useless for exactly the matches it was made for.
 ---@param state PersonalAuraGroupState
 ---@param count number
 local function PrewarmFor(state, count)
@@ -359,7 +355,7 @@ end
 
 ---Whether a parked entry still carries the current look of some other live group sharing the
 ---shape. Those entries are that group's restricted-reuse matches, so a sweep converting them
----would steal a match another group depends on; only entries no live group can use are taken.
+---would steal a match another group depends on. Only entries no live group can use are taken.
 ---@param entry PersonalAuraDisplayEntry
 ---@param sweepingState PersonalAuraGroupState
 ---@return boolean
@@ -380,15 +376,15 @@ local function EntryCarriesAnotherGroupsLook(entry, sweepingState)
 end
 
 ---One parked entry converted to the group's current look, called from the pool's background
----sweep. Everything is resolved fresh per entry: the sweep runs over seconds, longer than the
----shared style scratch survives, and the group table itself moves on a profile switch.
+---sweep. Everything is resolved fresh per entry, since the sweep runs over seconds, longer than
+---the shared style scratch survives, and the group table itself moves on a profile switch.
 ---@param entry PersonalAuraDisplayEntry
 ---@param state PersonalAuraGroupState
 ---@return boolean? keepGoing
 local function SweepEntryStyle(entry, state)
-	-- A restricted restyle could not land anyway. Re-armed before abandoning, or the remainder
-	-- of this run would never be swept: the flag was spent when the run was queued, and only
-	-- another look change would set it again.
+	-- A restricted restyle could not land anyway. Re-armed before abandoning, or the remainder of
+	-- this run would never be swept. The flag was spent when the run was queued, and only another
+	-- look change would set it again.
 	if wowEx:IsAuraStylingRestricted() then
 		state.StyleStale = true
 		return false
@@ -405,16 +401,14 @@ local function SweepEntryStyle(entry, state)
 	return true
 end
 
----Brings the parked pool up to date after the group's look changed. Prewarm covers entries that
----do not exist yet; this covers the ones that do, whose baked look no longer matches - and
----while styling is restricted a reuse can ONLY match the baked look (AcquireEntry), so without
----it a settings tweak between pulls leaves the whole prewarmed pool useless for exactly the
----matches it was built for, forcing fresh mid-combat builds. Entries the sweep has not reached
----are corrected at acquire, so this is a warm-up, never a correctness requirement.
+---Brings the parked pool up to date after the group's look changed. While styling is restricted a
+---reuse can only match the baked look, so without this a settings tweak between pulls leaves the
+---prewarmed pool useless for exactly the matches it was built for, forcing fresh mid-combat
+---builds. Entries the sweep has not reached are corrected at acquire, so this is a warm-up.
 ---
----Each state sweeps on its own lane: the shape pools are shared, and same-shape groups going
----stale in one refresh would otherwise replace each other's runs, leaving the losers' parked
----entries unswept with their flags already spent.
+---Each state sweeps on its own lane. The shape pools are shared, and same-shape groups going stale
+---in one refresh would otherwise replace each other's runs, leaving the losers' parked entries
+---unswept with their flags already spent.
 ---@param state PersonalAuraGroupState
 local function SweepParkedIfStale(state)
 	if not state.StyleStale then
@@ -480,13 +474,12 @@ local function ConfigureDisplay(state, entry, unit)
 	display:SetGrow(group.Grow)
 
 	-- A spells group is only ever as good as the id map that reached the engine. If that map is
-	-- missing or empty the group is left with the bare aura type, which matches EVERY aura on the
-	-- unit - the worst possible reading of "track these three spells". Checked here rather than
-	-- trusted, so the failure shows nothing instead of everything.
+	-- missing or empty the group is left with the bare aura type, which matches every aura on the
+	-- unit, so the check here makes that failure show nothing instead of everything.
 	local ids = state.Filters and state.Filters.includeSpellIDs
 	local unfiltered = groups:TracksSpells(group) and (ids == nil or next(ids) == nil)
 
-	-- False while previewing: those icons are fake, so the container behind them shows nothing.
+	-- False while previewing, since those icons are fake and the container shows nothing.
 	-- Also false with no unit at all, or the bare aura type would match everything on whatever
 	-- the container happens to be pointed at.
 	local budget = state.Allowed and not unfiltered and unit ~= nil
@@ -538,8 +531,8 @@ local function PreviewSize(group)
 end
 
 ---The stand-in container for one copy, matching the shape the live display draws. Built on first
----use and kept: an entry only ever comes from the pool of its own shape, so the container it grew
----is always the right one for whoever holds it next.
+---use and kept, since an entry only ever comes from the pool of its own shape, so the container it
+---grew is always the right one for whoever holds it next.
 ---@param state PersonalAuraGroupState
 ---@param entry PersonalAuraDisplayEntry
 ---@return IconSlotContainer|BarSlotContainer
@@ -600,7 +593,7 @@ local function EnsureTestContainer(state, entry, parent)
 end
 
 ---A group's configured colour in the shape the slot containers take. Unlike ModuleUtil's icon
----colour this is never withheld: a bar's fill is coloured whatever the glow and border toggles say.
+---colour this is never withheld, since a bar's fill is coloured whatever the toggles say.
 ---@param group PersonalAuraGroup
 ---@return table
 local function BarColor(group)
@@ -615,8 +608,8 @@ local function BarColor(group)
 end
 
 ---One fake icon or bar per tracked spell, so a group can be positioned without waiting for the
----aura. A group tracking by filter names no spells, so it borrows its own grid icon for every slot:
----the point of the preview is the geometry, and an empty one could not be dragged.
+---aura. A group tracking by filter names no spells, so it borrows its own grid icon for every slot.
+---The point of the preview is the geometry, and an empty one could not be dragged.
 ---@param state PersonalAuraGroupState
 ---@param entry PersonalAuraDisplayEntry
 local function RenderTestIcons(state, entry)
@@ -646,10 +639,9 @@ local function RenderTestIcons(state, entry)
 	end
 
 	local drawsBars = groups:DrawsBars(group)
-	-- A bar's fill always carries the group's colour, so the stand-in cannot use the icon colour:
-	-- that one is withheld unless a glow or a border asked for it, because for an icon a colour is
-	-- what draws the border in the first place. Reading it through ModuleUtil left the preview
-	-- white while the live bars were coloured.
+	-- A bar's fill always carries the group's colour, so the stand-in cannot use the icon colour.
+	-- That one is withheld unless a glow or a border asked for it, because for an icon a colour is
+	-- what draws the border in the first place.
 	local color = drawsBars and BarColor(group) or moduleUtil:GetIconColor(group.Icons)
 	local barTexture = group.Icons.BarTexture
 	-- The same calls BuildStyle makes, so the stand-ins show exactly what the live icons will.
@@ -713,8 +705,8 @@ end
 local function UpdateAnchorSize(state)
 	local group = state.Group
 	local width, height = PreviewSize(group)
-	-- Sized to the stand-ins, not the icon cap: the anchor is something to grab while placing
-	-- the group, and one forty icons wide would cover the screen.
+	-- Sized to the stand-ins rather than the icon cap. The anchor is something to grab while
+	-- placing the group, and one forty icons wide would cover the screen.
 	local count = PreviewCount(group)
 	local spacing = group.Icons.Spacing
 
@@ -746,7 +738,7 @@ local function EnsureAnchor(state)
 	anchor:SetIgnoreParentScale(true)
 	anchor:EnableMouse(false)
 	anchor:SetMovable(false)
-	-- A function rather than the table: an import or profile switch replaces the group wholesale,
+	-- A function rather than the table. An import or profile switch replaces the group wholesale,
 	-- and EnsureState re-points state.Group at the live one.
 	moduleUtil:MakeMovable(anchor, function()
 		return state.Group.Position
@@ -790,7 +782,7 @@ local function OnOffsetDragStart(handle)
 	dragContext.StartY = y
 	dragContext.StartOffsetX = handle.Group.Offset.X
 	dragContext.StartOffsetY = handle.Group.Offset.Y
-	-- The offset lands on the DISPLAY, which ignores its parent's scale, so the cursor delta
+	-- The offset lands on the display, which ignores its parent's scale, so the cursor delta
 	-- converts through that frame's scale and not the host frame's or UIParent's.
 	dragContext.Scale = handle.DisplayFrame:GetEffectiveScale()
 
@@ -854,7 +846,7 @@ local function OffsetBinding(state)
 		state.OffsetBinding = binding
 	end
 
-	-- Every time: a group can be renamed while its preview is up.
+	-- Every time, since a group can be renamed while its preview is up.
 	binding.Title = state.Group.Name
 
 	return binding
@@ -966,11 +958,10 @@ local function EnsureState(groupDef)
 
 	local generation = StyleGeneration(groupDef)
 
-	-- A changed look strands the parked copies on the old one; noted here, acted on by the
-	-- sweep the refresh kicks off next to the prewarm (SweepParkedIfStale). A state seen for
-	-- the first time counts as changed: after a profile switch the pool is full of the old
-	-- profile's looks and the replacement groups are all new states, so a first-sight skip
-	-- would leave the whole pool unswept. At login the sweep is a handful of no-op diffs.
+	-- A changed look strands the parked copies on the old one, which the sweep the refresh kicks
+	-- off next to the prewarm puts right. A state seen for the first time counts as changed. After
+	-- a profile switch the pool is full of the old profile's looks and the replacement groups are
+	-- all new states, so a first-sight skip would leave the whole pool unswept.
 	if state.StyleGeneration ~= generation then
 		state.StyleStale = true
 	end
@@ -979,9 +970,9 @@ local function EnsureState(groupDef)
 
 	local shape = groups:GetShape(groupDef)
 
-	-- Switching between icons, bars and art is the one appearance change a restyle cannot make: a
-	-- button's shape is baked in when it is created. Hand every copy back (each to the pool that
-	-- built it) and let the refresh below take fresh ones of the new shape.
+	-- Switching between icons, bars and art is the one appearance change a restyle cannot make,
+	-- because a button's shape is baked in when it is created. Every copy goes back to the pool
+	-- that built it and the refresh below takes fresh ones of the new shape.
 	if state.Shape ~= shape then
 		state.Shape = shape
 		Park(state)
@@ -1090,8 +1081,8 @@ local function ApplyPreview(state, entry, host)
 
 	handle:ClearAllPoints()
 	handle:SetAllPoints(entry.Test.Frame)
-	-- The stand-ins' layer, not the host's: a group pinned above its host would otherwise put its
-	-- icons over the grab area and there would be nothing left to drag.
+	-- The stand-ins' layer rather than the host's. A group pinned above its host would otherwise
+	-- put its icons over the grab area and there would be nothing left to drag.
 	handle:SetFrameStrata(ResolveStrata(state.Group, host))
 	handle:SetFrameLevel(host:GetFrameLevel() + 20)
 	handle:EnableMouse(true)
@@ -1149,9 +1140,9 @@ local function RefreshFrameGroup(state, anchor, unit)
 		return
 	end
 
-	-- A member the player cannot assist (a mind control) loses its copy too. Not while previewing:
-	-- a stand-in frame's "party1" is nobody at all, and the group is there to be positioned rather
-	-- than to show auras. CanFilterUnit still budgets the container to zero.
+	-- A member the player cannot assist, such as one under a mind control, loses its copy too. Not
+	-- while previewing, since a stand-in frame's "party1" is nobody at all and the group is there
+	-- to be positioned. CanFilterUnit still budgets the container to zero.
 	if not IsPreviewing(state) and not groups:MatchesReaction(state.Group.Unit, unit) then
 		ReleaseFrameEntry(state, anchor)
 
@@ -1174,7 +1165,7 @@ local function RefreshFrameGroup(state, anchor, unit)
 	AnchorEntry(state, entry, anchor)
 	ConfigureDisplay(state, entry, unit)
 
-	-- The copy follows the unit frame's own visibility, except while previewing: a stand-in on a
+	-- The copy follows the unit frame's own visibility, except while previewing. A stand-in on a
 	-- frame the addon has parked is still something to position the group with.
 	if not ApplyPreview(state, entry, anchor) then
 		frames:ShowHideDisplay(entry.Display, anchor, false)
@@ -1235,16 +1226,16 @@ local function RefreshArenaGroup(state, index)
 		EnsureTestContainer(state, entry, frame)
 	end
 
-	-- No visibility switch of its own: the copy is parented to the arena frame, so it comes and
+	-- No visibility switch of its own, since the copy is parented to the arena frame and comes and
 	-- goes with it.
 	AnchorEntry(state, entry, frame)
 	ConfigureDisplay(state, entry, token)
 	ApplyPreview(state, entry, frame)
 end
 
----The units a sound-only group registers on. It builds no copies, so there is nothing to read
----the tokens off: the roster, the arena slots and the live plates are the list instead. This is
----also why the sound survives a unit frame the group could not find - nothing here is on screen.
+---The units a sound-only group registers on. It builds no copies, so the roster, the arena slots
+---and the live plates are the list instead. That is also why the sound survives a unit frame the
+---group could not find.
 ---@param group PersonalAuraGroup
 ---@return string[] tokens The shared scratch, valid until the next call.
 local function SoundOnlyTokens(group)
@@ -1276,7 +1267,7 @@ local function SoundOnlyTokens(group)
 	else
 		local token = groups:GetToken(group)
 
-		-- The same reaction test the plates get: a friendly-target group has no business firing
+		-- The same reaction test the plates get. A friendly-target group has no business firing
 		-- on a hostile one just because both answer to "target". The module refreshes on target
 		-- change and on UNIT_FACTION, so this is re-asked whenever the answer could have moved.
 		if token and groups:MatchesReaction(group.Unit, token) then
@@ -1292,8 +1283,8 @@ local function CollectSoundRequests(state)
 	local group = state.Group
 
 	-- The engine plays these per spell id, so a group that names none can never ask for one.
-	-- Asked before any of the scratch below is built: a plate appearing or going runs this for
-	-- every group, and most groups are silent.
+	-- Asked before any of the scratch below is built, since a plate appearing or going runs this
+	-- for every group and most groups are silent.
 	if not groups:HasSound(group) or #group.Spells == 0 or not groups:TracksSpells(group) then
 		return
 	end
@@ -1326,7 +1317,7 @@ local function CollectSoundRequests(state)
 		end
 	end
 
-	-- Sorted: the sound module stamps this list, and pairs order varies.
+	-- Sorted because the sound module stamps this list, and pairs order varies.
 	-- Deduplicated too, because two unit frames can hold the same member.
 	wipe(soundTokens)
 	wipe(soundSeen)
@@ -1344,9 +1335,9 @@ local function CollectSoundRequests(state)
 			AddToken(token)
 		end
 	elseif group.Anchor == groups.Anchor.Screen then
-		-- The token, not the unit CHOICE: "target (friendly)" and the role choices are names for
-		-- the picker, and the engine wants the unit they resolve to. Gated on the side the choice
-		-- names, like every other branch here: "target" is the same token whoever is in it, and a
+		-- The token rather than the unit choice. "target (friendly)" and the role choices are
+		-- names for the picker, and the engine wants the unit they resolve to. Gated on the side
+		-- the choice names, because "target" is the same token whoever is in it and a
 		-- friendly-target group has no business sounding on a hostile one.
 		local token = groups:GetToken(group)
 
@@ -1411,7 +1402,7 @@ end
 
 ---Puts the stand-in party or arena frames on screen while the group being positioned hangs off
 ---frames that are not there, and takes them away again once it is not.
----Never while test mode runs: it owns the same frames, and driving them from both sides would
+---Never while test mode runs. It owns the same frames, and driving them from both sides would
 ---leave whichever spoke last in charge.
 ---@param options PersonalAurasModuleOptions
 ---@return boolean party
@@ -1424,9 +1415,8 @@ local function ShowPreviewFrames(options)
 	local anchor
 
 	for _, groupDef in ipairs(options.Groups) do
-		-- The same test the preview itself uses: a group with nothing to draw is not previewed,
-		-- so it has no business putting frames on screen either. A sound-only group is the
-		-- extreme of that - it never draws, so there is nothing to stand a frame in for.
+		-- The same test the preview itself uses. A group with nothing to draw is not previewed,
+		-- so it has no business putting frames on screen either.
 		if groupDef.Id == previewGroupId and groups:Supports(groupDef)
 			and not groups:IsSoundOnly(groupDef) then
 			anchor = groupDef.Anchor
@@ -1513,9 +1503,9 @@ function M:Refresh(options, moduleEnabled)
 	frameAnchors = nil
 	previewFrameAnchors = nil
 
-	-- Ahead of the groups themselves: the copies below anchor to whatever this puts on screen.
+	-- Ahead of the groups themselves, since the copies below anchor to what this puts on screen.
 	local previewPartyFrames = ShowPreviewFrames(options)
-	-- Test mode ignores it: a group held back by its combat state would look broken there, with
+	-- Test mode ignores it. A group held back by its combat state would look broken there, with
 	-- nothing to tell it apart from one whose spells simply are not up.
 	local inCombat = InCombatLockdown()
 
@@ -1528,7 +1518,7 @@ function M:Refresh(options, moduleEnabled)
 		state.Allowed = moduleEnabled and groupDef.Enabled and groups:Supports(groupDef)
 			and (testModeActive or groups:ShowsInCombat(groupDef, inCombat))
 
-		-- Previewed only once there is something to draw: the stand-in icons are the handle, so
+		-- Previewed only once there is something to draw. The stand-in icons are the handle, so
 		-- a group with no spells yet would be an invisible frame to drag around.
 		local active = state.Allowed
 			or (groupDef.Id == previewGroupId and groups:Supports(groupDef))
@@ -1536,7 +1526,7 @@ function M:Refresh(options, moduleEnabled)
 		if not active then
 			Park(state)
 		elseif groups:IsSoundOnly(groupDef) then
-			-- Nothing to build, position or preview: the group IS its registrations. Parked
+			-- Nothing to build, position or preview, since the group is its registrations. Parked
 			-- rather than skipped so a group switched over to sound only hands its copies back.
 			Park(state)
 
@@ -1643,9 +1633,8 @@ function M:HasFrameGroups()
 	return anyFrameGroups
 end
 
----Only live while previewing; otherwise the anchor eats clicks meant for what is behind it.
----There is nothing to see: the stand-in icons under the cursor are what you grab, which is why
----a group with nothing to draw is not previewed at all.
+---Only live while previewing, or the anchor eats clicks meant for what is behind it. There is
+---nothing to see, since the stand-in icons under the cursor are what you grab.
 ---@param state PersonalAuraGroupState
 function M:SetAnchorInteractive(state)
 	local anchor = state.Anchor
@@ -1658,16 +1647,16 @@ function M:SetAnchorInteractive(state)
 
 	anchor:EnableMouse(previewing)
 	anchor:SetMovable(previewing)
-	-- The group's own name rather than the module's: every group is its own draggable, and a
+	-- The group's own name rather than the module's. Every group is its own draggable, and a
 	-- screen full of identical "Personal Auras" captions would tell them apart no better.
 	moduleUtil:SetTestLabel(anchor, previewing and state.Group.Name or nil)
 end
 
----Rebuilds every group's sound registrations without touching a single display. What a
----registration depends on - which unit a token holds, and whether it is still the side the group
----asked for - moves without anything being drawn differently, and a sound-only group has no
----display for the unit and plate handlers to re-point. Cheap to call: the sound module compares
----a stamp and does nothing when the answer has not moved.
+---Rebuilds every group's sound registrations without touching a single display. Which unit a token
+---holds, and whether it is still the side the group asked for, can move without anything being
+---drawn differently, and a sound-only group has no display for the unit and plate handlers to
+---re-point. Cheap to call, since the sound module compares a stamp and does nothing when the
+---answer has not moved.
 function M:RefreshSounds()
 	wipe(soundRequests)
 
@@ -1683,7 +1672,7 @@ end
 ---@param token string
 function M:OnNamePlateAdded(token)
 	for _, state in pairs(states) do
-		-- Sound-only groups take no copy out on the plate; they only want it in their token list.
+		-- Sound-only groups take no copy out on the plate, and only want it in their token list.
 		if state.Group.Anchor == groups.Anchor.Nameplate and state.Allowed
 			and not groups:IsSoundOnly(state.Group) then
 			RefreshPlateGroup(state, token)
@@ -1752,7 +1741,8 @@ function M:OnUnitChanged(unit)
 	end
 
 	-- The token now holds somebody else, which is the whole of what a registration is keyed on.
-	-- Coalesced like the plate churn: a group-wide phase or faction change fires this per unit.
+	-- Coalesced like the plate churn, since a group-wide phase or faction change fires this per
+	-- unit.
 	QueueSoundRefresh()
 end
 

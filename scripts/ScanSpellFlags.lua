@@ -1,4 +1,4 @@
--- Dev tool (NOT shipped with the addon): scans every spell ID and collects the ones flagged
+-- Dev tool, not shipped with the addon. It scans every spell ID and collects the ones flagged
 -- CrowdControl / Important, for regenerating src/Core/AuraCategoryIds.lua.
 --
 -- Usage:
@@ -9,17 +9,17 @@
 --      WTF\Account\<ACCOUNT>\SavedVariables\MiniAuras.lua (see that file's header).
 --   4. Revert the TOC changes.
 --
--- Run OUT of combat in the open world - the flags can be secret in combat/instanced content,
--- and secret results can't be collected. The scan takes ~30-60 seconds; progress prints to
--- chat. Results are written to the MiniAurasSpellScan saved variable (the copy window only shows
--- a summary - the full lists are too big for an edit box).
+-- Run out of combat in the open world, because the flags can be secret in combat or instanced
+-- content and secret results can't be collected. The scan takes 30 to 60 seconds and prints its
+-- progress to chat. Results go to the MiniAurasSpellScan saved variable, since the full lists
+-- are too big for the copy window's edit box.
 --
 -- If the "secret" counts are non-zero, Blizzard has made the flags unreadable in this client
--- version/context and the lists will be incomplete - try a different zone, or this approach
--- is dead on that client.
+-- version or context and the lists will be incomplete. Try a different zone, or take it that
+-- this approach is dead on that client.
 
-local MAX_ID = 1400000 -- above the highest live spell ID as of 12.0; bump if needed
-local BATCH = 20000 -- spell IDs scanned per frame; lower this if the client stutters
+local MAX_ID = 1400000 -- above the highest live spell ID as of 12.0, bump if needed
+local BATCH = 20000 -- spell IDs scanned per frame, lower this if the client stutters
 
 local scanner = CreateFrame("Frame")
 local scanning = false
@@ -83,8 +83,8 @@ local function StartScan()
 		scanning = false
 		print(("MiniAuras scan complete: %d CC spells (%d secret), %d Important spells (%d secret)"):format(#cc, ccSecret, #imp, impSecret))
 
-		-- Full results go to the saved variable (they're far too large for chat or an edit box);
-		-- /reload to flush them to WTF\...\SavedVariables\MiniAuras.lua.
+		-- Full results go to the saved variable, being far too large for chat or an edit box.
+		-- /reload flushes them to WTF\...\SavedVariables\MiniAuras.lua.
 		MiniAurasSpellScan = {
 			BuildVersion = select(4, GetBuildInfo()),
 			CC = {},
@@ -100,7 +100,7 @@ local function StartScan()
 		end
 		print("MiniAuras scan: results stored in the MiniAurasSpellScan saved variable - /reload to write them to disk.")
 
-		-- The important list is usually small enough to eyeball; show it plus a summary.
+		-- The important list is usually small enough to eyeball, so show it plus a summary.
 		local out = {
 			("-- Scan of build %s: %d CC (%d secret), %d Important (%d secret)."):format(tostring(select(4, GetBuildInfo())), #cc, ccSecret, #imp, impSecret),
 			"-- Full lists saved to the MiniAurasSpellScan saved variable; /reload to flush to disk.",

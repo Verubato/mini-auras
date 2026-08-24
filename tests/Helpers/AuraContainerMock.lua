@@ -1,29 +1,15 @@
--- Mock environment for testing the 12.1 AuraContainer path (Core/AuraContainerDisplay.lua)
--- without a WoW client. Provides:
---
---   * A rich CreateFrame replacement (superset of wow_api's stub) with parent tracking,
---     SetPoint/SetSize/Show/Hide recording, and child region/animation mocks.
---   * CreateFrame("AuraContainer", ...) frames implementing the container inbound API:
---     AddAuraGroup batch-creates buttons through initializeFrame (mirroring the client's
---     10-per-batch pre-creation), plus the group setters as recorders.
---   * AuraButton mocks with the display-element APIs (SetIcon, SetDurationCooldown, ...).
---   * The RESTRICTION model: while M.restricted is true, calling any method on an aura
---     button OR anything created beneath one raises the client's forbidden-object error.
---     (Confirmed live behavior: even Hide() on an addon-created child errors in combat.)
---   * Deterministic C_Timer.NewTicker/NewTimer with manual pumps (M.tickAll / M.runTimers).
---
--- Call M.setup() after wow_api.setup(); then M.loadDisplay() returns the real
--- AuraContainerDisplay module loaded against a mock addon table.
+-- Mock environment for testing the 12.1 AuraContainer path without a WoW client.
+-- Call M.setup() after wow_api.setup(), then M.loadDisplay() for the real display module.
 
 local M = {}
 
 M.restricted = false
 M.batchSize = 10
--- The file the global font option resolves to; nil means nothing is picked.
+-- The file the global font option resolves to, and nil means nothing is picked.
 M.fontFace = nil
 -- Button methods to leave off, for the display's older-build fallbacks. Cleared by M.reset.
 M.missingButtonMethods = {}
--- Whether the mocked client is behind a loading screen; read by the background sweep.
+-- Whether the mocked client is behind a loading screen, read by the background sweep.
 M.loadingScreen = false
 
 local FORBIDDEN_ERROR = "Attempt to access forbidden object from code tainted by an AddOn"
@@ -63,8 +49,6 @@ function M.lastFrameForEvent(event)
 	return nil
 end
 
--- Frame factory
-
 local frameCount = 0
 
 local function IsUnderAuraButton(frame)
@@ -79,7 +63,7 @@ local function IsUnderAuraButton(frame)
 end
 
 -- Wraps every function on a frame so calls error while restricted, matching the client's
--- forbidden-object behavior for aura buttons and their descendants.
+-- forbidden-object behavior. Even Hide() on an addon-created child under an aura button errors.
 local function GuardRestricted(frame)
 	for key, value in pairs(frame) do
 		if type(value) == "function" then
@@ -122,8 +106,8 @@ local function NewRegion(parent, regionType)
 		_calls = {},
 	}
 
-	-- _calls counts invocations; _lastArgs keeps the most recent argument list per method so
-	-- tests can assert on what was actually applied (e.g. which texture asset).
+	-- _lastArgs keeps the most recent argument list per method, so tests can assert on what was
+	-- applied.
 	region._lastArgs = {}
 
 	local function record(name)
@@ -309,8 +293,8 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:GetScale()
 		return frame._scale or 1
 	end
-	-- Rect queries return nil until a test supplies one with SetMockRect (frames are never
-	-- laid out here); anchor-normalization code treats nil as "rect unavailable" and skips.
+	-- Frames are never laid out here, so rect queries return nil until a test calls SetMockRect.
+	-- Anchor-normalization code treats nil as an unavailable rect and skips.
 	function frame:SetMockRect(left, bottom, width, height)
 		frame._rect = { left = left, bottom = bottom, width = width, height = height }
 	end
@@ -333,8 +317,8 @@ function M.NewFrame(frameType, name, parent, template)
 		return frame._rect.left + frame._rect.width / 2, frame._rect.bottom + frame._rect.height / 2
 	end
 	function frame:SetFrameLevel(level)
-		-- The client shifts a frame's children with it so relative levels hold; the pet
-		-- portrait path depends on that when Anchors lowers the container after creation.
+		-- The client shifts a frame's children with it so relative levels hold. The pet portrait
+		-- path depends on that when Anchors lowers the container after creation.
 		local delta = level - (frame._level or 0)
 		frame._level = level
 		if delta ~= 0 then
@@ -383,7 +367,7 @@ function M.NewFrame(frameType, name, parent, template)
 
 	M.frames[#M.frames + 1] = frame
 
-	-- Textures are kept in creation order so tests can reach a button's icon (the first one).
+	-- Textures are kept in creation order, so a button's icon is the first one a test finds.
 	frame._createdTextures = {}
 
 	function frame:CreateTexture(_, layer)
@@ -394,14 +378,12 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:CreateMaskTexture()
 		return NewRegion(frame, "MaskTexture")
 	end
-	-- Unit-frame portraits are textures in the client; the mock models them as frames so they
-	-- can carry a parent and a rect, which means the frame surface needs the region methods
-	-- the portrait paths call.
+	-- Portraits are textures in the client, and the mock models them as frames so they can carry a
+	-- parent and a rect. That is why the frame surface needs these region methods.
 	function frame:SetDrawLayer() end
 	function frame:AddMaskTexture() end
 	function frame:SetTexCoord() end
-	-- Font strings are kept in creation order too, so a test can read the text a widget put on
-	-- each of them (a status bar's name and countdown, for instance).
+	-- Font strings are kept in creation order too, so a test can read what a widget put on each one.
 	frame._createdFontStrings = {}
 
 	function frame:CreateFontString()
@@ -428,7 +410,6 @@ function M.NewFrame(frameType, name, parent, template)
 		return NewAnimationGroup(frame)
 	end
 
-	-- StatusBar widget surface
 	if frameType == "StatusBar" then
 		frame._value = 0
 		frame._minValue, frame._maxValue = 0, 1
@@ -453,7 +434,6 @@ function M.NewFrame(frameType, name, parent, template)
 		end
 	end
 
-	-- Cooldown widget surface (CooldownFrameTemplate)
 	if frameType == "Cooldown" then
 		for _, methodName in ipairs({
 			"SetDrawEdge", "SetDrawBling", "SetHideCountdownNumbers", "SetSwipeColor",
@@ -469,7 +449,7 @@ function M.NewFrame(frameType, name, parent, template)
 			return "MockFont", 10, ""
 		end
 		frame.SetFont = function() end
-		-- Kept apart from the counters: tests assert on which formatter (or nil) was installed.
+		-- Kept apart from the counters so tests can assert on which formatter was installed.
 		frame.SetCountdownFormatter = function(_, formatter)
 			frame._calls.SetCountdownFormatter = (frame._calls.SetCountdownFormatter or 0) + 1
 			frame._countdownFormatter = formatter
@@ -478,8 +458,6 @@ function M.NewFrame(frameType, name, parent, template)
 
 	return frame
 end
-
--- AuraButton mock
 
 local function NewAuraButton(container, groupKey)
 	local button = M.NewFrame("Button", nil, container)
@@ -501,8 +479,8 @@ local function NewAuraButton(container, groupKey)
 		end
 	end
 
-	-- Validates like the live client: the duration-text options walk NAMED fields, and a
-	-- positional {curve, property} pair errored per button at AddAuraGroup time on the PTR.
+	-- The live client walks named fields in the duration-text options. A positional
+	-- {curve, property} pair errored per button at AddAuraGroup time on the PTR.
 	local countedSetDurationText = button.SetDurationText
 	function button:SetDurationText(fontString, options)
 		if options and options.textColor then
@@ -519,8 +497,6 @@ local function NewAuraButton(container, groupKey)
 	return button
 end
 
--- AuraContainer mock
-
 local function NewAuraContainer(name, parent, template)
 	local container = M.NewFrame("AuraContainer", name, parent, template)
 	container._groups = {}
@@ -528,9 +504,9 @@ local function NewAuraContainer(name, parent, template)
 	container._enabled = true
 	container._buttons = {}
 
-	-- Counted as well as recorded: pointing a container at nobody and back is how the wrapper
-	-- forces a re-read when a token's OCCUPANT changed rather than the token, and the unit it
-	-- ends up on looks identical either way.
+	-- Pointing a container at nobody and back is how the wrapper forces a re-read when a token's
+	-- occupant changed rather than the token. The unit it ends up on looks the same either way, so
+	-- the count is all a test can see it by.
 	function container:SetUnit(unit)
 		container._unit = unit
 		container._calls.SetUnit = (container._calls.SetUnit or 0) + 1
@@ -566,19 +542,19 @@ local function NewAuraContainer(name, parent, template)
 		local group = {
 			filterString = filterString,
 			options = options,
-			-- In force from creation, like the client: the runtime setter overwrites it, so tests
-			-- reading this field see whatever the engine would currently be filtering with.
+			-- In force from creation, like the client. The runtime setter overwrites it, so this field
+			-- is whatever the engine would be filtering with now.
 			candidateFilters = options.candidateFilters,
 			maxFrameCount = options.maxFrameCount,
-			-- Kept because the live client allocates a group's buttons from the count it was
-			-- created with; raising the count afterwards does not conjure more.
+			-- Kept because the live client allocates a group's buttons from the count it was created
+			-- with. Raising the count afterwards does not conjure more.
 			maxFrameCountAtCreation = options.maxFrameCount,
 			layout = options.layout,
 			buttons = {},
 		}
 		container._groups[groupKey] = group
 
-		-- Mirror the client: a batch of buttons is created up-front, each initialized.
+		-- Like the client, a batch of buttons is created up-front and each one initialized.
 		for _ = 1, M.batchSize do
 			local button = NewAuraButton(container, groupKey)
 			group.buttons[#group.buttons + 1] = button
@@ -639,8 +615,6 @@ local function NewAuraContainer(name, parent, template)
 	return container
 end
 
--- Deterministic timers
-
 function M.tickAll(times)
 	for _ = 1, times or 1 do
 		for _, ticker in ipairs(tickers) do
@@ -665,7 +639,7 @@ function M.tickAll(times)
 end
 
 function M.runTimers()
-	-- Snapshot: callbacks may schedule new timers.
+	-- Snapshot, because callbacks may schedule new timers.
 	local due = {}
 	for _, timer in ipairs(timers) do
 		if not timer.cancelled and not timer.fired then
@@ -697,16 +671,13 @@ function M.reset()
 	timers = {}
 	M.frames = {}
 
-	-- Not wiped: a suite file's sweep worker is created once and only ever registers its OnUpdate
-	-- then, so forgetting it would leave the file with nothing to pump. Stopped instead, which the
-	-- next sweep undoes by showing its own worker again, and which leaves the workers of earlier
-	-- files parked for good.
+	-- Not wiped, because a suite file's sweep worker registers its OnUpdate once, so forgetting it
+	-- would leave the file with nothing to pump. Stopping it instead leaves earlier files' workers
+	-- parked and lets the next sweep show its own worker again.
 	for _, frame in ipairs(updaters) do
 		frame:Hide()
 	end
 end
-
--- Environment installation
 
 function M.setup()
 	local previousCreateFrame = _G.CreateFrame
@@ -755,13 +726,13 @@ function M.setup()
 	_G.Enum.LuaCurveType = _G.Enum.LuaCurveType or { Linear = 0, Step = 1 }
 	_G.Enum.DurationTextBindingProperty = _G.Enum.DurationTextBindingProperty
 		or { RemainingDuration = 0, RemainingPercent = 1 }
-	-- Pandemic capability: the display wrapper probes these before registering regions.
+	-- The display wrapper probes these pandemic APIs before registering regions.
 	_G.C_UnitAuras = _G.C_UnitAuras or {}
 	_G.C_UnitAuras.GetRefreshExtendedDuration = _G.C_UnitAuras.GetRefreshExtendedDuration
 		or function() return 0 end
 	_G.C_UnitAuras.GetAuraBaseDuration = _G.C_UnitAuras.GetAuraBaseDuration
 		or function() return 0 end
-	-- Duration-text colour curves: probed the same way before binding the countdown fontstring.
+	-- The duration-text colour curves are probed the same way before binding the countdown string.
 	_G.C_AuraContainerUtil = _G.C_AuraContainerUtil or {}
 	_G.C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions =
 		_G.C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions
@@ -804,9 +775,9 @@ end
 -- tests can assert that a misuse is reported rather than swallowed.
 M.notifications = {}
 
--- Loads the real AuraContainerDisplay - and the Core modules it now depends on - against a mock
--- addon table. Returns the display module and the mock addon (mockDb is live-editable; the
--- sibling modules are on addon.Core.Pool / .GrowAnchors / .AuraFilters / .KickSlot).
+-- Loads the real AuraContainerDisplay and the Core modules it depends on against a mock addon
+-- table, and returns both. mockDb is live-editable, and the siblings sit on addon.Core.Pool,
+-- .GrowAnchors, .AuraFilters, and .KickSlot.
 function M.loadDisplay()
 	local mockDb = { DisableSwipe = false, MillisecondsThreshold = 3, GlowType = "Proc Glow" }
 	local addon = {
@@ -815,17 +786,17 @@ function M.loadDisplay()
 				UpdateCooldownFontSize = function() end,
 				UpdateStackFontSize = function() end,
 				UpdateFontSize = function() end,
-				-- Stands in for the global font option: nil is "nothing picked", so the face is
-				-- whatever the string already wears.
+				-- Stands in for the global font option. nil means nothing is picked, so the string
+				-- keeps the face it already wears.
 				CurrentFace = function()
 					return M.fontFace
 				end,
 				BaseFace = function(_, fontString, face)
 					return face or (fontString and fontString:GetFont())
 				end,
-				-- The real one attaches picked text to shared font objects; the observable
-				-- outcome - pick beats fallback beats the string's own face - is kept through
-				-- SetFont, which is what these tests record and assert on.
+				-- The real one attaches picked text to shared font objects. The mock keeps the
+				-- observable outcome through SetFont, where pick beats fallback beats the string's
+				-- own face.
 				Apply = function(_, fontString, size, flags, fallbackFace)
 					if not fontString then
 						return
@@ -850,7 +821,7 @@ function M.loadDisplay()
 			},
 		},
 		Core = {},
-		-- The background sweep asks: it spends nothing while a loading screen is up.
+		-- The background sweep asks this so it spends nothing while a loading screen is up.
 		IsLoadingScreenUp = function()
 			return M.loadingScreen == true
 		end,

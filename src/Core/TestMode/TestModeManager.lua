@@ -41,7 +41,6 @@ function M:StopTesting()
 	frames:SetTestFramesShown(false)
 	frames:SetTestArenaFramesShown(false)
 
-	-- Stop all module test modes
 	for _, module in ipairs(testModules) do
 		module:StopTesting()
 	end

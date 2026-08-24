@@ -6,8 +6,8 @@ local M = addon.Config.Migrator
 function M:UpgradeToVersion41(vars)
 	if vars.Version ~= 40 then return false end
 
-	-- Add DisabledSpells to EnemyCooldownTrackerModule (new spell-filter feature).
-	-- DisabledSpells is an opaque user hash; initialise to empty for existing installs.
+	-- Add DisabledSpells to EnemyCooldownTrackerModule for its spell filter. It is an opaque user
+	-- hash, so existing installs start empty.
 	local ecd = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
 	if ecd and ecd.DisabledSpells == nil then
 		ecd.DisabledSpells = {}
@@ -49,7 +49,7 @@ end
 function M:UpgradeToVersion45(vars)
 	if vars.Version ~= 44 then return false end
 
-	-- The new AlwaysShow key is filled from dbDefaults by GetAndUpgradeDb; this step exists to
+	-- The new AlwaysShow key is filled from dbDefaults by GetAndUpgradeDb. This step exists to
 	-- bump the version and surface the feature in What's New.
 	vars.WhatsNew = vars.WhatsNew or {}
 	table.insert(vars.WhatsNew, L[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."])
@@ -78,8 +78,8 @@ end
 function M:UpgradeToVersion48(vars)
 	if vars.Version ~= 47 then return false end
 
-	-- The "Split" enemy-cooldown layout mode has been removed (it split offensive vs defensive
-	-- cooldowns, and offensive cooldown tracking no longer exists). Fall back to "Linear".
+	-- The "Split" enemy-cooldown layout mode has been removed, since it split offensive from
+	-- defensive cooldowns and offensive cooldown tracking no longer exists. Fall back to "Linear".
 	local ecd = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
 	if ecd and ecd.DisplayMode == "Split" then
 		ecd.DisplayMode = "Linear"
@@ -96,11 +96,10 @@ end
 function M:UpgradeToVersion49(vars)
 	if vars.Version ~= 48 then return false end
 
-	-- Nameplates: the fixed "CC" and "Combined/Defensives" sections became two generic bars
-	-- ("Bar1", "Bar2"), each with its own ShowCC / ShowDefensives toggles. Map the old sections
-	-- onto the bars - CC -> Bar1 (Show CC), Combined -> Bar2 (Show Defensives) - so each user's
-	-- existing size/position/enabled settings carry over. Leftover CC/Combined keys are stripped
-	-- by CleanTable against the new defaults.
+	-- Nameplates: the fixed "CC" and "Combined/Defensives" sections became two generic bars,
+	-- "Bar1" and "Bar2", each with its own ShowCC / ShowDefensives toggles. CC maps onto Bar1 with
+	-- Show CC and Combined onto Bar2 with Show Defensives, so existing size, position and enabled
+	-- settings carry over.
 	local nameplates = vars.Modules and vars.Modules.NameplatesModule
 	if nameplates then
 		for _, factionKey in ipairs({ "Friendly", "Enemy" }) do
@@ -149,13 +148,11 @@ end
 function M:UpgradeToVersion52(vars)
 	if vars.Version ~= 51 then return false end
 
-	-- Nameplates can now show the "important" buffs Blizzard permits (e.g. enemy offensive
-	-- cooldowns) via a per-bar ShowImportant toggle. Missing ShowImportant keys are filled
-	-- from dbDefaults by GetAndUpgradeDb (Enemy Bar1 defaults to on). For existing users we
-	-- additionally turn it on for one enabled bar so the feature surfaces somewhere sensible
-	-- without retroactively overriding a deliberately empty layout. Prefer an enabled bar that
-	-- already shows defensives (important buffs are cooldowns, so they sit naturally alongside
-	-- them); otherwise fall back to the first enabled bar.
+	-- Nameplates can now show the "important" buffs Blizzard permits through a per-bar
+	-- ShowImportant toggle. Missing ShowImportant keys are filled from dbDefaults by
+	-- GetAndUpgradeDb, where Enemy Bar1 defaults to on. Existing users also get it on for one
+	-- enabled bar, preferring one that already shows defensives and falling back to the first
+	-- enabled bar.
 	local nameplates = vars.Modules and vars.Modules.NameplatesModule
 	local enemy = nameplates and nameplates.Enemy
 	local friendly = nameplates and nameplates.Friendly
@@ -202,9 +199,8 @@ function M:UpgradeToVersion54(vars)
 	if vars.Version ~= 53 then return false end
 
 	-- Alerts and Nameplates now have their own icon padding instead of sharing the global
-	-- (Miscellaneous) IconSpacing. Seed each from the current global so existing layouts don't shift;
-	-- the module sliders take over once the user changes them. Alerts has one shared value; nameplates
-	-- are per-bar (like their Icon Size / Max Icons).
+	-- Miscellaneous IconSpacing. Seed each from the current global so existing layouts do not
+	-- shift. Alerts has one shared value and nameplates are per-bar.
 	local spacing = vars.IconSpacing or 2
 	local alerts = vars.Modules and vars.Modules.AlertsModule
 	if alerts then
@@ -234,9 +230,9 @@ end
 function M:UpgradeToVersion55(vars)
 	if vars.Version ~= 54 then return false end
 
-	-- The remaining modules that shared the global (Miscellaneous) IconSpacing now own their padding,
-	-- and the global setting is retired. Seed each from the current global so existing layouts don't
-	-- shift. CC and FriendlyIndicator are per-instance (Default/Raid); Healer and KickTimer are single.
+	-- The remaining modules that shared the global Miscellaneous IconSpacing now own their padding,
+	-- and the global setting is retired. Seed each from the current global so existing layouts do
+	-- not shift. CC and FriendlyIndicator are per-instance, Healer and KickTimer are single.
 	local spacing = vars.IconSpacing or 2
 	local modules = vars.Modules
 	if modules then
@@ -265,9 +261,9 @@ end
 function M:UpgradeToVersion56(vars)
 	if vars.Version ~= 55 then return false end
 
-	-- FriendlyIndicator's important-buff category (12.1) used to follow the defensives toggle.
-	-- It now has its own ShowImportant option; seed it from ShowDefensives so nobody's
-	-- indicator gains or loses icons on upgrade.
+	-- FriendlyIndicator's important-buff category followed the defensives toggle and now has its
+	-- own ShowImportant option. Seed it from ShowDefensives so nobody's indicator gains or loses
+	-- icons on upgrade.
 	local fi = vars.Modules and vars.Modules.FriendlyIndicatorModule
 	if fi then
 		if fi.Default then
@@ -287,9 +283,9 @@ local KICK_DUPE_ZONES = { "World", "Arena", "BattleGrounds", "Dungeons", "Raid" 
 function M:UpgradeToVersion57(vars)
 	if vars.Version ~= 56 then return false end
 
-	-- The CC module always draws the kick icon (it has no toggle), so anyone running it in the
-	-- same zone as the friendly indicator with ShowKicks on got two identical interrupt icons
-	-- on the same unit frames. Drop the indicator's copy where the two overlap; CC keeps its own.
+	-- The CC module always draws the kick icon, so anyone running it in the same zone as the
+	-- friendly indicator with ShowKicks on got two identical interrupt icons on the same unit
+	-- frames. Drop the indicator's copy where the two overlap.
 	local function DisableDuplicateKicks(modules)
 		local cc = modules and modules.CCModule
 		local fi = modules and modules.FriendlyIndicatorModule
@@ -309,8 +305,8 @@ function M:UpgradeToVersion57(vars)
 			return
 		end
 
-		-- ShowKicks is per instance profile (Default/Raid) and either can apply in any zone -
-		-- the split is group size, not zone - so an overlap anywhere turns both off.
+		-- ShowKicks is per instance profile and either can apply in any zone, since the split is
+		-- group size rather than zone, so an overlap anywhere turns both off.
 		if fi.Default then
 			fi.Default.ShowKicks = false
 		end
@@ -395,9 +391,9 @@ end
 function M:UpgradeToVersion60(vars)
 	if vars.Version ~= 59 then return false end
 
-	-- FriendlyIndicatorModule became AurasModule: the module shows any tracked aura, not just an
-	-- indicator on friendly frames, and the options page has been called Auras for a while.
-	-- Carry the saved settings across rather than letting CleanTable drop them as an unknown key.
+	-- FriendlyIndicatorModule became AurasModule, since the module shows any tracked aura rather
+	-- than an indicator on friendly frames. Carry the saved settings across rather than letting
+	-- CleanTable drop them as an unknown key.
 	local function MoveOptions(modules)
 		if not modules or not modules.FriendlyIndicatorModule then
 			return
@@ -477,8 +473,8 @@ function M:UpgradeToVersion62(vars)
 		local offset = precog.Offset or {}
 		local sound = precog.Sound or {}
 
-		-- White is the precog default, so it reads as "never picked one": those installs get the
-		-- designed per-spell tints; an actual choice is carried onto both groups.
+		-- White is the precog default, so it reads as "never picked one" and those installs get
+		-- the designed per-spell tints. An actual choice is carried onto both groups.
 		local r, g, b, a = color.R or 1, color.G or 1, color.B or 1, color.A or 1
 		local pickedColor = not (r == 1 and g == 1 and b == 1 and a == 1)
 
@@ -553,9 +549,9 @@ end
 function M:UpgradeToVersion63(vars)
 	if vars.Version ~= 62 then return false end
 
-	-- The split-mode defensives bar gained its own anchor (AlertsModule.Defensives); fresh
-	-- installs ship it mirrored beside the important bar. Existing installs seed it from the
-	-- main bar's anchor instead, so a split layout someone already positioned does not move.
+	-- The split-mode defensives bar gained its own anchor, AlertsModule.Defensives. Fresh installs
+	-- ship it mirrored beside the important bar. Existing installs seed it from the main bar's
+	-- anchor instead, so a split layout someone already positioned does not move.
 	local function SeedDefensives(modules)
 		local alerts = modules and modules.AlertsModule
 
@@ -591,8 +587,8 @@ function M:UpgradeToVersion64(vars)
 	if vars.Version ~= 63 then return false end
 
 	-- The pandemic reveal's default tint went from amber to red, and a bar group's fill from the
-	-- plain Blizzard bar to the raid one. Only groups still carrying the exact old defaults follow:
-	-- anyone who picked those on purpose keeps them.
+	-- plain Blizzard bar to the raid one. Only groups still carrying the exact old defaults follow,
+	-- so anyone who picked those on purpose keeps them.
 	local function Recolour(modules)
 		local groups = modules and modules.CustomAurasModule and modules.CustomAurasModule.Groups
 
@@ -655,9 +651,8 @@ function M:UpgradeToVersion66(vars)
 	if vars.Version ~= 65 then return false end
 
 	-- Colouring the countdown by time is off out of the box now, and turned off for everyone
-	-- already running: the complaints were from people who had never asked for it. Anyone who
-	-- wants it back has a switch on the miscellaneous page. Profiles carry their own copy of
-	-- this key (ProfileManager PayloadKeys), so each one is cleared too.
+	-- already running it, because the complaints came from people who never asked for it.
+	-- Profiles carry their own copy of this key, so each one is cleared too.
 	vars.ColorCountdownByTime = false
 
 	if vars.Profiles then
@@ -706,8 +701,7 @@ function M:UpgradeToVersion68(vars)
 
 	-- The ally kick list is anchored by the edge its rows grow away from now, so the first row
 	-- stays put as the others come and go. Re-point each saved position at that edge, measured
-	-- with the list one row tall: its resting "Ready" height, and the height it almost always
-	-- has while being positioned, since the height it actually had at drag time is not recorded.
+	-- with the list one row tall, since the height it actually had at drag time is not recorded.
 	local function PinListAnchor(modules)
 		local tracker = modules and modules.AllyKickTrackerModule
 		local point = tracker and tracker.Point

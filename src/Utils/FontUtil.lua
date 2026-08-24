@@ -8,9 +8,8 @@ addon.Utils.FontUtil = M
 
 -- Stack counts sit in a corner and share the icon with the countdown, so they run smaller.
 local STACK_COEFFICIENT = 0.38
--- The alphabets a font family carries a member for. The configured file only overrides the
--- member for the client's own locale; the rest keep the game's files, so text in another script
--- - a Cyrillic name in a group, say - never renders as boxes because the picked face lacks it.
+-- The alphabets a font family carries a member for. Only the client's own locale takes the
+-- configured file, so text in another script still renders from the game's files.
 local FAMILY_ALPHABETS = { "roman", "korean", "simplifiedchinese", "traditionalchinese", "russian" }
 local LOCALE_ALPHABETS = {
 	koKR = "korean",
@@ -20,21 +19,18 @@ local LOCALE_ALPHABETS = {
 }
 
 -- The file the configured face resolves to, remembered between calls: every icon asks for it on
--- every refresh and the answer only moves when the media list does. Core/Display/Media/Fonts loads
--- after this file, so it is reached through the addon table rather than an upvalue.
+-- every refresh and the answer only moves when the media list does.
 local cachedName
 local cachedFile
--- The saved variables table, kept between calls; see CurrentFace.
+-- The saved variables table, kept between calls.
 local cachedDb
 local subscribedToFonts = false
--- One shared font object per file, size and flags combination, nested file -> size -> flags, each created once and never
--- re-fonted. Text drawn in a font attaches to one of these with SetFontObject rather than being
--- handed the file: the client renders a string given a font object even when the file's first
--- load is still in flight, where SetFont with a cold path answers false, leaves the string as
--- it was, and repaints on nothing. Never re-fonted is load-bearing too: a font change hands
--- re-applied strings a DIFFERENT object, because editing an object a string already holds only
--- repainted text that was about to redraw anyway - countdowns followed a change while a static
--- warning kept its old face, which read as the option working for some text and not the rest.
+-- One shared font object per file, size and flags, nested file -> size -> flags, each created
+-- once and never re-fonted. Text attaches to one with SetFontObject rather than being handed the
+-- file: the client renders a string given a font object even while the file's first load is in
+-- flight, where SetFont on a cold path answers false and leaves the string as it was. Re-fonting
+-- an object in place only repaints text that was about to redraw anyway, so a font change hands
+-- re-applied strings a new object.
 local fontObjects = {}
 local fontObjectCount = 0
 
@@ -49,14 +45,15 @@ function M:CurrentFace()
 	if not subscribedToFonts then
 		subscribedToFonts = true
 
+		-- Core/Display/Media/Fonts loads after this file, so it is reached through the addon table.
 		addon.Core.Fonts:OnChanged(function()
 			cachedName = nil
 			cachedDb = nil
 		end)
 	end
 
-	-- The saved variables are asked for once and kept. Every fontstring on every icon comes
-	-- through here on a restyle, and the table cannot be swapped without a refresh behind it.
+	-- Every fontstring on every icon comes through here on a restyle, and the table cannot be
+	-- swapped without a refresh behind it.
 	local db = cachedDb
 
 	if not db then
@@ -109,16 +106,13 @@ local function FamilyMembers(file, size, flags)
 end
 
 ---The shared object for this file at this size and flags, created on first need and immutable
----after: see the note on fontObjects. Also serves the dropdown's per-font preview rows, which
----is why the file is a parameter rather than always the configured one.
+---after. The file is a parameter because the dropdown's preview rows ask for faces other than the
+---configured one.
 ---
----Created through CreateFontFamily, definition and all, never CreateFont plus SetFont: SetFont
----on a font object hits the same lazy file loading strings do - false for a file the client is
----still loading, leaving the object undefined for good - where a family created WITH its
----definition is registered like the game's own declared fonts, and the client sees the file's
----load through itself. That difference is why one session's pick used to land whole on the
----fallback face while another's worked: it hung on whether some other addon had already loaded
----the file before the object was built.
+---Created through CreateFontFamily with its definition, never CreateFont plus SetFont: SetFont on
+---a font object hits the same lazy file loading strings do, answering false for a file the client
+---is still loading and leaving the object undefined for good. A family created with its definition
+---is registered like the game's own declared fonts, so the client sees the file's load through it.
 ---@param file string
 ---@param size number
 ---@param flags string?
@@ -126,8 +120,7 @@ end
 function M:FileFontObject(file, size, flags)
 	flags = flags or ""
 
-	-- Nested rather than one map on a joined key: this is asked for per fontstring per restyle,
-	-- and building that key was a string per call for the client to hash and throw away.
+	-- Asked for per fontstring per restyle, so it nests rather than build a key string per call.
 	local bySize = fontObjects[file]
 
 	if not bySize then
@@ -152,7 +145,7 @@ function M:FileFontObject(file, size, flags)
 		if CreateFontFamily then
 			object = CreateFontFamily(name, FamilyMembers(file, size, flags))
 		else
-			-- Nothing but an old client gets here; the two-step is all it has.
+			-- Only an old client gets here, where the two-step is all there is.
 			object = CreateFont(name)
 			object:SetFont(file, size, flags)
 		end
@@ -163,14 +156,13 @@ function M:FileFontObject(file, size, flags)
 	return object
 end
 
---- Draws a fontstring in the configured font at the given size, or in its own face when
---- nothing is picked or the pick has not resolved yet. The one entry point for the option, and
---- always through a font object, never FontString:SetFont: an explicit SetFont sets instance
---- properties that keep shadowing whatever object is attached later, which is how a string
---- first touched with no font picked stayed on the game face for the session after a pick. The
---- unpicked state is simply a family built from the string's own base face. Falling back
---- rather than picking a default face is deliberate - the media refresh comes round again once
---- an unresolved name resolves, and swaps then.
+--- Draws a fontstring in the configured font at the given size, or in its own face when nothing
+--- is picked or the pick has not resolved yet. Always through a font object, never
+--- FontString:SetFont, which sets instance properties that keep shadowing any object attached
+--- later.
+---
+--- An unresolved name resolves on a later media refresh, so this falls back rather than picking a
+--- default face.
 --- @param fontString table
 --- @param size number? point size; nil keeps the size the string was built with
 --- @param flags string? font flags; nil keeps the flags the string was built with
@@ -215,11 +207,9 @@ function M:Apply(fontString, size, flags, fallbackFace)
 		fontString:SetFontObject(object)
 
 		-- A string keeps drawing its old glyphs after SetFontObject until something dirties it,
-		-- and rewriting its text is that something. Text that rewrites anyway - the captions,
-		-- every countdown - repaints on its own, but a static warning is written once ever.
-		-- Cleared first, because the client drops a SetText that changes nothing, which is
-		-- exactly what this text is. Secret text is left alone: it belongs to the engine, which
-		-- redraws it itself.
+		-- and rewriting its text is that something. Cleared first, because the client drops a
+		-- SetText that changes nothing. Secret text is left alone, since the engine redraws that
+		-- itself.
 		local text = fontString.GetText and fontString:GetText()
 		local secret = issecretvalue and issecretvalue(text)
 
@@ -231,8 +221,8 @@ function M:Apply(fontString, size, flags, fallbackFace)
 end
 
 --- The face a string was built with: what going back to "Game Default" restores, and what a
---- stand-in borrows from the string it mirrors - borrowing the WORN face would bake the pick in
---- as the mirror's own.
+--- stand-in borrows from the string it mirrors. The face it is wearing would bake the pick in as
+--- the mirror's own.
 --- @param fontString table
 --- @param face string? the face to answer for a string that has never been through Apply
 --- @return string? face
@@ -270,7 +260,6 @@ function M:UpdateFontSize(fontString, iconSize, coefficient, fontScale)
 	M:Apply(fontString, fontSize)
 end
 
---- Updates a stack count's font size based on icon size
 --- @param fontString table The font string showing the count
 --- @param iconSize number The size of the icon
 --- @param fontScale? number Optional font scale multiplier (default: 1.0)
@@ -278,7 +267,6 @@ function M:UpdateStackFontSize(fontString, iconSize, fontScale)
 	M:UpdateFontSize(fontString, iconSize, STACK_COEFFICIENT, fontScale)
 end
 
---- Updates the cooldown frame's countdown text font size based on icon size
 --- @param cd table The cooldown frame
 --- @param iconSize number The size of the icon
 --- @param coefficient? number Optional coefficient (default: 0.4)
@@ -288,7 +276,6 @@ function M:UpdateCooldownFontSize(cd, iconSize, coefficient, fontScale)
 		return
 	end
 
-	-- Scan once, cache result on the cooldown frame
 	if not cd.MiniAurasFontString then
 		local numRegions = cd:GetNumRegions()
 		for i = 1, numRegions do

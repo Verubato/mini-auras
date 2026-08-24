@@ -25,8 +25,6 @@ local function newAddon(db)
 	}
 end
 
--- SlotDistribution
-
 local slotAddon = loadModule("src/Utils/SlotDistribution.lua", newAddon({}))
 local slots = slotAddon.Utils.SlotDistribution
 
@@ -56,8 +54,6 @@ fw.describe("SlotDistribution.Calculate", function()
 	end)
 end)
 
--- Array
-
 local arrayAddon = loadModule("src/Libs/MiniFramework/Framework/Tables.lua", newAddon({}))
 local array = arrayAddon.Framework
 
@@ -81,11 +77,9 @@ fw.describe("Array", function()
 	end)
 end)
 
--- ModuleUtil
-
 fw.describe("ModuleUtil", function()
 	local moduleUtil, db
-	-- What the test preview is pretending the context is; nil outside test mode.
+	-- What the test preview is pretending the context is, nil outside test mode.
 	local previewIsRaid
 
 	local function setup(enabledSettings)
@@ -225,7 +219,7 @@ fw.describe("ModuleUtil", function()
 
 	-- The preview tabs are what the user is really asking about: previewing the raid layout from
 	-- the open world must read the Raid flag, and previewing the other tab must not borrow a
-	-- context the player is not in - a dungeons-only module stays off in the world.
+	-- context the player is not in. A dungeons-only module stays off in the world.
 	fw.it("takes the raid question from the preview, not from the group", function()
 		setup({ World = true, Arena = true, Dungeons = true, Raid = false, BattleGrounds = false })
 		setWorld(false, "none", false)
@@ -304,7 +298,7 @@ fw.describe("ModuleUtil:Coalesced", function()
 	local moduleUtil = loadModule("src/Utils/ModuleUtil.lua", newAddon({})).Utils.ModuleUtil
 
 	-- The suite's C_Timer.After runs its callback on the spot, which would collapse the
-	-- distinction this is about; these hold the callbacks so the burst can be counted.
+	-- distinction this is about. These hold the callbacks so the burst can be counted.
 	local function withHeldTimers(body)
 		local queued = {}
 		local realAfter = _G.C_Timer.After
@@ -430,8 +424,6 @@ fw.describe("ModuleUtil:Coalesced", function()
 	end)
 end)
 
--- WoWEx
-
 fw.describe("WoWEx aura-styling gate", function()
 	local function loadWoWEx(inCombat, shouldAurasBeSecret)
 		_G.InCombatLockdown = function()
@@ -458,7 +450,7 @@ fw.describe("WoWEx aura-styling gate", function()
 end)
 
 -- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped
--- answering, which emptied every spec lookup in the addon: profiles stopped auto switching and
+-- answering, which emptied every spec lookup in the addon, so profiles stopped auto switching and
 -- the kick tracker errored. The classic clients only ever had the globals, so both shapes have
 -- to work, and a test that leaves both in place cannot tell the difference.
 
@@ -514,8 +506,6 @@ fw.describe("WoWEx specialization lookup", function()
 	end)
 end)
 
--- AuraCategoryIds sanity
-
 fw.describe("AuraCategoryIds", function()
 	local data = loadModule("src/Core/Auras/AuraCategoryIds.lua", newAddon({})).Core.AuraCategoryIds
 
@@ -555,9 +545,9 @@ fw.describe("AuraCategoryIds", function()
 	end)
 end)
 
--- The change stamp behind every "has this moved?" test in the addon. What it replaced built a
--- string, so the traps are the ones a string could not have: a list that shrinks, a set whose
--- pairs order varies, and two keys sharing one set.
+-- The change stamp behind every "has this moved?" test in the addon. The traps are the ones a
+-- string could not have: a list that shrinks, a set whose pairs order varies, and two keys
+-- sharing one set.
 fw.describe("ChangeStamp", function()
 	local function newStamps()
 		local addon = newAddon({})

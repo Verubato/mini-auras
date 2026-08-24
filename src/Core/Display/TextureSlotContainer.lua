@@ -2,15 +2,12 @@
 local _, addon = ...
 local artTextures = addon.Core.ArtTextures
 
--- Stand-in art for previews, shaped like the texture an AuraContainer draws: one picture, sized
--- and turned exactly as the live one will be. The real texture only appears while its aura is up,
--- so a group being positioned needs something to grab; this is that something, and nothing here
--- ever touches aura data.
+-- Stand-in art for previews, shaped like the texture an AuraContainer draws, so a group being
+-- positioned has something to grab before its aura is up. Nothing here touches aura data.
 --
--- One slot, always. A texture group draws its art while any tracked aura is up and never more
--- than once, so the count the other stand-in containers carry would have nothing to count. The
--- rest of the surface (SetSlot, SetSlotUnused, ResetAllSlots, Count) matches theirs so a caller
--- can swap between the three by shape alone.
+-- One slot, always: a texture group draws its art once while any tracked aura is up. The rest of
+-- the surface (SetSlot, SetSlotUnused, ResetAllSlots, Count) matches the other stand-in containers,
+-- so a caller can swap between the three by shape alone.
 
 local DEFAULT_SIZE = 64
 

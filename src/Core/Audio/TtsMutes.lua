@@ -1,10 +1,9 @@
 ---@type string, Addon
 local _, addon = ...
 
--- The TTS Spells tab saves an opt-out list per category, so a spell it has never been told
--- about is announced. For the handful in AuraCategoryIds.TtsDefaultOff the rule flips: an
--- absent id is silent, and switching one on stores an explicit false. Both the tab and the
--- sound registrations read the state through here so they agree on what an absent id means.
+-- The TTS Spells tab saves an opt-out list per category, so a spell it has never been told about is
+-- announced. For the handful in AuraCategoryIds.TtsDefaultOff the rule flips and an absent id is
+-- silent. Both the tab and the sound registrations read the state through here.
 
 local auraCategoryIds = addon.Core.AuraCategoryIds
 

@@ -1,8 +1,8 @@
 """Generates src/Core/Auras/SpellNameIndex.lua from Blizzard's client database exports.
 
-The problem it solves: an aura's spell ID is usually not the ID of the spell that applies it, and
-12.1 keeps the aura's ID secret, so nothing in game can look it up. The two share a name, so a
-name index turns the ID a player can find into every ID the aura might actually carry.
+An aura's spell ID is usually not the ID of the spell that applies it, and 12.1 keeps the aura's
+ID secret, so nothing in game can look it up. The two share a name, so a name index turns the ID a
+player can find into every ID the aura might actually carry.
 
 Usage (from the repo root):
     python scripts/GenerateSpellNameIndex.py report
@@ -11,9 +11,9 @@ Usage (from the repo root):
 Tables come from wago.tools as CSV and are cached under scripts/.cache, which is gitignored.
 Delete the cache to pick up a new patch.
 
-The emitted file carries NO names, only the ID groups a shared name puts together. Names are used
+The emitted file carries no names, only the ID groups a shared name puts together. Names are used
 here to do the grouping and are then thrown away, because the client knows what it calls every one
-of these IDs in its own language - so Core/Auras/SpellSearch asks it at runtime. That is what makes
+of these IDs in its own language and Core/Auras/SpellSearch asks it at runtime. That is what makes
 the picker's suggestions work outside English, and it roughly halves the file.
 """
 
@@ -199,14 +199,13 @@ def Generate(byName):
         "-- applies it and 12.1 keeps it secret, so the shared name is the only bridge between the",
         "-- id a player can find and the id the filter has to match.",
         "--",
-        "-- The name is a COMMENT, not data. The client knows what it calls every id below in its",
+        "-- The name is a comment, not data. The client knows what it calls every id below in its",
         "-- own language, so Core/Auras/SpellSearch asks it at runtime and keys the groups on the",
-        "-- answer - which is what makes the picker's suggestions work outside English. The enUS",
-        "-- name is kept alongside so this file can still be read and grepped; Lua drops comments",
+        "-- answer. That is what makes the picker's suggestions work outside English. The enUS",
+        "-- name is kept alongside so this file can still be read and grepped. Lua drops comments",
         "-- at compile time, so it costs nothing in game.",
         "--",
-        "-- Ordered by lowest id, which is the one ordering that does not depend on the enUS names",
-        "-- used to do the grouping.",
+        "-- Ordered by lowest id, the one ordering that does not depend on the enUS grouping names.",
         "--",
         "-- %d groups, %d ids." % (len(groups), emitted),
         "",

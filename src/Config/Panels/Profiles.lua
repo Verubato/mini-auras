@@ -14,10 +14,10 @@ local ROW_HEIGHT = 28
 local SPEC_COL_W = 160
 
 -- The payload is deflated CBOR, then Base64. Early 5.0 alphas handed out the same payload as
--- "!MiniAuras:2!" (a number carried over from MiniCC), so a format change bumps to :3, not :2.
+-- "!MiniAuras:2!", so a format change bumps to :3, not :2.
 -- The Version stamp is not a format change. A build that predates it drops the extra key.
 local PROFILE_PREFIX    = "!MiniAuras:1!"
--- Strings handed out under the old addon name. Same payload but not compressed;
+-- Strings handed out under the old addon name, carrying the same payload uncompressed.
 -- "!MiniCC!" is older still and carries the whole saved-vars table.
 local MINICC_PREFIX     = "!MiniCC:2!"
 local MINICC_V1_PREFIX  = "!MiniCC!"
@@ -436,8 +436,7 @@ function M:Build(panel)
 	noteText:SetWidth(mini.ContentWidth or 600)
 	noteText:SetJustifyH("LEFT")
 
-	-- Spec rows - built lazily on first panel show because spec data is unavailable
-	-- at ADDON_LOADED time (only ready after PLAYER_LOGIN).
+	-- Spec rows are built on first panel show, since spec data is not ready until PLAYER_LOGIN.
 	local specRows = {}
 	local specRowsBuilt = false
 	local prevRow = noteText
@@ -499,7 +498,6 @@ function M:Build(panel)
 		if panel.OnMiniRefresh then panel:OnMiniRefresh() end
 	end)
 
-	-- MiniRefresh
 	panel.OnMiniRefresh = function()
 		for i = #profileItems, 1, -1 do profileItems[i] = nil end
 		for _, name in ipairs(profileManager:GetProfileNames()) do

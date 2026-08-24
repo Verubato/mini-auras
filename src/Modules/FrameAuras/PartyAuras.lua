@@ -14,10 +14,10 @@ local testSpells = addon.Core.TestSpells
 local spells = addon.Modules.FrameAuras.Spells
 
 -- Stands in for Blizzard's own buff and debuff rows on the party and raid frames. Each side is a
--- display of its own, with its own switch, so replacing the debuffs does not also take the buffs.
+-- display of its own, with its own switch.
 --
--- Blizzard's frames only. Every other unit frame addon draws its own auras and has its own
--- settings for them, and the cvars below only reach the stock frames.
+-- Blizzard's frames only. Every other unit frame addon draws its own auras, and the cvars below
+-- only reach the stock frames.
 
 local BUFF_GROUP = "FrameBuffs"
 local BUFF_PANDEMIC_GROUP = "FrameBuffsPandemic"
@@ -25,15 +25,15 @@ local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
 local BUFF_GROUP_KEYS = { BUFF_PANDEMIC_GROUP, BUFF_GROUP }
 local DEBUFF_GROUP_KEYS = { DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }
--- The categories the game flags never come into the buff row: what reaches the corner is decided
--- by the switches on its own page. The token is the coarse half of "only what you cast".
+-- The categories the game flags never come into the buff row. What reaches the corner is decided
+-- by the switches on its own page.
 local BUFF_FILTER = "HELPFUL"
 local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
 local DEBUFF_FILTER = "HARMFUL"
--- The flagged categories Important Auras draws its own row of. Kept out of these rows by negating
--- the game's own token, which is the only filter weighed on every unit: a spell-id map would be
--- skipped for a helpful aura on an enemy and for a harmful one on a friendly, and the frames this
--- draws on are exactly the friendly half.
+-- The flagged categories Important Auras draws its own row of. Kept out by negating the game's own
+-- token, which is the only filter weighed on every unit. A spell-id map would be skipped for a
+-- helpful aura on an enemy and for a harmful one on a friendly, and these frames are the friendly
+-- half.
 local EXCLUDE_IMPORTANT = "|!IMPORTANT"
 local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
@@ -54,18 +54,16 @@ local MAX_CROWD_CONTROL_ICONS = 2
 -- What "under a minute" means to the engine: a bound on an aura's whole duration rather than on
 -- what is left of it. Any value at all also drops the auras that never run out.
 local SHORT_AURA_SECONDS = 60
--- Where each row sits. Fixed rather than a setting: these rows stand in for Blizzard's own, so a
--- corner is the frame's answer rather than the player's. The offsets hold the row far enough in
--- to clear the frame's own edge, and the grow wraps a second line upwards, away from the frame
--- below this one.
+-- Where each row sits. The offsets hold the row far enough in to clear the frame's own edge, and
+-- the grow wraps a second line upwards, away from the frame below this one.
 local PLACEMENT = {
 	Buffs = { Point = "BOTTOMRIGHT", Grow = "LEFT_UP", OffsetX = -2, OffsetY = 2 },
 	Debuffs = { Point = "BOTTOMLEFT", Grow = "RIGHT_UP", OffsetX = 2, OffsetY = 2 },
 }
 local ICON_SPACING = 1
 -- How many frames' worth of rows to have ready before a group turns up. A party is five, which is
--- the size a solo player is most likely to become; past that the walker keeps up with the frames
--- appearing, because a raid fills in over several seconds anyway.
+-- the size a solo player is most likely to become. Past that the walker keeps up, since a raid
+-- fills in over several seconds anyway.
 local PREWARM_FRAMES = 5
 -- The walker hands its callback the item that was queued. A spare build picks its own side, so
 -- this stands in for one.
@@ -79,8 +77,8 @@ local FALLBACK_ICON_SIZE = 14
 local DEFAULT_MAX_ICONS = { Buffs = 6, Debuffs = 3 }
 local DEFAULT_PER_ROW = 3
 local DEFAULT_SIZE_PERCENT = 35
--- The Masque sub-group these rows are skinned under. One name for both sides: a player picking a
--- skin for the frame auras means the lot of them.
+-- The Masque sub-group these rows are skinned under. One name for both sides, since a player
+-- picking a skin for the frame auras means the lot of them.
 local MASQUE_GROUP = "Frame Auras"
 
 -- Blizzard's own party and raid frame auras, switched off while this draws its own in their place.
@@ -93,7 +91,7 @@ local CVAR_WORK_KEY = "MiniAuras_FrameAurasCVar_"
 
 local SIDES = { "Buffs", "Debuffs" }
 -- Where each side's preview row is kept on an entry. The engine decides what an AuraContainer
--- shows, so a fake aura cannot be fed to one; the preview draws its own icons instead.
+-- shows, so a fake aura cannot be fed to one and the preview draws its own icons instead.
 local TEST_FIELDS = { Buffs = "TestBuffs", Debuffs = "TestDebuffs" }
 
 addon.Modules.FrameAuras = addon.Modules.FrameAuras or {}
@@ -113,10 +111,10 @@ local cvarState = { Buffs = nil, Debuffs = nil }
 -- Bumped on every refresh. An entry stamped with the current one is already drawn to the current
 -- settings, so a re-point can skip the geometry and only tell its displays who they are now.
 local generation = 0
--- Unit frame -> its two displays. The frames are Blizzard's own and live for the session, so an
--- entry lives as long as they do; there is nothing to clear.
+-- Unit frame -> its two displays. The frames are Blizzard's own and live for the session, so there
+-- is nothing to clear.
 local watchers = {}
--- The filters the displays currently hold, one set between them all: the engine keeps the
+-- The filters the displays currently hold, one set between them all. The engine keeps the
 -- reference it is handed, and handing the same one back costs nothing.
 local pandemicCandidates
 local plainCandidates
@@ -128,24 +126,24 @@ local eventsFrame
 ---@type EventGate?
 local rosterGate
 local hooked = false
--- Refilled per pass rather than built per pass: the frame list is asked for on every refresh, and
--- a raid is forty of them.
+-- Refilled per pass because the frame list is asked for on every refresh, and a raid is forty of
+-- them.
 local frameScratch = {}
--- Refilled per call, for the same reason: the preview list is rebuilt per side per frame.
+-- Refilled per call for the same reason. The preview list is rebuilt per side per frame.
 local testListScratch = {}
--- Assigned once ApplyToAll exists; the events that drive it all burst, and the one that matters
+-- Assigned once ApplyToAll exists. The events that drive it all burst, and the one that matters
 -- most fires while the frames it walks are still settling.
 local QueueApplyToAll
 -- Spare displays built before any frame has asked for one, so a group forming does not have to
 -- wait out the walker for its rows. Held on the screen until a frame takes one.
 local spares = { Buffs = {}, Debuffs = {} }
 -- The spare currently being finished, so its groups are declared one per turn like every other
--- build. Only ever one at a time: spares are the lowest-priority work the addon does.
+-- build. Only ever one at a time, since spares are the lowest-priority work the addon does.
 local prewarmBuilding
 local prewarmSweep = sweep:New()
--- Background walker declaring the aura groups of the displays as they are built. Urgent: these sit
--- on unit frames the player is looking at. The engine allocates a batch of buttons the moment a
--- group is declared, so a party converting to a raid would otherwise build eighty of them at once.
+-- Background walker declaring the aura groups of the displays as they are built, urgent because
+-- these sit on unit frames the player is looking at. The engine allocates a batch of buttons the
+-- moment a group is declared, so a party converting to a raid would build eighty of them at once.
 local buildSweep = sweep:New(true)
 
 ---@return FrameAurasModuleOptions?
@@ -163,11 +161,10 @@ local function SideOptions(side)
 	return options and options[side] or nil
 end
 
----Blizzard's COMPACT party and raid member frames, and nothing else. Refilled in place.
+---Blizzard's compact party and raid member frames, and nothing else. Refilled in place.
 ---
----The standard party frames are deliberately left out. The two cvars below only reach the compact
----ones, so a row drawn on a standard frame would sit on top of Blizzard's own rather than in place
----of it, which is the one thing this module exists to avoid.
+---The standard party frames are left out. The two cvars below only reach the compact ones, so a
+---row drawn on a standard frame would sit on top of Blizzard's own rather than in place of it.
 ---@return table[]
 local function BlizzardFrames()
 	for index = #frameScratch, 1, -1 do
@@ -206,8 +203,8 @@ end
 
 ---Whether a frame's unit is really there. All forty raid frames exist from the moment the client
 ---starts, most of them pointed at nobody, and a display for one of those is a batch of buttons the
----engine allocates for nothing. An unreadable answer counts as occupied: this is an optimisation,
----so it only ever skips a frame the client says outright is empty.
+---engine allocates for nothing. An unreadable answer counts as occupied, so this only ever skips a
+---frame the client says outright is empty.
 ---@param unit string?
 ---@return boolean
 local function HasUnit(unit)
@@ -217,19 +214,17 @@ local function HasUnit(unit)
 
 	local exists = UnitExists(unit)
 
-	-- The secret check leads: comparing a secret value is what aborts the whole handler.
+	-- The secret check leads because comparing a secret value aborts the whole handler.
 	return mini:IsSecret(exists) or exists == true
 end
 
----Whether a frame's unit is DEFINITELY there. The question HasUnit asks fails open, which is right
+---Whether a frame's unit is definitely there. The question HasUnit asks fails open, which is right
 ---for deciding whether to show a row that already exists and wrong for deciding whether to build
----one: building is a batch of buttons the engine allocates on the spot and can never free.
+---one. Building is a batch of buttons the engine allocates on the spot and can never free.
 ---
----This is what a reload with the module on used to cost. While a loading screen is up the client
----answers about units secretly, so every one of the forty raid frames and five party frames it
----pre-creates looked occupied, and each got two containers. Switching the module on later, with the
----world settled, built two - the same end state for a fraction of the work. A frame the client will
----not answer for yet is simply built later, by the refresh or the visibility hook that follows.
+---While a loading screen is up the client answers about units secretly, so every one of the forty
+---raid frames and five party frames it pre-creates looks occupied. A frame the client will not
+---answer for yet is simply built later, by the refresh or the visibility hook that follows.
 ---@param unit string?
 ---@return boolean
 local function HasUnitForSure(unit)
@@ -244,9 +239,8 @@ end
 
 ---The icon size for one side on one frame, as a share of the frame's own height.
 ---
----In the frame's OWN units, not screen pixels: the row scales with its host (see AnchorSide), so
----the size has to be measured in the same space the host is drawn in or the icons come out the
----wrong fraction of the frame at any UI scale but 1.
+---In the frame's own units rather than screen pixels. The row scales with its host, so a size
+---measured in any other space comes out the wrong fraction of the frame at any UI scale but 1.
 ---@param frame table
 ---@param side "Buffs"|"Debuffs"
 ---@return number
@@ -262,16 +256,16 @@ local function IconSize(frame, side)
 end
 
 ---The engine's own answer to "can I dispel this", which it works out per aura from the player's
----spec. Asked for each time rather than kept: the aura data it comes from is not guaranteed to be
----there by the time this file loads.
+---spec. Asked for each time because the aura data it comes from is not guaranteed to be there by
+---the time this file loads.
 ---@return number?
 local function DispelType()
 	return AuraUtil and AuraUtil.AuraUpdateChangedType and AuraUtil.AuraUpdateChangedType.Dispel
 end
 
 ---Blizzard's own raid frame debuff order, which is what ranks a group's own matches against each
----other. The engine has to do it: an aura's spell id is secret, so nothing can reorder a group
----once it has rendered.
+---other. The engine has to do it because an aura's spell id is secret, so nothing can reorder a
+---group once it has rendered.
 ---@return number?
 local function DebuffSort()
 	if not AuraContainerSortMethod then
@@ -282,7 +276,7 @@ local function DebuffSort()
 end
 
 ---The aura filter string the buff groups run under. The "mine" token is the coarse half of that
----switch: it and the candidate filter are weighed separately, so an aura has to satisfy both.
+---switch. It and the candidate filter are weighed separately, so an aura has to satisfy both.
 ---@return string
 local function BuffFilter()
 	local options = SideOptions("Buffs") or {}
@@ -308,14 +302,13 @@ local function BuffCandidates()
 
 	local pandemic, plain = spells:BuildSpellSets()
 	local options = SideOptions("Buffs") or {}
-	-- Absent rather than false when the filter is off: the booleans match an aura's field exactly,
+	-- Absent rather than false when the filter is off. The booleans match an aura's field exactly,
 	-- so false here would mean "only the ones somebody else cast".
 	local mine = options.Mine ~= false or nil
 	local maxDuration = options.ShortOnly == true and SHORT_AURA_SECONDS or nil
 	local filtered = options.Filtered ~= false
 
-	-- The glow group keeps its ids either way: which spells light up is fixed, so it is always the
-	-- tracked ones that do.
+	-- The glow group keeps its ids either way, since which spells light up is fixed.
 	pandemicCandidates = {
 		includeSpellIDs = pandemic,
 		isFromPlayerOrPlayerPet = mine,
@@ -335,12 +328,12 @@ end
 
 ---The debuff filters, built the same way and for the same reason.
 ---
----Both groups run under these: the two switches on the page are about the row rather than about a
+---Both groups run under these. The two switches on the page are about the row rather than about a
 ---category of it, so a stun the player cannot dispel is dropped exactly as a debuff would be.
 ---
 ---Ranked by the game's own raid frame debuff order, which already leads with encounter mechanics
----and the debuffs it flags as priority. So all that is left to narrow by is the two switches, and
----with neither of them on the engine is handed nothing at all.
+---and the debuffs it flags as priority, so all that is left to narrow by is the two switches. With
+---neither of them on the engine is handed nothing at all.
 ---@return table? Nil when the row is not narrowed, which the engine reads as "everything".
 local function DebuffCandidates()
 	if debuffCandidatesBuilt then
@@ -429,9 +422,8 @@ local function PerRow(side)
 end
 
 ---The spells one side's preview draws, leading with a stand-in for each flagged category the row
----is currently letting in. Switching crowd control on has to put a stun in the debuff row and
----switching it off has to take that stun back out, or the preview says nothing about what the
----switch does.
+---is currently letting in. Switching a category on has to move the preview with it, or the preview
+---says nothing about what the switch does.
 ---@param side "Buffs"|"Debuffs"
 ---@return number[] Refilled scratch; the caller reads it before the next call.
 local function TestSpellList(side)
@@ -461,9 +453,8 @@ local function TestSpellList(side)
 	return testListScratch
 end
 
----How many icons the preview draws: one row's worth, capped by the budget. A single row is enough
----to show where the icons land and how big they are, and reading BOTH sliders is what makes each
----of them visibly do something while test mode is up.
+---How many icons the preview draws: one row's worth, capped by the budget. Reading both sliders is
+---what makes each of them visibly do something while test mode is up.
 ---@param side "Buffs"|"Debuffs"
 ---@return number
 local function TestIconCount(side)
@@ -485,8 +476,7 @@ local function BuildStyle(side)
 	end
 
 	-- No dispel-type colouring on either row. These stand in for Blizzard's own, which draws a
-	-- plain icon, and a ring around every debuff is a lot of colour on a frame that already carries
-	-- the Important Auras row.
+	-- plain icon.
 	return style
 end
 
@@ -501,7 +491,7 @@ local function DeclareNextGroup(display)
 end
 
 ---@param frame table? The frame this row will sit on, which is what sizes it. Nil for a spare
----built before its frame is known; it takes the fallback size and is resized when it is taken.
+---built before its frame is known, which takes the fallback size and is resized when it is taken.
 ---@param unit string?
 ---@param parent table? Defaults to the frame. A spare is built on the screen instead.
 ---@return AuraContainerDisplay
@@ -511,12 +501,12 @@ local function BuildBuffs(frame, unit, parent)
 	local maxIcons = MaxIcons("Buffs")
 	local groups = {}
 
-	-- The spells that light up lead the row, in a group of their own: the reveal is registered on a
+	-- The spells that light up lead the row, in a group of their own. The reveal is registered on a
 	-- button when it is built and driven by a window nothing can read, so which spells get one can
 	-- only be decided by which group they land in.
 	--
-	-- Left out entirely when the reveal is off. A group is a batch of buttons the engine allocates
-	-- on the spot, and one that can never match anything is that batch on every frame in the raid.
+	-- Left out entirely when the reveal is off, or every frame in the raid pays for a batch of
+	-- buttons that can never match anything.
 	if PandemicIcons() > 0 then
 		groups[#groups + 1] =
 			{ Key = BUFF_PANDEMIC_GROUP, FilterString = filter, MaxIcons = PandemicIcons(), CandidateFilters = pandemic }
@@ -529,15 +519,15 @@ local function BuildBuffs(frame, unit, parent)
 		MasqueGroup = MASQUE_GROUP,
 		Pandemic = true,
 		PerLine = PerRow("Buffs"),
-		-- The groups are declared by the walker instead, one per turn: a raid turning up builds one
-		-- of these per frame at once, and each group costs a batch of buttons the engine allocates
-		-- on the spot. Icons appear within a second or two of the frames themselves.
+		-- The groups are declared by the walker, one per turn. A raid turning up builds one of
+		-- these per frame at once, and each group costs a batch of buttons the engine allocates
+		-- on the spot.
 		DeferGroups = true,
 	})
 end
 
----The crowd control group at the head of the debuff row. Built fresh each time: a display stamps
----its own state on the spec it is handed and keeps the reference.
+---The crowd control group at the head of the debuff row. Built fresh each time because a display
+---stamps its own state on the spec it is handed and keeps the reference.
 ---@return AuraDisplayGroupSpec
 local function CrowdControlGroup()
 	return {
@@ -621,9 +611,8 @@ local function AddCrowdControlGroup(display)
 end
 
 ---Pins one side's row into its corner of the frame, and puts it over the frame's own artwork.
----Parented to the frame rather than the screen, so the row fades and hides with the unit frame the
----way Blizzard's own row did. A display ignores its parent's scale, so reparenting cannot change
----the size the icons were given.
+---Parented to the frame, so the row fades and hides with the unit frame the way Blizzard's own row
+---did.
 ---@param display AuraContainerDisplay
 ---@param frame table
 ---@param side "Buffs"|"Debuffs"
@@ -633,15 +622,14 @@ local function AnchorSide(display, frame, side)
 
 	display:SetGrow(place.Grow)
 
-	-- Scales with the frame, unlike the free-standing displays elsewhere. These rows stand in for
-	-- ones Blizzard drew as children of the frame, so they have to sit in the same coordinate space
-	-- it does: at any UI scale but 1, a row that ignored it would take the wrong fraction of the
-	-- frame and its corner inset would not line up with the frame's own edge.
+	-- Scales with the frame, unlike the free-standing displays elsewhere. At any UI scale but 1, a
+	-- row that ignored it would take the wrong fraction of the frame and its corner inset would not
+	-- line up with the frame's own edge.
 	containerFrame:SetIgnoreParentScale(false)
 
 	-- Buttons draw at the container's own level rather than one above it, so a container level with
-	-- its host loses to the host's own artwork. The strata is left alone: the row is a child of the
-	-- frame now, and raising it would lift the icons out of the band their host draws in.
+	-- its host loses to the host's own artwork. The strata is left alone, since raising it would
+	-- lift the icons out of the band their host draws in.
 	local hostLevel = pixels:Number(frame:GetFrameLevel())
 
 	if hostLevel then
@@ -687,7 +675,7 @@ local function EnsureTestContainer(entry, side)
 	return container
 end
 
----Draws one side's preview, or clears it for a side that is switched off: a row nobody asked for
+---Draws one side's preview, or clears it for a side that is switched off. A row nobody asked for
 ---draws nothing in play, so it previews nothing either.
 ---@param entry FrameAurasEntry
 ---@param side "Buffs"|"Debuffs"
@@ -764,7 +752,7 @@ local function ApplySide(display, frame, side, groupKeys)
 end
 
 ---Everything that depends on the settings rather than on who is on the frame. Skipped for an entry
----already drawn to the current ones: a raid sorting itself re-points every frame it has, and
+---already drawn to the current ones. A raid sorting itself re-points every frame it has, and
 ---re-anchoring forty displays for settings that have not moved is the bulk of that cost.
 ---@param entry FrameAurasEntry
 local function ApplySettings(entry)
@@ -782,8 +770,8 @@ local function ApplySettings(entry)
 		local pandemic, plain = BuffCandidates()
 		local filter = BuffFilter()
 
-		-- The glow group is only there when the reveal is on; a display built without it is not
-		-- rebuilt when the switch flips, it simply has nothing to publish to.
+		-- The glow group is only there when the reveal is on. A display built without it is never
+		-- rebuilt when the switch flips, so there is nothing to publish to.
 		if entry.Buffs:HasGroup(BUFF_PANDEMIC_GROUP) then
 			entry.Buffs:SetFilterString(BUFF_PANDEMIC_GROUP, filter)
 			entry.Buffs:SetCandidateFilters(BUFF_PANDEMIC_GROUP, pandemic)
@@ -798,8 +786,8 @@ local function ApplySettings(entry)
 		AddCrowdControlGroup(entry.Debuffs)
 		ApplySide(entry.Debuffs, frame, "Debuffs", DEBUFF_GROUP_KEYS)
 
-		-- The policy first: a group asking for a classification the display is not making matches
-		-- nothing at all.
+		-- The policy first, since a group asking for a classification the display is not making
+		-- matches nothing at all.
 		entry.Debuffs:SetProcessingPolicy(ClassifiesDebuffs())
 
 		-- The filter strings are fixed, so only the candidate filters are re-published.
@@ -817,8 +805,8 @@ local function ApplyEntry(entry)
 		ApplySettings(entry)
 	end
 
-	-- The live rows go dark for the preview: nothing can put a fake aura in front of the engine,
-	-- so the two would otherwise sit on top of each other.
+	-- The live rows go dark for the preview. Nothing can put a fake aura in front of the engine, so
+	-- the two would otherwise sit on top of each other.
 	if testModeActive then
 		if entry.Buffs then
 			entry.Buffs:SetShown(false)
@@ -845,7 +833,7 @@ local function ApplyEntry(entry)
 
 	ClearTestIcons(entry)
 
-	-- Always, unlike the rest: who is on the frame is exactly what a re-point changes.
+	-- Always, unlike the rest, because who is on the frame is exactly what a re-point changes.
 	local occupied = HasUnit(entry.Unit) and frames:IsAnchorUsable(entry.Frame)
 
 	if entry.Buffs then
@@ -879,9 +867,8 @@ local function SparesWanted(side)
 end
 
 ---What a side's rows are shaped like right now. A spare bakes its groups' budgets in when it is
----built and they can never be raised: the engine hands out a group's buttons from the count it was
----declared with. So a spare built under different settings is not a spare, and one handed to a
----frame anyway would draw the wrong row for the rest of the session.
+---built and they can never be raised, so a spare built under different settings is not a spare and
+---one handed to a frame anyway would draw the wrong row for the rest of the session.
 ---
 ---Crowd control is left out of the answer. Its group is added to whichever display a frame ends up
 ---with, so a spare built before the switch was thrown is still the spare that frame wants.
@@ -897,7 +884,7 @@ end
 
 ---Throws away the spares that no longer match what a frame would be given today.
 local function DropStaleSpares()
-	-- The one the walker is part way through counts too: it was started at the old shape and
+	-- The one the walker is part way through counts too. It was started at the old shape, and
 	-- nothing checks a spare's shape again once it is banked.
 	if prewarmBuilding and prewarmBuilding.Display.FrameAurasShape ~= ShapeOf(prewarmBuilding.Side) then
 		prewarmBuilding.Display:SetShown(false)
@@ -910,8 +897,8 @@ local function DropStaleSpares()
 
 		for index = #pool, 1, -1 do
 			if pool[index].FrameAurasShape ~= shape then
-				-- Nothing releases a display; it is simply never handed out. The engine cannot
-				-- free a container or the buttons under it either way.
+				-- Nothing releases a display. The engine cannot free a container or the buttons
+				-- under it, so a stale one is simply never handed out.
 				pool[index]:SetShown(false)
 				table.remove(pool, index)
 			end
@@ -956,9 +943,9 @@ local function SideWantingSpare()
 end
 
 ---A group per turn, and straight on to the next spare once one is banked, so the whole warm-up
----rides on this single queued item. Everything is re-read at fire time: the walk runs over
----seconds, in which a side can be switched off and the frames it was being held for can turn up
----on their own.
+---rides on this single queued item. Everything is re-read at fire time, since the walk runs over
+---seconds in which a side can be switched off and the frames it was held for can turn up on their
+---own.
 ---@return SweepVerdict?
 local function PrewarmNext()
 	if prewarmBuilding then
@@ -977,7 +964,7 @@ local function PrewarmNext()
 		return
 	end
 
-	-- Sized off a real frame where there is one, so a spare taken later needs no resize: a restyle
+	-- Sized off a real frame where there is one, so a spare taken later needs no resize. A restyle
 	-- is refused outright while auras are secret, and one bound mid-fight would keep whatever size
 	-- it was built with.
 	local sample = BlizzardFrames()[1]
@@ -994,8 +981,8 @@ local function PrewarmNext()
 	return sweep.Verdict.Unfinished
 end
 
----Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the one
----queued item walks the whole warm-up, so a refresh landing part way through adds nothing.
+---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh, since
+---the one queued item walks the whole warm-up and one landing part way through adds nothing.
 local function QueuePrewarm()
 	if prewarmSweep:HasWork() or not SideWantingSpare() then
 		return
@@ -1005,7 +992,7 @@ local function QueuePrewarm()
 end
 
 ---The entry for a frame, built the first time the frame is seen. A side switched on after the entry
----exists gets its display then; one switched off keeps it, because the engine can free neither a
+---exists gets its display then, and one switched off keeps it, because the engine can free neither
 ---display nor the buttons under it.
 ---@param frame table
 ---@return FrameAurasEntry?
@@ -1018,20 +1005,19 @@ local function EnsureEntry(frame)
 
 	-- Only the first pass is gated. Once a frame has displays they are kept and re-pointed.
 	--
-	-- ON SCREEN as well as occupied. A hidden compact frame can still carry the unit it last held,
+	-- On screen as well as occupied. A hidden compact frame can still carry the unit it last held,
 	-- and the client answers for that unit whether or not the frame is showing it, so a token on
-	-- its own let fifteen frames through in a solo session: five party members and the spare raid
-	-- frames behind them, each paying for two displays and their batch of buttons. A frame that
-	-- turns up later is built by the visibility hook, which is what fires when one appears.
+	-- its own let fifteen frames through in a solo session, each paying for two displays and their
+	-- batch of buttons. A frame that turns up later is built by the visibility hook.
 	--
-	-- The cheap half leads, and only a frame with nothing built on it pays for the rest: while the
+	-- The cheap half leads, and only a frame with nothing built on it pays for the rest. While the
 	-- world loads, Blizzard points every compact frame at a unit several times over and almost all
 	-- of them are still hidden, so reading the token and asking the client about it for each was
 	-- most of what this module cost during a login.
 	--
 	-- Blizzard briefly shows every frame it pre-creates, pointed at "player", while it lays them
-	-- out at login: all forty-five look visible and occupied, and only the timing tells them apart
-	-- from the frame the player has. The refresh after the screen builds what this skips.
+	-- out at login, so only the timing tells all forty-five apart from the frame the player has.
+	-- The refresh after the screen builds what this skips.
 	if not entry and addon:IsLoadingScreenUp() then
 		return nil
 	end
@@ -1065,7 +1051,7 @@ local function EnsureEntry(frame)
 		end
 	end
 
-	-- Nothing live is built for a preview: the display would be hidden the moment it existed, and
+	-- Nothing live is built for a preview. The display would be hidden the moment it existed, and
 	-- the stand-ins name units it could never read. The refresh that ends test mode builds them.
 	if testModeActive then
 		return entry
@@ -1082,8 +1068,8 @@ local function EnsureEntry(frame)
 
 			entry[side] = display
 
-			-- Whatever it still owes goes on the urgent lane, ahead of the spares: a frame is
-			-- holding it now. A spare taken mid-build may still owe some of its groups.
+			-- Whatever it still owes goes on the urgent lane, ahead of the spares, because a frame
+			-- is holding it now. A spare taken mid-build may still owe some of its groups.
 			if display:HasPendingGroups() then
 				buildSweep:Append(display, DeclareNextGroup)
 			end
@@ -1119,8 +1105,8 @@ end
 
 ---Tells the client whether to draw its own row for one side, but only where the answer moved.
 ---
----Deferred past combat: flipping either cvar makes the client rebuild the raid frames, which it
----refuses to do mid-fight.
+---Deferred past combat, because flipping either cvar makes the client rebuild the raid frames,
+---which it refuses to do mid-fight.
 ---@param side "Buffs"|"Debuffs"
 ---@param enabled boolean
 local function ApplyCVar(side, enabled)
@@ -1132,7 +1118,7 @@ local function ApplyCVar(side, enabled)
 
 	cvarState[side] = enabled
 
-	-- Nothing to hand back on the first pass of a side that is switched off: the player may have
+	-- Nothing to hand back on the first pass of a side that is switched off. The player may have
 	-- turned Blizzard's own row off themselves, and this has never touched it.
 	if not enabled and not wasSettled then
 		return
@@ -1148,9 +1134,9 @@ local function ApplyCVar(side, enabled)
 	local remembered = db.FrameAuraCVars
 
 	if enabled then
-		-- Remembered before it is overwritten, and kept in the saved variables rather than in
-		-- memory: the row is handed back on a switch the player may not flip for weeks, long past
-		-- the reload that would forget what they had.
+		-- Remembered before it is overwritten, and kept in the saved variables because the row is
+		-- handed back on a switch the player may not flip for weeks, long past the reload that
+		-- would forget what they had.
 		--
 		-- Only on a switch the player threw. At login the cvar already carries this module's own
 		-- write from the last session, so reading it there would remember "off" and hand that back
@@ -1180,19 +1166,18 @@ local function InstallHooks()
 	hooked = true
 
 	eventsFrame = CreateFrame("Frame")
-	-- Deferred a frame: this fires as the loading screen ends, and the compact frames have not
+	-- Deferred a frame, since this fires as the loading screen ends and the compact frames have not
 	-- finished settling onto their real units until after it. Coalesced too, because a roster
 	-- forming fires one of these per member joining.
 	eventsFrame:SetScript("OnEvent", QueueApplyToAll)
 
 	-- A frame passed over for having nobody on it gets no set-unit call of its own when someone
 	-- turns up under a token it was already holding, so the roster is what says to look again.
-	-- Gated rather than answered inside the handler: with both sides off there is nothing here to
-	-- do, and a disabled module should not be paying for the dispatch.
+	-- With both sides off there is nothing here to do, so a disabled module pays for no dispatch.
 	--
 	-- The loading screen ending is in there because building needs a definite answer about who is
-	-- on a frame (see HasUnitForSure), and the client gives none while one is up. This is the pass
-	-- that builds what the world-entering pass had to skip.
+	-- on a frame, and the client gives none while one is up. This is the pass that builds what the
+	-- world-entering pass had to skip.
 	rosterGate = eventGate:New(eventsFrame, {
 		"GROUP_ROSTER_UPDATE",
 		"PLAYER_ENTERING_WORLD",
@@ -1208,9 +1193,8 @@ local function InstallHooks()
 				ApplyToFrame(frame)
 			end
 		end,
-		-- A frame the client empties rather than hides still has to drop its rows.
-		-- Builds as well as re-applies: the gate in EnsureEntry turns a frame away while it is
-		-- hidden, so this is where one the client has just put up gets its rows.
+		-- A frame the client empties rather than hides still has to drop its rows. It builds too,
+		-- since the gate in EnsureEntry turns a frame away while it is hidden.
 		OnUpdateVisible = function(frame)
 			if AnySideActive() or watchers[frame] then
 				ApplyToFrame(frame)
@@ -1263,8 +1247,8 @@ function M:Refresh()
 	-- A spare is only a spare while it still matches what a frame would be given.
 	DropStaleSpares()
 
-	-- Dropped rather than rebuilt: the walk below asks for them, and a refresh that changes nothing
-	-- about the tracked ids still has to hand the engine tables it will accept.
+	-- Dropped rather than rebuilt, since the walk below asks for them and a refresh that changes
+	-- nothing about the tracked ids still has to hand the engine tables it will accept.
 	pandemicCandidates = nil
 	plainCandidates = nil
 	debuffCandidates = nil
@@ -1274,7 +1258,7 @@ function M:Refresh()
 		InstallHooks()
 		rosterGate:SetActive(true)
 		ApplyToAll()
-		-- After the frames on screen have been served: a spare is only worth building for a frame
+		-- After the frames on screen have been served. A spare is only worth building for a frame
 		-- that is not there yet, and ApplyToAll is what settles how many of those there are.
 		QueuePrewarm()
 

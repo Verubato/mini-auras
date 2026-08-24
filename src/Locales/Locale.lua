@@ -55,7 +55,7 @@ function L:ApplyLocale(localeKey)
 end
 
 ---Forgets every locale but the active one. Their strings live inside the builders, so dropping
----the last reference to one makes its share of the eleven translations collectable - which is
+---the last reference to one makes its share of the eleven translations collectable, which is
 ---most of what the locale files weigh. Safe because switching language asks for a reload, and
 ---the reload keeps whichever one the user landed on.
 ---
@@ -87,7 +87,6 @@ function L:GetAvailableLocales()
 	return result
 end
 
--- Set a localized string
 function L:SetString(key, value)
 	strings[key] = value
 end
@@ -121,7 +120,6 @@ setmetatable(L, {
 	end,
 })
 
--- Return current locale
 function L:GetLocale()
 	return locale
 end

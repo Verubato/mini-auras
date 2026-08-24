@@ -8,14 +8,13 @@ local _, addon = ...
 -- applies it and 12.1 keeps it secret, so the shared name is the only bridge between the
 -- id a player can find and the id the filter has to match.
 --
--- The name is a COMMENT, not data. The client knows what it calls every id below in its
+-- The name is a comment, not data. The client knows what it calls every id below in its
 -- own language, so Core/Auras/SpellSearch asks it at runtime and keys the groups on the
--- answer - which is what makes the picker's suggestions work outside English. The enUS
--- name is kept alongside so this file can still be read and grepped; Lua drops comments
+-- answer. That is what makes the picker's suggestions work outside English. The enUS
+-- name is kept alongside so this file can still be read and grepped. Lua drops comments
 -- at compile time, so it costs nothing in game.
 --
--- Ordered by lowest id, which is the one ordering that does not depend on the enUS names
--- used to do the grouping.
+-- Ordered by lowest id, the one ordering that does not depend on the enUS grouping names.
 --
 -- 7870 groups, 25660 ids.
 

@@ -3,14 +3,14 @@
 --
 -- Both modules build one display per party or raid frame, and a display's groups cost a batch of
 -- buttons the engine allocates on the spot and can never free. Nothing is built while a loading
--- screen is up, so a solo player logs in with none of them; the walker below is what has a party's
--- worth ready before the party forms.
+-- screen is up, so a solo player logs in with none of them. The walker below is what has a
+-- party's worth ready before the party forms.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
 local acm = require("AuraContainerMock")
 
--- A crowd control display carries the one cc group; an important auras display carries that plus
+-- A crowd control display carries the one cc group. An important auras display carries that plus
 -- the two spell-id-filtered helpful groups.
 local CC_GROUPS = 1
 local IMPORTANT_GROUPS = 3

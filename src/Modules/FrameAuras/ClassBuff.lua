@@ -7,17 +7,15 @@ local frames = addon.Core.Frames
 local pixels = addon.Core.Pixels
 local classBuffs = addon.Core.ClassBuffs
 
--- Marks a party or raid frame whose member is missing the group buff the player's own class
--- brings. The mark is the buff's own icon drained of colour, so it reads as absent rather than as
--- one more thing that is up.
+-- Marks a party or raid frame whose member is missing the group buff the player's class brings.
+-- The mark is the buff's own icon drained of colour, so it reads as absent.
 
 local FALLBACK_ICON_SIZE = 14
 -- Trims the silver frame baked into the spell art, so the icon reaches the mark's own edge.
 local ICON_CROP = 0.08
 local DEFAULT_SIZE_PERCENT = 35
--- Which corner the mark sits in, and how far in from it. Fixed rather than a setting: the mark
--- stands in for something the game would have drawn itself, so the corner is the frame's answer
--- rather than the player's. Top right is the one Blizzard leaves free on a compact frame.
+-- Which corner the mark sits in, and how far in from it. Top right is the one Blizzard leaves free
+-- on a compact frame.
 local ANCHOR = "TOPRIGHT"
 local OFFSET_X = -2
 local OFFSET_Y = -2
@@ -31,11 +29,10 @@ addon.Modules.FrameAuras.ClassBuff = M
 
 local active = false
 local testModeActive = false
--- The buff the player brings, or nil for a class that brings none. Fixed for the session: a
+-- The buff the player brings, or nil for a class that brings none. Fixed for the session, since a
 -- character's class does not change.
 local playerBuff
--- Compact frame -> its mark. Frames are created once and reused, so an entry lives as long as the
--- session does; there is nothing to clear.
+-- Compact frame -> its mark. Frames are created once and reused, so there is nothing to clear.
 local marks = {}
 -- Unit token -> the frames showing it, so UNIT_AURA does not walk forty frames to find one. The
 -- main tank and assist frames can show a unit a second time, so this is a set per token.
@@ -46,7 +43,7 @@ local unitByFrame = {}
 local watcher
 local eventsFrame
 local hooked = false
--- Refilled per pass rather than built per pass: the frame list is asked for on every refresh.
+-- Refilled per pass because the frame list is asked for on every refresh.
 local frameScratch = {}
 
 ---@return FrameAurasClassBuffOptions?
@@ -151,14 +148,13 @@ local function IsMarkable(unit)
 	return not (UnitIsDeadOrGhost and UnitIsDeadOrGhost(unit))
 end
 
----Whether the unit already has the buff. Three answers, not two: the client hides aura data
----outright while a match or a key is running, and a "no" it never actually gave would put a mark on
----every frame in the group. Unknown reads the same as having it.
+---Whether the unit already has the buff. Three answers, not two. The client hides aura data
+---outright while a match or a key is running, and a "no" it never actually gave would put a mark
+---on every frame in the group. Unknown reads the same as having it.
 ---
----Asked once for the whole client rather than per spell. The per-spell exemption is an enum whose
----name is not something to guess at, and branching on an aura the client answered secretly is what
----aborts a handler outright - so while auras are secret this says nothing at all. A group buff is
----cast before the pull, which is exactly where the answer is readable.
+---Asked once for the whole client, since branching on an aura the client answered secretly aborts
+---a handler outright. A group buff is cast before the pull, which is exactly where the answer is
+---readable.
 ---@param unit string
 ---@return boolean? nil when the client will not say
 local function HasBuff(unit)
@@ -242,13 +238,12 @@ local function ApplyToFrame(frame)
 
 	-- Not while previewing. The stand-ins answer party1..3, the same tokens the real frames hold,
 	-- so filing them here would leave a later UNIT_AURA for a real member drawing onto a stand-in.
-	-- The index is rebuilt from the real frames by the refresh that ends test mode.
 	if not testModeActive then
 		Index(frame, unit)
 	end
 
-	-- The preview marks every frame it walks. Whether the unit has the buff is the one thing it
-	-- must not ask: the point is to see the mark, and a stand-in names a unit nobody is on.
+	-- The preview marks every frame it walks and must not ask whether the unit has the buff, since
+	-- a stand-in names a unit nobody is on.
 	if not testModeActive and (not IsMarkable(unit) or HasBuff(unit) ~= false) then
 		if mark then
 			mark:Hide()
@@ -288,8 +283,8 @@ local function Watcher()
 		return watcher
 	end
 
-	-- Gated rather than switched off inside the handler: UNIT_AURA is the busiest event the client
-	-- has, and this is optional, so a player who never turns it on should not pay for the dispatch.
+	-- UNIT_AURA is the busiest event the client has, so a player who never turns this on should
+	-- not pay for the dispatch.
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, unit)
 		-- The aura event names the unit it is about, so a raid of forty is not re-checked because

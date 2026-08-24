@@ -4,7 +4,7 @@
 local M = {}
 
 -- Shared framework (Libs\MiniFramework\MiniFramework.xml in the TOC). Namespace.lua must come
--- first - it creates addon.Framework, which every other file resolves at load time.
+-- first, because it creates addon.Framework, which every other file resolves at load time.
 M.framework = {
 	"src/Libs/MiniFramework/Namespace.lua",
 	"src/Libs/MiniFramework/Framework/Notify.lua",

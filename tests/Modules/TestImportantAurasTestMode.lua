@@ -1,6 +1,6 @@
 -- The raid frame auras preview. Test mode draws its own fake icons rather than waiting for real
 -- auras, so a category with no test spells behind it is invisible in the preview no matter what
--- its option says: the bug this guards is Show Important reading as broken because ticking it
+-- its option says. The bug this guards is Show Important reading as broken because ticking it
 -- changed nothing on screen.
 
 local fw = require("Framework")

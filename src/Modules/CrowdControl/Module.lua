@@ -29,15 +29,15 @@ local testModeActive = false
 local stateSub
 -- Scratch for the watched units handed to the unit state poller each refresh.
 local stateUnitsScratch = {}
--- Deferred as well as coalesced: the frame addons (danders/grid) rebuild on the same event, so
--- the anchors are only worth reading once they have settled.
+-- Deferred as well as coalesced, because the frame addons rebuild on the same event and the
+-- anchors are only worth reading once they have settled.
 local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
 end)
 
----Hands the poller the units on screen right now. Re-seeded per refresh rather than tracked
----per frame: the frames retarget constantly (sorting, roster changes), and a baseline for a unit
----nobody is watching would fire a refresh for nothing.
+---Hands the poller the units on screen right now. Re-seeded per refresh rather than tracked per
+---frame, because the frames retarget constantly and a baseline for a unit nobody is watching would
+---fire a refresh for nothing.
 local function SeedStateBaselines()
 	if not stateSub then
 		return
@@ -56,8 +56,8 @@ local function OnEvent(_, event)
 		-- the entries the layout put on frames that turned out to hold nobody.
 		QueueRefresh()
 	elseif event == "UNIT_PET" then
-		-- A pet was summoned/dismissed; refresh so the opt-in pet unit frame containers show/hide
-		-- with it. Only relevant when IncludePetFrame is enabled, so skip the work otherwise.
+		-- A pet was summoned or dismissed, so refresh to show or hide the opt-in pet unit frame
+		-- containers with it. Only relevant when IncludePetFrame is enabled.
 		local petOptions = db.Modules.PetCrowdControl
 		if petOptions and petOptions.IncludePetFrame and moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 			QueueRefresh()
@@ -105,17 +105,16 @@ end
 local function Setup()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
-	-- Registered by the Refresh gate while either feature is on. UNIT_PET tracks the player's
-	-- pet being summoned/dismissed so the opt-in pet unit frame containers follow it,
-	-- regardless of which unit-frame addon owns the pet frame.
+	-- Registered by the Refresh gate while either feature is on. UNIT_PET tracks the player's pet
+	-- being summoned or dismissed, so the opt-in pet unit frame containers follow it whichever
+	-- unit-frame addon owns that frame.
 	rosterGate = eventGate:New(eventsFrame,
 		{ "GROUP_ROSTER_UPDATE", "UNIT_PET", "LOADING_SCREEN_DISABLED" })
 
-	-- A unit leaving or re-entering the player's visible world has no event, and it decides
-	-- whether the engine evaluates the CC filter at all, so the budgets are recomputed when the
-	-- poller sees it flip. Registered for the module's lifetime; the predicate below gates it.
-	-- Per token, not a module refresh: the icon count is all a flip moves, and only for the unit
-	-- that flipped. A raid riding out of range flips many at once, each now paying for itself.
+	-- A unit leaving or re-entering the player's visible world has no event, and it decides whether
+	-- the engine evaluates the CC filter at all, so the budgets are recomputed when the poller sees
+	-- it flip. Registered for the module's lifetime, with the predicate below gating it.
+	-- Per token rather than a module refresh, since the icon count is all a flip moves.
 	stateSub = unitStatePoller:Register(function()
 		return IsEnabled()
 	end, function(unitToken)
@@ -144,8 +143,8 @@ local function Setup()
 	})
 end
 
--- Events stay unregistered while both features are off; the addon-wide Refresh (config, world
--- change, raid flip) is what brings the module back.
+-- Events stay unregistered while both features are off. The addon-wide Refresh is what brings the
+-- module back.
 local function OnEnable()
 	rosterGate:SetActive(true)
 end

@@ -6,15 +6,12 @@ local partyAuras = addon.Modules.FrameAuras.PartyAuras
 local classBuff = addon.Modules.FrameAuras.ClassBuff
 local targetAuras = addon.Modules.FrameAuras.TargetAuras
 
--- Four halves of one page: the buff and debuff rows on the party and raid frames, the missing
--- class buff mark on the same frames, and the rows on the target and focus frames. Each carries
--- its own switch, and each is off until the player asks for it, so nothing here builds anything
--- until then.
+-- The buff and debuff rows on the party and raid frames, the missing class buff mark on the same
+-- frames, and the rows on the target and focus frames. Each carries its own switch.
 --
--- No ModuleLifecycle and no per-context enable table, unlike every other module. Those exist to
--- gate a display on where the player is; these rows stand in for frames the game draws everywhere,
--- so a row that came and went with the zone would read as broken rather than as filtered. The
--- parts run their own enable edges instead, which is also what keeps the cvar writes to the edge.
+-- No ModuleLifecycle and no per-context enable table. These rows stand in for frames the game
+-- draws everywhere, so one that came and went with the zone would read as broken rather than as
+-- filtered, and the parts run their own enable edges instead.
 
 ---@class FrameAurasModule : IModule
 local M = {}

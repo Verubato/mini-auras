@@ -4,15 +4,11 @@ local _, addon = ...
 -- The heal-over-time and shield auras worth watching on a party or raid frame, by spell id and
 -- grouped by the class that casts them, which is also how the options list reads them back.
 --
--- An allowlist rather than a set of category filters. The game's own categories both miss auras
--- that matter and sweep in ones that do not: a talent granting a second copy of a heal-over-time
--- gives it its own spell id, and that copy does not always carry the flags its original has.
+-- An allowlist, because a talent granting a second copy of a heal-over-time gives that copy its own
+-- spell id, and the copy does not always carry the flags its original has.
 --
--- The list goes to the engine as a candidate filter, which it only honours for helpful auras on a
--- unit you can assist. Party and raid frames are exactly that, so it is a real filter here and
--- would silently do nothing anywhere else.
---
--- Ids for specs nobody plays cost nothing: one that never matches never draws.
+-- The engine honours this candidate filter only for helpful auras on a unit you can assist, so it
+-- really filters on party and raid frames and would silently do nothing anywhere else.
 local groups = {
 	{
 		Class = "DRUID",
@@ -68,23 +64,21 @@ local groups = {
 	},
 }
 
--- The spells worth lighting up as their refresh window opens. Lifebloom alone, because its
--- window is the one that is a real skill check: the rest are cheap to reapply, and a glow on all
--- of them is a corner full of glow rather than a cue.
+-- The spells worth lighting up as their refresh window opens. Lifebloom alone, because its window
+-- is the only one that is a real skill check.
 --
--- Not a per-spell setting: the reveal is registered on a button when the engine builds it, so
--- every spell that carries one needs its own aura group, and a set that moves per player would
--- mean a group count that moves with it.
+-- It cannot be a per-spell setting. The reveal is registered on a button when the engine builds it,
+-- so every spell that carries one needs its own aura group, and a set that moves per player would
+-- move the group count with it.
 local pandemic = {
 	[33763] = true, -- Lifebloom
 }
 
--- What a row calls a spell, where its own name does not read well in a list. A talent that
--- grants a second copy of a heal-over-time names it after the original, so the whole row says
--- "Rejuvenation" twice over and none of it says which one this is.
+-- What a row calls a spell, where its own name does not read well in a list. A talent granting a
+-- second copy of a heal-over-time names it after the original, so the row says "Rejuvenation"
+-- twice and neither says which one this is.
 --
--- Written out rather than taken from the client, so these read the same whatever the client's
--- language is - which also means they stay English on a client that is not.
+-- These are written out, so they stay English on a client that is not.
 local names = {
 	[155777] = "Germination",
 }

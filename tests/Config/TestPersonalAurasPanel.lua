@@ -1,19 +1,14 @@
--- The personal aura options page, built against a db that already has a group in it.
---
--- The smoke test loads the addon with empty saved variables, so every "is a group selected?"
--- branch in this page early-returns and the editor is never actually laid out. That blind spot
--- let a deleted local slip through as a nil global reference - luacheck cannot catch those here,
--- because the addon's config suppresses undefined globals so real WoW globals stay quiet.
---
--- So: seed a group, drive the page the way the tab framework does, and open the editor.
+-- The personal aura options page, built against a db that already has a group in it. The smoke
+-- test never lays this page out, and luacheck cannot catch a nil global here because the addon's
+-- config suppresses undefined globals so real WoW globals stay quiet.
 
 local fw = require("Framework")
 local harness = require("AddonHarness")
 local WowMock = require("WowMock")
 
--- Two curated ids given real names, because the spell picker's suggestions are now named by the
--- CLIENT rather than by the shipped index (that is what makes them work outside English), and the
--- mock names every spell "Spell <id>". Without this the arrow-key tests have nothing to walk.
+-- Two curated ids given real names, because the spell picker's suggestions are named by the
+-- client rather than by the shipped index, which is what makes them work outside English. The
+-- mock names every spell "Spell <id>", so without this the arrow-key tests have nothing to walk.
 local ARCANE_TORRENT = 33390
 local KIDNEY_SHOT = 408
 
@@ -61,7 +56,7 @@ end
 ---@return table content
 local function ShowPage(addon, group)
 	-- The window and its pages are built on the first ask, which for a player is opening the
-	-- options; nothing exists to drive before that.
+	-- options. Nothing exists to drive before that.
 	addon.Config:EnsureWindow()
 
 	local content = addon.Config.TabController:GetContent("PersonalAuras")
@@ -226,7 +221,7 @@ fw.describe("Personal auras page - typing a group's offset", function()
 end)
 
 fw.describe("Personal auras page - controls inside a tab", function()
-	-- Every control registers for refresh against its PARENT, so the ones inside a tab are on
+	-- Every control registers for refresh against its parent, so the ones inside a tab are on
 	-- the tab's list, not the editor's. Refreshing only the editor left them showing the values
 	-- they were built with, which is the state before any group existed.
 	fw.it("shows the selected group's values on the appearance sliders", function()

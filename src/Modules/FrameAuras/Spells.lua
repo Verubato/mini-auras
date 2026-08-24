@@ -8,8 +8,8 @@ local trackedBuffs = addon.Core.TrackedBuffs
 -- instead of none of them.
 local NEVER_MATCHED_SPELL_ID = 2147483647
 local EMPTY = {}
--- The section holding whatever the player added by hand. Always shown, even when empty: it is
--- where the add box lives, so it has to be reachable before there is anything in it.
+-- The section holding whatever the player added by hand. Always shown, even when empty, because
+-- it is where the add box lives.
 local CUSTOM_GROUP_KEY = "CUSTOM"
 
 addon.Modules.FrameAuras = addon.Modules.FrameAuras or {}
@@ -87,7 +87,7 @@ function M:SetTracked(spellId, tracked)
 end
 
 ---Forgets a hand-added spell outright, which is what the list's remove button does. A curated one
----is only ever switched off; the list is where it gets switched back on.
+---is only ever switched off, and the list is where it gets switched back on.
 ---@param spellId number
 function M:Forget(spellId)
 	local _, custom = Overrides()
@@ -171,8 +171,7 @@ function M:SpellGroups()
 end
 
 ---How many spells can light up on refresh at once, which is the most icons the glow group can ever
----need. Counted rather than assumed: it is what that group is declared with, and the engine hands
----out a group's buttons from the count it was born with.
+---need. The engine hands out a group's buttons from the count it was born with.
 ---@return number
 function M:PandemicCount()
 	local count = 0
@@ -190,12 +189,10 @@ function M:PandemicCount()
 	return count
 end
 
----Every tracked id as one map, for a row that draws them all through a single group. The split
----below exists only so the refresh-window reveal can be registered on one of two groups; a display
----without that reveal wants the lot.
+---Every tracked id as one map, for a row that draws them all through a single group.
 ---
----A fresh table each time: the engine keeps whatever reference it is handed, and this changes as
----the player edits the list.
+---A fresh table each time, since the engine keeps whatever reference it is handed and this changes
+---as the player edits the list.
 ---@return table<number, boolean>
 function M:BuildSpellMap()
 	local map = {}
@@ -218,12 +215,12 @@ end
 ---window nothing can read, so the only way to pick which spells get one is to put them in their
 ---own group.
 ---
----Fresh tables each time: the engine keeps whatever reference it is handed, and these change as
----the player edits the list.
+---Fresh tables each time, since the engine keeps whatever reference it is handed and these change
+---as the player edits the list.
 ---@return table<number, boolean> pandemic, table<number, boolean> plain
 function M:BuildSpellSets()
 	local pandemic, plain = {}, {}
-	-- Asked once rather than per spell: it reads the settings, and the list runs to hundreds.
+	-- Asked once because it reads the settings and the list runs to hundreds.
 	local glowing = M:IsPandemicEnabled()
 
 	for _, spellId in ipairs(M:TrackedList({})) do

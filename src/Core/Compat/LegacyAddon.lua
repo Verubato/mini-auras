@@ -1,8 +1,7 @@
 -- Installing the release zip replaces MiniCC's toc with our settings bridge, so the pre-rename
--- addon cannot load. Copying src/ straight out of the repo, or an addon manager that treats
--- MiniAuras as a brand new addon and leaves the old folder enabled, both dodge that and end up
--- with two copies anchoring icons onto the same frames.
--- TEMPORARY: goes away with the bridge folder once MiniCCDB is dropped.
+-- addon cannot load. Copying src/ out of the repo, or an addon manager that leaves the old folder
+-- enabled, dodges that and ends up with two copies anchoring icons onto the same frames.
+-- Temporary: goes away with the bridge folder once MiniCCDB is dropped.
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework

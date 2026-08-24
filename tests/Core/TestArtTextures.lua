@@ -182,7 +182,7 @@ fw.describe("ArtTextures - painting", function()
 		Near(mirrored[1], 1, "the upper left corner takes the right edge")
 		Near(mirrored[5], 0, "and the upper right takes the left")
 
-		-- A quarter turn clockwise draws the texture's LOWER left at the upper left corner, which
+		-- A quarter turn clockwise draws the texture's lower left at the upper left corner, which
 		-- is what carries the left edge round to the top.
 		local turned = artTextures:Coords(90, false)
 

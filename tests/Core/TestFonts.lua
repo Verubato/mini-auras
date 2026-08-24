@@ -1,10 +1,9 @@
--- The global font face. Three properties carry it: a name belonging to a media addon that has
--- not loaded yet must resolve to nothing rather than to a stand-in face (the addon would
--- otherwise draw the stand-in for the rest of the session); the face a fontstring was built with
--- has to survive the override, because putting it back is the only way the option can be turned
--- off; and picked text rides shared font objects rather than per-string SetFont, because the
--- client silently drops a SetFont whose file it has not loaded yet, where strings attached to an
--- object follow every change the object makes.
+-- The global font face, and the three properties that carry it. A name belonging to a media addon
+-- that has not loaded yet must resolve to nothing, or the addon draws a stand-in face for the rest
+-- of the session. The face a fontstring was built with has to survive the override, because
+-- putting it back is the only way the option can be turned off. Picked text rides shared font
+-- objects rather than per-string SetFont, because the client silently drops a SetFont whose file
+-- it has not loaded yet, where strings attached to an object follow every change the object makes.
 
 local fw = require("Framework")
 
@@ -44,15 +43,15 @@ _G.wipe = _G.wipe or function(t)
 	return t
 end
 
--- Coalesced defers through C_Timer.After; immediate, because every test asserts straight after
--- the event it fires. The burst test swaps in a holding version of its own.
+-- Coalesced defers through C_Timer.After. Immediate here, because every test asserts straight
+-- after the event it fires. The burst test swaps in a holding version of its own.
 _G.C_Timer = _G.C_Timer or {}
 _G.C_Timer.After = function(_, callback)
 	callback()
 end
 
 -- The After above runs its callback on the spot, which would collapse the distinction a coalesced
--- fan-out is about; these hold the callbacks so a burst can be counted.
+-- fan-out is about. These hold the callbacks so a burst can be counted.
 local function withHeldTimers(body)
 	local queued = {}
 	local realAfter = _G.C_Timer.After
@@ -247,7 +246,7 @@ fw.describe("FontUtil:Apply", function()
 	fw.before_each(function()
 		wipe(registered)
 		wipe(db)
-		-- FontUtil memoises the resolved file until the media list moves; without this a name
+		-- FontUtil memoises the resolved file until the media list moves. Without this a name
 		-- registered by an earlier test would keep resolving after the wipe above.
 		if callbacks.LibSharedMedia_Registered then
 			callbacks.LibSharedMedia_Registered()
@@ -296,8 +295,8 @@ fw.describe("FontUtil:Apply", function()
 
 		db.Font = "Other"
 
-		-- The refresh that accompanies a pick re-applies every string. A DIFFERENT object each
-		-- time is the point: editing the object a string already holds only repainted text that
+		-- The refresh that accompanies a pick re-applies every string. A different object each
+		-- time is the point. Editing the object a string already holds only repainted text that
 		-- was about to redraw anyway, which left static text on the old face.
 		fontUtil:Apply(text)
 
@@ -314,7 +313,7 @@ fw.describe("FontUtil:Apply", function()
 		db.Font = "Expressway"
 
 		-- The client keeps drawing a static string's old glyphs after SetFontObject until
-		-- something dirties it; rewriting its text is that something, cleared first because a
+		-- something dirties it. Rewriting its text is that something, cleared first because a
 		-- SetText that changes nothing is dropped. This is what kept a once-written warning on
 		-- its old face while every rewritten text followed the change.
 		fontUtil:Apply(text)
@@ -418,8 +417,8 @@ fw.describe("FontUtil:Apply", function()
 		db.Font = "Expressway"
 
 		fontUtil:Apply(source)
-		-- What a countdown's duration text does with the cooldown's own text: take its face so
-		-- the two match. Taking the face it is WEARING would bake the pick in as the mirror's.
+		-- A countdown's duration text takes the cooldown's own face so the two match. Taking the
+		-- face it is wearing would bake the pick in as the mirror's.
 		fontUtil:Apply(mirror, nil, nil, fontUtil:BaseFace(source))
 
 		assert(Worn(mirror) == PACK_FACE, "fixture: both wearing the override")

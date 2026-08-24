@@ -23,10 +23,9 @@ local SWITCH_ROW_HEIGHT = 20
 -- than a control whose label sits beside it. Measured from the bar, which is what gets anchored.
 local SLIDER_TOP_GAP = verticalSpacing * 2.5
 local SLIDER_ROW_GAP = verticalSpacing * 3
--- How tall every tab's page is. One height for all of them rather than one each: the window
--- measures its scroll range from the tab container once, when the page is first shown, so a
--- container that grew on a later tab change could never be scrolled to. Sized to sit inside the
--- window's own viewport, so no page needs a scrollbar beside the one the spell list carries.
+-- How tall every tab's page is. The window measures its scroll range from the tab container once,
+-- when the page is first shown, so a container that grew on a later tab change could never be
+-- scrolled to. Sized inside the window's own viewport, so only the spell list needs a scrollbar.
 local TAB_HEIGHT = 470
 local SIDEBAR_WIDTH = 120
 local SIDEBAR_ROW_HEIGHT = 24
@@ -144,8 +143,8 @@ end
 
 ---Lays a set of switches across one row, each in its own column of the shared grid. Every tab
 ---leads with one of these: the enable switch first, then whatever narrows what the row draws, so
----the settings that decide WHETHER something shows all sit on one line above the ones that decide
----what it looks like.
+---the settings that decide what shows all sit on one line above the ones that decide what it
+---looks like.
 ---
 ---The grid is a fixed width rather than one column per switch, so a tab carrying three of them
 ---lines up with the tabs carrying four instead of spreading to fill the page.
@@ -157,9 +156,9 @@ end
 local function CheckboxRow(parent, options, specs, anchor)
 	local width = switchColumnWidth or mini:ColumnWidth(SWITCH_COLUMNS, 0, 0)
 	local first
-	-- The switch starting the LAST line, which is what the section below hangs off: it carries both
-	-- the bottom of the row and the left edge the next control lines up with. Taking the last one
-	-- PLACED instead would put that control under whichever column the row happened to end in.
+	-- The switch starting the last line, which is what the section below hangs off: it carries both
+	-- the bottom of the row and the left edge the next control lines up with. Taking the last switch
+	-- placed instead would put that control under whichever column the row happened to end in.
 	local bottomLeftIndex = 1 + SWITCH_COLUMNS * math.floor((#specs - 1) / SWITCH_COLUMNS)
 	local bottomLeft
 
@@ -262,7 +261,7 @@ local function BuildSpellList(parent, anchor)
 
 	local sections, buttons = {}, {}
 	-- What each row was labelled with when it was built. The client learns spell names as it goes,
-	-- so a list built before it knew them reads as bare ids; this is what says whether re-opening
+	-- so a list built before it knew them reads as bare ids. This is what says whether re-opening
 	-- the page would actually show anything different.
 	local rows = {}
 	local selectedKey

@@ -25,19 +25,16 @@ addon.Modules.ImportantAuras = addon.Modules.ImportantAuras or {}
 local M = {}
 addon.Modules.ImportantAuras.Display = M
 
--- CC + defensive auras render through an AuraContainer per anchor (one group per category); the
--- IconSlotContainer is kept for the kick icon and test mode. There is no dynamic slot split
--- between categories (aura counts are unreadable), so each enabled category gets the full
--- MaxIcons budget.
+-- CC and defensive auras render through an AuraContainer per anchor, one group per category, with
+-- an IconSlotContainer alongside for the kick icon and test mode.
 local paused = false
 local testModeActive = false
 -- Anchor frame -> the container and display drawn on it. Owned here: the module asks for
 -- whole-set operations rather than reaching into it.
 ---@type table<table, ImportantAurasWatchEntry>
 local watchers = {}
--- Background walker declaring the aura groups of displays as they are built; see
--- DeclareNextGroup. Urgent: these are on a unit frame the player is looking at, unlike the lanes
--- preparing spares nobody has asked for.
+-- Background walker declaring the aura groups of displays as they are built. Urgent, because
+-- these are on a unit frame the player is looking at.
 local buildSweep = sweep:New(true)
 ---@type TestSpell[]
 local testDefensiveSpells = {}
@@ -54,23 +51,21 @@ local budgetScratch = {}
 local settingsScratch = {}
 
 -- Helpful auras are filtered by spell id alone rather than by Blizzard's category flags. That is
--- only possible here because the gate on spell-id filters is UnitCanAssist, and this module
--- tracks assistable units - the same swap on an enemy-facing display would silently show every
--- buff. It buys the ability to track spells the game never flags, at the cost of showing nothing
--- that is not explicitly listed.
+-- only possible because the gate on spell-id filters is UnitCanAssist and this module tracks
+-- assistable units. On an enemy-facing display the same swap would show every buff. It buys the
+-- spells the game never flags, at the cost of showing nothing that is not explicitly listed.
 --
--- Not the usual big/external/important split: with the category tokens gone both groups carry the
--- same filter string, and the categories are kept apart by which ids reach which group. They are
--- two groups rather than one only so each can take its own colour - the engine tints a whole
--- group, and an aura's own id is unreadable here.
+-- With the category tokens gone both groups carry the same filter string, and the categories are
+-- kept apart by which ids reach which group. They are two groups rather than one so each can take
+-- its own colour, since the engine tints a whole group.
 -- Read-only stand-in so the lookups below never have to nil-check.
 local EMPTY_TABLE = {}
 local DEFENSIVE_GROUP_KEY = "helpfuldef"
 local IMPORTANT_GROUP_KEY = "helpfulimp"
 local HELPFUL_FILTER = "HELPFUL"
--- An id nothing will ever have, for a tracked set that comes out empty. An EMPTY includeSpellIDs
+-- An id nothing will ever have, for a tracked set that comes out empty. An empty includeSpellIDs
 -- map reads as "no ids required", so the group would match every buff on the unit instead of none
--- of them - see the same trap in Modules/PersonalAuras/Display.
+-- of them.
 local NEVER_MATCHED_SPELL_ID = 2147483647
 -- The curated lists, each tied to the toggle that owns it and the group it lands in. The unflagged
 -- halves are only reachable at all because the groups filter by id.
@@ -96,8 +91,8 @@ local HELPFUL_GROUP_KEYS = { DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }
 -- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
 local MASQUE_GROUP = "Important Auras"
 -- How many frames' worth of containers to have ready before a group turns up. A party is five,
--- which is the size a solo player is most likely to become; past that the walker keeps up with
--- the frames appearing, because a raid fills in over several seconds anyway.
+-- which is the size a solo player is most likely to become. Past that the walker keeps up, since
+-- a raid fills in over several seconds anyway.
 local PREWARM_FRAMES = 5
 -- What a spare tracks until a frame hands it a real token.
 local SPARE_UNIT = "none"
@@ -134,10 +129,9 @@ local anchorScratch = {}
 ---The category toggles pick the lists rather than an icon budget each, because a curated id can
 ---belong to both categories: budgeting a group to zero would take those spells down with it.
 ---
----Rebuilt only when the toggles or the overrides move. This runs per entry on every roster
----refresh, and the curated walk plus its fresh id maps is the same answer forty times over;
----helpfulFilterGeneration is what a caller compares to skip re-publishing tables the engine
----already holds.
+---Rebuilt only when the toggles or the overrides move, since this runs per entry on every roster
+---refresh and the curated walk is the same answer forty times over. helpfulFilterGeneration is
+---what a caller compares to skip re-publishing tables the engine already holds.
 ---@param options ImportantAurasInstanceOptions
 ---@return table filtersByGroup Group key -> candidate filters.
 local function GetHelpfulFilters(options)
@@ -198,8 +192,8 @@ local function GetHelpfulFilters(options)
 
 	for spellId in pairs(custom) do
 		-- A spell the user added by hand can later ship in the curated lists. Drop their copy
-		-- when that happens: leaving it would list the spell twice in the options - once under
-		-- its class and once under Custom - with two checkboxes driving the same tracked state.
+		-- when that happens, or the options list it twice, under its class and under Custom,
+		-- with two checkboxes driving the same tracked state.
 		if curated[spellId] then
 			custom[spellId] = nil
 		elseif not disabled[spellId] then
@@ -232,8 +226,8 @@ local function BuildGroups(maxIcons, options, colors)
 
 	return {
 		auraFilters:GroupSpec("CrowdControl", maxIcons),
-		-- Not standard categories: the helpful side filters by the user-curated spell id lists
-		-- rather than Blizzard's category tokens (see the header comment above).
+		-- The helpful side filters by the user-curated spell id lists rather than Blizzard's
+		-- category tokens.
 		{
 			Key = DEFENSIVE_GROUP_KEY,
 			FilterString = HELPFUL_FILTER,
@@ -284,8 +278,8 @@ local function RefreshCategoryColors()
 	moduleUtil:FillColor(defensiveColor, module and module.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
 end
 
----The tints the helpful groups take, keyed by group key. The CC group is never in there: it takes
----the game's dispel type colours, which is all the toggle meant before there was anything to pick.
+---The tints the helpful groups take, keyed by group key. The CC group is never in there, since it
+---takes the game's dispel type colours.
 ---@param options ImportantAurasInstanceOptions
 ---@return table<string, number[]> Shared, rewritten per call.
 local function HelpfulColors(options)
@@ -338,16 +332,16 @@ local function UpdateKickIcon(entry)
 	end)
 end
 
----Budgets every group for the entry's CURRENT unit, which is a question about the unit rather
+---Budgets every group for the entry's current unit, which is a question about the unit rather
 ---than about the options.
 ---
 ---Assist: spell-id filters are gated on UnitCanAssist, so a unit that stops being assistable
----drops includeSpellIDs and the bare HELPFUL token then matches every buff they have. Two ways
----in - a duel flips the unit under the frame, and a mind control has Blizzard hand a FRIENDLY
----frame an enemy unit outright.
+---drops includeSpellIDs and the bare HELPFUL token then matches every buff they have. A duel
+---flips the unit under the frame, and a mind control has Blizzard hand a friendly frame an enemy
+---unit outright.
 ---
 ---Visible: outside the player's visible world the engine stops evaluating the filters correctly
----and BOTH groups fill with unrelated auras, so a unit that far away shows nothing at all.
+---and both groups fill with unrelated auras, so a unit that far away shows nothing at all.
 ---
 ---Neither has an event of its own, which is why the unit state poller watches them.
 ---@param entry ImportantAurasWatchEntry
@@ -362,10 +356,10 @@ local function ApplyUnitGates(entry, options)
 	local crowdControl = visible and options.ShowCrowdControl and maxIcons or 0
 
 	if entry.Display then
-		-- Both helpful groups take the same budget: a category switched off has an empty id set
-		-- already, so budgeting them apart would say the same thing twice.
-		-- Urgent: the unit a gate zeroes is outside the visible world and emits no aura events,
-		-- so a budget flip parked for combat would keep showing the garbage until regen.
+		-- Every switched-on category gets the whole budget, since aura counts cannot be read to
+		-- split the slots between them, and a category switched off has an empty id set already.
+		-- Urgent, because the unit a gate zeroes is outside the visible world and emits no aura
+		-- events, so a budget flip parked for combat would keep showing the garbage until regen.
 		entry.Display:SetMaxIcons(DEFENSIVE_GROUP_KEY, helpful, true)
 		entry.Display:SetMaxIcons(IMPORTANT_GROUP_KEY, helpful, true)
 		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, crowdControl, true)
@@ -388,11 +382,10 @@ local function DeclareNextGroup(entry)
 
 	local options = GetOptions()
 
-	-- Re-published rather than trusted from creation: the walk runs over seconds, in which the
-	-- tracked spell list can move and an entry whose anchor is out of sight is skipped by every
-	-- refresh in between. Only when it actually moved, though: once the first group is declared
-	-- this reaches the engine, and an unguarded push bounces the container into a full reparse
-	-- for every group after it.
+	-- Re-published rather than trusted from creation, since the walk runs over seconds and the
+	-- tracked spell list can move while an entry whose anchor is out of sight is skipped by every
+	-- refresh. Only when it actually moved, because an unguarded push bounces the container into a
+	-- full reparse for every group after the first.
 	if options then
 		local filters = GetHelpfulFilters(options)
 
@@ -499,10 +492,9 @@ end
 ---Both halves are already parented to the screen, which is where a taken one lives too, so the
 ---token is all that changes.
 ---
----MATCHES, not merely exists. A spare bakes its size, its style and its groups' budgets in when it
----is built, and a restyle is refused outright while auras are secret, so one handed over needing a
----resize would keep the wrong look for the rest of an arena. CarriesConfig is the question every
----other pool here asks before reuse.
+---A spare bakes its size, its style and its groups' budgets in when it is built, and a restyle is
+---refused outright while auras are secret, so one handed over needing a resize would keep the
+---wrong look for the rest of an arena.
 ---@param unit string
 ---@param size number
 ---@param spacing number
@@ -515,8 +507,8 @@ local function TakeSpare(unit, size, spacing, style, maxIcons)
 
 		-- The budget has to match outright: the engine hands out a group's buttons from the count
 		-- it was declared with, so a spare built for a smaller row can never grow into a bigger
-		-- one. The look only has to match while a restyle is refused; outside that the same
-		-- refresh that takes this corrects it, exactly as it would a display built on demand.
+		-- one. The look only has to match while a restyle is refused, since outside that the same
+		-- refresh that takes this corrects it.
 		if spare.MaxIcons == maxIcons
 			and (not wowEx:IsAuraStylingRestricted() or spare.Display:CarriesConfig(size, spacing, style)) then
 			table.remove(spares, index)
@@ -612,7 +604,7 @@ local function EnsureWatcher(anchor, unit)
 		watchers[anchor] = entry
 
 		-- The standard categories, partitioned by filter negation so an aura only ever lands in
-		-- one group (see Core/AuraFilters).
+		-- one group.
 		entry.Display = spare and spare.Display or auraContainerDisplay:New(
 			UIParent,
 			unit,
@@ -650,9 +642,8 @@ local function EnsureWatcher(anchor, unit)
 		-- until the next refresh.
 		ApplyUnitGates(entry, options)
 	else
-		-- Check if unit has changed
 		if entry.Unit ~= unit then
-			-- The container tracks the new unit itself; only the unit token changes.
+			-- The container tracks the new unit itself, so only the token changes.
 			entry.Display:SetUnit(unit)
 
 			kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
@@ -664,14 +655,12 @@ local function EnsureWatcher(anchor, unit)
 			entry.Unit = unit
 
 			-- The gates are per unit, so a re-point can change the answer even though nothing
-			-- about the options moved. The category toggles are deliberately NOT re-read here
-			-- (a re-point must not reset them from defaults); only the gates are re-asked.
+			-- about the options moved. The category toggles are left alone, since a re-point must
+			-- not reset them from defaults.
 			ApplyUnitGates(entry, options)
 
-			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
 
-			-- Force immediate refresh for the new unit
 			UpdateKickIcon(entry)
 		end
 	end

@@ -1,16 +1,14 @@
 -- Portrait module, 12.1 container path: the layered single-icon stack over a unit frame portrait.
 --
--- A portrait shows ONE icon but cannot ask which aura wins (aura presence is secret), so it gets
--- five single-icon containers stacked by frame level and lets the higher-priority one cover the
--- rest. The levels must be DISTINCT: same-level siblings draw in an arbitrary order, which sank
--- the creation-order variant. Two things about the arrangement have already broken once and are
--- invisible when they do:
+-- A portrait shows one icon but cannot ask which aura wins, since aura presence is secret, so it
+-- gets five single-icon containers stacked by frame level and lets the higher-priority one cover
+-- the rest. The levels must be distinct, because same-level siblings draw in an arbitrary order.
+-- Two things about the arrangement are invisible when they break:
 --
---   * Frame levels. The first PTR build put the stack BELOW the kick frame, which put it behind
---     TargetFrame's own textures - no errors, just no icons. The order is asserted here.
---   * Going through the wrapper. These used to be raw CreateFrame("AuraContainer") calls, which
---     kept them out of the Edit Mode suppression list and would have shown Blizzard's placeholder
---     auras over every portrait.
+--   * Frame levels. Putting the stack below the kick frame puts it behind TargetFrame's own
+--     textures, with no errors and no icons. The order is asserted here.
+--   * Going through the wrapper. A raw CreateFrame("AuraContainer") stays out of the Edit Mode
+--     suppression list and would show Blizzard's placeholder auras over every portrait.
 
 local fw = require("Framework")
 local acm = require("AuraContainerMock")
@@ -20,8 +18,8 @@ local env = moduleEnv.build()
 
 env.setModuleEnabled("Portrait", true)
 
--- Blizzard unit frames. The portrait is a texture in the client; the mock models it as a child
--- frame so it can carry a parent, a size and a rect.
+-- Blizzard unit frames. The portrait is a texture in the client, and the mock models it as a
+-- child frame so it can carry a parent, a size and a rect.
 local PORTRAIT_SIZE = 60
 for _, spec in ipairs({
 	{ Global = "PlayerFrame", Unit = "player", Level = 1 },
@@ -45,11 +43,11 @@ env.loadModule("src/Modules/Portrait/Anchors.lua")
 env.loadModule("src/Modules/Portrait/Module.lua")
 local module = env.addon.Modules.PortraitModule
 module:Init()
--- Init only builds the lifecycle now; a module sets itself up on the first refresh that
--- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+-- Init only builds the lifecycle. A module sets itself up on the first refresh that finds it
+-- enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
 module:Refresh()
 
--- The wrapper's shared event frame; created with the first display, so it exists by now.
+-- The wrapper's shared event frame, created with the first display, so it exists by now.
 local displayEvents = assert(acm.lastFrameForEvent("AURA_DATA_PROVIDER_SWITCH"),
 	"the display wrapper listens for the Edit Mode data provider switch")
 local unitChangeEvents = assert(acm.lastFrameForEvent("PLAYER_TARGET_CHANGED"),
@@ -213,7 +211,7 @@ fw.describe("Portrait 12.1 - the custom spell layer", function()
 	end)
 
 	fw.it("allocates its buttons up front, so a later addition can render", function()
-		-- The client builds a group's buttons from the count it was created with; a group born
+		-- The client builds a group's buttons from the count it was created with. A group born
 		-- at zero has none to hand out however high the budget is raised afterwards.
 		settleGroups()
 
@@ -226,10 +224,10 @@ end)
 
 fw.describe("Portrait 12.1 - the demoted portrait layer", function()
 	fw.it("moves the portrait and its icons a strata below the unit frame", function()
-		-- Icons anchored over a portrait have to clear the portrait's own level, which used to
-		-- put them above the unit frame's border art too - the icon then drew over the ring
-		-- instead of inside it. Dropping the portrait into a frame one strata down takes the
-		-- whole level range with it, since strata beats level.
+		-- Icons anchored over a portrait have to clear the portrait's own level, which also puts
+		-- them above the unit frame's border art, where the icon draws over the ring instead of
+		-- inside it. Dropping the portrait into a frame one strata down takes the whole level
+		-- range with it, since strata beats level.
 		for _, unit in ipairs({ "player", "target", "focus" }) do
 			local _, container = displaysFor(unit)
 			local portrait = _G[unit == "player" and "PlayerFrame"
@@ -260,8 +258,8 @@ fw.describe("Portrait 12.1 - the demoted portrait layer", function()
 	end)
 
 	fw.it("keeps every icon above the portrait it covers", function()
-		-- Below the portrait's own level the portrait texture hides the icons entirely (the
-		-- first PTR build's bug), so the stack still has to sit above it.
+		-- Below the portrait's own level the portrait texture hides the icons entirely, so the
+		-- stack still has to sit above it.
 		for _, unit in ipairs({ "player", "target", "focus" }) do
 			local displays, container = displaysFor(unit)
 			local portraitLevel = container.Frame:GetParent():GetFrameLevel()
@@ -279,9 +277,8 @@ end)
 fw.describe("Portrait 12.1 - frame level stacking", function()
 	fw.it("stacks the displays UP from the container, kick slot on top", function()
 		-- Buttons render at the display's own level, so the lowest display must clear whatever
-		-- the portrait draws at, or the portrait hides them (the first PTR build's bug). The
-		-- levels must also be strictly ascending - same-level siblings draw in an arbitrary
-		-- order.
+		-- the portrait draws at, or the portrait hides them. The levels must also be strictly
+		-- ascending, because same-level siblings draw in an arbitrary order.
 		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
 			local displays, container = displaysFor(unit)
 			local previous = container.Frame:GetFrameLevel() + 1
@@ -325,7 +322,7 @@ end)
 
 fw.describe("Portrait 12.1 - wrapper-managed containers", function()
 	fw.it("every portrait container is suppressed by the Edit Mode preview", function()
-		-- Only containers built through AuraContainerDisplay are in the suppression list; a
+		-- Only containers built through AuraContainerDisplay are in the suppression list. A
 		-- hand-rolled one would happily paint placeholder auras over the portrait.
 		displayEvents:TriggerEvent("AURA_DATA_PROVIDER_SWITCH", false)
 
@@ -342,10 +339,10 @@ fw.describe("Portrait 12.1 - wrapper-managed containers", function()
 	end)
 
 	fw.it("a target swap refreshes only that unit's stack", function()
-		-- Containers watch their unit token, not who currently occupies it; nothing refreshes
+		-- Containers watch their unit token, not who currently occupies it, and nothing refreshes
 		-- them when the target changes unless the module asks. The refresh is the hide/show
-		-- bounce (an addon-context UpdateAllAuras only marks flags nothing is armed to consume),
-		-- so a bounce shows up as one extra Show call per display.
+		-- bounce, because an addon-context UpdateAllAuras only marks flags nothing is armed to
+		-- consume, so a bounce shows up as one extra Show call per display.
 		local function refreshCount(unit)
 			local total = 0
 			for _, display in ipairs(displaysFor(unit)) do
@@ -364,7 +361,7 @@ fw.describe("Portrait 12.1 - wrapper-managed containers", function()
 
 	fw.it("a target swap re-gates the disarm layer on assistability", function()
 		-- The disarm layer's spell-ID filter is skipped by the engine on assistable units, where
-		-- the group would show whatever debuff is newest; the budget is the addon-side gate and
+		-- the group would show whatever debuff is newest. The budget is the addon-side gate and
 		-- must follow the occupant's reaction, which only the module can see change.
 		local disarmKey = env.addon.Core.AuraFilters.GroupKey.Disarm
 		local _, container = displaysFor("target")

@@ -15,10 +15,9 @@ Set.__index = Set
 
 ---A keyed "has any of this moved?" test, answered with a number.
 ---
----What it replaces built a string per call, a tostring per field and a concat, on paths that run
----per nameplate and per roster event. This compares the values against what the key last saw and
----returns a number that only changes when one of them did. Callers keep the number where they
----kept the string: stored on an entry, compared to spot a stale one.
+---Compares the values against what the key last saw and returns a number that only changes when
+---one of them did, cheaply enough for paths that run per nameplate and per roster event. Callers
+---store the number on an entry and compare it to spot a stale one.
 ---
 ---One key is one thing being watched. Give a key the same values in the same order every time. A
 ---key fed two different looks reads as changing on every call.

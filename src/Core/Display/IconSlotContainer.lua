@@ -10,7 +10,7 @@ local glowStyles = addon.Core.GlowStyles
 
 -- The icon crop (Utils/IconUtil) leaves the artwork reaching the icon's edge, so our own border
 -- sits flush and the swipe covers exactly the visible square. A Masque skin overrides it with its
--- own crop, which is what we want - the skin owns the icon's shape.
+-- own crop, since the skin owns the icon's shape.
 
 -- Style name -> the field its built frame is cached under on a parent, so a frame is never
 -- built twice per layer. Membership doubles as "this style is texture-based": the shared
@@ -37,8 +37,8 @@ local frameIdCounter = 0
 -- secret aura durations are never read. One shared ticker serves every container.
 local coloredCooldowns = {}
 local colorTicker
--- Fallbacks while db.CountdownColors is missing (a profile snapshot from before the setting
--- existed round-trips without it); must match BAND_DEFAULTS in Core/Auras/AuraCountdownText.
+-- Fallbacks while db.CountdownColors is missing, which a profile snapshot saved before the setting
+-- existed round-trips without. Must match BAND_DEFAULTS in Core/Auras/AuraCountdownText.
 local COUNTDOWN_FALLBACKS = {
 	Under5s = { R = 1, G = 0, B = 0 },
 	Under60s = { R = 1, G = 0.8, B = 0 },
@@ -84,8 +84,8 @@ local function GetCooldownText(cd)
 	return cd.MiniAurasFontString
 end
 
----Colour bands by remaining seconds, tinted by db.CountdownColors; must match the curve stops in
----Core/Auras/AuraCountdownText so these icons show exactly what the curve-bound 12.1 aura icons
+---Colour bands by remaining seconds, tinted by db.CountdownColors. They must match the curve stops
+---in Core/Auras/AuraCountdownText so these icons show exactly what the curve-bound 12.1 aura icons
 ---show. Compared by the colour actually applied rather than by band, so a colour changed in the
 ---options repaints on the next tick.
 local function ApplyCountdownColor(cd, remaining)
@@ -223,7 +223,6 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 		f:SetFrameLevel(level)
 	end
 
-	-- place our icons on the 1st draw layer of background
 	local icon = f:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetAllPoints()
 	icon:SetTexCoord(iconUtil:TexCoord())
@@ -244,8 +243,8 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 
 	local border
 	if not noBorder then
-		-- make the border 1px larger than the icon
-		-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
+		-- The border sits 1px outside the icon, as Blizzard's CompactUnitFrame does:
+		-- https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
 		border = f:CreateTexture(nil, "OVERLAY")
 		border:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 1)
 		border:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -1)
@@ -272,8 +271,8 @@ local function EnsureContainer(slot, iconSize, group, noBorder)
 		return slot.Container
 	end
 
-	-- Wrap in its own frame so its alpha doesn't propagate to extra layers,
-	-- which are siblings (also children of slot.Frame) rather than descendants.
+	-- Wrap in its own frame so its alpha does not propagate to the extra layers, which are
+	-- siblings under slot.Frame rather than descendants.
 	local slotLevel = slot.Frame:GetFrameLevel() or 0
 	slot.Container = CreateLayer(slot.Frame, slotLevel + 1, iconSize, noBorder)
 
@@ -287,7 +286,7 @@ local function EnsureContainer(slot, iconSize, group, noBorder)
 	return slot.Container
 end
 
--- layerIndex is the public layer number (2, 3, …); extra layer 1 lives at slot.ExtraLayers[1], etc.
+-- layerIndex is the public layer number (2, 3, ...); extra layer 1 lives at slot.ExtraLayers[1], etc.
 local function EnsureExtraLayer(slot, layerIndex, iconSize)
 	local extraIdx = layerIndex - 1
 	if not slot.ExtraLayers then
@@ -304,7 +303,6 @@ local function EnsureExtraLayer(slot, layerIndex, iconSize)
 		slot.ExtraLayers[l] = CreateLayer(slot.Frame, baseLevel + l * 2, iconSize)
 	end
 
-	-- Re-apply levels if the slot frame level has changed since last time.
 	if slot.LastExtraBaseLevel ~= baseLevel then
 		slot.LastExtraBaseLevel = baseLevel
 		for l = 1, #slot.ExtraLayers do
@@ -327,8 +325,8 @@ local function ApplyAlpha(target, alpha)
 end
 
 local function ApplyStaticGlowPadding(glowFrame, parent)
-	-- GetWidth() returns a secret number inside nameplate hierarchies, which can't
-	-- be compared or multiplied; fall back to the size we set on the layer ourselves.
+	-- GetWidth() returns a secret number inside nameplate hierarchies, which cannot be compared or
+	-- multiplied, so fall back to the size we set on the layer ourselves.
 	local width = parent:GetWidth()
 	if issecretvalue(width) or not (width and width > 0) then
 		width = parent.DesiredSize or 30
@@ -338,8 +336,8 @@ local function ApplyStaticGlowPadding(glowFrame, parent)
 	glowFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", padding, -padding)
 end
 
--- Hook once per parent (idempotent via the marker flag); the hook resizes whichever static
--- glows live on this parent so all glow types stay proportional.
+-- Hooked once per parent. The hook resizes whichever static glows live on this parent so all glow
+-- types stay proportional.
 local function EnsureStaticGlowResizeHook(parent)
 	if parent._StaticGlowResizeHooked then
 		return
@@ -387,13 +385,11 @@ local function HideStaticGlowsExcept(parent, exceptType)
 	end
 end
 
--- LibCustomGlow keeps its glow frames in pools stored on the shared lib table. If another addon
--- embeds a higher-version copy of LibCustomGlow that loads after ours, it replaces those pools on
--- the shared table. Frames we created then belong to the previous pool, so the lib's *_Stop
--- functions try to release them into the new pool and raise
--- "Attempted to release object that doesn't belong to this pool".
--- Guard each stop: only call the lib function while the frame is still active in the current pool;
--- otherwise hide the orphaned frame and drop our stale reference so it can't be released again.
+-- LibCustomGlow keeps its glow frames in pools on the shared lib table, and another addon embedding
+-- a higher-version copy that loads after ours replaces those pools. Frames we created then belong
+-- to the previous pool, so the lib's *_Stop functions raise "Attempted to release object that
+-- doesn't belong to this pool". Only call the lib stop while the frame is still active in the
+-- current pool, otherwise hide the orphan and drop the stale reference.
 local function SafeStopGlow(parent, field, pool, stopFn)
 	local f = parent[field]
 	if not f then
@@ -460,7 +456,7 @@ local function ResolveGlowType()
 	local glowType = (db and db.GlowType) or "Slot Glow"
 
 	-- Aura icons render through AuraContainerDisplay, which can only use the texture-based glows
-	-- (LibCustomGlow cannot attach to AuraButtons). Kick and test icons still render here, so
+	-- because LibCustomGlow cannot attach to AuraButtons. Kick and test icons still render here, so
 	-- clamp them to the same set and every glow stays visually consistent.
 	if not STATIC_GLOW_FIELDS[glowType] then
 		return "Slot Glow"
@@ -469,7 +465,6 @@ local function ResolveGlowType()
 	return glowType
 end
 
----Updates glow effects on a layer frame
 ---@param layerFrame table The layer frame to update glow on
 ---@param options IconLayerOptions Options containing glow settings
 local function UpdateGlow(layerFrame, options)
@@ -482,7 +477,6 @@ local function UpdateGlow(layerFrame, options)
 		return
 	end
 
-	-- Check if color has changed
 	local colorChanged = false
 	local newColorKey = nil
 	if options.Color then
@@ -528,7 +522,6 @@ local function UpdateGlow(layerFrame, options)
 		return
 	end
 
-	-- LCG-based glows
 	HideStaticGlowsExcept(layerFrame, nil)
 	StopLCGGlowsExcept(layerFrame, glowType)
 
@@ -561,7 +554,8 @@ local function UpdateGlow(layerFrame, options)
 			end
 		end
 	else
-		-- Remaining LCG type: Proc Glow. Always call Start so the glow resizes when icon size changes.
+		-- The remaining type is Proc Glow. Start is called every time so the glow resizes with the
+		-- icon.
 		if LCG and LCG.ProcGlow_Start then
 			if colorChanged and layerFrame._ProcGlow and LCG.ProcGlow_Stop then
 				SafeStopGlow(layerFrame, "_ProcGlow", LCG.ProcGlowPool, LCG.ProcGlow_Stop)
@@ -587,7 +581,7 @@ local function ApplyIconCorners(layer, options)
 	end
 
 	-- The border ring has the same rounded inner corners as the overlays, so it rounds the icon
-	-- too; an LCG glow does not, which is why only the texture-based ones count here.
+	-- too. An LCG glow does not, so only the texture-based ones count here.
 	local rounded = (options.Border or (options.Glow and STATIC_GLOW_FIELDS[ResolveGlowType()]))
 		and true or false
 
@@ -599,7 +593,6 @@ local function ApplyIconCorners(layer, options)
 	layer.CornerMask = glowStyles:SetIconCorners(layer.Frame, layer.Icon, layer.Cooldown, layer.CornerMask, rounded)
 end
 
----Creates a new IconSlotContainer instance
 ---@param parent table frame to attach to
 ---@param count number of slots to create (default: 3)
 ---@param size number of each icon slot (default: 20)
@@ -637,7 +630,6 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 end
 
 function M:Layout()
-	-- Populate scratch table with used slot indices
 	local n = 0
 	for i = 1, self.Count do
 		if self.Slots[i] and self.Slots[i].IsUsed then
@@ -648,8 +640,8 @@ function M:Layout()
 
 	-- The current size, row settings and used slot indices. When none of them moved the visual
 	-- result would be identical, so every SetPoint/SetSize/Show/Hide below can be skipped.
-	-- Vertical layout covers both grow-down and grow-up; the only difference is icon ordering
-	-- (grow-up reverses the stack so slot 1 sits at the bottom, nearest the anchor).
+	-- Vertical layout covers both grow-down and grow-up, which differ only in icon order: grow-up
+	-- puts slot 1 at the bottom, nearest the anchor.
 	local vertical = self.GrowDown or self.GrowUp
 	local numRows = (not vertical and self.NumRows and self.NumRows > 1) and self.NumRows or nil
 	local columnsPerRow = (vertical and self.Columns and self.Columns > 1) and self.Columns or nil
@@ -708,8 +700,8 @@ function M:Layout()
 
 			local x
 			if self.InvertLayout then
-				-- Inverted: use simple LEFT formula; column reversal already handles right-to-left
-				-- fill, so partial rows are naturally right-aligned without an extra shift.
+				-- The column reversal already fills right to left, so partial rows are right-aligned
+				-- without an extra shift.
 				x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
 			else
 				local alignment = rowIndex == 0 and row1Alignment or overflowAlignment
@@ -785,7 +777,6 @@ function M:Layout()
 			slot.Frame:Show()
 		end
 	else
-		-- Single row
 		local totalWidth = usedCount * self.Size + (usedCount - 1) * self.Spacing
 		self.Frame:SetSize(totalWidth, self.Size)
 		self.Frame:SetAlpha(1)
@@ -802,7 +793,6 @@ function M:Layout()
 		end
 	end
 
-	-- Hide unused active slots
 	for i = 1, self.Count do
 		local slot = self.Slots[i]
 		if slot and not slot.IsUsed then
@@ -819,11 +809,10 @@ function M:Layout()
 		end
 	end
 
-	-- testing to see if this helps with the weird issue with randomly large Masque borders and icons
+	-- Re-skin after a layout, or Masque borders come out randomly oversized.
 	ScheduleMasqueReSkin(self)
 end
 
----Sets the spacing between slots
 ---@param newSpacing number
 function M:SetSpacing(newSpacing)
 	---@diagnostic disable-next-line: cast-local-type
@@ -900,7 +889,7 @@ function M:SetGrowUp(enabled)
 end
 
 ---Sets the maximum number of icons per row when growing downward.
----Only effective when GrowDown is true; a value of 1 or nil reverts to a single column.
+---Only effective when GrowDown is true. A value of 1 or nil reverts to a single column.
 ---@param n number? Maximum icons per row; nil or 1 means single column
 function M:SetColumns(n)
 	n = (n and n > 1) and math.floor(n) or nil
@@ -912,7 +901,6 @@ function M:SetColumns(n)
 	self:Layout()
 end
 
----Sets the icon size for all slots
 ---@param newSize number
 function M:SetIconSize(newSize)
 	---@diagnostic disable-next-line: cast-local-type
@@ -926,7 +914,6 @@ function M:SetIconSize(newSize)
 
 	self.Size = newSize
 
-	-- Resize active slots and update cooldown font sizes
 	for i = 1, self.Count do
 		local slot = self.Slots[i]
 		if slot and slot.Frame then
@@ -972,7 +959,6 @@ function M:SetIconSize(newSize)
 	self:Layout()
 end
 
----Sets the total number of slots
 ---@param newCount number of slots to maintain
 function M:SetCount(newCount)
 	newCount = math.max(0, newCount or 0)
@@ -994,14 +980,12 @@ function M:SetCount(newCount)
 
 	self.Count = newCount
 
-	-- Grow pool if needed
 	for i = #self.Slots + 1, newCount do
 		local slotFrame = CreateFrame(self.MasqueGroup and "Button" or "Frame", NextFrameName("Slot"), self.Frame)
 		slotFrame:SetSize(self.Size, self.Size)
 		slotFrame:EnableMouse(false)
-		-- Composite the slot's icon/cooldown/border/glow regions in a single render pass.
-		-- Applied per slot (not per bar) so an animating cooldown swipe only re-composites
-		-- its own icon rather than the whole bar.
+		-- Composite the slot's icon/cooldown/border/glow regions in a single render pass. Per slot
+		-- rather than per bar, so an animating cooldown swipe only re-composites its own icon.
 		slotFrame:SetFlattensRenderLayers(true)
 
 		self.Slots[i] = {
@@ -1125,8 +1109,8 @@ function M:SetSlot(slotIndex, options)
 		layer.Cooldown:SetDrawSwipe(false)
 		ResetCountdownColor(layer.Cooldown)
 	end
-	-- Query IsShown() AFTER setting the cooldown - the frame hides itself when the
-	-- duration is zero or expired, so this is the authoritative "on cooldown" check.
+	-- The frame hides itself when the duration is zero or expired, so IsShown() only answers the
+	-- "on cooldown" question once the cooldown has been set.
 	layer.Icon:SetDesaturated(options.Desaturate and layer.Cooldown:IsShown() or false)
 
 	if options.ChargeText then
@@ -1137,8 +1121,7 @@ function M:SetSlot(slotIndex, options)
 			layer.ChargeText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 			layer.ChargeText:SetPoint("BOTTOMRIGHT", layer.Frame, "BOTTOMRIGHT", -3, 1)
 			layer.ChargeTextCentered = false
-			-- The template face, kept so the centred stand-in (which borrows the countdown's
-			-- face below) can be put back in the corner state.
+			-- The template face, kept so the centred stand-in can be put back in the corner state.
 			local face, _, flags = layer.ChargeText:GetFont()
 			layer.ChargeTextFace, layer.ChargeTextFlags = face, flags
 		end
@@ -1200,9 +1183,9 @@ function M:SetSlot(slotIndex, options)
 
 	ApplyAlpha(layer.Frame, options.Alpha)
 
-	-- The coloured border normally gives way to an active glow so the two rings don't double up.
-	-- Border forces both, for icons standing in for aura buttons - the engine draws border and
-	-- glow together on those, and a preview rendered here must not look different from live.
+	-- The coloured border normally gives way to an active glow so the two rings do not double up.
+	-- Border forces both, for icons standing in for aura buttons: the engine draws border and glow
+	-- together on those, and a preview rendered here must not look different from live.
 	if options.Color and layer.Border and (options.Border == true or not options.Glow) then
 		layer.Border:SetVertexColor(
 			options.Color.r or 1,
@@ -1228,7 +1211,6 @@ function M:SetSlot(slotIndex, options)
 	ApplyIconCorners(layer, options)
 end
 
--- Clears all layers on a slot
 ---@param slotIndex number Slot index
 function M:ClearSlot(slotIndex)
 	if slotIndex < 1 or slotIndex > #self.Slots then
@@ -1251,14 +1233,12 @@ function M:ClearSlot(slotIndex)
 		end
 	end
 
-	-- Stop any slot-level glow on slot.Frame. Cheap when none exists (just nil-field checks) and
-	-- ensures a glow never lingers when the slot is freed/reused.
+	-- Stop any slot-level glow on slot.Frame, so none lingers when the slot is freed and reused.
 	StopLCGGlowsExcept(slot.Frame, nil)
 	HideStaticGlowsExcept(slot.Frame, nil)
 end
 
----Marks a slot as unused and triggers layout update
----This will shift all other used slots to fill the gap
+---Marks a slot as unused. The other used slots shift up to fill the gap.
 ---@param slotIndex number Slot index
 function M:SetSlotUnused(slotIndex)
 	if slotIndex < 1 or slotIndex > self.Count then
@@ -1277,7 +1257,6 @@ function M:SetSlotUnused(slotIndex)
 	end
 end
 
----Gets the number of currently used slots
 ---@return number Count of used slots
 function M:GetUsedSlotCount()
 	local count = 0
@@ -1289,7 +1268,7 @@ function M:GetUsedSlotCount()
 	return count
 end
 
----Resets all slots to unused (active range only)
+---Resets every slot in the active range to unused.
 function M:ResetAllSlots()
 	local needsLayout = false
 	for i = 1, self.Count do

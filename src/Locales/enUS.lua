@@ -520,6 +520,6 @@ L:SetDefaultStrings({
 	["The colour a buff you can take off an enemy lights up in."] = "The colour a buff you can take off an enemy lights up in.",
 })
 
--- English registers nothing: the strings above ARE the fallback every locale reads through, so
--- an English client wants the defaults and no overlay at all. The language dropdown lists it
--- from the shipped display names rather than from what has registered.
+-- English registers nothing, because the strings above are themselves the fallback every locale
+-- reads through, so an English client wants the defaults and no overlay.
+-- The language dropdown lists English from the shipped display names, not from what registered.

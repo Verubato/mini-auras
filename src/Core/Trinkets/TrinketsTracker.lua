@@ -25,7 +25,6 @@ function M:GetUnitDuration(unit)
 	return C_PvP.GetArenaCrowdControlDuration(unit)
 end
 
----Returns the default trinket icon texture.
 ---@return string
 function M:GetDefaultIcon()
 	-- Resolved on demand as well as in Init: the config panel builds its tab strip before the
@@ -61,7 +60,7 @@ function M:Init()
 	-- Events are registered by Refresh, and only inside arenas.
 	-- Roster changes are deliberately not handled here: the Trinkets module already runs its own
 	-- full refresh on GROUP_ROSTER_UPDATE, which re-reads trinket data anyway, so a tracker-side
-	-- fire only doubled the work.
+	-- fire would only double the work.
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, ...)
 		if event == "PVP_MATCH_STATE_CHANGED" then
@@ -79,7 +78,7 @@ function M:Init()
 		"ARENA_COOLDOWNS_UPDATE",
 		"PVP_MATCH_STATE_CHANGED",
 	}, {
-		-- Replaces the PLAYER_ENTERING_WORLD fire the tracker no longer listens for.
+		-- The gate's own seed fire, standing in for a PLAYER_ENTERING_WORLD nothing here listens for.
 		OnActivate = function()
 			FireCallbacks(nil)
 		end,

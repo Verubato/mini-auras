@@ -16,15 +16,14 @@ local dbDefaults = {
 	NotifiedChanges = true,
 	GlowType = "Slot Glow",
 	FontScale = 1.0,
-	-- Font face for every module's text, by LibSharedMedia name. False leaves each piece of text
-	-- in whatever face the game hands it, which is not one face: countdowns come from the number
-	-- font, names from the normal one, and each locale has its own files behind those.
+	-- Font face for every module's text, by LibSharedMedia name. False leaves each piece of text in
+	-- whatever face the game hands it, which is not one face.
 	Font = false,
 	ConfigureBlizzardNameplates = true,
 	DisableSwipe = false,
 	-- Crops Blizzard's silver border off every icon. Off gives the stock art back.
 	IconZoom = true,
-	-- Off: enough people asked for it back off that it does not earn being the default.
+	-- Off by default because enough people asked for it to be off.
 	ColorCountdownByTime = false,
 	FadeWithParent = true,
 	MillisecondsThreshold = 5,
@@ -38,15 +37,13 @@ local dbDefaults = {
 	LocaleOverride = false,
 	-- What Blizzard's own party and raid frame aura rows were set to before Frame Auras took one
 	-- over, so switching that side back off puts the client where it found it. False until a side is
-	-- switched on, and false again once it has been handed back. Written by the module, never by the
-	-- options UI.
+	-- switched on, and false again once it has been handed back. Written by the module.
 	--
-	-- Top level rather than inside the module's own settings, and deliberately not a profile payload
-	-- key: a cvar belongs to the client, not to a profile, so a profile that never enabled a side
-	-- must not be able to answer for what the client had.
+	-- Not a profile payload key. A cvar belongs to the client, so a profile that never enabled a
+	-- side must not be able to answer for what the client had.
 	FrameAuraCVars = { Buffs = false, Debuffs = false },
-	-- TEMPORARY: true when first-time setup ran without MiniCCDB, so a legacy table appearing on
-	-- a later login can still be offered for import. Dies with the settings bridge.
+	-- Temporary. True when first-time setup ran without MiniCCDB, so a legacy table appearing on
+	-- a later login can still be offered for import.
 	MissedLegacyImport = false,
 	Modules = {
 		---@class CrowdControlModuleOptions
@@ -122,8 +119,7 @@ local dbDefaults = {
 				Raid = false,
 			},
 
-			-- Also show a CC icon container next to the player's own pet unit frame (Blizzard PetFrame),
-			-- in addition to the party/raid pet frames.
+			-- Adds the player's own pet unit frame to the party and raid pet frames.
 			IncludePetFrame = false,
 
 			Grow = "RIGHT",
@@ -193,7 +189,7 @@ local dbDefaults = {
 			ShowTooltips = false,
 		},
 		---@class PortraitModuleOptions
-		---@field CustomSpells table<number, boolean> Ticked buffs. Opaque to CleanTable, which would strip every id against the empty template - see Config/Migrator.
+		---@field CustomSpells table<number, boolean> Ticked buffs. Opaque to CleanTable, which would strip every id against the empty template. See Config/Migrator.
 		Portrait = {
 			Enabled = {
 				Always = true,
@@ -228,12 +224,11 @@ local dbDefaults = {
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",
 
-			-- Sits between the starter personal aura row and the healer CC icons. Those two are
-			-- 84 and 220 below the top of a 768 tall UIParent (the personal auras anchor from the
-			-- centre, so 384 + 300), and this sits between them. At the old -100 the bar was
-			-- only 16 below the personal auras and the two rows of icons overlapped.
-			-- This anchor is the COMBINED bar's home; no X on purpose, the single bar belongs
-			-- in the middle. Split mode uses the Defensives and Important anchors instead.
+			-- Sits between the starter personal aura row and the healer CC icons, which are 84 and
+			-- 220 below the top of a 768 tall UIParent. The personal auras anchor from the centre, so
+			-- their 84 is 384 + 300 up from the bottom.
+			-- X stays 0 because the single combined bar belongs in the middle. Split mode uses the
+			-- Defensives and Important anchors instead.
 			Offset = {
 				X = 0,
 				Y = -150,
@@ -259,8 +254,7 @@ local dbDefaults = {
 				Point = "CENTER",
 				RelativePoint = "TOP",
 				RelativeTo = "UIParent",
-				-- Split mode only: same row as the defensives bar, mirrored right of the centre
-				-- gap. At the old -220 an enabled split bar sat on top of the healer CC icons.
+				-- Split mode only: same row as the defensives bar, mirrored right of the centre gap.
 				Offset = {
 					X = 220,
 					Y = -150,
@@ -270,8 +264,7 @@ local dbDefaults = {
 			Sound = {
 				-- One output channel for both alert categories, like the TTS announcements.
 				Channel = "Master",
-				-- Important-spell sound (opt-in, like the defensive sound). Important auras are now
-				-- read reliably from Blizzard's nameplate buff lists.
+				-- Important-spell sound, opt-in like the defensive sound.
 				Important = {
 					Enabled = false,
 					File = "AirHorn",
@@ -287,9 +280,9 @@ local dbDefaults = {
 				VoicePack = "David",
 				-- The engine plays the baked clips, so they need an output channel.
 				Channel = "Master",
-				-- Important-spell TTS (opt-in, like the defensive TTS). MutedSpellIds is what the
-				-- TTS Spells tab writes: an opt-out list, so a category announces everything it
-				-- has a clip for until something is switched off, including clips added later.
+				-- Important-spell TTS, opt-in like the defensive TTS. MutedSpellIds is the opt-out
+				-- list the TTS Spells tab writes, so a category announces everything it has a clip
+				-- for, including clips added later.
 				Important = {
 					Enabled = false,
 					MutedSpellIds = {},
@@ -311,14 +304,14 @@ local dbDefaults = {
 				Size = 50,
 				Glow = true,
 				-- Colours every icon by the owner's class instead of by category. The unit's own
-				-- class is secret in here, so the colour comes from an arena opponent's spec,
-				-- which is not; outside an arena the class is readable as it always was.
+				-- class is secret in here, so an arena opponent's colour comes from their spec.
+				-- Outside an arena the class is readable.
 				ClassColors = true,
 				-- Per-category glow tints, used when the above is off.
 				ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 				DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 				-- A ring in the same category colour as the glow, so the glow can be switched off
-				-- and the colouring kept. Off by default: the glow already carries it.
+				-- and the colouring kept. Off by default because the glow already carries it.
 				Border = false,
 				ReverseCooldown = true,
 				MaxIcons = 8,
@@ -336,15 +329,15 @@ local dbDefaults = {
 				Raid = true,
 			},
 			ScaleWithNameplate = true,
-			-- Anchor icons to UnitFrame.HealthBarsContainer instead of the nameplate frame, so
-			-- they follow addons that resize plates by shrinking that container (e.g. BBP).
+			-- Anchor icons to UnitFrame.HealthBarsContainer rather than the nameplate frame, so
+			-- they follow an addon that resizes plates by shrinking that container.
 			AnchorToHealthBar = false,
 
 			-- Category tints for every bar that colours by category. Module wide rather than per
 			-- bar, since a category should read the same on whichever bar it lands.
 			ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 			DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
-			-- Taken by CC and disarm on the bars whose UseDispelColors is off; the ones still on
+			-- Taken by CC and disarm on the bars whose UseDispelColors is off. The ones still on
 			-- the dispel palette ignore it.
 			CrowdControlColor = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 
@@ -483,8 +476,7 @@ local dbDefaults = {
 		},
 		---@class AllyKickTrackerModuleOptions
 		AllyKickTracker = {
-			-- Dungeons only out of the box: that is where interrupt rotations are coordinated.
-			-- Everywhere else the list is opt-in rather than another thing on a busy screen.
+			-- Dungeons only out of the box, since that is where interrupt rotations are coordinated.
 			Enabled = {
 				Always = false,
 				World = false,
@@ -506,8 +498,7 @@ local dbDefaults = {
 
 			Grow = "DOWN",
 			BarSpacing = 2,
-			-- Unlocked by default: the rows are their own preview, so they are dragged into
-			-- place and then locked out of the way of the mouse.
+			-- Unlocked by default because the rows are their own preview.
 			Locked = false,
 			-- Enough to read a pull's worth of interrupts without becoming a wall of them.
 			MaxBars = 5,
@@ -541,8 +532,7 @@ local dbDefaults = {
 			Icons = {
 				Size = 40,
 				Glow = false,
-				-- Off by default: the icons read fine bare, and a border only earns its pixels
-				-- when the user asks for one.
+				-- Off by default because the icons read fine bare.
 				Border = false,
 				ReverseCooldown = false,
 				ShowText = true,
@@ -557,16 +547,16 @@ local dbDefaults = {
 		},
 		---@class ImportantAurasModuleOptions
 		ImportantAuras = {
-			-- Helpful auras here are chosen by spell id rather than by Blizzard's category
-			-- flags, so anything can be tracked - including spells the game never flags. Stored
-			-- as deltas against the curated lists rather than a copy of them, so the saved
-			-- variables stay small and a regenerated list still reaches existing profiles.
+			-- Helpful auras here are chosen by spell id rather than by Blizzard's category flags, so
+			-- anything can be tracked, including spells the game never flags. Stored as deltas
+			-- against the curated lists, so the saved variables stay small and a regenerated list
+			-- still reaches existing profiles.
 			Spells = {
 				-- [spellId] = true, curated entries the user switched off.
 				Disabled = {},
 				-- [spellId] = true, ids the user added by hand.
 				Custom = {},
-				-- [spellId] = true, spells from AuraCategoryIds.DefaultOff the user switched ON.
+				-- [spellId] = true, spells from AuraCategoryIds.DefaultOff the user switched on.
 				Enabled = {},
 			},
 
@@ -579,8 +569,8 @@ local dbDefaults = {
 			},
 
 			-- Category tints, applied wherever the dispel colours are switched on. CC takes the
-			-- game's dispel type colours; these cover the buffs it has no colour for. Module wide,
-			-- so a defensive reads the same on a party frame as it does on a raid frame.
+			-- game's dispel type colours, so these cover the buffs it has no colour for. Module
+			-- wide, so a defensive reads the same on a party frame as it does on a raid frame.
 			ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 			DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 
@@ -628,15 +618,15 @@ local dbDefaults = {
 				ShowTooltips = false,
 			},
 		},
-		-- Stands in for Blizzard's own aura rows on the party, raid, target and focus frames,
-		-- and marks a group member who is missing the buff the player's class brings. Four halves
-		-- that share a page, each with its own switch, because a player replacing the raid frame
-		-- buffs rarely wants the target frame taken over at the same time.
+		-- Stands in for Blizzard's own aura rows on the party, raid, target and focus frames, and
+		-- marks a group member who is missing the buff the player's class brings. Each half carries
+		-- its own switch, since replacing the raid frame buffs rarely means wanting the target
+		-- frame taken over too.
 		--
-		-- Every switch here is off to start with. The module takes frames the game already draws
-		-- on, so an update that switched it on would rearrange a UI nobody asked it to touch.
+		-- Every switch here is off to start with, because the module takes frames the game already
+		-- draws on.
 		---@class FrameAurasModuleOptions
-		---@field Spells { Disabled: table<number, boolean>, Custom: table<number, boolean> } Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
+		---@field Spells { Disabled: table<number, boolean>, Custom: table<number, boolean> } Opaque to CleanTable, which would otherwise strip every entry against the empty template. See Config/Migrator.
 		FrameAuras = {
 			-- Deltas against the curated buff list rather than a copy of it, so the saved variables
 			-- stay small and a later version's curated spells still reach an existing profile.
@@ -650,23 +640,22 @@ local dbDefaults = {
 			---@class FrameAurasBuffOptions
 			Buffs = {
 				Enabled = false,
-				-- A share of the frame's height, not pixels: a raid profile and a party profile size
-				-- their frames very differently.
+				-- A share of the frame's height rather than pixels, because a raid profile and a
+				-- party profile size their frames very differently.
 				Size = 35,
 				MaxIcons = 6,
 				PerRow = 3,
-				-- Both on, because the tracked spell list is a list of things you cast: a row filled
-				-- with everyone's raid buffs is what it is there to avoid.
+				-- Both on, because the tracked spell list is a list of things you cast. Without them
+				-- the row fills with everyone's raid buffs.
 				Filtered = true,
 				Mine = true,
 				ShortOnly = false,
-				-- The refresh-window reveal: one switch for the lot, since which spells carry it is
-				-- fixed in the tracked data.
 				-- The categories Important Auras already draws its own row of, kept out of this one so
-				-- the two do not both show the same icon. Off rather than on for that reason: a player
-				-- who wants the overlap can ask for it.
+				-- the two do not both show the same icon.
 				ShowImportant = false,
 				ShowDefensives = false,
+				-- The refresh-window reveal: one switch for the lot, since which spells carry it is
+				-- fixed in the tracked data.
 				PandemicGlow = true,
 				PandemicColor = { R = 0.1, G = 0.9, B = 0.3 },
 			},
@@ -681,7 +670,7 @@ local dbDefaults = {
 				ShortOnly = false,
 				-- Same again: crowd control has its own row on the Important Auras page.
 				ShowCrowdControl = false,
-				-- No "Mine" switch, unlike the buff side: everything landing on a group member came from
+				-- No "Mine" switch on this side. Everything landing on a group member came from
 				-- somebody else, so filtering to your own would only ever empty the row.
 			},
 
@@ -701,22 +690,22 @@ local dbDefaults = {
 				MaxIcons = 6,
 				PerRow = 6,
 				-- On, like the group buff row: a friendly target's buffs are worth narrowing to the
-				-- tracked list. It only bites there either way - a spell-id map is identity-gated, so
-				-- the engine skips it for a helpful aura on a unit you cannot assist.
+				-- tracked list. It only bites there either way, since a spell-id map is identity
+				-- gated and the engine skips it for a helpful aura on a unit you cannot assist.
 				Filtered = true,
 				ShortBuffsOnly = true,
 				-- Each only bites where it means anything: your own buffs on a unit you can help,
 				-- your own debuffs on one you cannot. An enemy still shows the buffs worth purging.
 				MyBuffs = true,
 				MyDebuffs = true,
-				-- On, and it costs nothing to leave on: the filter behind it answers "a dispel type
-				-- YOU can remove", so a class with no purge never lights an icon up.
+				-- Costs nothing to leave on, since the filter behind it answers "a dispel type you
+				-- can remove" and a class with no purge never lights an icon up.
 				PurgeGlow = true,
 				PurgeColor = { R = 0.35, G = 0.7, B = 1 },
 			},
 		},
 		---@class PersonalAurasModuleOptions
-		---@field Groups PersonalAuraGroup[] User-authored groups. Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
+		---@field Groups PersonalAuraGroup[] User-authored groups. Opaque to CleanTable, which would otherwise strip every entry against the empty template. See Config/Migrator.
 		PersonalAuras = {
 			-- No module-wide Enabled table: each group carries its own switch.
 			-- Everything here is authored by the user, so there is nothing sensible to ship.

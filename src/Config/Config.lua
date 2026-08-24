@@ -12,8 +12,8 @@ local M = addon.Config
 
 local NAV_ICON_BASE = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Nav\\"
 
--- Blizzard settings panel splash. The accent matches the standalone window title, but the
--- framework palette is private to the GUI widgets so the value is repeated here.
+-- The framework palette is private to the GUI widgets, so the window title's accent is
+-- repeated here.
 local PANEL_ACCENT = { r = 0.90, g = 0.20, b = 0.20 }
 local PANEL_CONTENT_WIDTH = 460
 local PANEL_TEXT_WIDTH = 400
@@ -69,7 +69,7 @@ local function BuildRedirectPanel(panel, version)
 
 	-- Thin rule under the wordmark, brightest in the middle and fading out at both ends.
 	-- Two halves because a single texture can only gradient in one direction. Alpha is baked
-	-- into the gradient colours: SetGradient replaces vertex alpha, so SetAlpha can't dim it.
+	-- into the gradient colours, since SetGradient replaces vertex alpha and SetAlpha cannot dim it.
 	local ruleLeft = content:CreateTexture(nil, "ARTWORK")
 	ruleLeft:SetSize(PANEL_RULE_HALF_WIDTH, 1)
 	ruleLeft:SetPoint("TOPRIGHT", versionLabel, "BOTTOM", 0, -14)
@@ -97,8 +97,8 @@ local function BuildRedirectPanel(panel, version)
 	button:SetSize(240, 32)
 	button:SetPoint("TOP", message, "BOTTOM", 0, -20)
 	button:SetText(L["Open Settings"])
-	-- 14pt via font objects, not a raw SetFont path: the path drops the per-locale
-	-- glyph fallbacks (Cyrillic boxes), and hover swaps font objects anyway.
+	-- GameFontNormalMed3 is 14pt.
+	-- A raw SetFont path drops the per-locale glyph fallbacks and boxes Cyrillic text.
 	button:SetNormalFontObject(GameFontNormalMed3)
 	button:SetHighlightFontObject(GameFontHighlightMedium)
 	button:SetScript("OnClick", function()
@@ -108,10 +108,8 @@ local function BuildRedirectPanel(panel, version)
 			return
 		end
 
-		-- Close Blizzard's settings window on the way out: it opened this one, and leaving it
-		-- sitting behind the config window is just a panel the user has to dismiss afterwards.
-		-- HideUIPanel is protected though, so in combat this waits rather than erroring - the
-		-- panel closes itself the moment combat drops.
+		-- Blizzard's settings window opened this one, so it closes on the way out. HideUIPanel is
+		-- protected, so in combat the close waits for the fight to end.
 		local settingsFrame = SettingsPanel or InterfaceOptionsFrame
 		if settingsFrame and HideUIPanel then
 			local function HideSettings()
@@ -129,10 +127,10 @@ local function BuildRedirectPanel(panel, version)
 	end)
 end
 
----Says once that a look change cannot land yet. While the client is hiding aura data it will not
----let a button be restyled, so a size or style edit is stored and settles when the restriction
----lifts. Everything else, budgets, colours, positions, applies as normal. Test mode is exempt: it
----draws its own icons and shows the change straight away.
+---Says once that a look change cannot land yet. While the client is hiding aura data a button
+---cannot be restyled, so a size or style edit waits for the restriction to lift. Everything else,
+---budgets, colours, positions, applies as normal.
+---Test mode is exempt, since it draws its own icons and shows the change straight away.
 local function WarnIfLookIsParked()
 	if not wowEx:IsAuraStylingRestricted() or addon:IsTestActive() then
 		-- Cleared as soon as it could land, so the next fight says it again.
@@ -148,10 +146,9 @@ local function WarnIfLookIsParked()
 	mini:NotifyWithPrefix(L["Icon size and style changes will apply when combat ends."])
 end
 
----Applies a settings change. A ModuleName key scopes the refresh to the one module whose
----settings table changed - sliders and colour pickers fire this per drag step, so refreshing all
----eleven modules each time is real cost. No key means the change has addon-wide reach and
----everything refreshes.
+---Applies a settings change. A ModuleName key scopes the refresh to the one module whose settings
+---table changed, since sliders and colour pickers fire this per drag step. No key refreshes
+---everything.
 ---@param settingsKey string? A ModuleName value naming the db.Modules table that changed.
 function M:Apply(settingsKey)
 	WarnIfLookIsParked()
@@ -163,10 +160,8 @@ function M:Apply(settingsKey)
 	end
 end
 
----Builds the window, its pages and the dialogs they raise. Everything here is the options UI,
----which is a third of what the addon costs to start and which most sessions never open, so it
----waits for the first ask rather than running at login. Everything that reaches for the window or
----the tabs comes through here.
+---Builds the window, its pages and the dialogs they raise. The options UI is a third of what the
+---addon costs to start and most sessions never open it, so it waits for the first ask.
 ---@return table window
 function M:EnsureWindow()
 	if M.Window then
@@ -186,7 +181,6 @@ function M:EnsureWindow()
 
 	M.Window = window
 
-	-- Center the window when it becomes visible from a hidden state.
 	local windowPreviouslyHidden = true
 	window:HookScript("OnHide", function()
 		windowPreviouslyHidden = true
@@ -199,7 +193,6 @@ function M:EnsureWindow()
 		end
 	end)
 
-	-- Test button in the title bar
 	local testBtn = mini:Button({
 		Parent = window.TitleBar,
 		Text = L["Test"],
@@ -210,9 +203,7 @@ function M:EnsureWindow()
 	})
 	testBtn:SetPoint("RIGHT", window.CloseButton, "LEFT", -8, 0)
 
-	-- While test mode is live the button fills with a pulsing accent wash and says so, so the
-	-- fake icons on screen always have a visible explanation. The wash is a separate texture:
-	-- the button's own backdrop is driven by its hover scripts and can't be animated.
+	-- The pulse rides its own texture because the button's backdrop is driven by its hover scripts.
 	local accent = mini.GUI.Accent
 	local testWash = testBtn:CreateTexture(nil, "OVERLAY")
 	testWash:SetPoint("TOPLEFT", testBtn, "TOPLEFT", 1, -1)
@@ -258,13 +249,11 @@ function M:EnsureWindow()
 
 	window:HookScript("OnShow", UpdateTestButton)
 
-	-- The nav strip sits flush with the window's left edge and the title bar's accent line,
-	-- rather than inside Content's padding; pages keep their old position via ContentInsets.
+	-- The nav strip sits outside Content's padding, so pages get their position back through
+	-- ContentInsets.
 	local tabsPanel = CreateFrame("Frame", nil, window)
 	tabsPanel:SetPoint("TOPLEFT", window.TitleBar, "BOTTOMLEFT", 0, -1)
-	-- Anchored to the window rather than window.Content so the nav strip and pages run flush
-	-- to the bottom border, like the strip already does at the top and left. The x inset keeps
-	-- the Content frame's right padding (ContentPadding 12 + 1px border); y 1 clears the border.
+	-- The insets clear the Content frame's right padding of 12 and the window's 1px border.
 	tabsPanel:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -13, 1)
 
 	-- Sidebar icons: the addon's own art under Icons\Nav, one per tab key.
@@ -419,8 +408,7 @@ function M:EnsureWindow()
 		InitialKey = "General",
 		ScrollBody = true,
 		ScrollContentWidth = contentWidth,
-		-- Restores the content padding the flush tabsPanel no longer provides, so pages sit
-		-- exactly where they did when the tabs were parented to window.Content.
+		-- Restores the content padding the flush tabsPanel no longer provides.
 		ContentInsets = { Top = 4 + contentPadding + 1 },
 		TabFitToParent = true,
 		Vertical = true,
@@ -459,14 +447,13 @@ end
 function M:Init()
 	db = dbMigrator:GetAndUpgradeDb()
 
-	-- MiniAuras is the one addon that runs its own window rather than a Blizzard panel, so it
-	-- takes the accented restyle. Must come before any widget is built.
+	-- MiniAuras runs its own window, so it takes the accented restyle. This must come before any
+	-- widget is built.
 	mini:SetCustomStyling(true)
 
 	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
 
-	-- Register a minimal WoW settings entry so sub-categories can attach to it,
-	-- and the addon appears in Interface > AddOns for discoverability.
+	-- Sub-categories need a parent entry to attach to, and it puts the addon in Interface > AddOns.
 	local redirectPanel = CreateFrame("Frame")
 	redirectPanel.name = addonName
 
@@ -479,7 +466,7 @@ function M:Init()
 	SLASH_MINIAURAS1 = "/miniauras"
 	-- Not /minia: Blizzard's main assist command owns that and wins the parse, so it never reaches us.
 	SLASH_MINIAURAS2 = "/minia"
-	-- The MiniCC-era aliases stay registered; people have them in macros and muscle memory.
+	-- The MiniCC-era aliases stay registered because people have them in macros.
 	SLASH_MINIAURAS3 = "/minicc"
 	SLASH_MINIAURAS4 = "/mcc"
 	SLASH_MINIAURAS5 = "/cc"
@@ -495,7 +482,6 @@ function M:Init()
 		OpenWindow(true)
 	end
 
-	-- add a /rl alias if the user doesn't have one defined already
 	if not SLASH_RL1 then
 		SLASH_RL1 = "/rl"
 		SlashCmdList["RL"] = function()
@@ -509,7 +495,7 @@ end
 ---@field EnsureWindow fun(self: table): table
 ---@field Apply fun(self: table, settingsKey: string?)
 ---@field Migrator DbMigrator
----@field Window table? The options window; nil until EnsureWindow has built it.
+---@field Window table? The options window, nil until EnsureWindow has built it.
 ---@field TabController TabReturn? Nil until EnsureWindow has built the window.
 ---@field General GeneralConfig
 ---@field Portraits PortraitsConfig

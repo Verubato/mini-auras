@@ -9,19 +9,17 @@ local changeStamp = addon.Utils.ChangeStamp
 
 -- The shape of a personal aura group, shared by the display, the options page and the import path.
 --
--- The rule the whole design turns on: 12.1 only honours includeSpellIDs for helpful auras on
--- assistable units and harmful auras on the rest. Everywhere else the engine drops the map
--- silently and the bare token matches every aura on the unit. Hence AuraType being explicit,
--- SupportsAuraType, and the display's zero-icon budget.
+-- 12.1 only honours includeSpellIDs for helpful auras on assistable units and harmful auras on the
+-- rest. Everywhere else the engine drops the map silently and the bare token matches every aura on
+-- the unit, which is why AuraType is explicit.
 --
--- That rule covers SPELL ids only. A filter string and every other candidate filter are applied
--- whatever the unit's reaction, so a group tracking by filter is free of all of it: debuffs on
--- yourself are perfectly trackable that way, they just cannot be narrowed to a spell id. The one
--- exception is the caster filters: the engine cannot attribute casters on a unit outside the
--- player's visible world, and a check it cannot evaluate is skipped rather than failed, so the
--- group would show the aura from everyone. CanFilterUnit budgets those to zero.
+-- That rule covers spell ids only. A filter string and every other candidate filter are applied
+-- whatever the unit's reaction, so a group tracking by filter is free of it. The exception is the
+-- caster filters: the engine cannot attribute casters on a unit outside the player's visible
+-- world, and a check it cannot evaluate is skipped rather than failed, so those are budgeted to
+-- zero there.
 --
--- Class and spec conditions are deliberately absent; profiles already switch on specialisation.
+-- Class and spec conditions are deliberately absent. Profiles already switch on specialisation.
 
 addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
@@ -38,17 +36,15 @@ local NAMEPLATE = "NAMEPLATE"
 local FRAMES = "FRAMES"
 local ARENA = "ARENA"
 
--- How a group draws its auras: square icons, or bars the engine drains (icon, spell name and
--- countdown in one row). The choice is baked into a container's buttons at creation, so the
--- display pools the two shapes separately rather than restyling between them.
+-- How a group draws its auras: square icons, or bars the engine drains. The choice is baked into a
+-- container's buttons at creation, so the display pools the shapes separately.
 --
--- Sound only is the third: no container at all, just the group's sound registrations. It is what
--- makes debuffs on your own side trackable by spell id - the engine drops that filter for the
--- display but honours it for AddAuraSound, so a group with nothing to draw has nothing to be
--- wrong about (see SupportsAuraType).
--- Art is the fourth: one picture drawn while any tracked aura is up, with no clock, no count and
--- no icon. Which aura is up is secret, so a picture that changed per aura could not be picked
--- anyway; the group IS the picture, and the engine showing its button is what says it applies.
+-- Sound only has no container at all, just the group's sound registrations. The engine drops a
+-- spell id filter for the display but honours it for AddAuraSound, which is what makes debuffs on
+-- your own side trackable by id.
+--
+-- Art is one picture drawn while any tracked aura is up. Which aura is up is secret, so a picture
+-- that changed per aura could not be picked anyway.
 local AS_ICONS = "ICON"
 local AS_BARS = "BAR"
 local AS_SOUND = "SOUND"
@@ -56,38 +52,35 @@ local AS_TEXTURE = "TEXTURE"
 
 local DEFAULT_ICON_SIZE = 40
 local DEFAULT_SPACING = 2
--- Bars keep their own width and height rather than borrowing the icon size: a row of text wants a
--- fraction of an icon's height and several times its width, so sharing one number would leave both
--- shapes with the wrong range.
+-- Bars keep their own width and height. A row of text wants a fraction of an icon's height and
+-- several times its width, so sharing one number would leave both shapes with the wrong range.
 local DEFAULT_BAR_WIDTH = 150
 local MIN_BAR_WIDTH = 40
 local MAX_BAR_WIDTH = 250
 local DEFAULT_BAR_HEIGHT = 20
 local MIN_BAR_HEIGHT = 8
 local MAX_BAR_HEIGHT = 50
--- Art keeps its own pair of sides for the same reason a bar does: this is decoration hung beside a
--- unit rather than a square in a row, and it is routinely far bigger than any icon.
+-- Art keeps its own pair of sides for the same reason a bar does, and it is routinely far bigger
+-- than any icon.
 local DEFAULT_TEXTURE_SIZE = 64
 local MIN_TEXTURE_SIZE = 8
 local MAX_TEXTURE_SIZE = 400
 local MAX_ROTATION = 359
--- Held as a percentage like every other whole-number setting; the display divides it back down.
+-- Held as a percentage like every other whole-number setting, and the display divides it back down.
 local DEFAULT_OPACITY = 100
--- Named rather than taken from BarTextures' own default, which is the plain Blizzard bar: this is
--- the same fill the kick tracker's bars ship with, so the two look like one addon out of the box.
+-- The same fill the kick tracker's bars ship with, so the two look like one addon out of the box.
 local DEFAULT_BAR_TEXTURE = "Blizzard Raid Bar"
 -- Where a new screen-anchored group lands, measured up from the centre of the screen.
 local DEFAULT_POSITION_Y = 220
 local MIN_ICON_SIZE = 10
 local MAX_ICON_SIZE = 200
 -- Text is sized off the icon, so a group tunes it with a percentage rather than a point size. Held
--- as a whole number so it clamps like every other group value; the display divides it back down.
+-- as a whole number so it clamps like every other group value.
 local DEFAULT_TEXT_SCALE = 100
 local MIN_TEXT_SCALE = 50
 local MAX_TEXT_SCALE = 200
--- How many icons one group can ever show. Fixed rather than configurable: the engine only
--- builds a frame when there is an aura for it, so a high cap costs nothing until it is used,
--- and a group that hits forty of anything has bigger problems than its icon budget.
+-- How many icons one group can ever show. The engine only builds a frame when there is an aura for
+-- it, so a high cap costs nothing until it is used.
 local MAX_ICONS = 40
 -- Stand-ins are drawn while a group is being positioned. Three is enough to see which way it
 -- grows without covering the screen for a filter group that could match anything.
@@ -96,14 +89,13 @@ local PREVIEW_ICONS = 3
 local MAX_SPELLS_PER_GROUP = 100
 
 -- Filter string components a group can require or forbid, in the order the options page lists
--- them. Helpful and harmful are excluded: AuraType already carries that.
+-- them. Helpful and harmful are excluded, since AuraType already carries that.
 local FILTER_COMPONENTS = {
 	"PLAYER", "RAID", "DISPELLABLE", "RAID_PLAYER_DISPELLABLE", "CANCELABLE",
 	"CROWD_CONTROL", "IMPORTANT", "BIG_DEFENSIVE", "EXTERNAL_DEFENSIVE",
 }
 -- Candidate filters that are a plain boolean on the aura. Applied whatever the unit's reaction,
--- unlike the spell id map, though isFromPlayerOrPlayerPet still needs an attributable caster
--- (see CanFilterUnit).
+-- unlike the spell id map, though isFromPlayerOrPlayerPet still needs an attributable caster.
 local CANDIDATE_FLAGS = {
 	"isFromPlayerOrPlayerPet", "isBossAura", "isStealable", "isPriorityAura", "canApplyAura",
 }
@@ -122,9 +114,9 @@ local SHOW_WHEN = { Always = "ALWAYS", InCombat = "INCOMBAT", OutOfCombat = "OUT
 local SORT_OLDEST = "OLDEST"
 local SORT_LONGEST = "LONGEST"
 local SORT_SHORTEST = "SHORTEST"
--- The unit choices. Target and nameplates are split by reaction rather than left to a separate
--- setting, because the reaction decides which aura type is even possible: a buff group aimed at
--- a hostile target would sit there showing nothing with nothing on screen to explain why.
+-- The unit choices. Target and nameplates are split by reaction because the reaction decides which
+-- aura type is even possible, and a buff group aimed at a hostile target would show nothing with
+-- nothing on screen to explain why.
 local SELF_UNIT = "player"
 local PET_UNIT = "pet"
 local TANK_UNIT = "tank"
@@ -137,13 +129,13 @@ local NAMEPLATE_ENEMY = "nameplateenemy"
 local UNIT_FRAMES_UNIT = "unitframes"
 local ARENA_FRAMES_UNIT = "arenaframes"
 
--- Token is the unit the container watches; Plates means one copy per matching nameplate instead,
+-- Token is the unit the container watches. Plates means one copy per matching nameplate instead,
 -- Frames one copy per party or raid frame, and ArenaFrames one copy per arena enemy frame.
 -- Friendly is the reaction the unit must have for the group to show at all, nil for either.
 local UNIT_INFO = {
 	[SELF_UNIT] = { Token = "player", Helpful = true, Harmful = true },
 	[PET_UNIT] = { Token = "pet", Helpful = true, Harmful = true },
-	-- Resolved per refresh rather than fixed: whoever is holding the role right now.
+	-- Resolved per refresh to whoever is holding the role right now.
 	[TANK_UNIT] = { Role = "TANK", Friendly = true, Helpful = true },
 	[HEALER_UNIT] = { Role = "HEALER", Friendly = true, Helpful = true },
 	[OTHER_DPS_UNIT] = { Role = "DAMAGER", SkipSelf = true, Friendly = true, Helpful = true },
@@ -154,13 +146,12 @@ local UNIT_INFO = {
 	-- Group members are always assistable, so the harmful side is only reachable by filter.
 	[UNIT_FRAMES_UNIT] = { Frames = true, Friendly = true, Helpful = true, Harmful = true },
 	-- Arena enemies are never assistable, so a spell id filter is honoured on them and debuffs
-	-- work in both tracking modes. Buffs are not offered: the engine would drop the id map.
+	-- work in both tracking modes. Buffs are not offered because the engine would drop the id map.
 	[ARENA_FRAMES_UNIT] = { ArenaFrames = true, Friendly = false, Harmful = true },
 }
 
--- The layer a group draws in. Automatic takes whatever the frame it hangs off is using, which is
--- what every group did before this became a setting. TOOLTIP is deliberately absent: a group drawn
--- there would cover the tooltips its own icons put up.
+-- The layer a group draws in. Automatic takes whatever the frame it hangs off is using. TOOLTIP is
+-- absent because a group drawn there would cover the tooltips its own icons put up.
 local STRATA_AUTO = "AUTO"
 local STRATA_OPTIONS = {
 	STRATA_AUTO, "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG",
@@ -190,11 +181,11 @@ local FALLBACK_ICON = [[Interface\Icons\INV_Misc_QuestionMark]]
 ---@type number?
 local fallbackFileId
 -- Which side the client says a spell lands on, kept for the session because the answer never
--- changes within one. Only decided answers go in: an id asked about before its data has loaded
--- answers neither, and caching that would hide its real side for the rest of the session.
+-- changes within one. Only decided answers go in, since an id asked about before its data has
+-- loaded answers neither and caching that would hide its real side for the rest of the session.
 ---@type table<number, string>
 local spellAuraTypes = {}
--- Bare party and arena tokens are left out: they have no stable place on screen, and the frame
+-- Bare party and arena tokens are left out. They have no stable place on screen, and the frame
 -- choices cover them by hanging a copy off each member's or opponent's frame instead.
 local UNITS = {
 	SELF_UNIT, PET_UNIT, TANK_UNIT, HEALER_UNIT, OTHER_DPS_UNIT, UNIT_FRAMES_UNIT,
@@ -203,9 +194,9 @@ local UNITS = {
 -- Units that are always assistable, so a harmful group on them could never filter by spell id.
 local ALWAYS_FRIENDLY = { [SELF_UNIT] = true, [PET_UNIT] = true, [UNIT_FRAMES_UNIT] = true }
 
--- What a profile starts with: the self-buffs worth knowing the instant they land. Each
--- tracks one spell and leaves Icon empty, which borrows that spell's own icon. A Color tints
--- the border/glow after the spell's own art; without one the group keeps the default white.
+-- What a profile starts with: the self-buffs worth knowing the instant they land. Each tracks one
+-- spell and leaves Icon empty, which borrows that spell's own icon. A Color tints the border and
+-- glow after the spell's own art, and without one the group keeps the default white.
 local DEFAULT_GROUPS = {
 	{ Name = "Precog", SpellId = 377362, Sound = "ElectricalSpark" },
 	{ Name = "Shroud", SpellId = 378464, Color = { R = 0.64, G = 0.21, B = 0.93 } },
@@ -214,7 +205,7 @@ local DEFAULT_GROUPS = {
 local DEFAULT_ROW_X = 0
 local DEFAULT_ROW_Y = 80
 
--- What each group's filters were last built from; see GetFilterGeneration.
+-- What each group's filters were last built from.
 local filterStamp = changeStamp:New()
 
 ---@class PersonalAurasGroups
@@ -353,15 +344,15 @@ function M:NewGroup(options, name)
 end
 
 ---Fills in what a group is missing and clamps what it got wrong, in place. Run on every group at
----load and on every import: the data is user-editable and an import string comes from a stranger.
+---load and on every import, since the data is user-editable and an import comes from a stranger.
 ---@param group table
 ---@return PersonalAuraGroup
 function M:Normalise(group)
 	group.Id = tostring(group.Id or "g0")
 	group.Name = tostring(group.Name or "")
 	group.Enabled = group.Enabled ~= false
-	-- Empty borrows the first tracked spell's icon. A file ID stays a NUMBER; SetTexture will
-	-- not take the digits as a string.
+	-- Empty borrows the first tracked spell's icon. A file id stays a number, because SetTexture
+	-- will not take the digits as a string.
 	local icon = group.Icon
 	group.Icon = (type(icon) == "number" or type(icon) == "string") and icon or ""
 
@@ -390,7 +381,7 @@ function M:Normalise(group)
 
 	local info = UNIT_INFO[unit]
 
-	-- Anchor is derived, never chosen: it is the unit question asked twice.
+	-- Anchor is derived, never chosen. It is the unit question asked twice.
 	group.Unit = unit
 	group.Anchor = info.Plates and NAMEPLATE or info.Frames and FRAMES
 		or info.ArenaFrames and ARENA or SCREEN
@@ -409,8 +400,8 @@ function M:Normalise(group)
 	group.Position.Y = tonumber(group.Position.Y) or DEFAULT_POSITION_Y
 
 	-- Groups that hang off a frame carry an offset rather than a screen point. Plates default to
-	-- hanging above (the plate itself is the health bar); a unit frame or arena frame copy sits
-	-- centred on the frame it decorates.
+	-- hanging above, since the plate itself is the health bar. A unit frame or arena frame copy
+	-- sits centred on the frame it decorates.
 	group.Offset = group.Offset or {}
 	group.Offset.X = tonumber(group.Offset.X) or 0
 	group.Offset.Y = tonumber(group.Offset.Y) or ((info.Frames or info.ArenaFrames) and 0 or 40)
@@ -423,7 +414,7 @@ function M:Normalise(group)
 	icons.Size = Clamped(icons.Size, DEFAULT_ICON_SIZE, MIN_ICON_SIZE, MAX_ICON_SIZE)
 	icons.Spacing = Clamped(icons.Spacing, DEFAULT_SPACING, 0, 50)
 	icons.TextScale = Clamped(icons.TextScale, DEFAULT_TEXT_SCALE, MIN_TEXT_SCALE, MAX_TEXT_SCALE)
-	-- Icons unless the group asked for something else: a group saved before bars existed has no
+	-- Icons unless the group asked for something else. A group saved before bars existed has no
 	-- field, and changing what those groups look like is not something a version bump gets to do.
 	icons.Display = (icons.Display == AS_BARS or icons.Display == AS_SOUND
 		or icons.Display == AS_TEXTURE) and icons.Display or AS_ICONS
@@ -438,16 +429,14 @@ function M:Normalise(group)
 	icons.Glow = icons.Glow == true
 	icons.Border = icons.Border == true
 	icons.Pandemic = icons.Pandemic == true
-	-- On unless it was turned off: the swipe filling up reads as time running out, which is what
-	-- these icons are for. A group saved before this carries the field either way.
+	-- On unless it was turned off, since the swipe filling up reads as time running out.
 	icons.ReverseCooldown = icons.ReverseCooldown ~= false
-	-- Both off by default: an aura icon without a clock is the unusual want, for someone who only
-	-- cares that the aura is up.
+	-- Both off by default, since an aura icon without a clock is the unusual want.
 	icons.HideSwipe = icons.HideSwipe == true
 	icons.HideNumbers = icons.HideNumbers == true
 	icons.CenterStacks = icons.CenterStacks == true
-	-- Off keeps every text on its default colouring, the colour-by-time countdown included; on
-	-- puts the group's own TextColor on all of it.
+	-- Off keeps every text on its default colouring, the colour-by-time countdown included. On puts
+	-- the group's own TextColor on all of it.
 	icons.ColorText = icons.ColorText == true
 	icons.ShowTooltips = icons.ShowTooltips == true
 	icons.Color = icons.Color or {}
@@ -467,12 +456,11 @@ function M:Normalise(group)
 	icons.TextColor.B = tonumber(icons.TextColor.B) or 1
 
 	-- The art a texture group draws, kept apart from the icon settings it has no use for. An empty
-	-- path is a group still being built: nothing is drawn and Supports says so, rather than picking
-	-- a picture on the user's behalf.
+	-- path is a group still being built, so nothing is drawn and Supports says so.
 	local texture = group.Texture or {}
 	group.Texture = texture
 	-- A file id from the browser, a path for something typed by hand, or empty for neither. A file
-	-- id stays a NUMBER; SetTexture will not take the digits as a string.
+	-- id stays a number, because SetTexture will not take the digits as a string.
 	texture.Asset = ArtAsset(texture.Asset)
 	texture.Width = Clamped(texture.Width, DEFAULT_TEXTURE_SIZE, MIN_TEXTURE_SIZE, MAX_TEXTURE_SIZE)
 	texture.Height = Clamped(texture.Height, DEFAULT_TEXTURE_SIZE, MIN_TEXTURE_SIZE, MAX_TEXTURE_SIZE)
@@ -480,12 +468,12 @@ function M:Normalise(group)
 	texture.Opacity = Clamped(texture.Opacity, DEFAULT_OPACITY, 0, 100)
 	texture.Mirror = texture.Mirror == true
 	texture.Desaturate = texture.Desaturate == true
-	-- On unless it was turned off: the client's overlay art is drawn over a black background and
-	-- reads as a black box without it.
+	-- On unless it was turned off, since the client's overlay art is drawn over a black background
+	-- and reads as a black box without it.
 	texture.Additive = texture.Additive ~= false
 
 	-- An empty file name is "no sound", which the picker offers as its first entry. One file per
-	-- trigger, sharing a channel; File is what the single-sound version of this called Applied.
+	-- trigger, sharing a channel, and File is the older single-sound key that became Applied.
 	local sound = group.Sound or {}
 	group.Sound = sound
 	sound.Applied = tostring(sound.Applied or sound.File or NO_SOUND)
@@ -494,9 +482,9 @@ function M:Normalise(group)
 	sound.File = nil
 	sound.Channel = sounds:NormaliseChannel(sound.Channel)
 
-	-- A sound-only group tracks spells whatever it was set to: the engine registers a sound per
-	-- spell id, so a filter group has nothing to hand it and would be a group that can never make
-	-- a noise. Enforced here rather than in the options page, so an import cannot save one either.
+	-- A sound-only group tracks spells whatever it was set to. The engine registers a sound per
+	-- spell id, so a filter group has nothing to hand it and could never make a noise. Enforced
+	-- here so an import cannot save one either.
 	group.TrackingMode = (group.TrackingMode == BY_FILTERS and not M:IsSoundOnly(group))
 		and BY_FILTERS or BY_SPELLS
 	group.Caster = (group.Caster == CASTER_MINE or group.Caster == CASTER_OTHERS)
@@ -511,15 +499,16 @@ function M:Normalise(group)
 	group.Filters = TriState(group.Filters, FILTER_COMPONENTS)
 	group.Candidates = TriState(group.Candidates, CANDIDATE_FLAGS)
 
-	-- In the order they were added, NOT sorted by id: the first one supplies the group's icon.
+	-- In the order they were added rather than sorted by id, since the first one supplies the
+	-- group's icon.
 	group.Spells = SpellList(group.Spells)
 
 	return group
 end
 
----Adds the groups a profile starts with, once. The flag is what stops them coming back after
----they are deleted, and is also what gets them into a profile that predates them: an install
----updating from an older version has no flag, so it seeds on the next load like a fresh one.
+---Adds the groups a profile starts with, once. The flag is what stops them coming back after they
+---are deleted, and an install updating from an older version has no flag, so it seeds on the next
+---load like a fresh one.
 ---@param options PersonalAurasModuleOptions
 ---@return boolean seeded True only on the run that created them.
 function M:SeedDefaults(options)
@@ -578,7 +567,7 @@ function M:Duplicate(options, groupId, name)
 end
 
 ---Moves one group to another's position, for the drag-to-reorder in the options grid. Order is
----presentation only: nothing about what a group shows depends on where it sits in the list.
+---presentation only, and nothing about what a group shows depends on where it sits in the list.
 ---@param options PersonalAurasModuleOptions
 ---@param fromId string
 ---@param toId string
@@ -650,8 +639,8 @@ function M:GetShape(group)
 	return (display == AS_BARS or display == AS_TEXTURE) and display or AS_ICONS
 end
 
----How many auras a group can show at once. Art is one picture however many auras are up: the
----group is the picture, so a second copy of it would say nothing the first does not.
+---How many auras a group can show at once. Art is one picture however many auras are up, so a
+---second copy of it would say nothing the first does not.
 ---@param group PersonalAuraGroup
 ---@return number
 function M:GetBudget(group)
@@ -685,7 +674,7 @@ end
 ---@param group PersonalAuraGroup
 ---@return boolean
 function M:SoundIgnoresFilters(group)
-	-- The same three things CollectSoundRequests asks before it registers anything: a group with
+	-- The same three things CollectSoundRequests asks before it registers anything. A group with
 	-- no spells in it yet has no sound to be wrong about.
 	if not M:HasSound(group) or not M:TracksSpells(group) or #group.Spells == 0 then
 		return false
@@ -810,15 +799,14 @@ function M:MatchesReaction(unit, token)
 	return units:CanAssist(token) == info.Friendly
 end
 
----Which aura types a unit choice can carry. A split unit allows one; self and pet allow both,
+---Which aura types a unit choice can carry. A split unit allows one, and self and pet allow both,
 ---subject to the spell-id rule below.
 ---@param unit string
 ---@param auraType string
 ---@param trackingMode string?
----@param soundOnly boolean? True for a group that draws nothing, which lifts every rule below:
----all of them exist because the engine drops a spell-id filter for the DISPLAY on the wrong side
----of the identity gate, while AddAuraSound keys on the bare spell id and honours it on any unit
----whatever its reaction. So a group with no display can watch either aura type on any unit.
+---@param soundOnly boolean? True for a group that draws nothing, which lifts every rule below. The
+---engine drops a spell-id filter for the display on the wrong side of the identity gate, while
+---AddAuraSound keys on the bare spell id and honours it on any unit whatever its reaction.
 ---@return boolean
 function M:SupportsAuraType(unit, auraType, trackingMode, soundOnly)
 	local info = UNIT_INFO[unit]
@@ -865,9 +853,8 @@ function M:SpellAuraType(spellId)
 	local harmful = C_Spell.IsSpellHarmful(spellId)
 	local helpful = C_Spell.IsSpellHelpful(spellId)
 
-	-- Either both or neither. A dispel is aimed at whichever side needs it, and a spell the
-	-- player cannot cast at all - a proc, or the bleed a cast leaves behind - has no target to
-	-- read a side off. Neither is something to warn about.
+	-- Either both or neither. A dispel is aimed at whichever side needs it, and a spell the player
+	-- cannot cast at all has no target to read a side off. Neither is something to warn about.
 	if harmful == helpful then
 		return nil
 	end
@@ -914,9 +901,8 @@ end
 ---Whether a group is in a state that can never show anything, and why. The options page says so
 ---rather than letting the display quietly budget it to zero.
 ---
----A spell on the wrong side is deliberately NOT a refusal: the client's answer is about what the
----spell can be cast at, which is a hair off what its aura counts as, and a group is better left
----running with a warning on it than switched off by a verdict that can be wrong.
+---A spell on the wrong side is not a refusal. The client's answer is about what the spell can be
+---cast at, which is a hair off what its aura counts as, so the group runs with a warning on it.
 ---@param group PersonalAuraGroup
 ---@return boolean supported
 ---@return string? reason Key the options page maps to a message.
@@ -930,21 +916,20 @@ function M:Supports(group)
 		return false, group.Anchor == FRAMES and "HARMFUL_ON_GROUP" or "HARMFUL_ON_FRIENDLY"
 	end
 
-	-- No reason given: the empty spell list says it already. A filter group has nothing it must
-	-- carry, because the aura type alone is already a working filter string.
+	-- No reason given, since the empty spell list says it already. A filter group has nothing it
+	-- must carry, because the aura type alone is already a working filter string.
 	if M:TracksSpells(group) and #group.Spells == 0 then
 		return false
 	end
 
-	-- Same again for a texture group with no picture chosen yet: it is a group still being built,
-	-- not one configured wrongly, and the empty swatch on the appearance tab already says so.
+	-- Same again for a texture group with no picture chosen yet. It is a group still being built,
+	-- and the empty swatch on the appearance tab already says so.
 	if M:DrawsTexture(group) and group.Texture.Asset == "" then
 		return false
 	end
 
-	-- A sound-only group is its sounds, and the engine plays those per spell id, so a filter
-	-- group could never ask for one either. No reason given, like the empty spell list above:
-	-- a group still being built is not a group configured wrongly.
+	-- A sound-only group is its sounds, and the engine plays those per spell id, so a filter group
+	-- could never ask for one either. No reason given, like the empty spell list above.
 	if soundOnly and not (M:TracksSpells(group) and M:HasSound(group)) then
 		return false
 	end
@@ -952,8 +937,8 @@ function M:Supports(group)
 	return true
 end
 
----Whether the player's combat state is one the group asked to show in. Separate from Supports:
----this answer changes minute to minute, where Supports is about how the group is configured.
+---Whether the player's combat state is one the group asked to show in. Separate from Supports
+---because this answer changes minute to minute, where Supports is about how a group is configured.
 ---@param group PersonalAuraGroup
 ---@param inCombat boolean
 ---@return boolean
@@ -987,16 +972,14 @@ end
 function M:GetWarning(group)
 	local info = UNIT_INFO[group.Unit]
 
-	-- Only the split units have a reaction to wait for. Self and pet are always there, and
-	-- whether they can carry the chosen aura type is a hard refusal rather than a caveat.
-	-- A unit frame holds a group member and an arena frame an opponent, so neither side is
+	-- Only the split units have a reaction to wait for. Self and pet are always there, and a unit
+	-- frame holds a group member while an arena frame holds an opponent, so neither side is
 	-- something the user is waiting on.
 	if not info or info.Friendly == nil or info.Frames or info.ArenaFrames then
 		return nil
 	end
 
-	-- Both of these are about what gets SHOWN, and a sound-only group shows nothing. It still
-	-- waits for the same reaction, it just has no icons to say it about.
+	-- Both of these are about what gets shown, and a sound-only group shows nothing.
 	if M:IsSoundOnly(group) then
 		return nil
 	end
@@ -1044,15 +1027,14 @@ function M:CanFilterUnit(group, unit)
 	end
 
 	-- Caster filters need the engine to attribute each aura's caster, which it cannot do for a
-	-- group member outside the player's visible world (another instance or phase). A check it
-	-- cannot evaluate is skipped rather than failed, so the group would show the aura from
-	-- everyone; budget it to zero until the unit is back.
+	-- group member outside the player's visible world. A check it cannot evaluate is skipped
+	-- rather than failed, so the group would show the aura from everyone.
 	if DependsOnCaster(group) and not units:IsVisible(unit) then
 		return false
 	end
 
-	-- A filter string and the flag filters are honoured whatever the unit is, so there is nothing
-	-- left to gate: the group shows on every unit it is pointed at.
+	-- A filter string and the flag filters are honoured whatever the unit is, so the group shows on
+	-- every unit it is pointed at.
 	if not M:TracksSpells(group) then
 		return true
 	end
@@ -1115,7 +1097,7 @@ function M:BuildFilterString(group)
 end
 
 ---The candidate filters a group's container tracks with. Only the spell id maps are subject to
----the engine's assist rule; everything else here applies on any unit.
+---the engine's assist rule, and everything else here applies on any unit.
 ---Returns a fresh table each time, because the engine keeps the reference it is handed.
 ---@param group PersonalAuraGroup
 ---@return table filters

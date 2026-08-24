@@ -5,7 +5,7 @@
 
 local fw = require("Framework")
 
--- The only WoW globals this module touches; no client mock is needed for anything else.
+-- The only WoW globals this module touches. No client mock is needed for anything else.
 _G.wipe = _G.wipe or function(t)
     for k in pairs(t) do
         t[k] = nil

@@ -16,7 +16,7 @@ local M = {}
 addon.Modules.Portrait.Module = M
 addon.Modules.PortraitModule = M
 
--- Which portrait token each occupant-change event speaks for (see Setup).
+-- Which portrait token each occupant-change event speaks for.
 local UNIT_CHANGE_TOKEN = {
 	PLAYER_TARGET_CHANGED = "target",
 	PLAYER_FOCUS_CHANGED = "focus",
@@ -32,7 +32,7 @@ local blizzardAttached = false
 local thirdPartyAttached = false
 ---@type ModuleLifecycle?
 local lifecycle
--- A disabled portrait module receives no events at all (see Setup).
+-- A disabled portrait module receives no events at all.
 ---@type EventGate?
 local unitChangeGate
 
@@ -55,8 +55,8 @@ local function IsEnabled()
 end
 
 ---Builds the portrait containers on first enable rather than at load. Attaching moves the
----Blizzard portraits a strata down, which shows even when no icon is ever rendered (Voidform's
----glow drew over the demoted portrait), so a disabled module must leave the frames untouched.
+---Blizzard portraits a strata down, which Voidform's glow draws over even when no icon is ever
+---rendered, so a disabled module must leave the frames untouched.
 local function EnsureAttached()
 	if not enabled then
 		return
@@ -98,11 +98,11 @@ local function SetTestMode(active)
 end
 
 local function Setup()
-	-- Containers track their unit token but don't refresh when the token's occupant changes; the
-	-- display's RequestRefresh forces the re-parse.
+	-- Containers track their unit token but do not refresh when the token's occupant changes, so
+	-- the re-parse has to be forced here.
 	local unitChangeEvents = CreateFrame("Frame")
 	unitChangeEvents:SetScript("OnEvent", function(_, event, owner)
-		-- UNIT_PET fires for every group member's pet; only the player's has a portrait.
+		-- UNIT_PET fires for every group member's pet, and only the player's has a portrait.
 		if event == "UNIT_PET" and owner ~= "player" then
 			return
 		end
@@ -122,8 +122,7 @@ local function Setup()
 	observer:WatchKicks()
 end
 
--- Events stay unregistered while disabled; the addon-wide Refresh (config, world change, raid
--- flip) is what brings the module back.
+-- Events stay unregistered while disabled. The addon-wide Refresh is what brings the module back.
 local function OnEnable()
 	unitChangeGate:SetActive(true)
 end

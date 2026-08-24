@@ -18,8 +18,8 @@ local CHECK_ROW_GAP = 8
 local CHECK_ROW2_GAP = 4
 
 ---Builds the appearance tab: what a group's auras look like. Where they sit and how big they are
----belongs to the layout tab, and which shape it draws to the trigger tab, next to the rest of
----what a group IS.
+---belongs to the layout tab, and which shape it draws to the trigger tab, beside the rest of
+---what a group is.
 ---Returns a refresh function, because the shape a group draws decides which controls even make
 ---sense: a bar has no cooldown swipe to reverse and an icon has no fill texture.
 ---@param ctx PersonalAurasEditorContext
@@ -114,9 +114,9 @@ function ui.BuildAppearanceTab(ctx)
 	end)
 
 	-- Bars is set on the ones that only make sense for one shape: a bar has no cooldown swipe to
-	-- reverse and no glow worth drawing (the art is built for a square), while an icon has no room
-	-- for a name. Columns are handed out per shape in this order rather than fixed, so whichever
-	-- set is up fills the row from the left with no gap where a hidden one would have been.
+	-- reverse and no glow worth drawing, while an icon has no room for a name. Columns are handed
+	-- out per shape in this order rather than fixed, so whichever set is up fills the row from the
+	-- left with no gap where a hidden one would have been.
 	local checkboxes = {
 		{
 			Bars = false,

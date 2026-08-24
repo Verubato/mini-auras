@@ -8,10 +8,9 @@ local M = {}
 addon.Core.Pixels = M
 
 -- WoW measures the interface against a 768 unit tall screen, whatever the monitor is. A region's
--- effective scale alone is NOT how many screen pixels one interface unit covers, which is easy
--- to get wrong: on a 1440p screen at scale 0.64 the scale says 0.64 and the truth is
--- 0.64 * 1440 / 768 = 1.2. Sizing anything against the scale on its own lands nowhere near a
--- whole pixel.
+-- effective scale is not how many screen pixels one interface unit covers: on a 1440p screen at
+-- scale 0.64 the scale says 0.64 and the truth is 0.64 * 1440 / 768 = 1.2. Sizing anything against
+-- the scale on its own lands nowhere near a whole pixel.
 local REFERENCE_HEIGHT = 768
 
 ---A value the addon is allowed to do arithmetic on. On 12.1 a region hands back secret numbers

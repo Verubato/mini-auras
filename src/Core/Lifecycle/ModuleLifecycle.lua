@@ -1,15 +1,8 @@
 ---@type string, Addon
 local _, addon = ...
 
--- Edge detection for a whole module, the same trick EventGate plays for a set of events. A
--- module's Refresh is level-triggered: it runs on every zone change, roster flip and config edit,
--- whether or not anything about the module moved. Enablement is what has edges, and the work that
--- belongs to them - registering events, releasing plates, tearing the display down - was hand
--- rolled in every module before this.
---
--- Setup runs once, on the first enable, so a module the player never switches on builds no frames,
--- registers no events and installs no hooks. It stays separate from OnEnable because none of that
--- can be taken back: hooks and observers outlive the module being switched off again.
+-- Edge detection for a whole module, the same trick EventGate plays for a set of events. A module's
+-- Refresh runs whether or not anything moved, and enablement is what has edges.
 
 ---@class ModuleLifecycle
 local M = {}
@@ -36,6 +29,10 @@ function M:New(callbacks)
 end
 
 ---Runs the one-time setup if it has not run yet. Called on the enable edge, and by ArmEarly.
+---
+---Separate from OnEnable because none of it can be taken back: hooks and observers outlive the
+---module being switched off again. A module the player never switches on builds no frames,
+---registers no events and installs no hooks.
 function M:EnsureSetup()
 	if self.HasSetUp then
 		return
@@ -50,8 +47,8 @@ end
 
 ---Sets the module up at load rather than waiting for the first Refresh, where its settings say it
 ---runs. For a module whose hooks are one-way and fire in between: a hook missed in that window can
----never be installed retrospectively. Does not enable the module - the first Refresh still owns
----that edge.
+---never be installed retrospectively. Does not enable the module, since the first Refresh still
+---owns that edge.
 ---@return boolean armed Whether the module's settings had it running, so a caller can follow up.
 function M:ArmEarly()
 	if not self.IsEnabled() then

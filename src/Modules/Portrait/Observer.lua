@@ -8,7 +8,7 @@ addon.Modules.Portrait = addon.Modules.Portrait or {}
 local M = {}
 addon.Modules.Portrait.Observer = M
 
--- Callbacks that re-render each container attached to a unit; populated as portraits are attached.
+-- Callbacks that re-render each container attached to a unit, filled as portraits are attached.
 -- Only target and focus have any, since they are the only portraits whose occupant changes.
 ---@type table<string, fun()[]>
 local unitUpdateFns = {}
@@ -33,7 +33,7 @@ function M:FireUnitUpdate(unit)
 	end
 end
 
----A kick landing on the target or focus has to redraw that portrait; no aura event covers it.
+---A kick landing on the target or focus has to redraw that portrait, and no aura event covers it.
 function M:WatchKicks()
 	for _, unit in ipairs({ "target", "focus" }) do
 		local event = unit == "target" and "PLAYER_TARGET_CHANGED" or "PLAYER_FOCUS_CHANGED"

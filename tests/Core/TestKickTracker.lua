@@ -1,4 +1,4 @@
--- Tests for Core/KickTracker.lua - the interrupt lockout tracker. Fully event-driven and
+-- Tests for Core/KickTracker.lua, the interrupt lockout tracker. Fully event-driven and
 -- 12.1-independent (kicks aren't auras), feeding the CC, Auras, Portrait, and
 -- Nameplates kick icons on both paths.
 

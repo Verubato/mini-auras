@@ -1,11 +1,10 @@
 -- CrowdControl + Auras, 12.1 container path: what happens when a raid frame is
 -- recycled onto a different unit.
 --
--- Both modules key their state on the ANCHOR frame, not the unit, because that is what raid frame
--- addons reuse. On the legacy path a unit change threw the watcher away and built a new one; on
--- 12.1 the container is kept and only re-pointed, which is cheaper but has two ways to go wrong
--- silently: the display keeps tracking the old unit (one player's crowd control drawn on another
--- player's frame), or the kick subscription stays behind on the old unit.
+-- Both modules key their state on the anchor frame, not the unit, because that is what raid frame
+-- addons reuse. On 12.1 the container is kept and only re-pointed, which has two ways to go wrong
+-- silently. The display keeps tracking the old unit, drawing one player's crowd control on
+-- another player's frame, or the kick subscription stays behind on the old unit.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
@@ -30,10 +29,10 @@ env.loadModule("src/Modules/ImportantAuras/Module.lua")
 local importantAurasModule = env.addon.Modules.ImportantAurasModule
 importantAurasModule:Init()
 
----The display a module built for a given anchor, identified by its group signature: crowd control
+---The display a module built for a given anchor, identified by its group signature. Crowd control
 ---displays carry a single cc group, auras displays carry a cc group plus the two
 ---spell-id-filtered helpful groups.
--- A raid-frame display is created with none of its groups: they are declared by the background
+-- A raid-frame display is created with none of its groups. They are declared by the background
 -- walker, a group per turn, so a whole roster turning up does not build them all in one frame.
 -- Reading one back means letting that walk run first.
 local function settleGroups()
@@ -58,7 +57,7 @@ local function fiDisplay(unit)
 	return displayForUnit(unit, 3)
 end
 
----The helpful icon budget. The two helpful groups are budgeted as a pair - they are split by
+---The helpful icon budget. The two helpful groups are budgeted as a pair. They are split by
 ---category so each can take its own colour, not so they can be switched on separately.
 local function helpfulBudget(display)
 	local defensive = assert(display._groups.helpfuldef, "no defensive group")
@@ -71,9 +70,9 @@ local function helpfulBudget(display)
 end
 
 ---Runs one poller tick with the module's own Refresh counted, so a test can tell a per-unit update
----apart from one that went the long way round. The module-wide refresh a flip used to trigger is
----coalesced onto C_Timer.After, which this harness runs synchronously, so it lands inside the tick
----and is counted; nothing has to be flushed afterwards.
+---apart from one that went the long way round. The module-wide refresh is coalesced onto
+---C_Timer.After, which this harness runs synchronously, so it lands inside the tick and is
+---counted. Nothing has to be flushed afterwards.
 ---@param module table
 ---@return number refreshes
 local function tickCountingRefreshes(module)
@@ -98,7 +97,7 @@ fw.describe("Important auras - the login layout pass", function()
 
 		-- Blizzard briefly shows every frame it pre-creates, pointed at "player", while it lays
 		-- them out at login. Each one is visible and holds a unit that genuinely exists, so the
-		-- ordinary tests pass for all forty-five of them; only the timing tells them apart.
+		-- ordinary tests pass for all forty-five of them. Only the timing tells them apart.
 		env.loadingScreenUp = true
 
 		importantAurasModule:Refresh()
@@ -250,7 +249,7 @@ fw.describe("ImportantAuras 12.1 - unit frame anchors", function()
 	end)
 
 	fw.it("the category budgets survive the re-point", function()
-		-- The budgets live on the group specs, which the display keeps; a re-point that rebuilt
+		-- The budgets live on the group specs, which the display keeps. A re-point that rebuilt
 		-- them from defaults would quietly turn categories back on.
 		local display = fiDisplay("party5")
 		local options = db.Modules.ImportantAuras.Default
@@ -299,7 +298,7 @@ fw.describe("ImportantAuras 12.1 - a party member who turns hostile", function()
 	local acm = require("AuraContainerMock")
 
 	fw.it("drops the helpful budget when a duel starts", function()
-		-- The frame was re-pointed by the tests above; party5 is who it holds now.
+		-- The frame was re-pointed by the tests above, and party5 is who it holds now.
 		env.enemies.party5 = nil
 		importantAurasModule:Refresh()
 
@@ -328,8 +327,8 @@ fw.describe("ImportantAuras 12.1 - a frame handed an enemy unit", function()
 	local raidDisplay = env.addon.Modules.ImportantAuras.Display
 
 	fw.it("drops the helpful budget when the frame is re-pointed at one", function()
-		-- What mind control does: Blizzard re-points the FRIENDLY frames onto enemy units. The
-		-- gate is per unit, so the answer moves without any option changing.
+		-- Mind control re-points the friendly frames onto enemy units. The gate is per unit, so
+		-- the answer moves without any option changing.
 		env.enemies.party6 = true
 		fiFrame.unit = "party6"
 		importantAurasModule:Refresh()
@@ -351,7 +350,7 @@ fw.describe("ImportantAuras 12.1 - a frame handed an enemy unit", function()
 	end)
 
 	fw.it("says nothing changed for a faction event that moved nothing", function()
-		-- PvP flagging fires this constantly in the open world; an unchanged answer must not
+		-- PvP flagging fires this constantly in the open world. An unchanged answer must not
 		-- drag the whole module through a refresh.
 		assert(not raidDisplay:ReapplyUnitGates("party6"), "no work for an unchanged gate")
 	end)
@@ -425,7 +424,7 @@ fw.describe("CrowdControlModule 12.1 - a unit outside the visible world", functi
 		assert(display._groups[cc].maxFrameCount > 0, "tracked again once they are back")
 	end)
 
-	-- Watchers are keyed by anchor, so one unit can sit behind more than one frame - a raid frame
+	-- Watchers are keyed by anchor, so one unit can sit behind more than one frame, a raid frame
 	-- and a focus frame, say. Stopping at the first match would leave the others showing the
 	-- unfiltered auras the budget exists to suppress, which is why the walk updates every match.
 	fw.it("updates every frame holding the unit, not just the first", function()

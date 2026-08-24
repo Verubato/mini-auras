@@ -19,7 +19,7 @@ local pendingPlayerKick = nil -- { Texture, Duration, Time, Timer }
 ---@type table<string, KickUnitData>
 local tracked = {}
 -- Event frames by token, kept past Unwatch. Frames can never be freed, and the nameplate tokens
--- churn constantly - a plate leaving and coming back as the camera turns would otherwise orphan
+-- churn constantly, so a plate leaving and coming back as the camera turns would otherwise orphan
 -- one frame per cycle, for the whole session.
 ---@type table<string, table>
 local eventFrames = {}
@@ -155,10 +155,9 @@ local function OnInterrupted(unitToken)
 	local texture = KICK_ICON
 	local duration = DEFAULT_KICK_DURATION
 
-	-- UnitIsEnemy covers duel opponents, arena/BG enemies, and MC'd allies - i.e. every case
-	-- where the local player or an ally could legitimately be the interrupter. When the
-	-- interrupted unit is a genuine teammate, an enemy did the kicking and our party-spec
-	-- heuristic / player-cast tracking is irrelevant, so we just show the generic rogue icon.
+	-- UnitIsEnemy covers duel opponents, arena and battleground enemies, and MC'd allies, which is
+	-- every case where the local player or an ally could be the interrupter. When the interrupted
+	-- unit is a genuine teammate an enemy did the kicking, so the generic rogue icon stands in.
 	if UnitIsEnemy(unitToken, "player") then
 		local pending = pendingPlayerKick
 		if pending and (GetTime() - pending.Time) <= PLAYER_KICK_TOLERANCE then
@@ -293,7 +292,7 @@ function M:Watch(unitToken, resetEvents)
 		frame.UnitToken = unitToken
 		frame:SetScript("OnEvent", OnFrameEvent)
 
-		-- Registered once and never taken back. RegisterUnitEvent binds to the TOKEN, so the
+		-- Registered once and never taken back. RegisterUnitEvent binds to the token, so the
 		-- registration nameplate3 was given still fits whoever holds nameplate3 next, and both
 		-- handlers drop an event for a token nothing is watching.
 		for _, event in ipairs(kickEvents.StartEvents) do

@@ -1,12 +1,10 @@
--- Lightweight spec inspector adapted from FrameSort's Inspector module.
--- Used as a fallback when FrameSortApi is unavailable.
--- Resolves friendly unit spec IDs via NotifyInspect / INSPECT_READY, with
--- a GUID-keyed in-memory cache and a simple run loop.
+-- Lightweight spec inspector adapted from FrameSort's Inspector module, the fallback when
+-- FrameSortApi is unavailable. Resolves friendly unit spec IDs through NotifyInspect and
+-- INSPECT_READY, behind a GUID-keyed cache.
 --
--- Init runs once from MiniAuras.lua. Without it GetUnitSpecId still answers, but only from its
--- synchronous paths (player spec, tooltip scan): the async inspect queue never drains and the
--- saved GUID->spec cache is never loaded. KickTracker leans on it through InspectorFacade to
--- guess which ally interrupted, which is the guess that gets worse when it is not running.
+-- Init runs once from MiniAuras.lua. Without it GetUnitSpecId still answers from its synchronous
+-- paths, but the async inspect queue never drains and the saved GUID->spec cache is never loaded,
+-- which is what makes KickTracker's guess at the interrupting ally worse.
 ---@type string, Addon
 local _, addon = ...
 

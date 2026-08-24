@@ -13,8 +13,7 @@ local growAnchors = addon.Core.GrowAnchors
 local observer = addon.Modules.AllyKickTracker.Observer
 local display = addon.Modules.AllyKickTracker.Display
 
--- Repaint rate while a row is counting down. The loop only runs then: with the list empty there
--- is nothing to animate, so it stops and the next interrupt starts it again.
+-- Repaint rate while a row is counting down.
 local TICK_INTERVAL = 0.05
 local MODULE_EVENTS = {
 	"PLAYER_ENTERING_WORLD",
@@ -25,9 +24,8 @@ local MODULE_EVENTS = {
 	"PLAYER_SPECIALIZATION_CHANGED",
 }
 
--- Test-mode rows: one fresh, one halfway and one nearly gone, so the whole range is on screen at
--- once while the list is being positioned. Real rows carry secret values; these are plain, which
--- is the point - the preview has to be readable.
+-- One fresh row, one halfway and one nearly gone, so the whole range is on screen while the list
+-- is positioned. Real rows carry secret values, and these are plain so the preview reads.
 local TEST_RECORDS = {
 	{ Unit = "player", Class = "SHAMAN", SpellId = 57994, Elapsed = 0 },
 	{ Unit = "party1", Class = "MAGE", SpellId = 2139, Elapsed = 6, Marker = 1 },
@@ -53,7 +51,7 @@ local testModeActive = false
 local shownOrder = {}
 ---@type AllyKickRecord[]
 local orderScratch = {}
--- Rewritten on every apply; the display copies the fields out and keeps nothing.
+-- Safe to reuse on every apply because the display copies the fields out and keeps nothing.
 local displayOptionsScratch = {}
 ---@type AllyKickRecord[]
 local testRecords = {}
@@ -74,7 +72,7 @@ local function IsEnabled()
 end
 
 ---The player's own row first when they asked for it, then the interrupts seen, newest first, up to
----the configured height. The observer appends, so walking it backwards is the whole sort - rows
+---the configured height. The observer appends, so walking it backwards is the whole sort. Rows
 ---never reorder once recorded.
 ---@param options AllyKickTrackerModuleOptions
 ---@return AllyKickRecord[]
@@ -84,9 +82,8 @@ local function BuildOrder(options)
 
 	wipe(orderScratch)
 
-	-- Pinned above the history rather than mixed into it: it answers "can I kick right now",
-	-- which is a different question from "who kicked what", and it is the only row whose answer
-	-- the client will actually tell us.
+	-- Pinned above the history because it answers whether the player can kick right now, which
+	-- is the only such answer the client will tell us.
 	if options.ShowOwnCooldown and not testModeActive then
 		local own = observer:GetOwnRecord()
 
@@ -142,7 +139,7 @@ local function UpdateVisibility()
 		return
 	end
 
-	-- Test mode keeps the list up regardless: it is what the user drags to position it.
+	-- Test mode keeps the list up because it is what the user drags to position it.
 	instance.Frame:SetShown(testModeActive or #shownOrder > 0)
 end
 
@@ -236,7 +233,7 @@ local function OnEvent(_, event, unit)
 		return
 	end
 
-	-- An arena, a fresh dungeon or a key pull all start over; the kicks from before it are not
+	-- An arena, a fresh dungeon or a key pull all start over, so the kicks from before are not
 	-- worth carrying across.
 	observer:Clear()
 	observer:RefreshOwn()
@@ -254,8 +251,7 @@ local function BuildTestRecords()
 			Class = spec.Class,
 			Icon = C_Spell.GetSpellTexture(spec.SpellId),
 			Marker = spec.Marker,
-			-- Far enough out that the preview never expires while it is being positioned; the
-			-- countdown still reads as a row partway through its life.
+			-- Far enough out that the preview never expires while the list is being positioned.
 			ExpireAt = now + (60 - spec.Elapsed),
 			Duration = 60,
 		}
@@ -269,13 +265,13 @@ local function EnsureFrames()
 
 	instance = display:New(UIParent, L["Ready"])
 
-	-- Function-form position: a profile switch replaces the options table, so it has to be
-	-- re-read on every drop. Each drop re-pins the saved anchor to the edge the rows grow away
-	-- from, so the first row stays put as the others come and go. Re-anchored now rather than
-	-- on the next refresh, so a row landing before one already extends from the pinned edge:
-	-- same spot, different point, the frame does not move.
+	-- The position comes from a function because a profile switch replaces the options table.
+	-- Each drop re-pins the saved anchor to the edge the rows grow away from, so the first row
+	-- stays put as the others come and go.
 	moduleUtil:MakeMovable(instance.Frame, GetOptions, function(frame, target)
 		if target and growAnchors:PinSavedAnchor(frame, target, target.Grow) then
+			-- Re-anchored now rather than on the next refresh. It is the same spot under a
+			-- different point, so the frame does not move.
 			frame:ClearAllPoints()
 			frame:SetPoint(target.Point, UIParent, "BOTTOMLEFT", target.Offset.X, target.Offset.Y)
 		end
@@ -312,9 +308,8 @@ local function ApplyStyle(options)
 	instance:SetOptions(scratch)
 end
 
----Draggable whenever it is on screen and unlocked, rather than only while test mode is up: the
----rows are their own preview, so there is nothing to switch on before moving them. Locking hands
----the mouse back to whatever sits underneath.
+---Draggable whenever it is on screen and unlocked, since the rows are their own preview. Locking
+---hands the mouse back to whatever sits underneath.
 ---@param options AllyKickTrackerModuleOptions
 local function ApplyInteractivity(options)
 	if not instance then
@@ -392,9 +387,8 @@ local function Apply(options)
 	observer:RefreshOwn()
 	ApplyRecords()
 
-	-- The rows are draggable outside test mode too (whenever unlocked), so the caption is the
-	-- only part of the drag affordance tied to testing. Set here rather than in the test-mode
-	-- toggle, so a module enabled mid-test gets it too.
+	-- The rows are draggable outside test mode, so the caption is the only part of the drag
+	-- affordance tied to testing. Setting it here catches a module enabled mid-test.
 	moduleUtil:SetTestLabel(instance.Frame, testModeActive and (L["Ally Kicks_Short"] or L["Ally Kicks"]) or nil)
 
 	if AnyCountingDown() or testModeActive then

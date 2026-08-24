@@ -2,11 +2,7 @@
 local _, addon = ...
 
 -- The group-wide buff each class brings, keyed by the class that casts it. Only the classes that
--- have one are listed; anyone else has nothing to be reminded about.
---
--- Icon and presence are separate fields because they do not always match. Blessing of the Bronze
--- lands as a different aura depending on the target's class, so finding it on a unit means asking
--- about all thirteen, while the icon only ever comes from the one the caster knows it by.
+-- have one are listed.
 local buffs = {
 	DRUID = {
 		-- Mark of the Wild

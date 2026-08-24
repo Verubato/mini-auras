@@ -100,9 +100,8 @@ local function Setup()
 
 	-- A healer leaving or re-entering the player's visible world has no event, and it decides
 	-- whether the engine evaluates the CC filter at all, so the budgets are recomputed when the
-	-- poller sees it flip. Registered for the module's lifetime; the predicate below gates it.
-	-- Per token, not a module refresh: the icon count is all a flip moves, and only for the healer
-	-- that flipped. A raid riding out of range flips many at once, each now paying for itself.
+	-- poller sees it flip. Registered for the module's lifetime, with the predicate below gating it.
+	-- Per token rather than a module refresh, since the icon count is all a flip moves.
 	stateSub = unitStatePoller:Register(function()
 		return IsEnabled()
 	end, function(unitToken)
@@ -110,7 +109,7 @@ local function Setup()
 	end)
 end
 
--- Events stay unregistered while disabled; the addon-wide Refresh brings the module back, and a
+-- Events stay unregistered while disabled. The addon-wide Refresh brings the module back, and a
 -- respec reaches it through the central spec-change driver.
 local function OnEnable()
 	rosterGate:SetActive(true)

@@ -27,7 +27,8 @@ local modules = {
 }
 
 -- Maps a settings table's db.Modules key back to the module that renders it, so a config change
--- can refresh just the module it touched. PetCrowdControl rides the CrowdControl module rather than owning a renderer.
+-- can refresh just the module it touched. PetCrowdControl rides the CrowdControl module rather
+-- than owning a renderer.
 local modulesBySettingsKey = {
 	CrowdControl = addon.Modules.CrowdControlModule,
 	PetCrowdControl = addon.Modules.CrowdControlModule,
@@ -209,8 +210,8 @@ local function OnEvent(_, event, unit)
 		end
 	elseif event == "GROUP_ROSTER_UPDATE" then
 		-- Modules unregister their events entirely while disabled, and IsModuleEnabled depends
-		-- on raid membership; re-evaluate every module's gate when it flips so a disabled
-		-- module can wake back up (instance changes are covered by PLAYER_ENTERING_WORLD).
+		-- on raid membership, so every module's gate is re-evaluated when it flips and a disabled
+		-- module can wake back up. Instance changes are covered by PLAYER_ENTERING_WORLD.
 		local inRaid = IsInRaid()
 		if inRaid ~= lastIsInRaid then
 			lastIsInRaid = inRaid
@@ -224,7 +225,7 @@ local function OnAddonLoaded()
 	-- it across. Read here too so the very first login after the rename keeps the user's language.
 	local savedVars = MiniAurasDB or MiniCCDB
 	L:ApplyLocale(savedVars and savedVars.LocaleOverride or GetLocale())
-	-- The language is settled for this session - changing it asks for a reload - so the ten
+	-- The language is settled for this session, since changing it asks for a reload, so the ten
 	-- translations nobody is reading can go. They are most of what the locale files weigh.
 	L:ReleaseUnused()
 
@@ -318,7 +319,7 @@ function addon:ToggleTest(isRaid)
 		testModeManager:StartTesting(isRaid ~= nil and isRaid or self.CurrentTestIsRaid)
 	end
 
-	-- Every test module refreshed itself as it flipped, and a second pass over all ten was half
+	-- Every test module refreshes itself as it flips, and a second pass over all ten would be half
 	-- the cost of the button. Only what no module owns is left to do.
 	RefreshShared()
 end

@@ -9,11 +9,9 @@ local ttsSounds = addon.Core.AuraTtsSounds
 local ttsPacks = addon.Core.TtsPacks
 local ttsMutes = addon.Core.TtsMutes
 local verticalSpacing = mini.VerticalSpacing
--- The announcement categories, in the order the TTS tab's own switches sit in. The colours are
--- the alert icons' own: red for important, green for defensive, and a third for the enemy
--- cooldowns that land on your side, which have no icon of their own to borrow from. TitleKey
--- rather than the translated title: the locale is applied after this file is read, so a title
--- resolved here would be English forever.
+-- The announcement categories, in the order the TTS tab's own switches sit in. The colours are the
+-- alert icons' own, with a third for the enemy cooldowns that have no icon to borrow from.
+-- TitleKey rather than the translated title, since the locale is applied after this file is read.
 local CATEGORIES = {
 	{ Key = "Important", TitleKey = "Important", R = 1, G = 0.2, B = 0.2 },
 	{ Key = "Defensive", TitleKey = "Defensive", R = 0.2, G = 1, B = 0.2 },
@@ -119,13 +117,13 @@ function M:Build(parent, options)
 	body:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
 	body:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 
-	-- A category holds more spells than the tab is tall, so the panels live inside a scroll
-	-- frame. One scroll child holds them all and only the selected one is shown; its height
-	-- becomes the scroll range. The right edge stops short of the tab because the template
-	-- hangs its bar outside the scroll frame, and a flush edge would put the bar under the
-	-- window's own border.
+	-- A category holds more spells than the tab is tall, so the panels live inside a scroll frame.
+	-- One scroll child holds them all and only the selected one is shown, and its height becomes
+	-- the scroll range.
 	local scroll = CreateFrame("ScrollFrame", nil, body, "UIPanelScrollFrameTemplate")
 	scroll:SetPoint("TOPLEFT", body, "TOPLEFT", SIDEBAR_WIDTH + mini.HorizontalSpacing, 0)
+	-- The right edge stops short of the tab because the template hangs its bar outside the scroll
+	-- frame.
 	scroll:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -SCROLLBAR_WIDTH, 0)
 
 	local scrollContent = CreateFrame("Frame", nil, scroll)

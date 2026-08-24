@@ -303,9 +303,9 @@ local function BuildColours(parent, options)
 	defensiveSwatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 end
 
----Trims a spell name that would run past its column. The budget is what fits beside the id and
----the remove icon at the column width above - the longest ability names ("Incarnation: Avatar of
----Ashamane") are half again too long for it. The icon's tooltip still gives the full name.
+---Trims a spell name that would run past its column. The budget is what fits beside the id and the
+---remove icon at the column width above, and the longest ability names are half again too long for
+---it. The icon's tooltip still gives the full name.
 ---@param spellId number
 ---@return string
 local function SpellLabel(spellId)
@@ -516,10 +516,8 @@ local function BuildSpells(parent)
 						return not overrides.Disabled[spellId]
 					end,
 					SetValue = function(value)
-						-- Only ever tracked/untracked, never deleted - the Custom section has its own
-						-- Remove button for that. Unticking used to drop a custom id from the list,
-						-- which left the row reading as tracked again on the next refresh, so the
-						-- first click never appeared to stick.
+						-- Only ever tracked or untracked, never deleted. The Custom section has its
+						-- own Remove button for that.
 						if auraCategoryIds.DefaultOff[spellId] then
 							-- Ships off, so tracking it is an explicit opt-in rather than the
 							-- absence of an opt-out.

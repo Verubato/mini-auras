@@ -9,10 +9,10 @@ local kickSlot = addon.Core.KickSlot
 local M = {}
 addon.Core.AnchoredIcons = M
 
--- The geometry shared by every display that hangs an icon container off a unit frame: the crowd
--- control and auras modules both keep one container and one aura display per raid frame anchor,
--- and positioned them with identical code. Only the aura groups they build and the categories
--- they budget actually differ, so that stays in the modules and this holds the rest.
+-- The geometry shared by every display that hangs an icon container off a unit frame. The crowd
+-- control and auras modules each keep one container and one aura display per raid frame anchor,
+-- and differ only in the aura groups they build and the categories they budget, so that stays in
+-- the modules and this holds the rest.
 
 ---@type Db
 local db
@@ -132,8 +132,8 @@ function M:TeardownEntry(entry)
 end
 
 ---Whether an anchor is worth laying anything out on. A unit frame the addon has taken away keeps
----its entry - WoW frames can never be freed, so a returning anchor has to find its own container
----again rather than build a second one - but there is nothing to style on it while it is gone.
+---its entry, since WoW frames can never be freed and a returning anchor has to find its own
+---container again, but there is nothing to style on it while it is gone.
 ---@param anchor table
 ---@return boolean
 function M:IsAnchorShown(anchor)
@@ -171,9 +171,9 @@ function M:ResetContainers(entries)
 end
 
 ---Applies a module's per-instance options to one entry: sizes the kick/test container, pushes
----geometry, style and per-group budgets to the aura display (one ApplyConfig restyle rather than
----a setter per property), re-renders and re-anchors, and resolves the test-mode handover that
----swaps the live display for the test container.
+---geometry, style and per-group budgets to the aura display in one ApplyConfig restyle, re-renders
+---and re-anchors, and resolves the test-mode handover that swaps the live display for the test
+---container.
 ---@param entry table Entry carrying Container, Anchor, Unit and Display.
 ---@param anchor table
 ---@param options table Module per-instance options (Grow, Offset, IconSpacing).

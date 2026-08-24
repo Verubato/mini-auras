@@ -2,11 +2,10 @@
 local _, addon = ...
 
 -- A rectangular outline built from four flat edges, for the shapes the ring border asset cannot
--- cover. Stretching that asset across a bar distorts it badly, so the bars - live and stand-in
--- alike - draw their border, and their pandemic reveal, out of solid edges instead.
+-- cover. Stretching that asset across a bar distorts it badly, so the live and stand-in bars alike
+-- draw their border, and their pandemic reveal, out of solid edges instead.
 --
--- Handed back as a list so a caller can colour, show and hide the whole outline in one loop, the
--- same way it would treat a single border texture.
+-- Handed back as a list so a caller can colour, show and hide the whole outline in one loop.
 
 local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8X8"
 

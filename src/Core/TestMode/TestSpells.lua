@@ -6,16 +6,12 @@ local wowEx = addon.Utils.WoWEx
 local M = {}
 addon.Core.TestSpells = M
 
--- Every spell test mode previews, in one place. Four modules were declaring their own copy of
--- the same three crowd control entries; the rest were each hiding a list somewhere in the middle
--- of a render function. Which spells the preview shows is a question you should be able to answer
--- without reading any of them.
+-- Every spell test mode previews, in one place, so which spells the preview shows can be answered
+-- without reading a render function.
 --
--- READ-ONLY: consumers share these tables. The per-entry fields are part of what the preview
--- shows, so they live with the spell rather than in the module: DispelColor drives the border
--- tint.
-
--- Shared sets
+-- Consumers share these tables, so nothing may write to them. The per-entry fields are part of what
+-- the preview shows, so they live with the spell rather than in the module: DispelColor drives the
+-- border tint.
 
 ---Crowd control, used by the unit frame, healer and portrait previews.
 ---@type TestSpell[]
@@ -40,8 +36,6 @@ M.Important = {
 	{ SpellId = 31884 }, -- Avenging Wrath
 	{ SpellId = 1719 },  -- Recklessness
 }
-
--- Per-module sets
 
 ---The nameplate bars preview two of each category to demo the slot distribution between them,
 ---so they take their own shorter lists rather than the shared ones.
@@ -88,7 +82,7 @@ M.FrameAuras = {
 
 ---The alert bars colour by category, or by the owner's class when that option is on. Class is
 ---carried per spell so the preview can show the second mode honestly: a real bar gives every icon
----on one enemy the same colour, and these spells are picked so the row reads that way - the mage's
+---on one enemy the same colour, and these spells are picked so the row reads that way: the mage's
 ---Ice Block and Combustion match, and so do the priest's Guardian Spirit and Precognition.
 ---
 ---Precognition is a PvP talent rather than a class spell, so the class here is only the one
@@ -108,7 +102,7 @@ M.Alerts = {
 	},
 }
 
----Specs whose interrupt cooldowns the enemy kick bar previews - a spell list by proxy, since the
+---Specs whose interrupt cooldowns the enemy kick bar previews, a spell list by proxy since the
 ---bar draws one icon per spec's kick.
 M.KickSpecIds = {
 	62,  -- Arcane Mage
@@ -118,8 +112,8 @@ M.KickSpecIds = {
 
 ---Fills a container's slots with fake running-cooldown icons for the given test spells and
 ---returns the next free slot, so a second category (or a trailing SetSlotUnused sweep) can pick
----up where it stopped. This is the one preview renderer: every module draws the same row of fake
----icons and differed only in which spells, where the row starts and how the icons are styled.
+---up where it stopped. The one preview renderer: every module draws the same row of fake icons,
+---differing only in which spells, where the row starts and how the icons are styled.
 ---A spell whose texture cannot be resolved is skipped without leaving a gap.
 ---@param container IconSlotContainer
 ---@param spells table[]|number[] TestSpell entries, or bare spell ids.

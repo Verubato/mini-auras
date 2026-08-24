@@ -1,13 +1,13 @@
 -- Alerts module, 12.1 container path: the parts of the bars that are geometry and gating rather
 -- than aura data. Three areas, each a silent-failure class:
 --
---   * Saved bar anchors are applied verbatim on refresh; only a drag drop rewrites one, pinned
---     to the edge the row grows from. Anything that converts an anchor from the frame's rect
+--   * Saved bar anchors are applied verbatim on refresh, and only a drag drop rewrites one,
+--     pinned to the edge the row grows from. Anything that converts an anchor from a frame's rect
 --     outside a drag has corrupted a profile reset, because the rect only matches the rendered
 --     row while test icons are actually up.
---   * The prep room hides every display, and only the match-state event brings them back - a
+--   * The prep room hides every display, and only the match-state event brings them back. A
 --     mistake here means no alerts for the whole arena.
---   * Split mode gives importants their own bar and container; combined mode renders them as a
+--   * Split mode gives importants their own bar and container. Combined mode renders them as a
 --     third group inside the defensive container, which is what keeps the row gap-free.
 
 local fw = require("Framework")
@@ -28,8 +28,8 @@ env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 local module = env.addon.Modules.AlertsModule
 module:Init()
--- Init only builds the lifecycle now; a module sets itself up on the first refresh that
--- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+-- Init only builds the lifecycle. A module sets itself up on the first refresh that finds it
+-- enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
 module:Refresh()
 
 local events = assert(acm.lastFrameForEvent("PVP_MATCH_STATE_CHANGED"), "alerts event frame")
@@ -48,17 +48,17 @@ for _, frame in ipairs(acm.frames) do
 end
 assert(mainBar and importantBar, "both alert bars are draggable anchors")
 
--- A bar sitting at x 300..500, y 400..430; its centre is (400, 415).
+-- A bar sitting at x 300..500, y 400..430. Its centre is (400, 415).
 local RECT = { left = 300, bottom = 400, width = 200, height = 30 }
 local function placeMainBar()
 	mainBar:SetMockRect(RECT.left, RECT.bottom, RECT.width, RECT.height)
 end
 
--- The defensive container carries three groups (big, external, important); the dedicated
+-- The defensive container carries three groups (big, external, important). The dedicated
 -- important container carries one.
 -- A pair's two containers are built one after the other, Def then Imp, so the live pair for a
--- token is the last two carrying it. Counting groups no longer tells them apart: each container is
--- built with only the groups the current mode renders on it.
+-- token is the last two carrying it. Counting groups does not tell them apart, because each
+-- container is built with only the groups the current mode renders on it.
 local function pairOf(token)
 	local containers = env.containersForUnit(token)
 
@@ -272,7 +272,7 @@ fw.describe("Alerts 12.1 - which plates get a pair", function()
 
 	fw.it("drops the pair a token had when it comes back as an NPC", function()
 		-- Plate tokens are recycled, so the enemy player on nameplate6 can be a boar a moment
-		-- later; the pair it was holding has to go back rather than sit there enabled.
+		-- later. The pair it was holding has to go back rather than sit there enabled.
 		addEnemyPlate("nameplate6")
 		assert(#env.containersForUnit("nameplate6") == 2, "precondition: a player got a pair")
 
@@ -295,7 +295,7 @@ fw.describe("Alerts 12.1 - prep room gating", function()
 		local containers = env.containersForUnit("nameplate1")
 		assert(#containers == 2, "pair acquired, got " .. #containers)
 		-- Combined mode parks the dedicated important container, so only the defensive one is
-		-- live here; the prep room still has to hide both.
+		-- live here. The prep room still has to hide both.
 		local def = defOf("nameplate1")
 		assert(def._enabled and def:IsShown(), "precondition: live")
 
@@ -329,9 +329,9 @@ fw.describe("Alerts 12.1 - prep room gating", function()
 end)
 
 fw.describe("Alerts 12.1 - split vs combined bars", function()
-	---Resolves a two-frame row into (start, follower): the chain imposes no token order, so which
-	---frame anchors the bar is the map's business; the shape - one at the bar, one chained off
-	---it - is what the row must always have.
+	---Resolves a two-frame row into (start, follower). The chain imposes no token order, so which
+	---frame anchors the bar is the map's business. The shape is what the row must always have: one
+	---at the bar, one chained off it.
 	local function chainPair(frameA, frameB, bar)
 		local _, relativeToA = frameA:GetPoint(1)
 
@@ -411,11 +411,11 @@ fw.describe("Alerts 12.1 - split vs combined bars", function()
 	end)
 end)
 
--- The border is the whole point of the category tints once the glow is off: the two are coloured
--- from the same pick, so switching the glow off must not take the colouring with it.
+-- The border is the whole point of the category tints once the glow is off, because the two are
+-- coloured from the same pick, so switching the glow off must not take the colouring with it.
 --
--- Class colouring is off throughout: it replaces the category tints outright, and these are the
--- tests that pin the category path. TestAlertsClassColors covers the other one.
+-- Class colouring is off throughout, since it replaces the category tints outright and these are
+-- the tests that pin the category path. TestAlertsClassColors covers the other one.
 fw.describe("Alerts 12.1 - the border and the glow", function()
 	local display = env.addon.Modules.Alerts.Display
 
@@ -527,7 +527,7 @@ fw.describe("Alerts 12.1 - the border and the glow", function()
 end)
 
 -- The live buttons take the same pair of switches. A button can only be styled when it is created,
--- so moving either has to rebuild the pooled pairs; the ring itself is drawn by the addon here,
+-- so moving either has to rebuild the pooled pairs. The ring itself is drawn by the addon here,
 -- because the engine only owns a border it was handed for dispel colouring.
 fw.describe("Alerts 12.1 - the border on the live bars", function()
 	local BORDER_ASSET = [[Interface\Buttons\UI-Debuff-Overlays]]
@@ -583,7 +583,7 @@ fw.describe("Alerts 12.1 - the border on the live bars", function()
 	end)
 
 	-- The ring art has rounded inner corners, so a square icon under it leaves its own corners
-	-- poking out past the ring. The glow already trimmed them; the border has to as well.
+	-- poking out past the ring. The glow already trimmed them. The border has to as well.
 	fw.it("trims the icon corners the way the glow does", function()
 		alerts.Icons.Glow = false
 		alerts.Icons.Border = true
@@ -619,8 +619,8 @@ end)
 -- baked into the buttons (size, style) may rebuild them: every rebuild abandons the prewarmed
 -- frame set for good, and frames can never be freed.
 fw.describe("Alerts 12.1 - what may rebuild the display pairs", function()
-	---The live Def container for a token: earlier rebuilds leave abandoned containers still
-	---tagged with the token, so the enabled one - always the current pair's - is the one asked.
+	---The live Def container for a token. Earlier rebuilds leave abandoned containers still tagged
+	---with the token, so the enabled one is asked, which is always the current pair's.
 	local function liveDefOf(token)
 		local found
 		for _, container in ipairs(env.containersForUnit(token)) do
@@ -688,8 +688,8 @@ fw.describe("Alerts 12.1 - what may rebuild the display pairs", function()
 
 	fw.it("an icon size change restyles the pairs instead of rebuilding them", function()
 		-- Buttons take their size when they are created, but a restyle can re-fit them wherever
-		-- the client allows one, and out of combat it does. Rebuilding abandons every prewarmed
-		-- pair for good, and a slider drag used to do that once per step.
+		-- the client allows one, and out of combat it does. Rebuilding would abandon every prewarmed
+		-- pair for good, once per step of a slider drag.
 		local before = env.auraContainerCount()
 		local oldSize = alerts.Icons.Size
 		local newSize = (oldSize or 24) + 2

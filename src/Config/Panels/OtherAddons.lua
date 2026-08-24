@@ -29,8 +29,8 @@ local ICON_BASE  = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Addons\\"
 
 local urlWindow
 
----Shows the small copy popup for a card's link: the box is focused with the link highlighted,
----so Ctrl+C is the only step left (WoW has no clipboard API to copy directly).
+---Shows the small copy popup for a card's link: the box is focused with the link highlighted, so
+---Ctrl+C is the only step left. WoW has no clipboard API to copy directly.
 local function ShowUrlPopup(name, url)
 	if not urlWindow then
 		local win = CreateFrame("Frame", addonName .. "AddonUrlWindow", UIParent, "BackdropTemplate")

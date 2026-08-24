@@ -2,21 +2,8 @@
 local _, addon = ...
 local artTextureData = addon.Core.ArtTextureData
 
--- The art a texture aura can draw, and the one place that paints it. One list: the proc overlays
--- the game itself flashes beside a unit, hand-picked in ArtTextureData.
---
--- Deliberately short. The client's wider effect library, its atlas art and a set drawn for this
--- were all tried and all looked wrong hung off a nameplate, so the list is the handful that read
--- well and the path field in the browser is how anyone reaches the rest.
---
--- Art is held as a FILE ID rather than a path. Ids outlive the paths that name them, and the
--- paths are only kept so the client can be asked at load whether it has each file - a build
--- without one drops it from the list instead of offering an empty square. Anything typed by hand
--- stays as typed: a path, or an atlas name for the art that only exists inside a shared sheet.
---
--- Rotation and mirroring are computed as texture coordinates rather than left to SetRotation,
--- because the two would fight: both write the same four corners, so a mirrored texture lost its
--- mirror the moment it was also turned.
+-- The art a texture aura can draw, and the one place that paints it: the proc overlays the game
+-- itself flashes beside a unit, hand-picked in ArtTextureData.
 
 -- Corner offsets from the middle of the texture, in the order SetTexCoord's eight-number form
 -- takes them: upper left, lower left, upper right, lower right. Y grows downwards.
@@ -55,6 +42,9 @@ addon.Core.ArtTextures = M
 
 ---Whether the client has a file, for builds that can answer. One that cannot leaves everything
 ---in the list: an empty picker is a worse answer than one with a few dead entries in it.
+---
+---Art is held as a file id, which outlives the path that names it. The path is kept only for this
+---check, and anything typed by hand stays as typed, a path or an atlas name.
 ---@param path string
 ---@return boolean
 local function Resolvable(path)
@@ -97,7 +87,7 @@ local function AtlasRect(name)
 end
 
 ---Whether a value names an atlas element rather than a file. Atlas names carry no folder and no
----extension, which is what tells the two apart - a hand-typed name works either way round.
+---extension, which is what tells the two apart. A hand-typed name works either way round.
 ---@param asset string|number
 ---@return boolean
 local function IsAtlasName(asset)
@@ -109,6 +99,8 @@ local function Build()
 	local client = {}
 	local index = {}
 
+	-- The list is short on purpose. The client's wider effect library and its atlas art both looked
+	-- wrong hung off a nameplate, so the picker's path field is how anyone reaches the rest.
 	for _, row in ipairs(artTextureData.Alerts) do
 		local entry = {
 			Asset = row[1],
@@ -130,8 +122,8 @@ local function Build()
 	end
 
 	-- A handful of survivors means the check is lying rather than the client being bare, so the
-	-- whole of its list stands. This is the shape of the bug that shipped once already: a list
-	-- that looked fine and came out four entries long on a real client, with nothing to say why.
+	-- whole of its list stands. A list that looks fine can come out four entries long on a real
+	-- client, with nothing to say why.
 	local trust = kept >= #client * MIN_RESOLVED_SHARE
 
 	for position, entry in ipairs(client) do
@@ -238,6 +230,9 @@ end
 
 ---The eight texture coordinates for a quad turned by an angle and optionally flipped. Pure maths
 ---and no frames, so the awkward part of this file is testable on its own.
+---
+---Computed as coordinates rather than left to SetRotation, because both write the same four
+---corners and a mirrored texture would lose its mirror the moment it was also turned.
 ---@param rotation number? Degrees, clockwise.
 ---@param mirror boolean? Flip left to right, applied before the turn.
 ---@return number[] coords The shared scratch, in SetTexCoord's UL, LL, UR, LR order.
@@ -248,8 +243,8 @@ function M:Coords(rotation, mirror)
 	local flip = mirror and -1 or 1
 	local out = coordScratch
 
-	-- Turned the opposite way to the corners, because moving where a corner SAMPLES from turns
-	-- the picture the other way: sampling further right draws what was on the right further left.
+	-- Turned the opposite way to the corners, because moving where a corner samples from turns the
+	-- picture the other way: sampling further right draws what was on the right further left.
 	for index, corner in ipairs(CORNERS) do
 		local x = corner[1] * flip
 		local y = corner[2]

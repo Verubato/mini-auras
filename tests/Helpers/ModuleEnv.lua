@@ -1,10 +1,5 @@
--- Builds a 12.1-mode environment for module lifecycle tests: real MiniFramework, Migrator
--- (providing the genuine default db), WoWEx (build 120100 so useAuraContainers is true at
--- module load), ModuleUtil, IconSlotContainer, and AuraContainerDisplay - with the WoW-side
--- and cross-module dependencies stubbed and controllable.
---
--- Call M.build() ONCE per test file, load the module under test with M.loadModule, then drive
--- it through the event frames (find them via aura_container_mock's frame registry).
+-- Builds a 12.1-mode environment for module lifecycle tests, with the WoW-side and cross-module
+-- dependencies stubbed and controllable. Call M.build() once per test file, then M.loadModule.
 
 local wow = require("WowApi")
 local acm = require("AuraContainerMock")
@@ -15,10 +10,10 @@ function M.build()
 	wow.setup()
 	acm.setup()
 	acm.reset()
+	-- 12.1, so useAuraContainers is true at module load.
 	wow.setBuildNumber(120100)
 
 	local env = {
-		-- Controllable unit classification sets.
 		enemies = {},
 		pets = {},
 		-- Critters and "minus" adds, which the nameplate module refuses to track.
@@ -26,8 +21,7 @@ function M.build()
 		-- NPC units. The alerts module tracks players only.
 		npcs = {},
 		healers = {},
-		-- Units outside the player's visible world (another instance or phase); caster filters
-		-- cannot work on these.
+		-- Units outside the player's visible world, so caster filters cannot work on them.
 		phased = {},
 		plates = {},
 		-- Group member tokens handed back by Units:FriendlyUnits(), i.e. the roster.
@@ -42,8 +36,8 @@ function M.build()
 		-- Whether the group counts as a raid, and what the test preview is pretending it is.
 		isRaid = false,
 		testIsRaid = nil,
-		-- Drives UnitAffectingCombat and InCombatLockdown; the combat events themselves are
-		-- fired by the tests.
+		-- Drives UnitAffectingCombat and InCombatLockdown. The combat events themselves are fired
+		-- by the tests.
 		inCombat = false,
 		-- Raid target index per unit, read when an interrupt lands.
 		raidTargets = {},
@@ -79,8 +73,6 @@ function M.build()
 		notifications = {},
 	}
 
-	-- Globals
-
 	_G.wipe = _G.wipe or function(t)
 		for k in pairs(t) do
 			t[k] = nil
@@ -94,7 +86,7 @@ function M.build()
 	_G.UnitAffectingCombat = function()
 		return env.inCombat == true
 	end
-	-- Raid markers: the index a unit carries, and the helper that paints one onto a texture.
+	-- The index a unit's raid marker carries, and the helper that paints one onto a texture.
 	_G.GetRaidTargetIndex = function(unit)
 		return env.raidTargets[unit]
 	end
@@ -107,7 +99,7 @@ function M.build()
 	_G.UnitNameFromGUID = function(guid)
 		return env.unitNames[guid]
 	end
-	-- Only the player is modelled: the class conditions on personal aura groups are about who the
+	-- Only the player is modelled. The class conditions on personal aura groups are about who the
 	-- user is playing, and nothing else in the addon asks a token for its base class.
 	_G.UnitClassBase = function(unit)
 		return unit == "player" and env.playerClass or nil
@@ -118,9 +110,9 @@ function M.build()
 
 		return class, class
 	end
-	-- The secret-safe way to a class colour: a function call takes a secret token, where indexing
-	-- RAID_CLASS_COLORS with one would throw. The colour object it hands back is an ordinary
-	-- table whose components are secret, so they can be given to a setter but never read.
+	-- A function call takes a secret token, where indexing RAID_CLASS_COLORS with one would throw.
+	-- The colour object it hands back is an ordinary table whose components are secret, so they can
+	-- be given to a setter but never read.
 	_G.C_ClassColor = {
 		GetClassColor = function(token)
 			if issecretvalue(token) then
@@ -133,8 +125,8 @@ function M.build()
 	_G.IsInInstance = function()
 		return env.inInstance, env.instanceType
 	end
-	-- Only the fifth return is modelled: how many players a side of this place holds, which is
-	-- what the prewarm targets read. Zero means the client has no number, as outdoors.
+	-- Only the fifth return is modelled, the player count a side of this place holds, which is what
+	-- the prewarm targets read. Zero means the client has no number, as outdoors.
 	_G.GetInstanceInfo = function()
 		return "Test Zone", env.instanceType, 0, "", env.maxPlayers or 0, 0, false, 0, 0, 0
 	end
@@ -142,18 +134,18 @@ function M.build()
 		return env.isRaid == true
 	end
 	_G.UnitExists = function(unit)
-		-- Every unit a test names exists, except the vehicle: that token is only there while the
+		-- Every unit a test names exists, except the vehicle. That token is only there while the
 		-- player is actually in one, and the display wrapper reads it as exactly that.
 		return unit ~= "vehicle" or env.inVehicle == true
 	end
 	-- A vehicle takes over the player unit, which changes what the engine will tell a container
-	-- tracking it; no test needs one by default.
+	-- tracking it. No test needs one by default.
 	_G.UnitHasVehicleUI = function(unit)
 		return unit == "player" and env.inVehicle == true
 	end
 	_G.PlaySoundFile = function() end
 	_G.PlaySound = function() end
-	-- Duration objects are opaque handles; test mode builds them for its synthetic cooldowns.
+	-- Duration objects are opaque handles. Test mode builds them for its synthetic cooldowns.
 	_G.C_DurationUtil = {
 		CreateDuration = function()
 			return {
@@ -182,11 +174,11 @@ function M.build()
 	_G.UnitName = function(unit)
 		return unit
 	end
-	-- Gates the auras module's spell-id filter; false once a duel makes the unit hostile.
+	-- Gates the auras module's spell-id filter. False once a duel makes the unit hostile.
 	_G.UnitCanAssist = function(_, unit)
 		return env.enemies[unit] ~= true
 	end
-	-- No third-party addon is "installed": the unit frame modules probe for ElvUI/Cell/... here.
+	-- No third-party addon is installed here, which is what the unit frame modules probe for.
 	_G.C_AddOns = {
 		GetAddOnEnableState = function()
 			return 0
@@ -202,8 +194,8 @@ function M.build()
 	_G.C_Spell.GetSpellTexture = function(spellId)
 		return "tex:" .. tostring(spellId)
 	end
-	-- Names are how a cast whose spell ID arrived secret still gets identified; the test env
-	-- keeps them mechanical so a test can build the same string the tracker will look up.
+	-- Names are how a cast whose spell ID arrived secret still gets identified. The test env keeps
+	-- them mechanical so a test can build the same string the tracker will look up.
 	_G.C_Spell.GetSpellName = function(spellId)
 		return env.spellNames[spellId] or ("spell:" .. tostring(spellId))
 	end
@@ -241,8 +233,8 @@ function M.build()
 	_G.C_UnitAuras = _G.C_UnitAuras or {}
 	_G.C_UnitAuras.AddAuraSound = function(trigger, info)
 		env.auraSoundAdds = env.auraSoundAdds + 1
-		-- Copied field by field: callers reuse one scratch table across a registration loop, so
-		-- keeping the reference would leave every entry showing the last spell id.
+		-- Copied field by field, because callers reuse one scratch table across a registration loop,
+		-- so keeping the reference would leave every entry showing the last spell id.
 		env.auraSounds[env.auraSoundAdds] = {
 			Trigger = trigger,
 			Unit = info and info.unitToken,
@@ -256,7 +248,7 @@ function M.build()
 		env.auraSoundRemoves = env.auraSoundRemoves + 1
 		env.auraSounds[handle] = nil
 	end
-	-- Nothing the modules load asks LibStub for a library; answering nil keeps a stray call honest.
+	-- Nothing the modules load asks LibStub for a library. Answering nil keeps a stray call honest.
 	_G.LibStub = function()
 		return nil
 	end
@@ -264,8 +256,6 @@ function M.build()
 		return "enUS"
 	end
 	_G.MiniAurasDB = nil
-
-	-- Real core files
 
 	local addon = {
 		Utils = {},
@@ -279,22 +269,22 @@ function M.build()
 		}),
 	}
 	-- What MiniAuras.lua exposes for the nameplate prewarm. Off by default so tests see the
-	-- ordinary in-play behaviour; a test that wants the login path sets env.loadingScreenUp.
+	-- ordinary in-play behaviour. A test that wants the login path sets env.loadingScreenUp.
 	function addon:IsLoadingScreenUp()
 		return env.loadingScreenUp == true
 	end
-	-- The world is loaded by default, which is where the modules spend all their time; a test
+	-- The world is loaded by default, which is where the modules spend all their time. A test
 	-- covering the login path clears env.enteredWorld.
 	function addon:HasEnteredWorld()
 		return env.enteredWorld ~= false
 	end
-	-- Counts world loads; a test that wants a module to treat the next refresh as a fresh world
+	-- Counts world loads. A test that wants a module to treat the next refresh as a fresh world
 	-- bumps env.worldGeneration.
 	function addon:WorldGeneration()
 		return env.worldGeneration or 1
 	end
-	-- A world load as the modules now see it: the addon bumps its generation and refreshes every
-	-- module. No module registers PLAYER_ENTERING_WORLD for itself any more.
+	-- A world load bumps the addon's generation and refreshes every module. No module registers
+	-- PLAYER_ENTERING_WORLD for itself.
 	function env.loadWorld(...)
 		env.worldGeneration = (env.worldGeneration or 1) + 1
 
@@ -311,14 +301,14 @@ function M.build()
 	local addonFiles = require("AddonFiles")
 	addonFiles.load(addonFiles.framework, addon)
 	loadFile("src/Core/Profiles/ProfileManager.lua")
-	-- The real resolver: with no LibSharedMedia in the mock it falls back to the bundled files,
+	-- The real resolver. With no LibSharedMedia in the mock it falls back to the bundled files,
 	-- which is the path a client without a media addon takes anyway.
 	loadFile("src/Core/Audio/Sounds.lua")
 	loadFile("src/Core/Audio/AuraSounds.lua")
 	addonFiles.load(addonFiles.migrator, addon)
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
 
-	-- Capture warnings instead of printing them; a warning is a test failure signal, not noise.
+	-- Capture warnings instead of printing them. A warning is a test failure signal, not noise.
 	addon.Framework.Notify = function(_, message, ...)
 		env.notifications[#env.notifications + 1] = string.format(message, ...)
 	end
@@ -328,8 +318,8 @@ function M.build()
 	loadFile("src/Utils/WoWEx.lua")
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
-	-- Stubbed, not loaded: every drop now opens the editor, and the real one builds GUI widgets
-	-- this env does not load. What it does with a drop is covered in TestPositionEditor.
+	-- Stubbed, because the real one builds GUI widgets this env does not load. What it does with
+	-- a drop is covered in TestPositionEditor.
 	addon.Core.PositionEditor = {
 		Open = function() end,
 		OpenOrRefresh = function() end,
@@ -341,26 +331,24 @@ function M.build()
 		end,
 	}
 	loadFile("src/Utils/SlotDistribution.lua")
-	-- The real thing rather than a stub: it reads one saved variable and hands back four numbers,
+	-- The real thing rather than a stub. It reads one saved variable and hands back four numbers,
 	-- and the displays crop every icon they build through it.
 	loadFile("src/Utils/IconUtil.lua")
 	loadFile("src/Core/Auras/AuraCategoryIds.lua")
 	-- Reads the curated category lists above, and expands a tracked id to the variants sharing
 	-- its name. Modules with user-authored spell lists index it directly.
 	loadFile("src/Core/Auras/SpellSearch.lua")
-	-- The baked TTS clip map and the pack list that reads it: the alert sound registrations index
-	-- both directly, so an env without them can only exercise the announcements while they are off.
+	-- The alert sound registrations index the baked TTS clip map and its pack list directly, so an
+	-- env without them can only exercise the announcements while they are off.
 	loadFile("src/Core/Auras/AuraTtsSounds.lua")
 	loadFile("src/Core/Audio/TtsPacks.lua")
 	loadFile("src/Core/Audio/TtsMutes.lua")
-
-	-- Cross-module stubs
 
 	addon.Utils.FontUtil = {
 		UpdateCooldownFontSize = function() end,
 		UpdateStackFontSize = function() end,
 		UpdateFontSize = function() end,
-		-- No font option in this env, so Apply is the unpicked path: the string keeps or is
+		-- No font option in this env, so Apply is the unpicked path, and the string keeps or is
 		-- handed the face it stands in for, sized as asked.
 		CurrentFace = function()
 			return nil
@@ -404,7 +392,7 @@ function M.build()
 		IsCompoundUnit = function()
 			return false
 		end,
-		-- Every unit a test names is there, except the ones it says are not: the modules skip a
+		-- Every unit a test names is there, except the ones it says are not. The modules skip a
 		-- frame whose token nobody is on, which is most of a solo player's raid frames.
 		Exists = function(_, unit)
 			return env.missingUnits[unit] ~= true
@@ -436,8 +424,8 @@ function M.build()
 			return list
 		end,
 	}
-	-- Modelled rather than stubbed flat: the test preview override decides both which option set
-	-- a module reads and, through the enable gate, whether it may draw at all.
+	-- Modelled rather than stubbed flat, because the test preview override decides both which
+	-- option set a module reads and, through the enable gate, whether it may draw at all.
 	addon.Core.InstanceOptions = {
 		IsRaid = function()
 			if env.testIsRaid ~= nil then
@@ -462,10 +450,9 @@ function M.build()
 		ShowHideDisplay = function(_, display)
 			display:Show()
 		end,
-		-- The stand-in frames are kept out of the anchor list unless they are asked for, exactly
-		-- as the real helper keeps them out of GetAll. visibleOnly is honoured for the same
-		-- reason the real one honours it: a frame addon parking its frames is how anchors go
-		-- stale, and a stub that hands them back regardless would hide that.
+		-- The stand-in frames are kept out of the anchor list unless they are asked for, as the real
+		-- helper keeps them out of GetAll. visibleOnly is honoured because a frame addon parking its
+		-- frames is how anchors go stale, and a stub ignoring it would hide that.
 		GetAll = function(_, visibleOnly, includeTestFrames)
 			local list = {}
 
@@ -485,8 +472,7 @@ function M.build()
 
 			return list
 		end,
-		-- Walks the same list GetAll hands back; the real one owns its buffer, this one does not
-		-- need to.
+		-- Walks the same list GetAll hands back.
 		ForEachAnchor = function(self, visibleOnly, includeTestFrames, fn, arg)
 			for _, anchor in ipairs(self:GetAll(visibleOnly, includeTestFrames)) do
 				fn(anchor, arg)
@@ -524,7 +510,7 @@ function M.build()
 		GetTestArenaFrames = function()
 			return env.testArenaFrames
 		end,
-		-- Recorded rather than acted on: the tests care that the module asked, and which side of
+		-- Recorded rather than acted on. The tests care that the module asked, and which side of
 		-- the test-mode/preview split did the asking.
 		SetTestFramesShown = function(_, shown)
 			env.testFramesShown = shown
@@ -541,19 +527,19 @@ function M.build()
 		HookCellSpotlightVisibility = function() end,
 		HookNDuiVisibility = function() end,
 		HookUUFPinnedVisibility = function() end,
-		-- Mirrors the real helper's surface. The CUF/FrameSort/Danders globals do not exist in
-		-- this environment, so it only records the callbacks for tests that want to fire them.
+		-- Mirrors the real helper's surface. The frame addon globals it hooks do not exist here, so
+		-- it only records the callbacks for tests that want to fire them.
 		InstallUnitFrameHooks = function(_, _, hooks)
 			env.unitFrameHooks = hooks
 		end,
 	}
-	-- The real arena frame lookup, loaded onto the stub: it only reads globals, so a test can
-	-- exercise the addon priority order by installing them.
+	-- The real arena frame lookup, loaded onto the stub, because it only reads globals and a test
+	-- can exercise the priority order by installing them.
 	loadFile("src/Core/Frames/ArenaFrames.lua")
 	-- Same again for the Blizzard party and raid frame lookup, which the frame aura rows collect
 	-- their anchors through. A test installs CompactPartyFrameMember1 and the rest as globals.
 	loadFile("src/Core/Frames/Blizzard.lua")
-	-- Kick tracking is recorded rather than simulated: modules that re-target a container to a
+	-- Kick tracking is recorded rather than simulated. Modules that re-target a container to a
 	-- different unit have to move their kick subscription with it, and nothing else would show
 	-- that they forgot.
 	env.kickCalls = {}
@@ -603,8 +589,8 @@ function M.build()
 	env.fireKick = function(unit)
 		local live, count = {}, 0
 
-		-- Snapshot first: a callback is free to subscribe, and adding to a table being walked is
-		-- undefined.
+		-- Snapshot first, because a callback is free to subscribe, and adding to a table being
+		-- walked is undefined.
 		for key, sub in pairs(env.kickSubs) do
 			live[key] = sub
 		end
@@ -641,7 +627,7 @@ function M.build()
 		return count
 	end
 	-- What the client reports once the gates are open, which is a different list from the prep
-	-- specs above: the alerts module picks its token source from whichever answers.
+	-- specs above. The alerts module picks its token source from whichever answers.
 	env.arenaOpponents = 0
 	_G.GetNumArenaOpponents = function()
 		return env.arenaOpponents
@@ -651,7 +637,7 @@ function M.build()
 			return env.arenaSpecs[unit]
 		end,
 	}
-	-- Spec id -> class token, which is how an arena opponent's class is worked out: the unit's own
+	-- Spec id -> class token, which is how an arena opponent's class is worked out. The unit's own
 	-- class is secret in there, and a spec belongs to exactly one class. Only the specs a test
 	-- names are known, so an unmapped one models the client refusing to say.
 	env.specClasses = {}
@@ -697,7 +683,7 @@ function M.build()
 		loadFile(path)
 	end
 
-	---The enable gate reads a world-state snapshot; the real client marks it stale from the
+	---The enable gate reads a world-state snapshot. The real client marks it stale from the
 	---zone/roster events, so a test that flips env.inInstance/instanceType/isRaid must do the same.
 	env.invalidateWorldState = function()
 		addon.Utils.ModuleUtil:InvalidateWorldState()
@@ -705,14 +691,12 @@ function M.build()
 
 	---Registers a mock nameplate frame for a unit token and returns it.
 	---
-	---Frames come from a pool the way the client's do, so a token that comes back lands on
-	---whichever plate happens to be free rather than the one it had before. Code that keys
-	---anything on the plate has to be exercised against that: a fresh frame per add would hide
-	---both the reuse it depends on and the arbitrary pairing it has to tolerate.
+	---Frames come from a pool the way the client's do, so a token that comes back lands on whichever
+	---plate happens to be free rather than the one it had before.
 	local platePool = {}
 	env.addPlate = function(token)
-		-- A token that already has a plate keeps it: re-adds are routine (RebuildContainers
-		-- replays every live plate) and the client does not move one mid-life.
+		-- A token that already has a plate keeps it. Re-adds are routine, since RebuildContainers
+		-- replays every live plate, and the client does not move one mid-life.
 		if env.plates[token] then
 			return env.plates[token]
 		end
@@ -740,9 +724,9 @@ function M.build()
 		return plate
 	end
 
-	---Switches a module on or off for EVERY context. Setting `Always` alone is not enough - the
-	---per-context flags (World, Arena, ...) still enable a module on their own, so a test that
-	---only clears `Always` is testing an enabled module.
+	---Switches a module on or off for every context. The per-context flags (World, Arena, ...)
+	---still enable a module on their own, so a test that only clears `Always` is testing an
+	---enabled module.
 	---@param moduleKey string db.Modules key, e.g. "CrowdControl".
 	---@param enabled boolean
 	env.setModuleEnabled = function(moduleKey, enabled)
@@ -763,8 +747,8 @@ function M.build()
 		return frame
 	end
 
-	-- The three party and three arena stand-ins the addon builds at load. Kept out of unitFrames:
-	-- the real ones are not in GetAll's normal list either.
+	-- The three party and three arena stand-ins the addon builds at load. Kept out of unitFrames,
+	-- since the real ones are not in GetAll's normal list either.
 	for index = 1, 3 do
 		local party = acm.NewFrame("Frame", "TestFrame" .. index)
 		party.unit = "party" .. index
@@ -778,7 +762,7 @@ function M.build()
 		env.testArenaFrames[index] = arena
 	end
 
-	---Total AuraContainers ever created. Pooled modules must not grow this on plate churn - a
+	---Total AuraContainers ever created. Pooled modules must not grow this on plate churn. A
 	---display that leaks out of its pool shows up as an extra container here.
 	env.auraContainerCount = function()
 		local count = 0

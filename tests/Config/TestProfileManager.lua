@@ -1,6 +1,6 @@
--- Tests for Core/Profiles/ProfileManager.lua against the REAL MiniFramework + Migrator (genuine
+-- Tests for Core/Profiles/ProfileManager.lua against the real MiniFramework + Migrator (genuine
 -- default db and merge semantics). The profile system's core contracts:
---   * switching swaps payload values while PRESERVING table identities (config-UI closures
+--   * switching swaps payload values while preserving table identities (config-UI closures
 --     capture nested tables at Build time and must stay valid),
 --   * profile data survives Migrator soft resets (opaque-cache round-trip),
 --   * every payload key is healable from dbDefaults (FillDefaults),
@@ -12,8 +12,6 @@ wow.setup()
 local acm = require("AuraContainerMock")
 acm.setup()
 acm.reset()
-
--- Environment
 
 local inCombat = false
 _G.InCombatLockdown = function()
@@ -32,8 +30,8 @@ end
 _G.GetSpecializationInfo = function()
 	return currentSpecId
 end
--- 12.1 reads the spec off C_SpecializationInfo, so point it at the same stubs; WoWEx prefers
--- it and falls back to the globals above on the classic clients.
+-- 12.1 reads the spec off C_SpecializationInfo, so point it at the same stubs. WoWEx prefers it
+-- and falls back to the globals above on the classic clients.
 _G.C_SpecializationInfo = {
 	GetSpecialization = _G.GetSpecialization,
 	GetSpecializationInfo = _G.GetSpecializationInfo,
@@ -140,7 +138,7 @@ fw.describe("ProfileManager - switching", function()
 		assert(db.Modules == modulesRef, "db.Modules identity preserved")
 		assert(db.Modules.CrowdControl.Default.Icons == iconsRef, "nested table identity preserved")
 
-		-- Switching saved the divergent state into Default; switching back restores it.
+		-- Switching saved the divergent state into Default. Switching back restores it.
 		profileManager:SwitchProfile("Default")
 		assert(db.FontScale == 1.4 and iconsRef.Size == 48, "Default kept the divergent values")
 		assert(db.Modules == modulesRef and db.Modules.CrowdControl.Default.Icons == iconsRef, "identities stable across both switches")
@@ -229,9 +227,9 @@ fw.describe("ProfileManager - lifecycle operations", function()
 	end)
 
 	fw.it("deleting the ACTIVE profile heals keys the survivor's snapshot predates", function()
-		-- The survivor simulates a profile saved by an older addon version; named to sort
+		-- The survivor simulates a profile saved by an older addon version, named to sort
 		-- first so the delete switchover lands on it. The profile-changed callbacks refresh
-		-- the open config panels, so the heal has to happen on this path too - a hole in the
+		-- the open config panels, so the heal has to happen on this path too. A hole in the
 		-- payload is a nil-index in the first colour swatch a panel rebinds.
 		profileManager:CreateProfile("AOld", nil)
 		db.Profiles.AOld.FadeWithParent = nil

@@ -2,18 +2,8 @@
 local addonName, addon = ...
 local auraCategoryIds = addon.Core.AuraCategoryIds
 
--- Every spell id the picker can offer, indexed by name so it can be searched on.
--- Deduped by NAME: the generated data carries every id variant of an ability, and four identical
--- rows help nobody. GetVariants hands the dropped ones back.
---
--- Two sources feed it. The curated category lists are the abilities MiniAuras knows something about,
--- and SpellNameIndex is a generated list of every aura id a player can reach, grouped by the ids
--- that share a name. The index is what bridges a cast id to the aura id it applies, which is the
--- only id a filter ever matches.
---
--- The generated groups carry no names: the client knows what it calls each id in its own language,
--- so GetNameIndex asks it and keys the groups on the answer. Everything below therefore works in
--- whatever language the player is running.
+-- Every spell id the picker can offer, indexed by name so it can be searched on. Deduped by name,
+-- since four identical rows help nobody, and GetVariants hands the dropped ones back.
 
 local MAX_RESULTS = 12
 local EMPTY = {}
@@ -29,10 +19,10 @@ local EXTRA_IDS = {
 	[342247] = true, -- Alter Time
 	[414659] = true, -- Ice Cold
 }
--- Built on first use: naming ~1,200 spells is pointless if the picker is never opened.
+-- Built on first use, because naming ~1,200 spells is pointless if the picker is never opened.
 ---@type SpellSearchEntry[]?
 local entries
--- Whether the generated half is in as well; see BuildSearchIndex.
+-- Whether the generated half is in as well. See BuildSearchIndex.
 local searchIndexBuilt = false
 -- Lowercased name -> the ids that share it, so an added id can be expanded to its variants.
 ---@type table<string, number[]>
@@ -52,9 +42,9 @@ local pendingGroups
 -- The same for curated ids, which the client can be just as slow to load.
 ---@type number[]?
 local pendingIds
--- When the pending sets last got a retry. One pass per frame at most: GetVariants runs per
--- tracked spell per refresh, and an id this build has dropped would otherwise be re-asked on
--- every one of those calls forever.
+-- When the pending sets last got a retry. One pass per frame at most, because GetVariants runs per
+-- tracked spell per refresh and an id this build has dropped would otherwise be re-asked on every
+-- one of those calls forever.
 local lastRetryTime
 -- Index names already split out of their stored string, and the union GetVariants last handed
 -- back for an id. Both are pure caches of work that never changes within a session.
@@ -84,11 +74,10 @@ local function CollectKeys(ids, out)
 end
 
 ---Whether the client could still come to name this id. Spell data loads lazily, so an id that
----answers nothing right now may answer later - but one this build has dropped never will, and the
----saved cache stays shut for as long as one of those is waiting; see StoreVariants.
----
----Without the question, everything waits: a group held back costs one session's cache, while one
----discarded in error costs an aura that never matches.
+---answers nothing right now may answer later, while one this build has dropped never will.
+---The saved cache stays shut for as long as one of those is waiting. See StoreVariants.
+---A group held back costs one session's cache, while one discarded in error costs an aura that
+---never matches.
 ---@param spellId number
 ---@return boolean
 local function MayYetName(spellId)
@@ -120,8 +109,8 @@ end
 ---@param raw string
 ---@return string?
 local function ResolveGroup(raw)
-	-- Every id in a group answers with the same name, so the first the client knows is enough.
-	-- Walked rather than assumed, because a group can lead with an id this build has dropped.
+	-- Every id in a group answers with the same name, so the first the client knows is enough. The
+	-- whole group is walked, because it can lead with an id this build has dropped.
 	for id in raw:gmatch("%d+") do
 		local name = C_Spell.GetSpellName(tonumber(id))
 
@@ -140,7 +129,7 @@ local function AddGroup(name, raw)
 
 	if existing then
 		-- Two names that are distinct in English can collide in another language, so the groups
-		-- merge rather than the second replacing the first.
+		-- merge.
 		nameIndex[name] = existing .. " " .. raw
 		-- The merge changes the id list, so a split already taken from it is out of date.
 		indexVariants[name] = nil
@@ -249,8 +238,8 @@ local function AddCuratedId(spellId)
 	}
 
 	idsByName[lower] = { spellId }
-	-- Only the curated entries, matching what GetEntry could ever reach: the generated names
-	-- never land in nameById, so no id resolves to one.
+	-- Only the curated entries, matching what GetEntry could ever reach. The generated names never
+	-- land in nameById, so no id resolves to one.
 	entryByName[lower] = entry
 
 	return true, entry
@@ -285,8 +274,8 @@ local function InsertCurated(entry)
 	local at = LowerBound(entry.Lower)
 	local existing = entries[at]
 
-	-- A generated row under that name only exists because the curated id was unnamed when the
-	-- list was built; the curated pass runs first, so it takes the row over.
+	-- A generated row under that name only exists because the curated id was unnamed when the list
+	-- was built. The curated pass runs first, so it takes the row over.
 	if existing and existing.Lower == entry.Lower then
 		entries[at] = entry
 	else
@@ -300,10 +289,10 @@ end
 ---@return string
 local function CacheStamp()
 	-- The addon's version stands in for the curated lists, which feed the same expansion and ship
-	-- with the addon: a release that adds an id to one without regenerating the index above would
+	-- with the addon. A release that adds an id to one without regenerating the index above would
 	-- otherwise leave every stored answer a version behind.
 	local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version")
-	-- The client build too: an answer is only ever as wide as the ids this client knows, and a
+	-- The client build too. An answer is only ever as wide as the ids this client knows, and a
 	-- patch that brings a dropped one back widens the name it lands on with nothing in the addon
 	-- changing to say so.
 	local build = GetBuildInfo and select(2, GetBuildInfo())
@@ -312,9 +301,9 @@ local function CacheStamp()
 		.. (build or "?") .. ":" .. GetLocale()
 end
 
----The saved cache, wiped when it was built from other data than this one carries. Created on
----first use rather than at load: the client restores a saved variable before the addon's own
----ADDON_LOADED, and nothing asks for an expansion before that.
+---The saved cache, wiped when it was built from other data than this one carries. Created on first
+---use, since the client restores a saved variable before the addon's own ADDON_LOADED and nothing
+---asks for an expansion before that.
 ---@return table<number, number[]>
 local function VariantStore()
 	local store = _G.MiniAurasSpellCache
@@ -343,11 +332,11 @@ local function StoredVariants(spellId)
 	return VariantStore()[spellId]
 end
 
----Keeps an expansion for the next session. Only once the client has answered for everything this
----could have covered: an id whose data has not loaded yet expands to itself alone, and an answer
----built while anything is still pending is short by whatever arrives next. Stored, that would
----outlive the retry that fixes it - the store is read before the retry ever runs - and be wrong
----for good rather than for the seconds it takes the client to catch up.
+---Keeps an expansion for the next session, only once the client has answered for everything this
+---could have covered. An id whose data has not loaded yet expands to itself alone, so an answer
+---built while anything is still pending is short by whatever arrives next.
+---Stored, that would outlive the retry that fixes it, because the store is read before the retry
+---ever runs.
 ---@param spellId number
 ---@param variants number[]
 local function StoreVariants(spellId, variants)
@@ -446,7 +435,7 @@ local function RetryPending()
 
 	lastRetryTime = now
 
-	-- Curated first, as at build time: a name a curated id claims is one the generated pass skips.
+	-- Curated first, as at build time. A name a curated id claims is one the generated pass skips.
 	local resolved = pendingIds and RetryPendingIds()
 
 	if pendingGroups and RetryPendingGroups() then
@@ -456,8 +445,8 @@ local function RetryPending()
 	if resolved then
 		-- A late id widens the name it landed on, so every expansion taken from the old one has
 		-- to be worked out again.
-		-- Which is also what reopens the store: an answer refused while this id was pending is no
-		-- longer in hand, so the call that wants it next works it out again and keeps it.
+		-- This also reopens the store. An answer refused while this id was pending is no longer in
+		-- hand, so the call that wants it next works it out again and keeps it.
 		wipe(variantCache)
 	end
 end
@@ -511,7 +500,7 @@ local function BuildCuratedIndex()
 end
 
 ---The other half: a row for every aura name a player can reach that the curated lists do not
----already carry. Thousands of them, so it is built only for the one thing that needs it - the
+---already carry. Thousands of them, so it is built only for the one thing that needs it, the
 ---search box in the options.
 local function BuildSearchIndex()
 	searchIndexBuilt = true
@@ -528,8 +517,8 @@ local function BuildSearchIndex()
 end
 
 ---Enough of the index to answer which ids share a spell's name, which is what an aura filter
----asks. Deliberately not the search list: a personal aura group with a spell in it would otherwise
----build every generated row at login for a list nobody is looking at.
+---asks. Not the search list, because a personal aura group with a spell in it would otherwise build
+---every generated row at login for a list nobody is looking at.
 local function EnsureVariants()
 	if entries then
 		RetryPending()
@@ -561,7 +550,7 @@ local function UnknownEntry(spellId)
 end
 
 ---The suggestions for a partially typed spell name or id, best match first.
----Returns a shared table that the next call refills; copy anything you need to keep.
+---Returns a shared table that the next call refills, so copy anything you need to keep.
 ---@param query string
 ---@param limit number?
 ---@return SpellSearchEntry[]
@@ -629,8 +618,8 @@ function M:GetEntry(spellId)
 	local entry = name and entryByName[name]
 
 	if entry then
-		-- The canonical entry carries a different id when the caller asked for a variant;
-		-- answer with the id they asked about so the row they see matches their list.
+		-- The canonical entry carries a different id when the caller asked for a variant. Answer
+		-- with the id they asked about so the row they see matches their list.
 		if entry.Id == spellId then
 			return entry
 		end
@@ -646,7 +635,7 @@ end
 ---@param spellId number
 ---@return number[]
 function M:GetVariants(spellId)
-	-- Only once something has been built: the retry is there to fold in ids the client could not
+	-- Only once something has been built. The retry is there to fold in ids the client could not
 	-- name yet, and nothing can be waiting on that while nothing has read the client at all.
 	if entries then
 		RetryPending()
@@ -658,8 +647,8 @@ function M:GetVariants(spellId)
 		return cached
 	end
 
-	-- Before anything is built: what a previous session worked out is the whole answer, and
-	-- reading it back is what keeps the naming pass below off the login path entirely.
+	-- Before anything is built, what a previous session worked out is the whole answer, and reading
+	-- it back is what keeps the naming pass below off the login path entirely.
 	local stored = StoredVariants(spellId)
 
 	if stored then
@@ -674,7 +663,7 @@ function M:GetVariants(spellId)
 	local curated = name and idsByName[name]
 	local scanned = IndexVariants(spellId)
 
-	-- The common case by far: nothing to merge, so hand back the list already built.
+	-- The common case by far. Nothing to merge, so hand back the list already built.
 	if curated and not scanned then
 		variantCache[spellId] = curated
 		StoreVariants(spellId, curated)

@@ -2,15 +2,11 @@
 local _, addon = ...
 local masque = LibStub and LibStub("Masque", true)
 
--- Masque skinning for 12.1 AuraButtons. Split out of AuraContainerDisplay because none of it is
--- about showing an aura: it is entirely about surviving a third-party library on frames the engine
--- owns and the addon is only borrowing.
---
--- Everything here takes the display instance explicitly rather than living on it, so the display
--- keeps one field (MasqueGroup) and none of the guarding.
+-- Masque skinning for 12.1 AuraButtons, which live on frames the engine owns and the addon is only
+-- borrowing.
 
--- Group names whose skinning has already been reported as failed. Keyed rather than a single flag,
--- so one module giving up does not silence the report for every other one.
+-- Group names whose skinning has already been reported as failed. Keyed by name, so one module
+-- giving up does not silence the report for every other one.
 local warned = {}
 
 ---@class AuraMasque
@@ -21,12 +17,11 @@ addon.Core.AuraMasque = M
 local function NoOp() end
 
 ---Masque re-parents the icon it is handed to the button that icon already belongs to. The call
----changes nothing, but SetIcon has since put a ChangeParent restriction on the texture and the
----refusal takes down whatever created the button - which is the engine, mid-batch. A field on
----the texture shadows the method for anything calling it from Lua, which is only ever Masque:
----the engine reaches the texture from the other side. Wrapping the texture instead would not
----work, because Masque also hands the icon to SetPoint as the anchor for the regions it builds
----around it, and only a real texture can be one.
+---changes nothing, but SetIcon has put a ChangeParent restriction on the texture, and the refusal
+---takes down the engine mid-batch.
+---A field on the texture shadows the method for anything calling it from Lua, which is only ever
+---Masque. The engine reaches the texture from the other side. A wrapper cannot stand in, because
+---Masque also hands the icon to SetPoint as the anchor for the regions it builds around it.
 ---@param texture table
 local function BlockIconReparent(texture)
 	texture.SetParent = NoOp
@@ -76,8 +71,8 @@ function M:ResolveGroup(instance, groupName)
 		return nil
 	end
 
-	-- A skin owns the icon's crop, its mask and the border art, so displays that bring their own
-	-- (the round portrait icons) or that are not icons at all stay off the skinning path.
+	-- A skin owns the icon's crop, its mask and the border art, so displays that bring their own or
+	-- that are not icons at all stay off the skinning path.
 	if instance.Bar or instance.Label or instance.Texture or instance.IconMask then
 		return nil
 	end
@@ -99,8 +94,8 @@ function M:RegisterButton(instance, button, widgets)
 		return
 	end
 
-	-- Reported rather than passed over: the icons come out unskinned either way, and which of the
-	-- two reasons it was matters when working out why.
+	-- The icons come out unskinned either way, and which of the two reasons it was matters when
+	-- working out why.
 	if not CanReadButtonSize(button) then
 		local width = button:GetWidth()
 
@@ -111,9 +106,9 @@ function M:RegisterButton(instance, button, widgets)
 
 	BlockIconReparent(widgets.Icon)
 
-	-- Strict, so only the regions listed here are skinned rather than whatever Masque can find by
-	-- probing the button for names an engine-created one cannot have. Normal is deliberately
-	-- absent: with no entry Masque builds and owns the skin's border texture, which leaves the
+	-- Strict, so only the regions listed here are skinned. Masque otherwise probes the button for
+	-- region names an engine-created one cannot have.
+	-- Normal is left out so Masque builds and owns the skin's border texture, which leaves the
 	-- dispel-coloured ring registered with the engine untouched.
 	if not Guard(instance, pcall(group.AddButton, group, button, {
 		Icon = widgets.Icon,

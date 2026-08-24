@@ -9,10 +9,10 @@ local ui = addon.Config.PersonalAurasUI
 local SLIDER_HEADROOM = 34
 local SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 34
 -- The last slider row keeps the headroom its value boxes need but not the padding below, which
--- only exists to hold the next row off. Its own headroom is most of the space between two stacked
--- slider bars, so it forgoes the row gap as well: both together are what stopped the tab needing
--- a scrollbar once the text size slider arrived.
+-- only exists to hold the next row off. Losing that padding and the row gap is what stopped the
+-- tab needing a scrollbar.
 local LAST_SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 20
+-- Safe because that headroom is most of the space between two stacked slider bars.
 local LAST_SLIDER_ROW_GAP = 0
 local SLIDER_GAP = 45
 local SORT_OPTIONS = { "OLDEST", "LONGEST", "SHORTEST" }

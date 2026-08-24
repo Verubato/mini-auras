@@ -1,7 +1,7 @@
 -- What the raid frame aura display actually tracks. The helpful categories carry the same filter
 -- string and are told apart only by the spell ids reaching each group, so their toggles have to
--- pick those ids: the bug this guards is Show Important and Show Defensives acting as a single
--- on/off switch, leaving both categories on screen until the user cleared them BOTH.
+-- pick those ids. The bug this guards is Show Important and Show Defensives acting as a single
+-- on/off switch, leaving both categories on screen until the user cleared them both.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
@@ -234,7 +234,7 @@ fw.describe("ImportantAuras - anchors that are out of sight", function()
 end)
 
 fw.describe("ImportantAuras - groups declared after the display", function()
-	-- A display is created with none of its groups; the background walker declares them a group
+	-- A display is created with none of its groups. The background walker declares them a group
 	-- per turn, so a roster turning up does not build them all in one frame. The filters a
 	-- display was built with can be well out of date by then.
 	fw.it("declares a group with the tracked set current at that moment", function()
@@ -284,8 +284,8 @@ fw.describe("ImportantAuras - an anchor returning without a refresh", function()
 		spells.Custom[custom] = true
 		module:Refresh()
 
-		-- Back on screen through the hook alone - no Refresh follows. The env stub answers false to
-		-- IsFriendlyCuf for everything, so the hook is told this frame is one for the duration.
+		-- Back on screen through the hook alone, with no Refresh following. The env stub answers
+		-- false to IsFriendlyCuf for everything, so the hook is told this frame is one throughout.
 		local display = env.addon.Modules.ImportantAuras.Display
 		local frames = env.addon.Core.Frames
 		local realIsFriendlyCuf = frames.IsFriendlyCuf

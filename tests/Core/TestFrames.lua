@@ -1,7 +1,7 @@
--- Frames:GetAll's reuse contract. Its callers hand it a long-lived scratch table instead of
--- taking a fresh one, so the two properties that keeps them correct - the table handed back IS the
--- one passed in, and it is wiped rather than appended to - have to hold. A caller that held the
--- result across two calls, or a provider that stopped wiping, would otherwise pass the whole suite.
+-- Frames:GetAll's reuse contract. Its callers hand it a long-lived scratch table, so two
+-- properties have to hold: the table handed back is the one passed in, and it is wiped rather
+-- than appended to. A caller that held the result across two calls, or a provider that stopped
+-- wiping, would otherwise pass the whole suite.
 
 local fw = require("Framework")
 local wow = require("WowApi")

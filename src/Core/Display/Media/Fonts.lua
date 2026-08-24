@@ -2,15 +2,7 @@
 local _, addon = ...
 
 -- The font face every module's text is drawn in. LibSharedMedia owns the list: its own faces plus
--- everything other addons have registered with it, which is where people's preferred fonts live.
--- It also gates fonts by client locale - a face has to declare Korean, Russian or Chinese support
--- to be offered on those clients - so the list is already free of the faces that would draw the
--- game's own text as boxes.
---
--- Nothing is registered here and nothing is filtered out. The client's own faces arrive through
--- the library, and a name that resolves to nothing is left resolving to nothing on purpose: see
--- Resolve. Getting the resolved file onto the screen reliably is FontUtil's job, through shared
--- font objects rather than per-string SetFont.
+-- everything other addons have registered with it. FontUtil draws with what Resolve hands back.
 
 -- The preview rows are menu rows, so their text matches the menu's own size.
 local PREVIEW_FONT_SIZE = 13
@@ -67,9 +59,9 @@ local function EnsureMediaSubscription()
 	media.RegisterCallback(M, "LibSharedMedia_SetGlobal", queue)
 end
 
----Runs the change fan-out at the end of the frame, once however many times it is asked for in
----one. The media callbacks come through here, and so does FontUtil when a font file the client
----was still loading finally lands - the same consumers need the same catch-up either way.
+---Runs the change fan-out at the end of the frame, once however many times it is asked for in one.
+---The media callbacks come through here, and so does FontUtil when a font file the client was still
+---loading finally lands. The same consumers need the same catch-up either way.
 function M:QueueChanged()
 	queueNotify = queueNotify or addon.Utils.ModuleUtil:Coalesced(NotifyChanged)
 
@@ -78,6 +70,10 @@ end
 
 ---The font names to offer, sorted. Empty only if the library failed to load, which leaves the
 ---dropdown with the game's own font as its one entry.
+---
+---The library gates faces by client locale: a face has to declare Korean, Russian or Chinese
+---support to be offered on those clients, so the list carries no face that would draw the game's
+---own text as boxes.
 ---@return string[]
 function M:GetNames()
 	wipe(nameScratch)
@@ -85,9 +81,9 @@ function M:GetNames()
 	local media = SharedMedia()
 
 	if media then
-		-- Every registered name is offered. SetFont's answer is not a per-file verdict - it
-		-- answers false for a file it has merely not loaded yet - and believing one once hid
-		-- working fonts for the whole session, cutting the dropdown from fifty entries to four.
+		-- Every registered name is offered. SetFont's answer is not a per-file verdict, since it
+		-- answers false for a file it has merely not loaded yet, and believing one cut the dropdown
+		-- from fifty entries to four for the session.
 		for _, name in ipairs(media:List("font") or {}) do
 			if media:Fetch("font", name) then
 				nameScratch[#nameScratch + 1] = name

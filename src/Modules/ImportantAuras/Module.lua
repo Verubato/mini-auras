@@ -30,9 +30,9 @@ local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
 end)
 
----Hands the poller the units on screen right now. Re-seeded per refresh rather than tracked
----per frame: the frames retarget constantly (sorting, roster changes), and a baseline for a unit
----nobody is watching would fire a refresh for nothing.
+---Hands the poller the units on screen right now. Re-seeded per refresh rather than tracked per
+---frame, because the frames retarget constantly and a baseline for a unit nobody is watching would
+---fire a refresh for nothing.
 local function SeedStateBaselines()
 	if not stateSub then
 		return
@@ -104,11 +104,10 @@ local function Setup()
 	rosterGate = eventGate:New(eventsFrame,
 		{ "GROUP_ROSTER_UPDATE", "UNIT_FACTION", "LOADING_SCREEN_DISABLED" })
 
-	-- A duel flips a party member to hostile with no event of its own, and that decides whether
-	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
-	-- Registered for the module's lifetime; the predicate below gates it.
-	-- Per token, not a module refresh: the icon counts are all a flip moves, and only for the unit
-	-- that flipped. A raid riding out of range flips many at once, each now paying for itself.
+	-- A duel flips a party member to hostile with no event of its own, and that decides whether the
+	-- spell-id filter applies at all, so the budgets have to be recomputed when it happens.
+	-- Registered for the module's lifetime, with the predicate below gating it.
+	-- Per token rather than a module refresh, since the icon counts are all a flip moves.
 	stateSub = unitStatePoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.ImportantAuras)
 	end, function(unitToken)
@@ -137,8 +136,7 @@ local function Setup()
 	})
 end
 
--- Events stay unregistered while disabled; the addon-wide Refresh (config, world change, raid
--- flip) is what brings the module back.
+-- Events stay unregistered while disabled. The addon-wide Refresh is what brings the module back.
 local function OnEnable()
 	rosterGate:SetActive(true)
 end

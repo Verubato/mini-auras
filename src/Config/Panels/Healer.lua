@@ -161,7 +161,6 @@ function M:Build(panel, options)
 		SetValue = function(value)
 			options.Sound.Enabled = value
 			if value then
-				-- Play the sound when enabled
 				PlaySoundFile(sounds:Resolve(options.Sound.File), options.Sound.Channel or "Master")
 			end
 			config:Apply(moduleName.HealerCrowdControl)

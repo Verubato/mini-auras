@@ -20,10 +20,10 @@ function M:Build(panel)
 	-- A control filling a whole column overhangs the panel, because the second column starts a
 	-- gap in from the first. The gap comes off the width so the right column ends on the edge.
 	local controlWidth = columnWidth - horizontalSpacing
-	-- Shared 5-column checkbox grid so checkbox rows align across pages. The long labels on
-	-- this page sit two grid columns apart so they never overlap.
-	-- Four columns rather than five: the three icon toggles sit in consecutive columns, and a
-	-- fifth of the panel is too narrow for the longest translated label.
+	-- Four columns rather than the shared five-column checkbox grid, since the three icon toggles
+	-- sit in consecutive columns and a fifth of the panel is too narrow for the longest translated
+	-- label.
+	-- The long labels on this page sit two columns apart so they never overlap.
 	local checkColumnWidth = mini:ColumnWidth(4, 0, 0)
 
 	local intro = mini:TextBlock({
@@ -189,8 +189,8 @@ function M:Build(panel)
 		"Static Pixel Border",
 	}
 
-	-- Says so out loud because the animated styles were on offer for years; a profile that used
-	-- one comes back on the slot glow with no other sign of why.
+	-- Says so out loud because a profile that used an animated style comes back on the slot glow
+	-- with no other sign of why.
 	local glowNoteLines = {
 		L["Sorry folks, had to remove the animated glows as they were causing FPS issues."],
 	}
@@ -261,7 +261,7 @@ function M:Build(panel)
 		end,
 		-- Each row previews the font it names. Menu rows are pooled, so the stock face is
 		-- remembered the first time a row comes through here and put back on the rows that
-		-- preview nothing - the Game Default row, and any font that resolves to nothing.
+		-- preview nothing: the Game Default row, and any font that resolves to nothing.
 		DecorateItem = function(button, value)
 			local text = button.fontString
 

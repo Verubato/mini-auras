@@ -5,9 +5,8 @@ local L = addon.L
 local config = addon.Config
 local artTextures = addon.Core.ArtTextures
 
--- The texture browser, over the art in Core/Display/Media/ArtTextures: the addon's own shapes first,
--- then the game's proc art. The grid is virtual like the icon one, a page of cells re-pointed at
--- a slice of the list as it scrolls, with a search box narrowing which list that is.
+-- The texture browser, over the art in Core/Display/Media/ArtTextures: the addon's own shapes
+-- first, then the game's proc art. The grid is virtual like the icon one.
 --
 -- The path field below the grid is the way out of the list: anything the client has, including a
 -- file another addon ships, works by typing where it lives.
@@ -27,7 +26,7 @@ local WINDOW_PADDING = 16
 local WINDOW_WIDTH = GRID_WIDTH + SCROLLBAR_WIDTH + WINDOW_PADDING * 2
 local WINDOW_HEIGHT = GRID_HEIGHT + 190
 local BOX_WIDTH = 320
--- The art is drawn over a black background because that is what it was made for; a lit cell would
+-- The art is drawn over a black background because that is what it was made for. A lit cell would
 -- show every overlay as a grey box.
 local CELL_BACKGROUND = { 0.04, 0.04, 0.05 }
 

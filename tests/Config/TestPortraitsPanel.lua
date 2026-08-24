@@ -1,9 +1,7 @@
--- The portraits options page, driven the way the tab framework drives it.
---
--- The page is mostly checkboxes, but the unflagged buff list is built from a generated table and
--- has its own read/write path, with no other coverage: the smoke test never lays a page out, and
+-- The portraits options page, driven the way the tab framework drives it. The unflagged buff list
+-- is built from a generated table and has its own read/write path, with no other coverage, and
 -- luacheck cannot catch a nil global here because the addon's config suppresses undefined globals
--- so real WoW globals stay quiet. Same blind spot the personal auras page test exists to close.
+-- so real WoW globals stay quiet.
 
 local fw = require("Framework")
 local harness = require("AddonHarness")
@@ -141,7 +139,7 @@ end)
 ---@return table content
 local function ShowPage(addon)
 	-- The window and its pages are built on the first ask, which for a player is opening the
-	-- options; nothing exists to drive before that.
+	-- options. Nothing exists to drive before that.
 	addon.Config:EnsureWindow()
 
 	local content = addon.Config.TabController:GetContent("Portraits")
@@ -185,7 +183,7 @@ local function CheckboxFor(spellId, page)
 	return nil
 end
 
----Toggles a checkbox the way a user does; it flips whatever the source currently says.
+---Toggles a checkbox the way a user does, flipping whatever the source currently says.
 ---@param chk table
 local function Click(chk)
 	chk:GetScript("OnClick")(chk)
@@ -262,7 +260,7 @@ fw.describe("Portraits page - the unflagged buff list", function()
 
 	fw.it("names its rows when the page is opened, not when it is built", function()
 		-- The whole window is built at login, where the client can still be too early to name a
-		-- spell; a row named then would read as a bare id for the rest of the session.
+		-- spell. A row named then would read as a bare id for the rest of the session.
 		local addon = Load()
 		local page = ShowPage(addon)
 		local chk = CheckboxFor(FEINT, page)

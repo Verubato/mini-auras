@@ -1,23 +1,21 @@
 -- Generates the curated player-PvP spell lists for src/Core/AuraCategoryIds.lua from a
--- MiniAurasSpellScan saved variable (produced in game by scripts/ScanSpellFlags.lua - see its
--- header for the full pipeline).
+-- MiniAurasSpellScan saved variable, produced in game by scripts/ScanSpellFlags.lua, whose
+-- header has the full pipeline.
 --
 -- Usage (Lua 5.1, from the repo root):
 --   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniAuras.lua> report
 --     - shows match counts, curated names with no matches, and unmatched candidates to review
 --   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniAuras.lua> generate
---     - prints the table body; paste it into src/Core/AuraCategoryIds.lua between the braces
+--     - prints the table body, to paste into src/Core/AuraCategoryIds.lua between the braces
 --
--- Matching is by exact spell name WITHIN the flagged sets, so every spell-ID variant of a
--- named ability is captured, and generic names ("Fear", "Silence") are safe - everything in
--- the source data is already CC/Important-flagged by the game.
+-- Matching is by exact spell name within the flagged sets, so every spell-ID variant of a named
+-- ability is captured. Generic names ("Fear", "Silence") are safe, because everything in the
+-- source data is already CC/Important-flagged by the game.
 --
--- The names below must be the name of the AURA THAT LANDS, not the button that casts it or the
--- talent that modifies it. Those often differ, and a wrong name fails silently: the report only
--- lists names matching NOTHING, so a wrong name that happens to collide with unrelated spells
--- looks covered. That is exactly how the Shaman stun went missing for a whole expansion - the
--- list said "Static Charge" (the PvP talent) and dutifully matched six unrelated spells of that
--- name, while the real debuff, "Capacitor Totem" (118905), was never picked up.
+-- The names below must be the name of the aura that lands, not the button that casts it or the
+-- talent that modifies it. Those often differ, and a wrong name fails silently, because the
+-- report only lists names matching nothing, so one that collides with unrelated spells looks
+-- covered, the way the "Static Charge" talent did in place of the "Capacitor Totem" aura.
 local scanPath = arg[1]
 local mode = arg[2] or "report"
 dofile(scanPath)
@@ -63,7 +61,7 @@ local ccNames = {
 }
 
 -- Player important ability names (specials + offensive cooldowns). Matched against the
--- Important-flagged set; emitted as AuraCategoryIds.Important (the "important spell" sound).
+-- Important-flagged set, and emitted as AuraCategoryIds.Important, the "important spell" sound.
 local importantNames = {
 	-- Specials
 	["Precognition"] = true, ["Nullifying Shroud"] = true, ["Grounding Totem"] = true,
@@ -88,12 +86,12 @@ local importantNames = {
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
 	["Takedown"] = true, ["Peaceweaver"] = true, ["Spell Reflection"] = true,
 	["Blessing of Freedom"] = true, ["Divine Protection"] = true, 
-	-- Only the Spellwarding-talented id; see idCategory below.
+	-- Only the Spellwarding-talented id. See idCategory below.
 	["Anti-Magic Shell"] = true,
 }
 
--- Player defensive ability names (defensives + healer throughput cooldowns). Matched against
--- the Important-flagged set; emitted as AuraCategoryIds.Defensive (the "defensive spell" sound).
+-- Player defensive ability names (defensives + healer throughput cooldowns). Matched against the
+-- Important-flagged set, and emitted as AuraCategoryIds.Defensive, the "defensive spell" sound.
 local defensiveNames = {
 	-- Defensive cooldowns
 	["Ice Block"] = true, ["Ice Cold"] = true, ["Divine Shield"] = true,
@@ -117,9 +115,9 @@ local defensiveNames = {
 	["Divine Hymn"] = true,
 }
 
--- Abilities that change category with a talent do it by changing SPELL ID, not name, so name
--- matching alone puts every variant in both lists. Pin the individual ids here instead: an id
--- listed below is emitted only for the category named, and the ability's name goes in BOTH name
+-- Abilities that change category with a talent do it by changing spell id, not name, so name
+-- matching alone puts every variant in both lists. Pin the individual ids here instead. An id
+-- listed below is emitted only for the category named, and the ability's name goes in both name
 -- sets above so each variant is a candidate for the right one.
 local idCategory = {
 	-- Anti-Magic Shell: important when talented into Spellwarding, a plain defensive otherwise.
@@ -174,9 +172,9 @@ if mode == "report" then
 		end
 	end
 
-	-- Player-relevant important names present in the scan that we did NOT match, to spot
-	-- anything missing from the curated lists. Keep the cutoff at or above ScanSpellFlags'
-	-- MAX_ID - a lower cutoff hid the Midnight-era spell IDs (>1.2M, e.g. Zenith) entirely.
+	-- Player-relevant important names present in the scan that we did not match, to spot anything
+	-- missing from the curated lists. Keep the cutoff at or above ScanSpellFlags' MAX_ID, because
+	-- a lower cutoff hides the Midnight-era spell IDs (>1.2M, e.g. Zenith) entirely.
 	print("\nUnmatched Important names (candidates to add):")
 	local seen = {}
 	for id, name in pairs(MiniAurasSpellScan.Important) do

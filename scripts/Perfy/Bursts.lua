@@ -1,8 +1,7 @@
 -- Finds the most expensive uninterrupted runs of work in a Perfy trace, and per-function
 -- worst-case cost per call. Perfy's own frame breakdown needs several instrumented addons to
--- bracket each frame; with only MiniAuras traced nearly every frame holds just its marker, so
--- a burst here is instead one top-level call: everything between an Enter on an empty stack
--- and the matching Leave, which is work the client cannot break across frames.
+-- bracket a frame, so a burst here is one top-level call instead, from an Enter on an empty
+-- stack to the matching Leave, which is work the client cannot break across frames.
 
 local analyzerDir, traceFile = arg[1], arg[2]
 if not analyzerDir or not traceFile then
@@ -28,8 +27,8 @@ local trace = export.Trace
 print(("%d trace entries covering %.1f seconds"):format(#trace, trace[#trace][1] - trace[1][1]))
 
 -- Every trace call costs time and memory itself. Running totals let any span subtract the
--- overhead of the calls inside it. A span owns the overhead of its own Enter (that happens
--- after the timestamp was taken) but not that of its Leave.
+-- overhead of the calls inside it. A span owns the overhead of its own Enter, which happens
+-- after the timestamp was taken, but not that of its Leave.
 local cumTime, cumMem = {}, {}
 local timeSum, memSum = 0, 0
 for i = 1, #trace do

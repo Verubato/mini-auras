@@ -2,20 +2,8 @@
 local _, addon = ...
 local sweep = addon.Core.Sweep
 
--- Generic object pool with staggered pre-creation. Nothing here knows about auras or frames -
--- an "item" is whatever createFn returns (a single display, a bundle of displays, a table of
--- widgets), and resetFn parks one for reuse.
---
--- Pre-creation is staggered through the shared background walker so login doesn't hitch, and the
--- expensive objects this pool exists for (12.1 AuraContainers) are therefore never built
--- mid-combat in practice. One walker for the whole addon means the pools take turns rather than
--- every module filling at once.
--- Acquire falls back to on-demand creation if demand outruns the pool, at the cost of a frame
--- spike, rather than failing.
---
--- Pre-creation does NOT start on its own: modules Init unconditionally, so a pool that filled
--- itself would build a screen's worth of objects for a module the user has switched off. Call
--- Prewarm from the module's enable path instead (it is idempotent and cheap to repeat).
+-- Generic object pool with staggered pre-creation. Nothing here knows about auras or frames: an
+-- item is whatever createFn returns, and resetFn parks one for reuse.
 
 ---@class Pool
 local M = {}
@@ -76,6 +64,8 @@ end
 ---Arguments are forwarded to createFn, and only reach it when the pool is empty and an item
 ---has to be built on the spot. That is the one moment a caller can influence how an item is
 ---made, which matters for anything that cannot be changed afterwards.
+---
+---Demand outrunning the pool costs a frame spike here rather than failing the acquire.
 ---@param ... any Passed to createFn.
 ---@return table item
 function M:Acquire(...)
@@ -127,10 +117,16 @@ end
 ---pool is full or while a fill is already running. Pass targetCount to raise the target when
 ---demand grows (e.g. the user enables a second bar, doubling displays per nameplate); it never
 ---lowers it, since the extra items are already built.
+---
+---Filling is staggered through the shared background walker so login does not hitch, and one
+---walker for the whole addon means the pools take turns rather than every module filling at once.
+---Call this from the module's enable path. A pool never fills itself, because modules Init
+---unconditionally and one that did would build a screen's worth of objects for a module the user
+---has switched off.
 ---@param targetCount number?
 ---@param argsFn (fun(argsCtx: any): ...)? Produces createFn's arguments for each item a fill
----builds, called at build time so the values come out fresh rather than captured - the fill is
----staggered over seconds, longer than any shared scratch survives. The latest pair given wins
+---builds, called at build time so the values come out fresh rather than captured, since the fill
+---is staggered over seconds, longer than any shared scratch survives. The latest pair given wins
 ---for the items still to come; without one ever given, createFn is called bare.
 ---@param argsCtx any? Handed to argsFn, so callers can pass a hoisted function and its context
 ---instead of allocating a closure per call.
@@ -172,7 +168,7 @@ end
 ---from, so a sweep capped by maxItems spends its visits on exactly the items the next acquires
 ---will reach for. A later call on the same lane replaces a sweep still in flight, and refreshFn
 ---returning false abandons the sweep ("cannot restyle right now"). Either way the acquire path
----remains the guarantee - this is only a warm-up.
+---remains the guarantee, and this is only a warm-up.
 ---@param refreshFn fun(item: table, refreshCtx: any): boolean? Returns false to abandon the sweep.
 ---@param refreshCtx any? Handed back to refreshFn, like Prewarm's argsCtx.
 ---@param maxItems number? Cap on items visited; defaults to the whole free list.

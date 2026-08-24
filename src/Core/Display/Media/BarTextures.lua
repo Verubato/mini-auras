@@ -1,12 +1,10 @@
 ---@type string, Addon
 local _, addon = ...
 
--- Bar fill textures offered to the user, by display name. LibSharedMedia is where the rest of
--- the list comes from - both its own textures and everything other addons have registered with
--- it, which is where most people's preferred bar art lives. These four ship with the client and
--- are listed regardless, so the dropdown is never empty even if the library fails to load. They
--- are named exactly as LibSharedMedia names them, so the two lists fold together into one entry
--- per texture instead of the same art appearing twice under two labels.
+-- Bar fill textures offered to the user, by display name. LibSharedMedia supplies the rest of the
+-- list. These four ship with the client and are listed regardless, so the dropdown is never empty
+-- when the library fails to load, and they are named exactly as LibSharedMedia names them so the
+-- two lists fold into one entry per texture.
 local BUILT_IN = {
 	["Blizzard"] = "Interface\\TargetingFrame\\UI-StatusBar",
 	["Blizzard Character Skills Bar"] = "Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar",
@@ -16,7 +14,7 @@ local BUILT_IN = {
 
 local DEFAULT_NAME = "Blizzard"
 -- Height of the swatch shown beside each name, and how wide a strip of the texture to show. Both
--- are in the font's own pixels rather than the bar's - this is a label, not the bar itself.
+-- are in the font's own pixels, since this is a label rather than the bar itself.
 local SWATCH_HEIGHT = 10
 local SWATCH_WIDTH = 72
 -- One table, refilled in place. Consumers hold onto it and re-ask for the contents rather than
@@ -48,8 +46,8 @@ end
 ---missing whatever loaded after it.
 ---
 ---The fan-out is coalesced: LibSharedMedia fires once per entry and a media pack registers its
----whole set inside one frame, while every consumer here re-reads the sorted list. Passing the
----burst straight through costs one full rebuild per registered texture.
+---whole set inside one frame, so passing the burst straight through costs one full rebuild per
+---texture.
 local function EnsureMediaSubscription()
 	if subscribedToMedia then
 		return

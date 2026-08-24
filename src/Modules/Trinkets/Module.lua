@@ -44,7 +44,7 @@ local function OnEvent(_, event)
 	if event == "PLAYER_ENTERING_WORLD" then
 		M:Refresh()
 	elseif event == "GROUP_ROSTER_UPDATE" then
-		-- for some reason it doesn't work right away
+		-- A refresh right away does not take.
 		QueueRefresh()
 	end
 end
@@ -54,8 +54,6 @@ local function IsInArena()
 	return inInstance and instanceType == "arena"
 end
 
--- Trinket cooldown data changes arrive via TrinketsTracker (arena cooldown updates and
--- match-state transitions); this module only re-renders the affected slot.
 local function OnTrinketDataChanged(unit)
 	if not lifecycle:IsActive() or paused then
 		return
@@ -67,22 +65,20 @@ local function OnTrinketDataChanged(unit)
 	end
 
 	-- No unit means a match-state change or the arena gate opening. Every unit frame addon has
-	-- had its chance to build by then, so this is the pass that replaces anchors taken during
-	-- the loading screen, when the frames on screen were not the ones that end up there.
+	-- built by then, so this pass replaces the anchors taken during the loading screen.
 	QueueRefresh()
 end
 
 ---Frame addons build, sort, and hide their party frames long after the arena's world event, and
----several of them replace the Blizzard frames only once their own are up. An anchor taken before
----that settles points at a frame nobody shows any more, which is where the icons were left
----stranded until a reload.
+---several replace the Blizzard frames only once their own are up. An anchor taken before that
+---settles points at a frame nobody shows any more.
 local function OnFramesChanged()
 	if not lifecycle:IsActive() then
 		return
 	end
 
 	-- Nothing is on screen outside an arena, so a raid's worth of frame churn buys nothing.
-	-- Test mode is the exception: the icons are up there to be positioned.
+	-- Test mode is the exception because the icons are up there to be positioned.
 	if not IsInArena() and not paused then
 		return
 	end
@@ -134,8 +130,8 @@ local function Setup()
 	worldGate = eventGate:New(eventsFrame, { "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE" })
 end
 
--- The roster/world events are the module's only event source, so they stay registered only while
--- it is awake. paused rides the same edges, and test mode flips it in between.
+-- The roster and world events are the module's only event source, so they stay registered only
+-- while it is awake. paused rides the same edges, and test mode flips it in between.
 local function OnEnable()
 	paused = false
 	worldGate:SetActive(true)

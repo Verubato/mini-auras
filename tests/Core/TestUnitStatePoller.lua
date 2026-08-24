@@ -1,8 +1,8 @@
--- The shared poller behind the states no event announces: a friendly unit turning attackable at
+-- The shared poller behind the states no event announces. A friendly unit turning attackable at
 -- duel start, a unit leaving or re-entering the player's visible world, a unit becoming charmed,
 -- and the player's ability to assist it, which is the gate the engine applies aura filters
 -- through. Subscribers react by refreshing their module, and a module is entitled to re-seed its
--- own baselines while doing so - which is the hazard these cover.
+-- own baselines while doing so, which is the hazard these cover.
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -39,7 +39,7 @@ _G.C_Timer.NewTicker = function(_, fn)
 	return { Cancel = function() end }
 end
 
--- The poller builds its own frame for the events that bring a poll forward; this is the only
+-- The poller builds its own frame for the events that bring a poll forward. This is the only
 -- handle a test gets on it.
 local wakeFrame
 local createFrame = _G.CreateFrame
@@ -177,7 +177,7 @@ fw.describe("UnitStatePoller", function()
 
 		assert(#flips == 1 and flips[1] == "nameplate6", "the event polled without waiting for the tick")
 
-		-- The event only asks for a read; a poll it brought forward leaves nothing for the tick
+		-- The event only asks for a read. A poll it brought forward leaves nothing for the tick
 		-- behind it to report again.
 		ticker()
 		assert(#flips == 1, "the tick reported the same flip a second time")
@@ -287,7 +287,7 @@ fw.describe("UnitStatePoller", function()
 	-- A module re-seeds its whole watched set whenever it refreshes, for reasons of its own that
 	-- have nothing to do with the other modules watching the same units. Taking a fresh baseline
 	-- there would reset a change nobody else has been told about yet, and the flip would be lost
-	-- for good; a baseline left alone costs one spare refresh on the next poll instead.
+	-- for good. A baseline left alone costs one spare refresh on the next poll instead.
 	fw.it("lets a shared token's flip survive another subscriber re-seeding it", function()
 		local flips = {}
 		local watching = poller:Register(function()

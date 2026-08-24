@@ -1,7 +1,7 @@
 -- Ally Kick Tracker: the interrupts it records and the rows it draws from them. Each area is a
 -- silent-failure class:
 --
---   * Nothing about the interrupter can be read on 12.1 - the GUID, the name it resolves to, the
+--   * Nothing about the interrupter can be read on 12.1. The GUID, the name it resolves to, the
 --     class and the interrupted spell are all secret. Reading, comparing or keying a table by one
 --     is a Lua error that takes the whole handler down, so the tests feed secrets in deliberately
 --     and assert the row still gets drawn.
@@ -47,7 +47,7 @@ env.loadModule("src/Modules/AllyKickTracker/Module.lua")
 local module = addon.Modules.AllyKickTrackerModule
 local observer = addon.Modules.AllyKickTracker.Observer
 
--- Mirrors the observer's own constant, which is no longer an option.
+-- Mirrors the observer's own constant, which is not configurable.
 local RECORD_DURATION = 15
 local WIND_SHEAR = 57994
 local ELEMENTAL_SHAMAN = 262
@@ -57,8 +57,8 @@ options.MaxBars = 5
 options.ShowOwnCooldown = false
 
 module:Init()
--- Init only builds the lifecycle now; a module sets itself up on the first refresh that
--- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+-- Init only builds the lifecycle. A module sets itself up on the first refresh that finds it
+-- enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
 module:Refresh()
 
 -- The display's root is the only frame the module makes draggable.
@@ -185,7 +185,7 @@ local function Reset()
 	env.enemies.nameplate1 = true
 	env.enemies.nameplate2 = true
 	options.MaxBars = 5
-	-- Off by default here so the history rows are the only thing under test; the own row
+	-- Off by default here so the history rows are the only thing under test. The own row
 	-- has its own block below.
 	options.ShowOwnCooldown = false
 	env.setModuleEnabled("AllyKickTracker", true)
@@ -296,7 +296,7 @@ fw.describe("AllyKickTracker - drawing a secret kicker", function()
 
 	fw.it("colours the row from a class token it is not allowed to read", function()
 		-- RAID_CLASS_COLORS cannot be indexed by a secret, so the colour has to come from the API
-		-- call; what it returns is secret too, and only a setter may be given it.
+		-- call. What it returns is secret too, and only a setter may be given it.
 		Interrupted("nameplate1", { Class = wow.markSecret({}) })
 
 		local bar = VisibleBars()[1]
@@ -312,8 +312,8 @@ fw.describe("AllyKickTracker - drawing a secret kicker", function()
 	end)
 
 	fw.it("paints a raid marker whose index is secret", function()
-		-- The FrameXML helper works the tex coords out arithmetically, which throws on a secret;
-		-- the sprite-sheet setter takes the index straight to the C side instead.
+		-- The FrameXML helper works the tex coords out arithmetically, which throws on a secret.
+		-- The sprite-sheet setter takes the index straight to the C side instead.
 		local marker = wow.markSecret({})
 
 		Interrupted("nameplate1", { Marker = marker })
@@ -383,7 +383,7 @@ fw.describe("AllyKickTracker - the list", function()
 	end)
 
 	fw.it("scales the row text with the shared font scale", function()
-		-- The one font setting shared by every module; the rows must follow it like the icons do.
+		-- The one font setting shared by every module. The rows must follow it like the icons do.
 		db.FontScale = 1.5
 		module:Refresh()
 
@@ -482,7 +482,7 @@ end)
 fw.describe("AllyKickTracker - the player's own row", function()
 	fw.before_each(function()
 		Reset()
-		-- The player's own spec, class, interrupt and cooldown are all readable; theirs is the one
+		-- The player's own spec, class, interrupt and cooldown are all readable. Theirs is the one
 		-- row the client will actually answer for.
 		playerSpec = ELEMENTAL_SHAMAN
 		wow.setUnitClass("player", "SHAMAN")
@@ -555,8 +555,8 @@ fw.describe("AllyKickTracker - the player's own row", function()
 	end)
 
 	fw.it("does not also record the player's own kick as history", function()
-		-- The readiness row is already their kick. Whose kick a stop event was cannot be asked -
-		-- the interrupter GUID is secret - so landing on their cast is what identifies it.
+		-- The readiness row is already their kick. Whose kick a stop event was cannot be asked, since
+		-- the interrupter GUID is secret, so landing on their cast is what identifies it.
 		Cast(WIND_SHEAR)
 		Interrupted("nameplate1", { Guid = "guid-a", Name = "Someone" })
 

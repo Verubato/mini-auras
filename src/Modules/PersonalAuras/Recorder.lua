@@ -3,9 +3,9 @@ local _, addon = ...
 
 -- Captures the spell ids the player casts, so a group can be built without a spell database.
 --
--- Only the LOCAL player's cast ids are readable on 12.1; a group member's arrive as secret values
--- that cannot even be used as a table key. What it records is the CAST id, which is usually but
--- not always the id of the aura it applies.
+-- Only the local player's cast ids are readable on 12.1, and a group member's arrive as secret
+-- values that cannot even be used as a table key. What it records is the cast id, which is usually
+-- but not always the id of the aura it applies.
 
 addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
@@ -95,7 +95,7 @@ function M:Start()
 
 	EnsureFrame()
 	recording = true
-	-- Only while recording: the event fires on every global cooldown.
+	-- Only while recording, since the event fires on every global cooldown.
 	eventsFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 end
 

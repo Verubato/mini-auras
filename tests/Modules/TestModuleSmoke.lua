@@ -1,6 +1,6 @@
 -- Cross-module smoke test. Every module that draws auras is loaded into one environment and
--- driven through its whole lifecycle - init, refresh, test mode on and off, disable, re-enable -
--- while two invariants are watched:
+-- driven through its whole lifecycle, from init through refresh, test mode on and off, disable
+-- and re-enable, while two invariants are watched:
 --
 --   * Nothing is reported through mini:Notify. The one warning the container wrapper raises is
 --     SetMaxIcons on a group key that does not exist, which otherwise silently switches a whole
@@ -19,7 +19,7 @@ _G.UnitClassBase = function()
 	return "PRIEST"
 end
 
--- Portrait attaches to the Blizzard unit frames; give it something to find.
+-- Portrait attaches to the Blizzard unit frames, so give it something to find.
 for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame" }) do
 	local frame = acm.NewFrame("Frame", name)
 	local portrait = acm.NewFrame("Frame", name .. "Portrait", frame)
@@ -33,7 +33,7 @@ env.addUnitFrame("party2", "CUF_Smoke2")
 env.healers.party2 = true
 
 -- Every module on the container path, in TOC order. Each is loaded, enabled for all contexts and
--- initialised; the event frame each one registers is captured before the next load so the plate
+-- initialised. The event frame each one registers is captured before the next load so the plate
 -- events can be driven per module.
 local MODULES = {
 	{ Name = "CrowdControlModule", Key = "CrowdControl",
@@ -60,7 +60,7 @@ for _, spec in ipairs(MODULES) do
 	modules[#modules + 1] = { Name = spec.Name, Key = spec.Key, Module = module }
 end
 
--- Plate-driven modules need plates; drive both modules' event frames.
+-- Plate-driven modules need plates, so drive both modules' event frames.
 local plateFrames = {}
 for _, frame in ipairs(acm.frames) do
 	if frame._events and frame._events.NAME_PLATE_UNIT_ADDED then
@@ -155,9 +155,9 @@ fw.describe("12.1 smoke - full lifecycle across every container module", functio
 	end)
 
 	fw.it("every module refreshes itself as test mode flips", function()
-		-- ToggleTest leans on this: it used to follow the flip with a refresh of all ten modules,
-		-- which was half the cost of the button, and now only does what no module owns. A module
-		-- that stopped refreshing itself here would come back from test mode wearing nothing.
+		-- ToggleTest leans on this, doing only what no module owns rather than refreshing all ten.
+		-- A module that stopped refreshing itself here would come back from test mode wearing
+		-- nothing.
 		local refreshed = {}
 
 		for _, entry in ipairs(modules) do

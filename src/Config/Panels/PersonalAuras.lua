@@ -8,12 +8,10 @@ local ui = addon.Config.PersonalAurasUI
 local verticalSpacing = mini.VerticalSpacing
 
 -- The personal aura page: a grid of groups and an editor for the selected one. The pieces live in
--- the PersonalAuras folder and share state through addon.Config.PersonalAurasUI; this file only lays
--- the page out and wires them together.
+-- the PersonalAuras folder and share state through addon.Config.PersonalAurasUI.
 --
--- The editor's controls are built ONCE and read whatever is selected through ui.Current(), so
--- switching groups is a MiniRefresh rather than a rebuild. Only the group grid and the spell
--- list recycle rows.
+-- The editor's controls are built once and read whatever is selected through ui.Current(), so
+-- switching groups is a MiniRefresh rather than a rebuild.
 
 ---@class PersonalAurasConfig
 local M = {}

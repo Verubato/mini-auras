@@ -43,7 +43,7 @@ local function ProblemText(reason)
 	return nil
 end
 
----Why the red spells in the list can never show. Takes the GROUP's aura type, not the spell's:
+---Why the red spells in the list can never show. Takes the group's aura type, not the spell's:
 ---the spells in question are whatever the group is not. Branches rather than a keyed table, so
 ---the strings stay literal for the locale tooling.
 ---@param auraType string
@@ -102,8 +102,8 @@ local function UnitLabel(unit)
 	return unit
 end
 
----Builds the trigger tab: what makes the group fire - the unit/type/tracking dropdowns, then
----either a spell list (with the picker and cast recorder) or the filter-component grid.
+---Builds the trigger tab, which is what makes the group fire: the unit/type/tracking dropdowns,
+---then either a spell list with the picker and cast recorder, or the filter-component grid.
 ---@param ctx PersonalAurasEditorContext
 ---@param refreshFlags fun(shown: boolean?) The filters tab's flag grid, re-read alongside the spells.
 ---@return fun(group: PersonalAuraGroup) refreshState Problem text and aura-type choices.
@@ -227,9 +227,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		end,
 	}, trackingControlsRow, ui.DropdownColumn * 2)
 
-	-- Leads the row, and is here rather than on the appearance tab where it used to live: sound
-	-- only changes which aura types the rest of the row can offer, so having to leave the tab to
-	-- reach it meant building a group in three visits.
+	-- Leads the row because sound changes which aura types the rest of the row can offer.
 	ctx.Dropdown(L["Display"], {
 		Items = DISPLAY_OPTIONS,
 		GetText = function(value)
@@ -319,7 +317,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 
 	local RefreshRecorded
 
-	---Takes the id BY VALUE: clearing the recorder refreshes the strip, which nils the SpellId on
+	---Takes the id by value: clearing the recorder refreshes the strip, which nils the SpellId on
 	---every row, so reading it off the row afterwards hands the add a nil.
 	---@param spellId number?
 	local function AddRecordedSpell(spellId)
@@ -558,7 +556,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 			text = "|cffff4040" .. problemText .. "|r"
 		elseif wrongType > 0 then
 			-- Red once the whole list is on the wrong side, amber while some of it still shows.
-			-- Ahead of the reaction caveat below: that one is about WHEN a group shows, this one
+			-- Ahead of the reaction caveat below: that one is about when a group shows, this one
 			-- about part of it never showing at all.
 			local color = wrongType == #group.Spells and "|cffff4040" or "|cffffd100"
 

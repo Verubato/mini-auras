@@ -2,9 +2,6 @@
 local _, addon = ...
 
 -- Single source of truth for the "Grow" option (LEFT/RIGHT/CENTER/UP/DOWN) -> anchor geometry.
--- The same mapping used to be written out three different ways (if/elseif chains in the unit
--- frame modules, a GrowToAnchor helper in the nameplates module, and three lookup tables in the
--- aura display wrapper), which made it easy for one of them to drift.
 --
 -- Three related mappings live here:
 --   Anchor - which point of the icon row is pinned to which point of its anchor frame. Also the
@@ -29,7 +26,7 @@ M.Anchor = {
 	CENTER = { Point = "CENTER", RelativePoint = "CENTER" },
 	DOWN = { Point = "TOP", RelativePoint = "BOTTOM" },
 	UP = { Point = "BOTTOM", RelativePoint = "TOP" },
-	-- The two corner grows, for a row that wraps onto a SECOND line rather than running on. Only
+	-- The two corner grows, for a row that wraps onto a second line rather than running on. Only
 	-- a wrapping row has an opinion about which way the next line goes, so the plain LEFT and
 	-- RIGHT above keep dropping downwards like every single-row display does.
 	LEFT_UP = { Point = "BOTTOMRIGHT", RelativePoint = "BOTTOMRIGHT" },
@@ -40,8 +37,8 @@ M.Anchor = {
 M.Chain = {
 	LEFT = { Point = "RIGHT", RelativePoint = "LEFT", XMul = -1, YMul = 0 },
 	RIGHT = { Point = "LEFT", RelativePoint = "RIGHT", XMul = 1, YMul = 0 },
-	-- CENTER can't be centred without a readable row width (12.1 container sizes can be
-	-- secret), so it chains rightwards like RIGHT.
+	-- CENTER cannot be centred without a readable row width, and 12.1 container sizes can be
+	-- secret, so it chains rightwards like RIGHT.
 	CENTER = { Point = "LEFT", RelativePoint = "RIGHT", XMul = 1, YMul = 0 },
 	DOWN = { Point = "TOP", RelativePoint = "BOTTOM", XMul = 0, YMul = -1 },
 	UP = { Point = "BOTTOM", RelativePoint = "TOP", XMul = 0, YMul = 1 },
@@ -77,11 +74,11 @@ function M:GetPinPoint(grow)
 	return (M.Anchor[grow] or M.Anchor[M.Default]).Point
 end
 
----Rewrites a saved position so its anchor is the pinned edge for this grow direction, keeping
----the frame at its current on-screen spot (converting never visibly moves it). Rect values are
----in the frame's own scale, which is also the scale SetPoint offsets use, so no conversion is
----needed even for frames that ignore parent scale. Needs a real rect, so call this from a drag
----drop rather than a layout path, where a stale or unrendered rect corrupts the options.
+---Rewrites a saved position so its anchor is the pinned edge for this grow direction, keeping the
+---frame at its current on-screen spot. Rect values are in the frame's own scale, which is also the
+---scale SetPoint offsets use, so no conversion is needed even for frames that ignore parent scale.
+---Needs a real rect, so call this from a drag drop rather than a layout path, where a stale or
+---unrendered rect corrupts the options.
 ---@param frame table
 ---@param options { Point: string, RelativeTo: string?, RelativePoint: string, Offset: { X: number, Y: number } }
 ---@param grow string?

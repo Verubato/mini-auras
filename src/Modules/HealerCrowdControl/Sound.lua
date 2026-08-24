@@ -12,22 +12,22 @@ addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
 local M = {}
 addon.Modules.HealerCrowdControl.Sound = M
 
--- The sound is played engine-side via registrations (Core/Audio/AuraSounds): the ENGINE plays a sound
--- when a known CC aura lands on a registered healer, without the addon ever reading aura state.
--- Registrations are per (unit, spellId), fed from the generated Core/AuraCategoryIds CC list.
+-- The engine plays the sound when a known CC aura lands on a registered healer, so the addon never
+-- reads aura state. Registrations are per unit and spell id, fed from the generated
+-- Core/AuraCategoryIds CC list.
 
 -- One sound for the whole module, so one key.
 local SOUND_SETTINGS_KEY = "HealerCcSound"
 
 ---@type Db
 local db
--- Sound handles keyed by healer unit, so a healer joining or leaving only re-registers that
--- unit. The CC spell list is ~1k entries, so a full teardown/rebuild of every healer on each
--- roster change was ~1k API calls per healer for no reason.
+-- Sound handles keyed by healer unit, so a healer joining or leaving only re-registers that unit.
+-- The CC spell list is ~1k entries, so rebuilding every healer on each roster change costs ~1k API
+-- calls per healer.
 ---@type table<string, number[]>
 local registeredAuraSoundsByUnit = {}
--- The sound settings the current registrations were made with; when these change every healer is
--- re-registered (the unit set is handled incrementally).
+-- The sound settings the current registrations were made with. A change to these re-registers
+-- every healer, while the unit set is handled incrementally.
 local settingsStamp = changeStamp:New()
 local auraSoundGeneration = nil
 
@@ -52,7 +52,7 @@ local function ClearAuraSounds()
 end
 
 ---Registers an engine-side sound for every known player CC spell on one healer.
----No-op when the unit is already registered - that is what keeps roster churn cheap.
+---A no-op when the unit is already registered, which is what keeps roster churn cheap.
 ---@param unit string
 ---@param soundFilePath string
 ---@param channel string
@@ -83,7 +83,7 @@ local function RegisterAuraSounds(activePool)
 	local channel = options.Sound.Channel or "Master"
 
 	-- The sound itself is baked into each registration, so changing it means re-registering
-	-- everyone; the healer set alone never does.
+	-- everyone. The healer set alone never does.
 	settingsStamp:Begin(SOUND_SETTINGS_KEY)
 	settingsStamp:Add(soundFilePath)
 	settingsStamp:Add(channel)

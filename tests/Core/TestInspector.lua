@@ -1,7 +1,7 @@
--- Tests for Core/Inspect/Inspector.lua - the spec lookup the kick tracker leans on to guess
--- which ally interrupted. The bug guarded here: on 12.1 a unit the client will not let an addon
--- identify answers GetInspectSpecialization with a SECRET number, and comparing one aborts the
--- whole handler. A mouseover of a stranger is the everyday way to get one.
+-- Tests for Core/Inspect/Inspector.lua, the spec lookup the kick tracker leans on to guess which
+-- ally interrupted. On 12.1 a unit the client will not let an addon identify answers
+-- GetInspectSpecialization with a secret number, and comparing one aborts the whole handler. A
+-- mouseover of a stranger is the everyday way to get one.
 
 local fw = require("Framework")
 local wow = require("WowApi")

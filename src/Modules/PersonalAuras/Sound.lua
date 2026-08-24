@@ -4,12 +4,11 @@ local sounds = addon.Core.Sounds
 local changeStamp = addon.Utils.ChangeStamp
 
 -- The engine plays the sound, because the addon is never told an aura landed. Registrations bake
--- in the file, so any change means handing them all back; hence the change check in Apply.
+-- in the file, so any change means handing them all back.
 --
--- That check reads the RESOLVED path, not the saved name. A name from a media addon
--- resolves to nothing until that addon has loaded and registered it, which routinely happens after
--- our first pass, so the same name has to be able to read as changed later, or the
--- retry would find nothing to do and the sound would stay wrong for the session.
+-- The change check in Apply reads the resolved path rather than the saved name. A name from a
+-- media addon resolves to nothing until that addon has loaded and registered it, so the same name
+-- has to be able to read as changed later or the sound would stay wrong for the session.
 --
 -- They keep firing whether or not anything of ours is on screen, so a disabled group must Clear.
 
@@ -101,9 +100,8 @@ function M:Apply(requests)
 
 	for index, request in ipairs(requests) do
 		local trigger = TRIGGERS[request.Trigger]
-		-- Nothing has registered this name yet, so the group stays silent rather than being given
-		-- the fallback sound: a wrong noise is worse than a second of quiet, and the retry picks
-		-- it up as soon as the media addon lands.
+		-- Nothing has registered this name yet, so the group stays silent rather than taking the
+		-- fallback sound. The retry picks it up as soon as the media addon lands.
 		local file = resolvedFiles[index]
 
 		info.unitToken = request.Unit
@@ -135,7 +133,7 @@ function M:WasTruncated()
 	return truncated
 end
 
----Plays a file directly for the options preview; the live sound is engine-side.
+---Plays a file directly for the options preview, while the live sound is engine-side.
 ---@param file string
 ---@param channel string?
 function M:PlayPreview(file, channel)

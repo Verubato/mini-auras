@@ -72,7 +72,6 @@ function M:UpgradeToVersion18(vars)
 		return false
 	end
 
-	-- commence massive refactor
 	-- Move Default and Raid configs into Modules.CCModule
 	if vars.Default then
 		vars.Modules = vars.Modules or {}
@@ -103,7 +102,6 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules = vars.Modules or {}
 		vars.Modules.FriendlyIndicatorModule = vars.Modules.FriendlyIndicatorModule or {}
 
-		-- Merge AllyIndicator properties directly into AllyIndicatorModule
 		for key, value in pairs(vars.AllyIndicator) do
 			vars.Modules.FriendlyIndicatorModule[key] = mini:CopyValueOrTable(value)
 		end
@@ -122,7 +120,6 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules = vars.Modules or {}
 		vars.Modules.HealerCCModule = vars.Modules.HealerCCModule or {}
 
-		-- Merge Healer properties directly into HealerCCModule
 		for key, value in pairs(vars.Healer) do
 			vars.Modules.HealerCCModule[key] = mini:CopyValueOrTable(value)
 		end
@@ -142,7 +139,6 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules = vars.Modules or {}
 		vars.Modules.AlertsModule = vars.Modules.AlertsModule or {}
 
-		-- Merge Alerts properties directly into AlertsModule
 		for key, value in pairs(vars.Alerts) do
 			vars.Modules.AlertsModule[key] = mini:CopyValueOrTable(value)
 		end
@@ -158,7 +154,6 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules = vars.Modules or {}
 		vars.Modules.PortraitModule = vars.Modules.PortraitModule or {}
 
-		-- Merge Portrait properties directly into PortraitModule
 		for key, value in pairs(vars.Portrait) do
 			vars.Modules.PortraitModule[key] = mini:CopyValueOrTable(value)
 		end
@@ -174,7 +169,6 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules = vars.Modules or {}
 		vars.Modules.NameplatesModule = vars.Modules.NameplatesModule or {}
 
-		-- Merge Nameplates properties directly into NameplatesModule
 		for key, value in pairs(vars.Nameplates) do
 			vars.Modules.NameplatesModule[key] = mini:CopyValueOrTable(value)
 		end
@@ -190,7 +184,6 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules = vars.Modules or {}
 		vars.Modules.KickTimerModule = vars.Modules.KickTimerModule or {}
 
-		-- Merge KickTimer properties directly into KickTimerModule
 		for key, value in pairs(vars.KickTimer) do
 			vars.Modules.KickTimerModule[key] = mini:CopyValueOrTable(value)
 		end
@@ -208,7 +201,6 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules = vars.Modules or {}
 		vars.Modules.TrinketsModule = vars.Modules.TrinketsModule or {}
 
-		-- Merge Trinkets properties directly into TrinketsModule
 		for key, value in pairs(vars.Trinkets) do
 			vars.Modules.TrinketsModule[key] = mini:CopyValueOrTable(value)
 		end

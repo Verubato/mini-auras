@@ -1,12 +1,10 @@
 ---@type string, Addon
 local _, addon = ...
 
--- Kick lockouts aren't auras, so on 12.1 they can't render through an AuraContainer alongside
--- the aura icons; every module that shows one keeps a one-slot IconSlotContainer for it and
--- chains the aura display after it. Nothing pushes an update when the lockout ends either (no
--- aura event fires), so the slot needs its own expiry timer.
---
--- This is the shared implementation of both halves.
+-- Kick lockouts are not auras, so on 12.1 they cannot render through an AuraContainer alongside
+-- the aura icons. Every module that shows one keeps a one-slot IconSlotContainer for it and chains
+-- the aura display after it, and since no aura event fires when the lockout ends, the slot needs
+-- its own expiry timer.
 
 ---@class KickSlot
 local M = {}

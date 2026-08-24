@@ -4,7 +4,7 @@ local childScratch = {}
 local seen = {}
 
 ---Appends the VuhDo unit frames.
----VuhDo panel frames are globals named Vd1, Vd2, … up to 10.
+---VuhDo panel frames are globals named Vd1, Vd2, ... up to 10.
 ---Unit buttons are direct children; the unit token is in :GetAttribute("unit") or button.raidid.
 ---@param visibleOnly boolean
 ---@param frames table Frames are appended here.
@@ -36,7 +36,6 @@ function M:VuhDoFrames(visibleOnly, frames)
 	end
 end
 
----Returns true if the frame is a VuhDo unit button.
 ---Used to decide whether to bump strata so FCD icons render above VuhDo frame elements.
 ---@param frame table
 ---@return boolean

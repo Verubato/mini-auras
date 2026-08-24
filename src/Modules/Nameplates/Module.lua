@@ -26,10 +26,9 @@ local testModeActive = false
 local lifecycle
 ---@type EventGate?
 local plateGate
--- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
--- at duel end), so the shared UnitStatePoller re-registers plates whose enemy status flips
--- (GetUnitOptions switches between Friendly and Enemy for the same token). Baselines are
--- seeded on plate add and cleared on plate remove.
+-- No event fires when a friendly unit turns attackable at a duel start or end, so the shared
+-- UnitStatePoller re-registers plates whose enemy status flips. Baselines are seeded on plate add
+-- and cleared on plate remove.
 ---@type UnitStatePollerSubscriber
 local stateSub
 
@@ -87,36 +86,34 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	-- A charmed unit is under the other team's control: its aura list flips to the
-	-- controller's buffs, and either faction's bars would draw those as the unit's own.
-	-- Untracked entirely (containers hidden, displays parked); the charm poll routes back
-	-- here when the mind control ends.
+	-- A charmed unit is under the other team's control, so its aura list flips to the controller's
+	-- buffs and either faction's bars would draw those as the unit's own. Untracked entirely, and
+	-- the charm poll routes back here when the mind control ends.
 	if units:IsCharmed(unitToken) then
 		display:Untrack(unitToken)
 		return
 	end
 
 	-- Critters and the game's "minus" adds never carry anything worth showing, and a busy zone is
-	-- mostly them: each one tracked costs a live aura container the client parses for as long as
-	-- the plate is up. Pets are exempt so IgnorePets stays the only thing deciding those - a
+	-- mostly them: each one tracked costs a live aura container the client parses for as long as the
+	-- plate is up. Pets are exempt so IgnorePets stays the only thing deciding those, since a
 	-- warlock's imps are classed minus too.
 	if units:IsMinorUnit(unitToken) and not units:IsPetOrMinion(unitToken) then
 		display:Release(unitToken)
 		return
 	end
 
-	-- Check if we should ignore pets
 	local unitOptions = display:GetUnitOptions(unitToken)
 	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then
 		display:Release(unitToken)
 		return
 	end
 
-	-- A plate with nothing enabled for its current faction is still tracked when the OPPOSITE
-	-- faction has a bar on, so a flip has state to rebuild from, and so the displays the plate
-	-- was drawing with are parked by EnsureBarDisplays rather than left reading a unit they were
-	-- never filtered for. A duel is the open-world way a plate changes sides; a mind control is
-	-- the one that happens in an arena.
+	-- A plate with nothing enabled for its current faction is still tracked when the opposite
+	-- faction has a bar on, so a flip has state to rebuild from and the displays the plate was
+	-- drawing with are parked by EnsureBarDisplays rather than left reading a unit they were never
+	-- filtered for. A duel is the open-world way a plate changes sides, and a mind control is the
+	-- arena way.
 	local oppositeOptions = units:IsEnemy(unitToken) and nmModule.Friendly or nmModule.Enemy
 	local anyEnabledOpposite = (oppositeOptions.Bar1 and oppositeOptions.Bar1.Enabled)
 		or (oppositeOptions.Bar2 and oppositeOptions.Bar2.Enabled)
@@ -144,9 +141,7 @@ local function OnNamePlateAdded(unitToken)
 
 	display:UpdateKick(data)
 
-	-- Initial update
 	if testModeActive then
-		-- In test mode, show test icons for this specific nameplate
 		display:ShowTestIconsFor(data)
 	end
 end
@@ -255,7 +250,6 @@ end
 local function EnsureFrames()
 	ApplyBlizzardNameplateSettings()
 
-	-- if the user has enabled/disabled a mode, rebuild the containers
 	if HaveModesChanged() then
 		RebuildContainers()
 	end
@@ -267,8 +261,8 @@ local function ApplyOptions()
 	display:RefreshAnchorsAndSizes()
 end
 
--- Only the fake icons rebuild here; the containers render the live ones themselves, and
--- RefreshAnchorsAndSizes (via ApplyOptions) has already re-applied the bar options to them.
+-- Only the fake icons rebuild here. The containers render the live ones themselves, and
+-- RefreshAnchorsAndSizes has already re-applied the bar options to them.
 local function UpdateContent()
 	if testModeActive then
 		display:ShowTestIcons()
@@ -343,11 +337,10 @@ local function Apply()
 	ApplyOptions()
 	UpdateContent()
 
-	-- Only behind a loading screen, which is the once-per-world-load trigger rather than the
-	-- window the work runs in: Display:Prewarm queues the set and the background walker builds it
-	-- one display per tick. PLAYER_ENTERING_WORLD lands here with the screen still up, which is
-	-- the case that matters. Outside one, plates build their own on first sight as they always
-	-- did.
+	-- Only behind a loading screen, which is the once-per-world-load trigger rather than the window
+	-- the work runs in. Display:Prewarm queues the set and the background walker builds it one
+	-- display per tick. PLAYER_ENTERING_WORLD lands here with the screen still up, which is the case
+	-- that matters. Outside one, a plate builds its own on first sight.
 	if addon:IsLoadingScreenUp() then
 		-- After ApplyOptions, so the displays are built with the geometry and look this refresh
 		-- settled rather than the previous one's.

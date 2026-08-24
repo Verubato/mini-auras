@@ -2,7 +2,7 @@
 -- a plain click, and what the editor writes has to land exactly where a drop would have. The
 -- three ways that goes wrong silently are a click that is really the end of a drag, a click on a
 -- frame nobody armed (test mode off, so there is nothing to place), and a write that moves the
--- frame without saving it - or saves it without moving it.
+-- frame without saving it, or saves it without moving it.
 
 local fw = require("Framework")
 local acm = require("AuraContainerMock")

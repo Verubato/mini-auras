@@ -1,7 +1,7 @@
 -- Countdown colouring on IconSlotContainer: icons whose duration times the addon itself
 -- supplied (test icons, kick timers) tint their countdown text by remaining time, matching
--- the bands the curve-bound 12.1 aura icons use. Durations from anywhere else are opaque
--- (possibly secret) and must never be touched.
+-- the bands the curve-bound 12.1 aura icons use. Durations from anywhere else are opaque,
+-- possibly secret, and must never be touched.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")

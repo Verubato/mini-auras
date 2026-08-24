@@ -10,8 +10,8 @@ Run from the repo root with the ELEVENLABS_API_KEY environment variable set:
 
 Existing clips are skipped unless --force is given, so re-runs after a spell-list
 change or a new VOICES entry only render what is missing. Each pack also gets
-PreviewImportant/PreviewDefensive clips (played when a TTS checkbox is enabled)
-and a PreviewVoice clip speaking the pack name (played on voice selection).
+PreviewImportant/PreviewDefensive clips for the TTS checkboxes and a PreviewVoice
+clip speaking the pack name for the voice dropdown.
 """
 
 import json
@@ -24,12 +24,11 @@ import time
 import urllib.error
 import urllib.request
 
-# Pack name -> ElevenLabs voice id, or a dict {"id": ..., "locales": [...], "language": ...}
-# for a voice that is only worth offering on some clients (the locales are GetLocale() codes
-# such as "deDE", and the addon hides the pack elsewhere). A "language" picks the spoken-name
-# table from LANGUAGES so the voice announces localized spell names; without one it speaks the
-# English names. The pack name is the folder, the dropdown label, and the saved VoicePack
-# value, so treat renames as breaking.
+# Pack name -> ElevenLabs voice id, or a dict {"id": ..., "locales": [...], "language": ...} for
+# a voice only offered on some clients, where the locales are GetLocale() codes such as "deDE". A
+# "language" picks the spoken-name table from LANGUAGES so the voice announces localized names,
+# and without one it speaks the English names. The pack name is the folder, the dropdown label,
+# and the saved VoicePack value, so treat renames as breaking.
 VOICES = {
     "David": "FF7KdobWPaiR0vkcALHF",
     "Grampa Werthers": "MKlLqCItoCkvdhrxgtLv",
@@ -40,28 +39,29 @@ VOICES = {
     "Anna Su": {"id": "9lHjugDhwqoxA5MhX0az", "locales": ["zhCN", "zhTW"], "language": "zhCN"},
     "Jason Chen": {"id": "DowyQ68vDpgFYdWVGjc3", "locales": ["zhCN", "zhTW"], "language": "zhCN"},
 }
-# The model is chosen per spoken language: a LANGUAGES entry can override this default. English
-# keeps multilingual v2, whose delivery suits those voices better.
+# A LANGUAGES entry can override this default per spoken language. English keeps multilingual v2,
+# whose delivery suits those voices better.
 DEFAULT_MODEL_ID = "eleven_multilingual_v2"
-# ElevenLabs cannot emit Vorbis, so clips arrive as MP3 and ffmpeg converts them to the
-# OGG files the addon ships (and the format the pack API asks external packs for).
+# ElevenLabs cannot emit Vorbis, so clips arrive as MP3 and ffmpeg converts them to the OGG files
+# the addon ships. The pack API asks external packs for OGG too.
 OUTPUT_FORMAT = "mp3_44100_128"
-# Voices come back at very different levels (a meditation voice sits ~6 dB under a trailer
-# voice), so every clip is normalised to this mean; a limiter keeps peaks under the ceiling.
+# Voices come back at very different levels, a meditation voice sitting about 6 dB under a
+# trailer voice, so every clip is normalised to this mean. A limiter keeps peaks under the
+# ceiling.
 TARGET_MEAN_DB = -19.0
 PEAK_CEILING_DB = -0.5
-# On top of normalisation: soft, low-pitched voices read as quieter than their measured
-# level, so they get an extra perceptual boost (the limiter absorbs what would clip).
+# Soft, low-pitched voices read as quieter than their measured level, so they get an extra boost
+# on top of normalisation. The limiter absorbs what would clip.
 PACK_GAIN_DB = {
     "Theo Silk": 7.0,
 }
 VOICE_SETTINGS = {"stability": 0.5, "similarity_boost": 0.75}
 
 CATEGORIES = ("Important", "Defensive", "EnemyDebuff")
-# Spell name -> what the English voices say instead, for names players never say in full.
-# Only the audio changes: the clip keeps the full name's file stem, so two spells sharing a
-# short name still get a clip each. Written as words, never initials: the voices read a bare
-# "AMS" as a word, and spacing the letters out does not sound much better.
+# Spell name -> what the English voices say instead, for names players never say in full. Only
+# the audio changes, and the clip keeps the full name's file stem, so two spells sharing a short
+# name still get a clip each. Written as words, never initials, because the voices read a bare
+# "AMS" as a word and spacing the letters out does not sound much better.
 SHORT_NAMES = {
     "Alter Time": "Alter",
     "Ancient of Lore": "Giga Tree",
@@ -125,14 +125,13 @@ PREVIEWS = {
     "PreviewDefensive": "Defensive",
     "PreviewEnemyDebuff": "Enemy debuff",
 }
-# Spoken-name tables for voices that announce in another language: a JSON file mapping each
-# unique English ability name to its localized one (see the fetch recipe in the repo history),
-# and the words the config previews speak. File names stay the English slugs either way, since
-# the generated Lua map is shared by every pack.
+# Spoken-name tables for voices that announce in another language. Each is a JSON file mapping
+# every unique English ability name to its localized one, plus the words the config previews
+# speak. File names stay the English slugs, since the generated Lua map is shared by every pack.
 LANGUAGES = {
     "zhCN": {
         "names": "SpellNamesZhCN.json",
-        # v3 for Mandarin: multilingual v2's tone accuracy is not good enough there.
+        # v3 for Mandarin, because multilingual v2's tone accuracy is not good enough there.
         "model": "eleven_v3",
         "previews": {
             "PreviewImportant": "重要",
@@ -141,8 +140,8 @@ LANGUAGES = {
         },
     },
 }
-# Spoken by PreviewVoice.mp3 when the pack is picked in the dropdown; packs without an
-# entry speak their own name.
+# Spoken by PreviewVoice.mp3 when the pack is picked in the dropdown. Packs without an entry
+# speak their own name.
 PREVIEW_VOICE_TEXTS = {
     "David": "In a world, full of gnomes, one man must punt them all.",
     "Grampa Werthers": "Blasted kids and their video games.",
@@ -170,7 +169,7 @@ def parse_ids(body):
 
 def parse_categories():
     """Returns {category: {spell_id: name}} for the categories we voice. The unflagged
-    sections carry the spells the game does not flag; each is folded into the flagged list
+    sections carry the spells the game does not flag. Each is folded into the flagged list
     of the same category so they announce under the matching toggle."""
     src = IDS_LUA.read_text(encoding="utf-8")
     sections = re.split(r"^\t(\w+) = \{", src, flags=re.M)
@@ -186,7 +185,7 @@ def parse_categories():
     if missing:
         sys.exit(f"categories not found in {IDS_LUA.name}: {missing}")
     # The scan can flag an EnemyDebuff spell too when the game marks the debuff itself
-    # important (Deathmark). Keep those out of the plate-registered categories: a plate
+    # important (Deathmark). Keep those out of the plate-registered categories, because a plate
     # gaining the debuff means an ally cast it, which is not worth an announcement.
     for spell_id in result["EnemyDebuff"]:
         for category in ("Important", "Defensive"):
@@ -233,7 +232,7 @@ def build_texts(categories, language):
 
 
 def spoken_text(name):
-    """The list disambiguates duplicate names with a parenthetical; it is not spoken."""
+    """The list disambiguates duplicate names with a parenthetical, which is not spoken."""
     return re.sub(r"\s*\(.*\)$", "", name).strip()
 
 
@@ -315,7 +314,7 @@ def write_lua(categories):
         if pack_locales(VOICES[name])
     }
     if limited:
-        lines.append("\t-- Packs only offered on these clients; the rest suit every client.")
+        lines.append("\t-- Packs only offered on these clients. The rest suit every client.")
         lines.append("\tPackLocales = {")
         for name, locales in limited.items():
             codes = ", ".join(f'"{locale}"' for locale in locales)

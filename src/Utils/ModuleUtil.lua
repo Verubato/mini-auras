@@ -11,11 +11,11 @@ local iconColorRgbScratch = {}
 local colorRgbScratch = {}
 -- Every test-mode caption ever created, so HideAllTestLabels can sweep them on test stop.
 local testLabels = {}
--- Snapshot of the world questions IsModuleEnabled asks. The gate runs on every plate add and
--- four times a second from the state poller, and each answer is a client API call; all of them
--- only change through events, so Init registers for those and marks the snapshot stale. Init
--- runs before any module's, so module handlers for the same events read a fresh snapshot; only
--- a file-scope frame could register earlier, so no gate check may run from one.
+-- Snapshot of the world questions IsModuleEnabled asks. The gate runs on every plate add and four
+-- times a second from the state poller, and each answer is a client API call.
+-- Init registers for the events that move them and marks the snapshot stale, and it runs before
+-- any module's, so module handlers for those events read a fresh one.
+-- No gate check may run from a file-scope frame, the only thing that could register before Init.
 local worldStateStale = true
 local inHousing = false
 local inInstance = false
@@ -108,8 +108,7 @@ end
 ---Resolves the configured icon size, either as a static pixel value or as a percentage of
 ---the anchor frame's height when Icons.SizeIsPercent is enabled.
 ---Accounts for scale mismatch between the anchor and the container's parent (UIParent), so the
----rendered icon matches the anchor's on-screen height even when the anchor uses a custom scale
----(common with ElvUI, Cell, SUF, etc.).
+---rendered icon matches the anchor's on-screen height even when the anchor uses a custom scale.
 ---@param iconOptions table  The Icons sub-table from a module's options.
 ---@param anchorFrame table? The frame the container is anchored to; used to read GetHeight when percent mode is on.
 ---@param pixelFallback number  Fallback pixel size when Icons.Size is missing.
@@ -120,14 +119,12 @@ function M:GetIconSize(iconOptions, anchorFrame, pixelFallback, percentFallback)
 		local h = anchorFrame:GetHeight()
 		if h and h > 0 then
 			local percent = tonumber(iconOptions.SizePercent) or percentFallback
-			-- The icon container calls SetIgnoreParentScale(true), so it renders at scale 1.0
-			-- regardless of UIParent's UI scale. Match the anchor's visible (physical) height by
-			-- multiplying logical height by the anchor's effective scale.
+			-- The icon container calls SetIgnoreParentScale(true) and so renders at scale 1.0.
+			-- The anchor's effective scale converts its height back to what is on screen.
 			local anchorScale = anchorFrame.GetEffectiveScale and anchorFrame:GetEffectiveScale() or 1
 			local size = math.floor(h * anchorScale * percent / 100 + 0.5)
-			-- An anchor that hasn't been laid out yet (or is scale-collapsed by another addon)
-			-- yields a degenerately small size; fall back to the pixel size so icons stay usable
-			-- until a later refresh sees the real height.
+			-- An anchor that has not been laid out yet gives a size too small to use, so the pixel
+			-- size stands in until a later refresh sees the real height.
 			if size >= 8 then
 				return size
 			end
@@ -139,11 +136,8 @@ end
 ---Resolves a module's configured glow/border colour into the {r, g, b, a} shape the icon
 ---containers take. Modules whose icons carry no dispel or category colouring have nothing to
 ---derive a colour from, so they let the user pick one instead.
----Returns a shared scratch table: the containers copy the components straight out and keep
----nothing, so this never allocates on the render path. Nil when no colour is configured, which
----leaves the container on its plain untinted glow.
----Returns nil unless a glow or a border is switched on, since those are the only two things the
----colour feeds.
+---Returns a shared scratch table the caller copies out of, so this never allocates on the render
+---path. Nil when no colour is configured, which leaves the container on its plain untinted glow.
 ---@param iconOptions table The Icons sub-table from a module's options.
 ---@return table? color
 function M:GetIconColor(iconOptions)
@@ -152,8 +146,7 @@ function M:GetIconColor(iconOptions)
 	end
 
 	-- The icon containers draw a border whenever a colour is supplied, and hide it while a glow
-	-- is running. So a colour is only ever wanted for one of those two, and handing one over
-	-- otherwise draws a border nobody asked for.
+	-- runs. Handing a colour over with neither switched on draws a border nobody asked for.
 	if not iconOptions.Glow and not iconOptions.Border then
 		return nil
 	end
@@ -170,8 +163,8 @@ function M:GetIconColor(iconOptions)
 end
 
 ---The same colour as GetIconColor in the positional {r, g, b} shape AuraContainerDisplay's
----style takes. Two shapes because the two icon backends read colours differently; both hand
----back a shared scratch that the consumer copies out of.
+---style takes, since the two icon backends read colours differently. Hands back a shared scratch
+---the consumer copies out of.
 ---@param iconOptions table The Icons sub-table from a module's options.
 ---@return number[]? color
 function M:GetIconColorRGB(iconOptions)
@@ -206,8 +199,8 @@ end
 
 ---Fills a caller-owned table with a configured {R, G, B} colour, in both shapes the icon backends
 ---read: [1..3] for AuraContainerDisplay's group tints and r/g/b for IconSlotContainer's test
----icons. Unlike GetColorRGB this writes into the caller's table, because the category colours are
----live two at a time and a shared scratch could only hold one of them.
+---icons. The table is the caller's because the category colours are live two at a time, and a
+---shared scratch could only hold one of them.
 ---@param target table
 ---@param configured table? A colour table with R/G/B fields.
 ---@param default table Fallback with R/G/B fields, for a profile saved before the option existed.
@@ -224,8 +217,8 @@ function M:FillColor(target, configured, default)
 end
 
 ---Wraps a function so that however many times it is called in one frame, it runs once, on the
----next. The roster events burst - a raid forming fires GROUP_ROSTER_UPDATE per member joining -
----and each one otherwise drives a full module refresh with a fresh closure to go with it.
+---next. The roster events burst, since a raid forming fires GROUP_ROSTER_UPDATE per member
+---joining, and each one otherwise drives a full module refresh.
 ---
 ---The deferral is the point as well as the saving: the frame addons rebuild their own frames on
 ---the same event, so a refresh reads the anchors only once they have settled.
@@ -288,8 +281,8 @@ end
 
 ---How many players a side of a battleground holds, which is how many enemies can be in front of
 ---the player at once. Battlegrounds only: everywhere else the client's number counts the players
----the place fits rather than the enemies it puts in your way - five in a dungeon, thirty in a
----raid - and neither says anything about how many things there are to track.
+---the place fits, five in a dungeon, thirty in a raid, which says nothing about how many things
+---there are to track.
 ---@return number?
 function M:PvpTeamSize()
 	RefreshWorldState()
@@ -336,13 +329,13 @@ end
 function M:IsModuleEnabled(moduleName)
 	RefreshWorldState()
 
-	-- Housing outranks every context, Always included; test mode still previews there.
+	-- Housing outranks every context, Always included. Test mode still previews there.
 	if inHousing then
 		return false
 	end
 
 	if not db or not db.Modules or not db.Modules[moduleName] then
-		return true -- Default to enabled if settings don't exist
+		return true
 	end
 
 	local settings = db.Modules[moduleName].Enabled
@@ -352,7 +345,6 @@ function M:IsModuleEnabled(moduleName)
 	end
 
 	if settings.Always then
-		-- this module is set to always enabled, so we can skip the instance check
 		return true
 	end
 
@@ -373,7 +365,6 @@ function M:IsModuleEnabled(moduleName)
 		return settings.World or false
 	end
 
-	-- Check specific instance types
 	if instanceType == "arena" then
 		return settings.Arena
 	elseif instanceType == "pvp" then
@@ -388,20 +379,19 @@ function M:IsModuleEnabled(moduleName)
 end
 
 ---Makes a frame draggable and persists where it lands. Wires the drag scripts and clamps the
----frame to the screen; whether dragging is currently allowed stays with the caller via
----EnableMouse/SetMovable (modules gate those on test mode).
+---frame to the screen. Whether dragging is allowed stays with the caller via EnableMouse and
+---SetMovable, which modules gate on test mode.
 ---
 ---The saved shape is the module-options one: Point, RelativePoint, RelativeTo (frame name,
----"UIParent" fallback) and Offset.X/Y. Two shape variations are honoured rather than forced:
----RelativeTo is only written when the table already carries the key, and a table without an
----Offset sub-table gets X/Y written directly (the personal aura groups' {Point, RelativePoint,
----X, Y} position shape).
+---"UIParent" fallback) and Offset.X/Y. RelativeTo is only written when the table already carries
+---the key, and a table with no Offset sub-table gets X/Y written directly, as the personal aura
+---groups' {Point, RelativePoint, X, Y} shape does.
 ---
 ---Dropping the frame opens the position editor on it, and so does a click that is not a drag, so
 ---a placement a drag can only get close to can be typed exactly.
 ---
----Pass a function for position when the options table can be replaced under the frame (profile
----switches); it runs on every drop and may return nil to skip saving.
+---Pass a function for position when the options table can be replaced under the frame, as a
+---profile switch does. It runs on every drop and may return nil to skip saving.
 ---@param frame table
 ---@param position table|fun(): table? The saved-position table, or a function returning it.
 ---@param onMoved fun(frame: table, position: table?)? Runs after each save, e.g. to re-normalise
@@ -435,9 +425,8 @@ function M:MakeMovable(frame, position, onMoved)
 	local binding = {
 		Key = frame,
 		-- The frame's own anchor, never the saved offsets: a module may save a position that
-		-- describes the same spot from a different point (the bars re-pin theirs to the edge the
-		-- row grows from, in screen coordinates, and leave the frame where it is). Reading one
-		-- space and writing the other turned a one pixel nudge into a jump across the screen.
+		-- describes the same spot from a different point. Reading one space and writing the other
+		-- turns a one pixel nudge into a jump across the screen.
 		Get = function()
 			local _, _, _, x, y = frame:GetPoint()
 
@@ -502,10 +491,10 @@ function M:MakeMovable(frame, position, onMoved)
 	end)
 end
 
----Shows or hides a caption above a test-mode frame, so with every module's test icons on
----screen at once each container can be told apart. Created on first show and reused; pass nil
----to hide. Every label ever shown is also registered, so TestModeManager can sweep them all
----away with HideAllTestLabels - display modules only have to SHOW labels on their test paths.
+---Shows or hides a caption above a test-mode frame, so with every module's test icons on screen
+---at once each container can be told apart. Created on first show and reused. Pass nil to hide.
+---Every label ever shown is registered, so TestModeManager can sweep them all away with
+---HideAllTestLabels and display modules only have to show labels on their test paths.
 ---@param frame table
 ---@param text string?
 function M:SetTestLabel(frame, text)
@@ -530,7 +519,7 @@ function M:SetTestLabel(frame, text)
 	end
 end
 
----Hides every test caption ever shown; the single teardown TestModeManager runs on stop.
+---Hides every test caption ever shown, the one teardown TestModeManager runs on stop.
 function M:HideAllTestLabels()
 	for _, label in ipairs(testLabels) do
 		label:Hide()

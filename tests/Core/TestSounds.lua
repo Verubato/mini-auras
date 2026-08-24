@@ -1,7 +1,7 @@
--- The sound media resolver. Options used to store a bare file name ("Sonar.ogg") and now store a
--- LibSharedMedia name ("Sonar"), so every saved value has to keep working: a dropdown that cannot
--- match its own saved value shows a blank selection, and a resolver that cannot map it plays the
--- wrong sound or none at all. There is no LibSharedMedia in the mock, which is also what a client
+-- The sound media resolver. A saved option can be a bare file name ("Sonar.ogg") or a
+-- LibSharedMedia name ("Sonar"), and both have to keep working. A dropdown that cannot match its
+-- own saved value shows a blank selection, and a resolver that cannot map it plays the wrong
+-- sound or none at all. There is no LibSharedMedia in the mock, which is also what a client
 -- without a media addon installed looks like.
 
 local fw = require("Framework")

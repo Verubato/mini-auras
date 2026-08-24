@@ -1,12 +1,12 @@
 ---@type string, Addon
 local _, addon = ...
 
--- Edge-detected register/unregister gate over a fixed set of events on one frame, so
--- disabled modules receive no event dispatch at all. SetActive is safe to call from a
--- level-triggered Refresh: repeated calls with the same state are no-ops, and the
--- activate/deactivate transition work (rebuild on wake, teardown on sleep) stays paired
--- with the registrations it depends on. Only the gate's own events are touched, so
--- always-registered gate-driver events can share the same frame.
+-- Edge-detected register/unregister gate over a fixed set of events on one frame, so disabled
+-- modules receive no event dispatch at all.
+--
+-- SetActive is safe to call from a level-triggered Refresh, since a repeated call with the same
+-- state is a no-op. Only the gate's own events are touched, so always-registered gate-driver
+-- events can share the same frame.
 
 ---@class EventGate
 local M = {}

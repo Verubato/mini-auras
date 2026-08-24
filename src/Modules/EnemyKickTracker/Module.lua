@@ -20,11 +20,11 @@ addon.Modules.EnemyKickTrackerModule = M
 local db
 local testModeActive = false
 
--- fallback icon (rogue Kick)
+-- The rogue Kick icon, shown when the interrupter's own spell is unknown.
 local KICK_ICON = C_Spell.GetSpellTexture(1766)
 
 local TEST_SPEC_IDS = testSpellData.KickSpecIds
--- Rebuilt on every preview; the display reads it synchronously and keeps nothing.
+-- Safe to reuse for every preview because the display reads it straight away and keeps nothing.
 local testEntriesScratch = {}
 
 ---@type ModuleLifecycle?
@@ -115,8 +115,8 @@ end
 
 ---@return boolean
 local function IsEnabled()
-	-- No moduleUtil check here: the kick timer carries its own per-spec enabled values, and
-	-- the generic check would report false for them.
+	-- No moduleUtil check here. The kick timer carries its own per-spec enabled values, and the
+	-- generic check would report false for them.
 	return M:IsEnabledForPlayer(GetOptions())
 end
 
@@ -156,8 +156,8 @@ local function Setup()
 end
 
 local function OnDisable()
-	-- Re-armed, or a module switched off in one arena and back on in the next would take that
-	-- match for a refresh inside the same one and never re-read the opponents' cooldowns.
+	-- Reset, or a module switched off in one arena and back on in the next takes the new match
+	-- for a refresh inside the old one and never re-reads the opponents' cooldowns.
 	wasInArena = false
 
 	matchPrepGate:SetActive(false)
@@ -172,8 +172,8 @@ local function Apply(options)
 
 	matchPrepGate:SetActive(inArena)
 
-	-- Only on the way in, not on every refresh inside one: the prep pass clears the bar, which
-	-- would wipe live icons whenever a setting changed mid-match.
+	-- Only on the way in. The prep pass clears the bar, so running it on every refresh would
+	-- wipe live icons whenever a setting changed mid-match.
 	if inArena ~= wasInArena then
 		wasInArena = inArena
 
@@ -187,8 +187,8 @@ local function Apply(options)
 	display:ApplyOptions(options)
 	UpdateContent()
 
-	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
-	-- test is running shows or hides the drag anchor and its caption with it.
+	-- Flipping the module switch while a test is running has to show or hide the drag anchor
+	-- and its caption with it.
 	display:SetAnchorInteractive(testModeActive)
 end
 
@@ -198,7 +198,6 @@ function M:IsEnabledForPlayer(options)
 		return false
 	end
 
-	-- nothing toggled on
 	if not (options.Enabled.Always or options.Enabled.Caster or options.Enabled.Healer) then
 		return false
 	end
@@ -209,7 +208,7 @@ function M:IsEnabledForPlayer(options)
 
 	local specId = GetPlayerSpecId()
 	if not specId then
-		-- no data, just assume enabled in this case
+		-- Assume enabled when the spec is unknown.
 		return true
 	end
 

@@ -104,9 +104,9 @@ fw.describe("GlowStyles", function()
 	end)
 
 	fw.it("holds no animated style at all", function()
-		-- The flipbook styles were dropped for their idle CPU cost: a REPEAT animation is
-		-- evaluated every frame even on a hidden button, and Blizzard leaves no way to gate one
-		-- per icon. Anything reintroducing that field brings the cost straight back.
+		-- The flipbook styles are gone for their idle CPU cost. A REPEAT animation is evaluated
+		-- every frame even on a hidden button, and Blizzard leaves no way to gate one per icon.
+		-- Anything reintroducing that field brings the cost straight back.
 		for name, spec in pairs(glowStyles.Specs) do
 			assert(spec.Animated == nil, name .. " is animated; the catalog is static only")
 		end

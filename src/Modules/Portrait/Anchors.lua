@@ -22,8 +22,7 @@ local function RegisterUnitUpdate(unit, container)
 end
 
 ---Points every icon region in a slot at the portrait itself, cropped to `inset`. Third-party
----portraits are plain textures of arbitrary shape, so the slot has to be stretched onto them
----rather than sitting in the container's own laid-out rect.
+---portraits are plain textures of arbitrary shape, so the slot has to be stretched onto them.
 ---@param container IconSlotContainer
 ---@param portrait table
 ---@param min number crop coordinate for the left/top edge
@@ -43,8 +42,8 @@ local function StretchSlotsOverPortrait(container, portrait, min, max)
 	end
 end
 
--- Frame lookups, one per supported unit-frame addon. Each returns the frame the container hangs
--- off and the portrait region it covers, or nil when that addon is not the one running.
+-- Each frame lookup returns the frame the container hangs off and the portrait region it covers,
+-- or nil when that addon is not the one running.
 
 ---@return table? unitFrame
 ---@return table? portrait
@@ -243,10 +242,10 @@ local function AttachBlizzardFrame(unit)
 	end
 
 	local mask = display:GetPortraitMask(unitFrame) or display:CreatePortraitMask(portrait)
-	-- Drops the portrait and its icons a strata below the unit frame, so the border art draws
-	-- over the icon edge instead of the other way round. Not the pet: its mask is the one that
-	-- anchors to the portrait rather than carrying its own size, and moving the portrait out of
-	-- PetFrame blacks out the frame's border art. The pet keeps the inset layout instead.
+	-- Drops the portrait and its icons a strata below the unit frame, so the border art draws over
+	-- the icon edge instead of the other way round. Not the pet, whose mask anchors to the
+	-- portrait instead of carrying its own size, and moving that portrait out of PetFrame blacks
+	-- out the frame's border art.
 	local portraitLayer = unit ~= "pet" and display:CreatePortraitLayer(portrait) or nil
 
 	-- The shadow priest insanity bar pins Voidform's portrait flipbook at LOW strata, level 1,
@@ -281,8 +280,8 @@ local function AttachBlizzardFrame(unit)
 
 	RegisterUnitUpdate(unit, container)
 
-	-- Only matters while the portrait still shares a frame with the border art; on its own layer
-	-- it has no siblings to sort against.
+	-- Only matters while the portrait still shares a frame with the border art, since on its own
+	-- layer it has no siblings to sort against.
 	if not portraitLayer then
 		portrait:SetDrawLayer("BACKGROUND", 0)
 	end
@@ -300,8 +299,7 @@ local function AttachElvUIFrame(unit)
 
 	local container = display:CreateContainer(elvuiFrame, elvuiPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
 	if not container then return end
-	-- 3d models are a frame, where as 2d portraits are textures which don't have a frame level
-	-- so for 2d textures we get the frame level from the parent frame, for 3d portraits we get it directly from the portrait frame
+	-- 3D models are frames, whereas 2D portraits are textures with no frame level of their own.
 	local portraitLevel = elvuiPortrait.GetFrameLevel and elvuiPortrait:GetFrameLevel()
 		or elvuiFrame:GetFrameLevel()
 		or 0
@@ -352,9 +350,8 @@ local function AttachUUFFrame(unit)
 		return
 	end
 
-	-- Parent to HighLevelContainer (portrait's parent) so frame levels are consistent.
-	-- UUF renders portraits inside HighLevelContainer at level 999, so parenting to
-	-- uufFrame directly would leave the container far below in the level hierarchy.
+	-- UUF renders portraits inside HighLevelContainer at level 999, so the container parents to
+	-- the portrait's own parent to keep the frame levels consistent.
 	local highLevelContainer = uufPortrait:GetParent()
 	local container = display:CreateContainer(highLevelContainer, uufPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
 	if not container then return end
@@ -455,8 +452,8 @@ local function AttachSUFFrame(unit)
 	display:AddContainer(container)
 end
 
--- Third-party attach functions and the units each one supports. Ordering matters only in that
--- every addon gets a look at every unit; whichever is actually loaded is the one that attaches.
+-- Third-party attach functions and the units each one supports. Every addon gets a look at every
+-- unit, and whichever is actually loaded is the one that attaches.
 local THIRD_PARTY_ATTACH = { -- luaconv: references the attach functions above
 	{ Attach = AttachElvUIFrame,        Units = { "player", "target", "focus" } },
 	{ Attach = AttachTPerlFrame,        Units = { "player", "target", "focus" } },

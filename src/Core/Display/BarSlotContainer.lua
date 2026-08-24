@@ -6,14 +6,12 @@ local iconUtil = addon.Utils.IconUtil
 local barTextures = addon.Core.BarTextures
 local outline = addon.Core.Outline
 
--- Stand-in bars for previews, shaped like the ones an AuraContainer draws: a square icon leading
--- a fill, the spell's name inside it and a countdown at the far end. The real bars are engine
--- driven and show nothing until an aura lands, so a group being positioned needs something to
--- grab; this is that something, and nothing here ever touches aura data.
+-- Stand-in bars for previews, shaped like the ones an AuraContainer draws, so a group being
+-- positioned has something to grab before any aura lands. Nothing here touches aura data.
 --
--- Deliberately NOT part of IconSlotContainer: that one is a live display used by half the modules
--- and its slots are square by construction. This is the same small surface (SetSlot, SetSlotUnused,
--- ResetAllSlots, Count) so a caller can swap between the two by shape alone.
+-- IconSlotContainer's slots are square by construction, so bars live here instead. The surface
+-- (SetSlot, SetSlotUnused, ResetAllSlots, Count) matches the other stand-in containers, so a caller
+-- can swap between them by shape alone.
 
 -- Gap between the icon and the fill, and how far text sits inside the fill. Matching
 -- AuraContainerDisplay's bar buttons, so the preview and the real thing line up.

@@ -1,18 +1,14 @@
 ---@type string, Addon
 local _, addon = ...
 
--- The countdown a 12.1 aura button draws through a bound fontstring rather than the cooldown's
--- own numbers: the formatter that renders the remaining time, and the colour curves the engine
--- evaluates against it. Nothing here reads the clock - the remaining time is secret, and the
--- engine does the reading - so this is entirely a factory for objects the engine keeps.
---
--- Split out of AuraContainerDisplay because none of it touches a display: every value below is
--- built once and shared by every bound fontstring in the addon.
+-- The formatter and colour curves a 12.1 aura button's countdown fontstring binds. The remaining
+-- time is secret, so nothing here reads the clock. These are objects the engine evaluates.
 
--- Colour-by-time bands for the countdown text, tinted by db.CountdownColors: red under 5s,
--- yellow to the minute, white above by default (OmniCC's classic bands). Bands rather than a
--- gradient: each near-coincident stop pair fakes a hard edge on the linear curve, so the 0.05s
--- blend windows are never visible.
+-- Colour-by-time bands for the countdown text, tinted by db.CountdownColors. Red under 5s, yellow
+-- to the minute, white above by default.
+--
+-- Each near-coincident stop pair fakes a hard edge on the linear curve, so the 0.05s blend windows
+-- are never visible.
 --
 -- Must match ApplyCountdownColor's bands in Core/Display/IconSlotContainer, so the legacy icons
 -- show exactly what the curve-bound ones do.
@@ -21,32 +17,29 @@ local BAND_DEFAULTS = {
 	Under60s = { R = 1, G = 0.8, B = 0 },
 	Over60s = { R = 1, G = 1, B = 1 },
 }
--- The highest stop on the ramp; the plain curve spans the same range so both clamp alike.
+-- The highest stop on the ramp. The plain curve spans the same range so both clamp alike.
 local TOP_STOP_SECONDS = 60.05
 
 ---@type table?
 local cachedDb
 ---@type table?
 local colorCurve
--- The generation the colour curve was built for; a mismatch rebuilds it.
+-- The generation the colour curve was built for. A mismatch rebuilds it.
 ---@type number?
 local curveGeneration
--- The colours the current generation stands for, flattened for value compares: a profile switch
+-- The colours the current generation stands for, flattened for value compares. A profile switch
 -- mutates the saved tables in place, so comparing references would miss the change.
 local appliedColors = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 local colorGeneration = 0
--- The flat curves a countdown binds while the colouring is OFF, one per configured text colour
--- (white, the NumberFontNormal default, being the common case). See Bind for why the off state is
--- a curve of its own rather than no colour binding at all. Keyed by colour: curves are never
--- mutated after creation - the engine keeps whatever reference is bound - so each distinct colour
--- is its own object.
+-- The flat curves a countdown binds while the colouring is off, one per configured text colour.
+-- Curves are never mutated after creation, since the engine keeps whatever reference is bound, so
+-- each distinct colour is its own object.
 ---@type table<string, table>
 local flatCurves = {}
 local flatCurveCount = 0
--- Dragging the colour picker mints one curve per colour it passes through, so the cache is
--- dropped wholesale once it grows past this rather than kept for the session. Anything already
--- bound goes on working - the engine holds its own reference - and the next bind rebuilds only
--- the colour actually in use.
+-- Dragging the colour picker mints one curve per colour it passes through, so the cache is dropped
+-- wholesale once it grows past this. Anything already bound goes on working, because the engine
+-- holds its own reference.
 local MAX_FLAT_CURVES = 32
 -- Formatters keyed by milliseconds threshold (0 = whole seconds only). The engine keeps each
 -- reference, so variants are built once and shared across every bound fontstring.
@@ -66,8 +59,8 @@ local function GetDb()
 	return cachedDb
 end
 
----One band's saved colour, or its default while the saved table is missing (a profile snapshot
----from before the setting existed round-trips without it).
+---One band's saved colour, or its default while the saved table is missing. A profile snapshot
+---from before the setting existed round-trips without it.
 ---@param key string
 ---@return table
 local function BandColor(key)
@@ -78,17 +71,15 @@ local function BandColor(key)
 end
 
 ---Bare-number remaining time ("45" -> "2m" -> "1h"), matching the cooldown countdown the coloured
----text replaces. A rule formatter because the engine's default renders a unit suffix ("45s") and
----SecondsFormatter cannot drop it - its abbreviation enum spells the unit out or shortens it,
----never omits it. The promotion thresholds are the game's own (1 + 1.5x the unit), and the
----quotients round up to match Blizzard's frames (2m32s reads "3m"). A non-zero msThreshold adds a
----tenths band below it ("4.3"); that breakpoint deliberately carries no min/rounding fields - with
----them present the engine rendered no fractions at all.
----
----Seconds round UP, like the cooldown's own numbers this text stands in for: a six second root
----reads "6" the moment it lands and "1" through its last second. Rounding down instead showed "5"
----on that same root, so turning the colouring on shifted every countdown by one.
----@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
+---text replaces. A rule formatter, because the engine's default renders a unit suffix ("45s") and
+---SecondsFormatter's abbreviation enum can shorten that unit but never omit it.
+---The promotion thresholds are the game's own (1 + 1.5x the unit), and the quotients round up to
+---match Blizzard's frames, so 2m32s reads "3m".
+---The tenths breakpoint a non-zero msThreshold adds carries no min or rounding fields. With them
+---present the engine rendered no fractions at all.
+---Seconds round up like the cooldown's own numbers, so a six second root reads "6" the moment it
+---lands and "1" through its last second.
+---@param msThreshold number Seconds below which tenths show, or 0 for whole seconds only.
 ---@return table
 local function GetFormatter(msThreshold)
 	local fmt = formatters[msThreshold]
@@ -112,10 +103,9 @@ local function GetFormatter(msThreshold)
 	return fmt
 end
 
----True when the client supports colour curves and formatters on duration-text bindings. Probes
----the options processor rather than the curve API alone: builds that predate it accept the
----options table and silently drop the colour, which would leave the swap-in fontstring plain
----white.
+---True when the client supports colour curves and formatters on duration-text bindings. The options
+---processor is the symbol to probe, because a build that predates it accepts the options table and
+---silently drops the colour.
 ---@return boolean
 function M:IsSupported()
 	return C_AuraContainerUtil ~= nil
@@ -128,10 +118,11 @@ function M:IsSupported()
 		and Enum.NumericRuleFormatRounding ~= nil
 end
 
----A generation stamp for the configured band colours, bumped whenever any component moves.
----Styles store the stamp and the style generation folds it in, so one number stands in for nine compares at
----every call site; the compare happens here, by value, because a profile switch mutates the
----saved tables in place. Missing components count as 1, matching what the curve would draw.
+---A generation stamp for the configured band colours, bumped whenever any component moves. Styles
+---store the stamp and the style generation folds it in, so one number stands in for nine compares
+---at every call site.
+---The compare happens here by value, because a profile switch mutates the saved tables in place.
+---Missing components count as 1, matching what the curve would draw.
 ---@return number
 function M:GetColorGeneration()
 	local under5, under60, over60 = BandColor("Under5s"), BandColor("Under60s"), BandColor("Over60s")
@@ -153,7 +144,7 @@ function M:GetColorGeneration()
 end
 
 ---The colour curve every countdown fontstring binds, rebuilt when the configured colours change.
----Curves are never mutated after creation - the engine keeps whatever reference is bound - so a
+---Curves are never mutated after creation, since the engine keeps whatever reference is bound. A
 ---change means a new object, and that reference change is what makes StyleCountdown re-bind.
 ---@return table
 function M:GetColorCurve()
@@ -162,7 +153,7 @@ function M:GetColorCurve()
 	if not colorCurve or curveGeneration ~= generation then
 		curveGeneration = generation
 
-		-- appliedColors is current: the generation call above just refreshed it.
+		-- appliedColors is current, refreshed by the generation call above.
 		local a = appliedColors
 		local curve = C_CurveUtil.CreateColorCurve()
 		curve:SetType(Enum.LuaCurveType.Linear)
@@ -201,8 +192,7 @@ function M:GetFlatCurve(r, g, b)
 
 		curve = C_CurveUtil.CreateColorCurve()
 		curve:SetType(Enum.LuaCurveType.Linear)
-		-- Descending, like the ramp above; two points so the value is flat rather than clamped
-		-- off the end of a single one.
+		-- Descending, like the ramp above. Two points, because a single one clamps off its end.
 		curve:AddPoint(TOP_STOP_SECONDS, CreateColor(r, g, b))
 		curve:AddPoint(0, CreateColor(r, g, b))
 		flatCurves[key] = curve
@@ -212,23 +202,21 @@ function M:GetFlatCurve(r, g, b)
 	return curve
 end
 
----Binds (or re-binds) a button's countdown fontstring. The engine retains the binding across
----calls, so this is how the formatter and colour curve are swapped at restyle time. Named fields,
----not positional: the options validator walks [textColor][curve] and [textColor][property], and a
----positional pair errors per button at AddAuraGroup time.
+---Binds (or re-binds) a button's countdown fontstring. The engine retains the binding across calls,
+---so this is how the formatter and colour curve are swapped at restyle time.
+---The fields are named, because the options validator walks [textColor][curve] and
+---[textColor][property], and a positional pair errors per button at AddAuraGroup time.
 ---
----While the fontstring is the countdown, a colour is bound either way round - the off state being
----a flat white curve, because leaving textColor out asks the engine to forget the binding it is
----holding and it does not: a bar's countdown IS this fontstring, so turning the setting off left
----it coloured until a reload.
+---While the fontstring is the countdown a colour is always bound, the off state being a flat white
+---curve. Leaving textColor out asks the engine to forget the binding it is holding and it does not,
+---so turning the setting off left a bar's countdown coloured until a reload.
 ---
----While it is NOT the countdown, no colour is bound at all. Binding one there has the engine draw
----the fontstring over the native numbers the cooldown is showing, which reads as two countdowns
----on one icon. The stale curve it keeps costs nothing: nothing is looking at it, and the next bind
----that does use it replaces it.
+---While it is not the countdown no colour is bound at all. Binding one there has the engine draw
+---the fontstring over the native numbers the cooldown is showing, which reads as two countdowns on
+---one icon.
 ---@param button table
 ---@param durationText table
----@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
+---@param msThreshold number Seconds below which tenths show, or 0 for whole seconds only.
 ---@param curve table? The colour curve to bind, or nil while the fontstring is not in use.
 function M:Bind(button, durationText, msThreshold, curve)
 	button:SetDurationText(durationText, {

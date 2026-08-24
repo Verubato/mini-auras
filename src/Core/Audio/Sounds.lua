@@ -31,7 +31,7 @@ local LOCALE_ONLY = {
 
 local DEFAULT_NAME = "Sonar"
 -- The output channels a sound can play on, in the order the game's own volume sliders list them.
--- Each is named from Blizzard's volume label, so the picker needs no strings of ours; the English
+-- Each is named from Blizzard's volume label, so the picker needs no strings of ours. The English
 -- fallback is only reached on a client that has no such global.
 local CHANNELS = {
 	{ Value = "Master", Global = "MASTER_VOLUME", Fallback = "Master" },
@@ -108,8 +108,8 @@ end
 ---whatever loaded after it.
 ---
 ---The fan-out is coalesced: LibSharedMedia fires once per entry and a media pack registers its
----whole set inside one frame, while every consumer here re-reads the sorted list. Passing the
----burst straight through costs one full rebuild per registered sound.
+---whole set inside one frame, so passing the burst straight through costs one full rebuild per
+---sound.
 local function EnsureMediaSubscription()
 	if subscribedToMedia then
 		return
@@ -146,8 +146,6 @@ local function BuiltInFile(name)
 	return nil
 end
 
--- Public
-
 ---The sound names to offer, sorted, with MiniAuras's own always present.
 ---@return string[]
 function M:GetNames()
@@ -178,9 +176,9 @@ function M:GetNames()
 	return nameScratch
 end
 
----The name a saved value should be shown and matched under. Options used to store a bare file
----name, so anything still holding one is folded onto the media name for the same sound rather
----than showing up as a selection that matches nothing in the list.
+---The name a saved value should be shown and matched under. A saved bare file name is folded onto
+---the media name for the same sound, rather than showing up as a selection that matches nothing in
+---the list.
 ---@param name string?
 ---@return string
 function M:Normalise(name)
@@ -198,10 +196,9 @@ function M:Normalise(name)
 end
 
 ---The file a saved name maps to right now, or nil when nothing has registered it yet.
----Engine-side aura sounds bake the path in at registration, so a caller doing that wants to hear
----"not yet" rather than take the fallback: media addons register their sounds whenever they happen
----to load, which is routinely after we have already registered, and a name that resolved to the
----default then would keep playing the default for the rest of the session.
+---Engine-side aura sounds bake the path in at registration, so a caller doing that wants "not yet"
+---rather than the fallback. Media addons routinely register after we have, and a name that resolved
+---to the default then would keep playing the default for the rest of the session.
 ---@param name string?
 ---@return string? file
 function M:ResolveStrict(name)

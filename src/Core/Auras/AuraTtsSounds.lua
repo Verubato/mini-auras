@@ -10,7 +10,7 @@ local _, addon = ...
 
 addon.Core.AuraTtsSounds = {
 	Packs = { "Amy", "Anna Su", "David", "Elise", "Emma", "Grampa Werthers", "Jason Chen", "Theo Silk" },
-	-- Packs only offered on these clients; the rest suit every client.
+	-- Packs only offered on these clients. The rest suit every client.
 	PackLocales = {
 		["Amy"] = { "zhCN", "zhTW" },
 		["Anna Su"] = { "zhCN", "zhTW" },

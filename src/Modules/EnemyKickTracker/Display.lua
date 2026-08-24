@@ -108,7 +108,7 @@ local function CreateFrames()
 	local spacing = options.IconSpacing or 2
 
 	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
-	-- Dragging is armed here but only enabled in test mode (SetAnchorInteractive).
+	-- Dragging is armed here and only switched on in test mode.
 	container.Frame:SetMovable(false)
 	container.Frame:EnableMouse(false)
 	container.Frame:SetDontSavePosition(true)
@@ -187,9 +187,8 @@ function M:SetAnchorInteractive(active)
 	anchor:EnableMouse(active)
 	moduleUtil:SetTestLabel(anchor, active and (L["Enemy Kicks_Short"] or L["Enemy Kicks"]) or nil)
 
-	-- The anchor is the live bar's own frame, so only force it visible for dragging; going
-	-- interactive-off hands visibility back to the used-slot rule rather than hiding a bar
-	-- that may be mid-kick.
+	-- The anchor is the live bar's own frame. Leaving drag mode hands visibility back to the
+	-- used-slot rule, so a bar mid-kick stays up.
 	if active then
 		anchor:Show()
 	else

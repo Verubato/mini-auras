@@ -135,8 +135,8 @@ end
 
 ---Returns true only if the unit is, right now, confidently an enemy of the local player.
 ---A secret-value result (possible on 12.0.5+) is treated as "not an enemy" so the boolean is safe
----to use in plain conditions. Note IsEnemy and IsFriend are NOT inverses: a duel opponent is both
----(same faction, attackable), and a unit you mind-control is a friend but not an enemy.
+---to use in plain conditions. IsEnemy and IsFriend are not inverses: a duel opponent is both, same
+---faction and attackable, and a unit you mind-control is a friend but not an enemy.
 ---@param unitToken string
 ---@return boolean
 function M:IsEnemy(unitToken)
@@ -149,8 +149,8 @@ end
 
 ---Returns true only if the unit is, right now, confidently charmed (mind controlled / controlled
 ---by another player). A secret-value result is treated as "not charmed" so a real enemy is never
----accidentally dropped. Note a charmed enemy player in PvP STAYS attackable by the controller's
----team, so this cannot be inferred from CanAttack.
+---accidentally dropped. A charmed enemy player in PvP stays attackable by the controller's team,
+---so this cannot be inferred from CanAttack.
 ---@param unitToken string
 ---@return boolean
 function M:IsCharmed(unitToken)
@@ -202,7 +202,7 @@ end
 
 ---Returns true if the unit token is a compound/derived unit (e.g. "raid1target", "boss1target"),
 ---meaning it's relative to another unit rather than a first-class unit token.
----Plain tokens like "target" and "focus" are NOT considered compound.
+---Plain tokens like "target" and "focus" are not considered compound.
 ---@param unitToken string
 ---@return boolean
 function M:IsCompoundUnit(unitToken)

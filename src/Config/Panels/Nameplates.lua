@@ -192,7 +192,6 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		SettingsKey = moduleName.Nameplates,
 	})
 
-	-- Each bar can hold up to 8 icons.
 	local maxIcons = helpers:BuildClampedSlider({
 		Parent = container,
 		LabelText = L["Max Icons"],
