@@ -49,14 +49,21 @@ local visibleState = {}
 local charmedState = {}
 local assistState = {}
 local tokenRefs = {}
--- Per-poll scratch, all reused. Never measured with #: the entries past a poll's own count are
--- whatever the previous poll left there.
+-- Reused buffers, each read through a count rather than #: the entries past it are whatever the
+-- last write left there.
 local activeSubs = {}
 local unionOrder = {}
 local unionSeen = {}
 local flipped = {}
 ---@type UnitStatePollerSubscriber[]
 local subscribers = {}
+-- The union outlives the poll that built it, because walking every subscriber's membership costs
+-- far more than the poll itself and only a Seed, a Clear or a new subscriber can move it.
+local unionDirty = true
+local unionCount = 0
+local activeCount = 0
+-- Last answer each subscriber's IsActive gave, so a module enabling or disabling is noticed.
+local subscriberActive = {}
 local ticker
 local wakeFrame
 -- One brought-forward poll in flight at a time; see the header.
@@ -87,9 +94,9 @@ local function ReleaseToken(unitToken)
 	assistState[unitToken] = nil
 end
 
-local function Poll()
-	local activeCount = 0
-	local unionCount = 0
+local function RebuildUnion()
+	activeCount = 0
+	unionCount = 0
 
 	wipe(unionSeen)
 
@@ -98,7 +105,7 @@ local function Poll()
 	for index = 1, #subscribers do
 		local subscriber = subscribers[index]
 
-		if subscriber.IsActive() then
+		if subscriberActive[subscriber] then
 			activeCount = activeCount + 1
 			activeSubs[activeCount] = subscriber
 
@@ -110,6 +117,26 @@ local function Poll()
 				end
 			end
 		end
+	end
+
+	unionDirty = false
+end
+
+local function Poll()
+	-- IsActive is the caller's own closure, so a module changing its mind arrives with nothing to
+	-- announce it.
+	for index = 1, #subscribers do
+		local subscriber = subscribers[index]
+		local isActive = subscriber.IsActive() and true or false
+
+		if subscriberActive[subscriber] ~= isActive then
+			subscriberActive[subscriber] = isActive
+			unionDirty = true
+		end
+	end
+
+	if unionDirty then
+		RebuildUnion()
 	end
 
 	-- Nothing for an active subscriber to watch: stop until a Seed brings work back. Every module
@@ -213,6 +240,7 @@ function Subscriber:Seed(unitToken)
 	if not self.Tokens[unitToken] then
 		self.Tokens[unitToken] = true
 		tokenRefs[unitToken] = (tokenRefs[unitToken] or 0) + 1
+		unionDirty = true
 	end
 
 	-- The poll stops itself once no active subscriber watches anything, so seeding is what wakes
@@ -237,6 +265,7 @@ function Subscriber:Clear(unitToken)
 
 	self.Tokens[unitToken] = nil
 	ReleaseToken(unitToken)
+	unionDirty = true
 end
 
 function Subscriber:ClearAll()
@@ -245,6 +274,7 @@ function Subscriber:ClearAll()
 	end
 
 	wipe(self.Tokens)
+	unionDirty = true
 end
 
 ---Registers a poll subscriber. IsActive gates the subscriber's whole membership (typically the
@@ -261,6 +291,7 @@ function M:Register(isActive, onFlip)
 		Tokens = {},
 	}, Subscriber)
 	subscribers[#subscribers + 1] = subscriber
+	unionDirty = true
 
 	return subscriber
 end

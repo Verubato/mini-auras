@@ -367,4 +367,31 @@ fw.describe("UnitStatePoller", function()
 		disabled:ClearAll()
 		env.enemies.nameplate5 = nil
 	end)
+
+	-- A token planted straight into the membership is the only way to show the walk was skipped
+	-- rather than merely cheap.
+	fw.it("walks a subscriber's membership only once something has moved it", function()
+		local sub = poller:Register(function()
+			return true
+		end, function() end)
+
+		env.enemies.party3 = false
+		sub:Seed("party3")
+		ticker()
+
+		sub.Tokens.party4 = true
+		env.reads = 0
+		ticker()
+
+		assert(env.reads == 1, "the kept union still holds only the seeded token")
+
+		sub:Seed("party5")
+		env.reads = 0
+		ticker()
+
+		assert(env.reads == 3, "and a real Seed rebuilds it around everything present")
+
+		sub:ClearAll()
+		env.enemies.party3 = nil
+	end)
 end)
