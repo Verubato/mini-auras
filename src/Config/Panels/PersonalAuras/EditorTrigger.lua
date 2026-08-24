@@ -3,9 +3,9 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local helpers = addon.Config.PanelHelpers
-local groups = addon.Modules.CustomAuras.Groups
-local recorder = addon.Modules.CustomAuras.Recorder
-local ui = addon.Config.CustomAurasUI
+local groups = addon.Modules.PersonalAuras.Groups
+local recorder = addon.Modules.PersonalAuras.Recorder
+local ui = addon.Config.PersonalAurasUI
 local MESSAGE_ROW_HEIGHT = 26
 local SPELL_ROW_HEIGHT = 26
 local SPELL_COLUMNS = 3
@@ -104,9 +104,9 @@ end
 
 ---Builds the trigger tab: what makes the group fire - the unit/type/tracking dropdowns, then
 ---either a spell list (with the picker and cast recorder) or the filter-component grid.
----@param ctx CustomAurasEditorContext
+---@param ctx PersonalAurasEditorContext
 ---@param refreshFlags fun(shown: boolean?) The filters tab's flag grid, re-read alongside the spells.
----@return fun(group: CustomAuraGroup) refreshState Problem text and aura-type choices.
+---@return fun(group: PersonalAuraGroup) refreshState Problem text and aura-type choices.
 ---@return fun() refreshLists The spell list and the recorder strip.
 function ui.BuildTriggerTab(ctx, refreshFlags)
 	local triggerPanel = ctx.TriggerPanel
@@ -541,7 +541,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	end
 
 	---Problem/warning text plus which aura types the unit offers.
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	local function RefreshTriggerState(group)
 		local supported, reason = groups:Supports(group)
 		local warning = groups:GetWarning(group)

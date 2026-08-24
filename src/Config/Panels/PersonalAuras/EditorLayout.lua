@@ -2,9 +2,9 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
-local groups = addon.Modules.CustomAuras.Groups
-local display = addon.Modules.CustomAuras.Display
-local ui = addon.Config.CustomAurasUI
+local groups = addon.Modules.PersonalAuras.Groups
+local display = addon.Modules.PersonalAuras.Display
+local ui = addon.Config.PersonalAurasUI
 -- Clearance a slider needs above itself for the value box and its label.
 local SLIDER_HEADROOM = 34
 local SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 34
@@ -30,8 +30,8 @@ local OFFSET_LIMIT = 2000
 ---Builds the layout tab: where a group sits, which way it grows and how big it is.
 ---Returns a refresh function: the size controls differ per shape, since a bar's height and width
 ---are its own settings with their own ranges.
----@param ctx CustomAurasEditorContext
----@return fun(group: CustomAuraGroup) refreshShape
+---@param ctx PersonalAurasEditorContext
+---@return fun(group: PersonalAuraGroup) refreshShape
 function ui.BuildLayoutTab(ctx)
 	local layoutPanel = ctx.LayoutPanel
 	-- Two sliders across the row rather than three, so each spans two dropdown columns and the
@@ -107,7 +107,7 @@ function ui.BuildLayoutTab(ctx)
 
 	---The pair a drag writes: a screen group keeps a screen position, every other anchor keeps an
 	---offset from the frame it hangs off.
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	---@return table
 	local function OffsetTarget(group)
 		return group.Anchor == groups.Anchor.Screen and group.Position or group.Offset
@@ -169,8 +169,8 @@ function ui.BuildLayoutTab(ctx)
 	---@param tooltip string
 	---@param minimum number
 	---@param maximum number
-	---@param get fun(group: CustomAuraGroup): number
-	---@param set fun(group: CustomAuraGroup, value: number)
+	---@param get fun(group: PersonalAuraGroup): number
+	---@param set fun(group: PersonalAuraGroup, value: number)
 	---@return table
 	local function Slider(label, tooltip, minimum, maximum, get, set)
 		local slider = mini:Slider({
@@ -281,7 +281,7 @@ function ui.BuildLayoutTab(ctx)
 		label:SetPoint("TOPLEFT", settingsControlsRow, "TOPLEFT", x, 0)
 	end
 
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
 		-- One picture, so there is no order to sort it into and no direction for it to grow in.

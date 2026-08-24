@@ -4,7 +4,7 @@ local _, addon = ...
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
-	Version = 72,
+	Version = 73,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -224,10 +224,10 @@ local dbDefaults = {
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",
 
-			-- Sits between the starter custom aura row and the healer CC icons. Those two are
-			-- 84 and 220 below the top of a 768 tall UIParent (the custom auras anchor from the
+			-- Sits between the starter personal aura row and the healer CC icons. Those two are
+			-- 84 and 220 below the top of a 768 tall UIParent (the personal auras anchor from the
 			-- centre, so 384 + 300), and this sits between them. At the old -100 the bar was
-			-- only 16 below the custom auras and the two rows of icons overlapped.
+			-- only 16 below the personal auras and the two rows of icons overlapped.
 			-- This anchor is the COMBINED bar's home; no X on purpose, the single bar belongs
 			-- in the middle. Split mode uses the Defensives and Important anchors instead.
 			Offset = {
@@ -711,9 +711,9 @@ local dbDefaults = {
 				PurgeColor = { R = 0.35, G = 0.7, B = 1 },
 			},
 		},
-		---@class CustomAurasModuleOptions
-		---@field Groups CustomAuraGroup[] User-authored groups. Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
-		CustomAurasModule = {
+		---@class PersonalAurasModuleOptions
+		---@field Groups PersonalAuraGroup[] User-authored groups. Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
+		PersonalAurasModule = {
 			-- No module-wide Enabled table: each group carries its own switch.
 			-- Everything here is authored by the user, so there is nothing sensible to ship.
 			Groups = {},

@@ -2,9 +2,9 @@
 local addonName, addon = ...
 local mini = addon.Framework
 local L = addon.L
-local groups = addon.Modules.CustomAuras.Groups
-local display = addon.Modules.CustomAuras.Display
-local ui = addon.Config.CustomAurasUI
+local groups = addon.Modules.PersonalAuras.Groups
+local display = addon.Modules.PersonalAuras.Display
+local ui = addon.Config.PersonalAurasUI
 local verticalSpacing = mini.VerticalSpacing
 local TILE_SIZE = ui.TileSize
 local TILE_GAP = 12
@@ -55,7 +55,7 @@ end
 ---@param deps { Editor: table, EditorDivider: table, SelectHint: table, OnLayout: fun() } Filled in by the page before the first Populate.
 ---@return table listAnchor
 function ui.BuildGrid(panel, anchor, deps)
-	local listAnchor = CreateFrame("Button", addonName .. "CustomAuraGrid", panel)
+	local listAnchor = CreateFrame("Button", addonName .. "PersonalAuraGrid", panel)
 	listAnchor:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
 	listAnchor:SetPoint("RIGHT", panel, "RIGHT")
 	listAnchor:SetHeight(1)
@@ -239,7 +239,7 @@ function ui.BuildGrid(panel, anchor, deps)
 		end)
 	end
 
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	---@param index number Position in the group list.
 	local function BuildGroupTile(group, index)
 		local tile = TileAt(index + 1)

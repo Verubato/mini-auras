@@ -13,7 +13,7 @@ local changeStamp = addon.Utils.ChangeStamp
 --
 -- They keep firing whether or not anything of ours is on screen, so a disabled group must Clear.
 
-addon.Modules.CustomAuras = addon.Modules.CustomAuras or {}
+addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
 -- Variants times triggers times visible plates reaches the thousands on a careless configuration.
 local MAX_REGISTRATIONS = 400
@@ -27,7 +27,7 @@ local TRIGGERS = {
 
 local EMPTY = {}
 -- One registration set for the module, so one key.
-local REQUESTS_KEY = "CustomAuraSounds"
+local REQUESTS_KEY = "PersonalAuraSounds"
 
 ---@type number[]
 local soundHandles = {}
@@ -39,10 +39,10 @@ local truncated = false
 ---@type table<number, string?>
 local resolvedFiles = {}
 
----@class CustomAurasSound
+---@class PersonalAurasSound
 local M = {}
 
-addon.Modules.CustomAuras.Sound = M
+addon.Modules.PersonalAuras.Sound = M
 
 local function ClearAuraSounds()
 	for index = #soundHandles, 1, -1 do
@@ -54,7 +54,7 @@ local function ClearAuraSounds()
 	truncated = false
 end
 
----@param requests CustomAuraSoundRequest[]
+---@param requests PersonalAuraSoundRequest[]
 ---@return number
 local function RequestsGeneration(requests)
 	requestStamp:Begin(REQUESTS_KEY)
@@ -81,7 +81,7 @@ end
 
 ---Reconciles the engine-side registrations against what the groups want. One request is one
 ---(unit, sound) pairing over however many spell ids that group tracks.
----@param requests CustomAuraSoundRequest[]
+---@param requests PersonalAuraSoundRequest[]
 function M:Apply(requests)
 	wipe(resolvedFiles)
 
@@ -146,7 +146,7 @@ function M:Clear()
 	ClearAuraSounds()
 end
 
----@class CustomAuraSoundRequest
+---@class PersonalAuraSoundRequest
 ---@field Unit string
 ---@field SpellIds number[]
 ---@field Trigger string A key of the group's Sound table: "Applied"|"Stacks"|"Removed".

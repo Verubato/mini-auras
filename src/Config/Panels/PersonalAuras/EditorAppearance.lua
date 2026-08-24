@@ -3,10 +3,10 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
-local groups = addon.Modules.CustomAuras.Groups
+local groups = addon.Modules.PersonalAuras.Groups
 local barTextures = addon.Core.BarTextures
 local artTextures = addon.Core.ArtTextures
-local ui = addon.Config.CustomAurasUI
+local ui = addon.Config.PersonalAurasUI
 -- The art preview beside the picker button, sized to the row it shares with it.
 local PREVIEW_WIDTH = 96
 local PREVIEW_HEIGHT = 28
@@ -22,8 +22,8 @@ local CHECK_ROW2_GAP = 4
 ---what a group IS.
 ---Returns a refresh function, because the shape a group draws decides which controls even make
 ---sense: a bar has no cooldown swipe to reverse and an icon has no fill texture.
----@param ctx CustomAurasEditorContext
----@return fun(group: CustomAuraGroup) refreshShape
+---@param ctx PersonalAurasEditorContext
+---@return fun(group: PersonalAuraGroup) refreshShape
 function ui.BuildAppearanceTab(ctx)
 	local appearancePanel = ctx.AppearancePanel
 	local checkColumn = mini:ColumnWidth(CHECK_COLUMNS, 0, 0)
@@ -303,7 +303,7 @@ function ui.BuildAppearanceTab(ctx)
 		end,
 	})
 
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
 		local texture = groups:DrawsTexture(group)

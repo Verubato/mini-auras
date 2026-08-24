@@ -63,11 +63,11 @@ local testFiles = {
     "tests/Modules/TestTestModePreview.lua",
     "tests/Modules/TestImportantAurasTestMode.lua",
     "tests/Modules/TestImportantAurasFilters.lua",
-    "tests/Modules/TestCustomAuras.lua",
+    "tests/Modules/TestPersonalAuras.lua",
     "tests/Modules/TestFrameAuras.lua",
 
     -- Config pages that need the whole addon loaded.
-    "tests/Config/TestCustomAurasPanel.lua",
+    "tests/Config/TestPersonalAurasPanel.lua",
     "tests/Config/TestPortraitsPanel.lua",
 
     -- Whole addon, loaded from the TOC into the shared mocked client. Last, because the shared

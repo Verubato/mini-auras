@@ -1,4 +1,4 @@
--- The custom aura module. The rule the whole design hangs off is that 12.1 only honours a
+-- The personal aura module. The rule the whole design hangs off is that 12.1 only honours a
 -- spell-id filter for helpful auras on assistable units and harmful auras on the rest, and
 -- silently drops it otherwise - so the sharp end of these tests is the icon budget: a group
 -- pointed at the wrong side of that rule must be budgeted to ZERO, never left running on a bare
@@ -11,19 +11,19 @@ local acm = require("AuraContainerMock")
 local env = moduleEnv.build()
 local addon = env.addon
 
-env.loadModule("src/Modules/CustomAuras/Groups.lua")
-env.loadModule("src/Modules/CustomAuras/Sound.lua")
-env.loadModule("src/Modules/CustomAuras/Recorder.lua")
-env.loadModule("src/Modules/CustomAuras/Display.lua")
-env.loadModule("src/Modules/CustomAuras/Module.lua")
+env.loadModule("src/Modules/PersonalAuras/Groups.lua")
+env.loadModule("src/Modules/PersonalAuras/Sound.lua")
+env.loadModule("src/Modules/PersonalAuras/Recorder.lua")
+env.loadModule("src/Modules/PersonalAuras/Display.lua")
+env.loadModule("src/Modules/PersonalAuras/Module.lua")
 
-local groups = addon.Modules.CustomAuras.Groups
+local groups = addon.Modules.PersonalAuras.Groups
 local artTextures = addon.Core.ArtTextures
-local display = addon.Modules.CustomAuras.Display
-local recorder = addon.Modules.CustomAuras.Recorder
-local module = addon.Modules.CustomAurasModule
+local display = addon.Modules.PersonalAuras.Display
+local recorder = addon.Modules.PersonalAuras.Recorder
+local module = addon.Modules.PersonalAurasModule
 local db = env.db
-local options = db.Modules.CustomAurasModule
+local options = db.Modules.PersonalAurasModule
 
 -- Everything below authors its own groups, so the starter ones are switched off before Init:
 -- they would otherwise be built against fixture spell names that are not installed yet, and
@@ -64,7 +64,7 @@ end
 
 ---Adds a group with the given overrides applied on top of the defaults.
 ---@param overrides table
----@return CustomAuraGroup
+---@return PersonalAuraGroup
 local function AddGroup(overrides)
 	local group = groups:NewGroup(options, "Test")
 
@@ -111,7 +111,7 @@ local function Budget(container, key)
 	return group and group.maxFrameCount or -1
 end
 
-fw.describe("CustomAuras - group defaults", function()
+fw.describe("PersonalAuras - group defaults", function()
 	fw.it("fills in everything a bare group is missing", function()
 		local group = groups:Normalise({})
 
@@ -175,7 +175,7 @@ fw.describe("CustomAuras - group defaults", function()
 	end)
 end)
 
-fw.describe("CustomAuras - the groups a profile starts with", function()
+fw.describe("PersonalAuras - the groups a profile starts with", function()
 	---A profile that has never been seeded, standing alone so the module's own options are
 	---left exactly as the rest of this file expects them.
 	---@return table
@@ -270,7 +270,7 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 	end)
 end)
 
-fw.describe("CustomAuras - duplicating a group", function()
+fw.describe("PersonalAuras - duplicating a group", function()
 	fw.it("copies everything but the id and the name", function()
 		ClearGroups()
 
@@ -318,8 +318,8 @@ fw.describe("CustomAuras - duplicating a group", function()
 	end)
 end)
 
-fw.describe("CustomAuras - reordering", function()
-	---@return CustomAuraGroup[]
+fw.describe("PersonalAuras - reordering", function()
+	---@return PersonalAuraGroup[]
 	local function ThreeGroups()
 		ClearGroups()
 
@@ -366,7 +366,7 @@ fw.describe("CustomAuras - reordering", function()
 	end)
 end)
 
-fw.describe("CustomAuras - group icons", function()
+fw.describe("PersonalAuras - group icons", function()
 	fw.it("borrows the first tracked spell's icon when none was chosen", function()
 		local group = groups:Normalise({ Spells = { ICE_BLOCK } })
 
@@ -431,7 +431,7 @@ fw.describe("CustomAuras - group icons", function()
 	end)
 end)
 
-fw.describe("CustomAuras - what a group is allowed to track", function()
+fw.describe("PersonalAuras - what a group is allowed to track", function()
 	fw.it("refuses debuffs on units that are always friendly", function()
 		assert(not groups:SupportsAuraType("player", "HARMFUL"), "not on yourself")
 		assert(not groups:SupportsAuraType("pet", "HARMFUL"), "not on your pet")
@@ -593,7 +593,7 @@ fw.describe("CustomAuras - what a group is allowed to track", function()
 	end)
 end)
 
-fw.describe("CustomAuras - spells on the wrong side of the group", function()
+fw.describe("PersonalAuras - spells on the wrong side of the group", function()
 	fw.it("reads a spell's side off the client", function()
 		assert(groups:SpellAuraType(A_DEBUFF) == "HARMFUL", "a spell cast at enemies is a debuff")
 		assert(groups:SpellAuraType(A_BUFF) == "HELPFUL", "and one cast at allies a buff")
@@ -671,7 +671,7 @@ fw.describe("CustomAuras - spells on the wrong side of the group", function()
 	end)
 end)
 
-fw.describe("CustomAuras - units saved before the split", function()
+fw.describe("PersonalAuras - units saved before the split", function()
 	-- Target, focus and the target's target were one choice each with a separate aura type. The
 	-- type it already had decides which side it becomes, so the group keeps showing what it showed.
 	fw.it("sends an old target group to the side matching its aura type", function()
@@ -698,7 +698,7 @@ fw.describe("CustomAuras - units saved before the split", function()
 	end)
 end)
 
-fw.describe("CustomAuras - units that follow a role", function()
+fw.describe("PersonalAuras - units that follow a role", function()
 	local wow = require("WowApi")
 
 	---Puts a roster in place, in the order the tokens are given.
@@ -714,7 +714,7 @@ fw.describe("CustomAuras - units that follow a role", function()
 	end
 
 	---@param unit string
-	---@return CustomAuraGroup
+	---@return PersonalAuraGroup
 	local function Group(unit)
 		return groups:Normalise({ Unit = unit })
 	end
@@ -781,7 +781,7 @@ fw.describe("CustomAuras - units that follow a role", function()
 	end)
 end)
 
-fw.describe("CustomAuras - spell filters", function()
+fw.describe("PersonalAuras - spell filters", function()
 	fw.it("expands each tracked id to every variant of the ability", function()
 		local group = groups:Normalise({ Spells = { TORRENT_IDS[1] } })
 		local filters = groups:BuildFilters(group)
@@ -813,7 +813,7 @@ fw.describe("CustomAuras - spell filters", function()
 	end)
 end)
 
-fw.describe("CustomAuras - screen anchored displays", function()
+fw.describe("PersonalAuras - screen anchored displays", function()
 	fw.it("builds one container carrying both an aura-type group", function()
 		ClearGroups()
 		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
@@ -970,7 +970,7 @@ fw.describe("CustomAuras - screen anchored displays", function()
 	end)
 end)
 
-fw.describe("CustomAuras - the combat condition", function()
+fw.describe("PersonalAuras - the combat condition", function()
 	fw.it("leaves a new group showing whatever the player is doing", function()
 		ClearGroups()
 		env.inCombat = false
@@ -1086,7 +1086,7 @@ fw.describe("CustomAuras - the combat condition", function()
 	end)
 end)
 
-fw.describe("CustomAuras - options page preview", function()
+fw.describe("PersonalAuras - options page preview", function()
 	fw.it("draws a selected group that its own conditions would otherwise hide", function()
 		ClearGroups()
 
@@ -1186,7 +1186,7 @@ fw.describe("CustomAuras - options page preview", function()
 
 end)
 
-fw.describe("CustomAuras - nameplate anchored displays", function()
+fw.describe("PersonalAuras - nameplate anchored displays", function()
 	fw.it("takes a display per plate and gives it back when the plate goes", function()
 		ClearGroups()
 		AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
@@ -1212,7 +1212,7 @@ fw.describe("CustomAuras - nameplate anchored displays", function()
 
 end)
 
-fw.describe("CustomAuras - the layer a group draws in", function()
+fw.describe("PersonalAuras - the layer a group draws in", function()
 	fw.it("leaves a screen group on the layer it would have inherited", function()
 		ClearGroups()
 		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
@@ -1280,7 +1280,7 @@ fw.describe("CustomAuras - the layer a group draws in", function()
 
 end)
 
-fw.describe("CustomAuras - unit frame anchored displays", function()
+fw.describe("PersonalAuras - unit frame anchored displays", function()
 	---Replaces whatever unit frames the last test left with one per token given.
 	---@param unitList string[]
 	---@return table[]
@@ -1384,7 +1384,7 @@ fw.describe("CustomAuras - unit frame anchored displays", function()
 
 	fw.it("registers the group's sounds on each member it shows on", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		UnitFrames({ "party1", "party2" })
 		AddGroup({
 			Unit = "unitframes",
@@ -1447,7 +1447,7 @@ fw.describe("CustomAuras - unit frame anchored displays", function()
 	end)
 end)
 
-fw.describe("CustomAuras - arena frame anchored displays", function()
+fw.describe("PersonalAuras - arena frame anchored displays", function()
 	-- The frames come from whichever addon owns them, so the finder walks a fixed priority list
 	-- of globals. Every test here installs its own and clears them again.
 	local ARENA_PREFIXES = { "sArenaEnemyFrame", "ElvUF_Arena" }
@@ -1579,7 +1579,7 @@ fw.describe("CustomAuras - arena frame anchored displays", function()
 	fw.it("registers the group's sounds on each opponent it shows on", function()
 		ClearGroups()
 		ClearArenaFrames()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		AddArenaFrames("sArenaEnemyFrame", { 1, 2 })
 		AddGroup({
 			Unit = "arenaframes",
@@ -1624,7 +1624,7 @@ fw.describe("CustomAuras - arena frame anchored displays", function()
 	end)
 end)
 
-fw.describe("CustomAuras - stand-in frames while a group is being placed", function()
+fw.describe("PersonalAuras - stand-in frames while a group is being placed", function()
 	---Empties the real unit frame list, so nothing but the stand-ins can be anchored to.
 	local function NoRealFrames()
 		for index = #env.unitFrames, 1, -1 do
@@ -1807,7 +1807,7 @@ fw.describe("CustomAuras - stand-in frames while a group is being placed", funct
 	end)
 end)
 
-fw.describe("CustomAuras - the anchor walk per refresh", function()
+fw.describe("PersonalAuras - the anchor walk per refresh", function()
 	local frames = addon.Core.Frames
 
 	---Counts the walks one refresh makes, with the module left as the body found it.
@@ -1871,7 +1871,7 @@ fw.describe("CustomAuras - the anchor walk per refresh", function()
 	end)
 end)
 
-fw.describe("CustomAuras - tracking by filter", function()
+fw.describe("PersonalAuras - tracking by filter", function()
 	-- Spell ids are the only thing 12.1's assist rule touches. A filter string and the flag
 	-- filters are honoured on any unit, so a filter group escapes every limit the spell path has.
 	fw.it("puts the aura type and nothing else in the string by default", function()
@@ -1966,7 +1966,7 @@ fw.describe("CustomAuras - tracking by filter", function()
 	end)
 end)
 
-fw.describe("CustomAuras - candidate filters", function()
+fw.describe("PersonalAuras - candidate filters", function()
 	fw.it("sends a required flag as true and a forbidden one as false", function()
 		local group = groups:Normalise({
 			Spells = { ICE_BLOCK },
@@ -2025,7 +2025,7 @@ fw.describe("CustomAuras - candidate filters", function()
 	end)
 end)
 
-fw.describe("CustomAuras - icon order", function()
+fw.describe("PersonalAuras - icon order", function()
 	fw.it("sorts on aura instance id by default, which is oldest first", function()
 		local method = groups:GetSortMethod(groups:Normalise({}))
 
@@ -2073,10 +2073,10 @@ fw.describe("CustomAuras - icon order", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sounds", function()
+fw.describe("PersonalAuras - sounds", function()
 	fw.it("registers one sound per tracked spell variant on the group's unit", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 
 		local before = env.auraSoundAdds
 
@@ -2109,7 +2109,7 @@ fw.describe("CustomAuras - sounds", function()
 
 	fw.it("registers each configured trigger separately", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 
 		AddGroup({
 			Unit = "player",
@@ -2131,7 +2131,7 @@ fw.describe("CustomAuras - sounds", function()
 
 	fw.it("leaves the triggers that have no sound alone", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 
 		AddGroup({
 			Unit = "player",
@@ -2171,7 +2171,7 @@ fw.describe("CustomAuras - sounds", function()
 	end)
 end)
 
-fw.describe("CustomAuras - filters the sound cannot honour", function()
+fw.describe("PersonalAuras - filters the sound cannot honour", function()
 	-- A registration is (unit, spell id, file), so the caster narrowing that shapes the icons is
 	-- not in it. The sounds tab says so rather than letting the group sound wrong quietly.
 	fw.it("says so when the group only wants its own casts", function()
@@ -2233,7 +2233,7 @@ fw.describe("CustomAuras - filters the sound cannot honour", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sounds from media addons", function()
+fw.describe("PersonalAuras - sounds from media addons", function()
 	-- A media addon registers its sounds whenever it happens to load, which is routinely after our
 	-- first registration pass. The engine bakes the file into the registration, so resolving to the
 	-- fallback then meant every configured sound played the default for the rest of the session.
@@ -2299,7 +2299,7 @@ fw.describe("CustomAuras - sounds from media addons", function()
 	end)
 end)
 
-fw.describe("CustomAuras - cast recorder", function()
+fw.describe("PersonalAuras - cast recorder", function()
 	fw.it("records nothing until it is started", function()
 		recorder:Clear()
 		recorder:Stop()
@@ -2344,7 +2344,7 @@ fw.describe("CustomAuras - cast recorder", function()
 	end)
 end)
 
-fw.describe("CustomAuras - profile switching", function()
+fw.describe("PersonalAuras - profile switching", function()
 	fw.it("repairs groups a migration wrote with only the fields it cared about", function()
 		ClearGroups()
 
@@ -2358,7 +2358,7 @@ fw.describe("CustomAuras - profile switching", function()
 
 		-- The shape the precog migration leaves in a stored profile: marked seeded, so
 		-- SeedDefaults stands down, with groups holding only the fields it carried over.
-		local snapshot = db.Profiles.Migrated.Modules.CustomAurasModule
+		local snapshot = db.Profiles.Migrated.Modules.PersonalAurasModule
 		snapshot.SeededDefaults = true
 		snapshot.NextId = 2
 		snapshot.Groups = { {
@@ -2380,7 +2380,7 @@ fw.describe("CustomAuras - profile switching", function()
 	end)
 end)
 
-fw.describe("CustomAuras - bars", function()
+fw.describe("PersonalAuras - bars", function()
 	fw.it("builds bar buttons for a group that asks for them", function()
 		ClearGroups()
 		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { Display = "BAR" } })
@@ -2538,13 +2538,13 @@ fw.describe("CustomAuras - bars", function()
 	end)
 end)
 
-fw.describe("CustomAuras - textures", function()
+fw.describe("PersonalAuras - textures", function()
 	-- One of the game's proc overlays, by the file id the catalog holds it under.
 	local ART = 450930
 
 	---A texture group with the art already chosen, since one without it draws nothing.
 	---@param texture table?
-	---@return CustomAuraGroup
+	---@return PersonalAuraGroup
 	local function AddTextureGroup(texture)
 		texture = texture or {}
 		texture.Asset = texture.Asset or ART
@@ -2670,7 +2670,7 @@ fw.describe("CustomAuras - textures", function()
 	end)
 end)
 
-fw.describe("CustomAuras - module gating", function()
+fw.describe("PersonalAuras - module gating", function()
 	fw.it("tears everything down once the last group is gone", function()
 		ClearGroups()
 		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
@@ -2705,7 +2705,7 @@ fw.describe("CustomAuras - module gating", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sound only groups", function()
+fw.describe("PersonalAuras - sound only groups", function()
 	local SOUND_ONLY = groups.DisplayStyle.SoundOnly
 
 	fw.it("allows debuffs by spell id where a drawn group cannot have them", function()
@@ -2736,7 +2736,7 @@ fw.describe("CustomAuras - sound only groups", function()
 
 	fw.it("registers its sounds without building a container", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 
 		local before = env.auraSoundAdds
 
@@ -2754,7 +2754,7 @@ fw.describe("CustomAuras - sound only groups", function()
 
 	fw.it("follows the roster rather than the frames it never hung off", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		env.friendlyUnits = { "player", "party1", "party2" }
 
 		AddGroup({
@@ -2779,7 +2779,7 @@ fw.describe("CustomAuras - sound only groups", function()
 
 	fw.it("registers a target group on the token, not on the unit choice", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 
 		AddGroup({
 			Unit = "targetfriendly",
@@ -2795,10 +2795,10 @@ fw.describe("CustomAuras - sound only groups", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sounds on units the picker renames", function()
+fw.describe("PersonalAuras - sounds on units the picker renames", function()
 	fw.it("registers a drawn target group on the token behind the choice", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 
 		AddGroup({
 			Unit = "targetfriendly",
@@ -2814,7 +2814,7 @@ fw.describe("CustomAuras - sounds on units the picker renames", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sound only ignores the aura type split", function()
+fw.describe("PersonalAuras - sound only ignores the aura type split", function()
 	-- Every split in UNIT_INFO is there because the engine drops a spell-id filter for the
 	-- DISPLAY on the wrong side of the identity gate. A registration has no such side.
 	local CASES = {
@@ -2834,10 +2834,10 @@ fw.describe("CustomAuras - sound only ignores the aura type split", function()
 	end
 end)
 
-fw.describe("CustomAuras - sound only on the unit frames", function()
+fw.describe("PersonalAuras - sound only on the unit frames", function()
 	fw.it("watches the player even with nobody else in the group", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		env.friendlyUnits = {}
 
 		AddGroup({
@@ -2860,7 +2860,7 @@ fw.describe("CustomAuras - sound only on the unit frames", function()
 
 	fw.it("does not register the player twice once there is a group", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		env.friendlyUnits = { "player", "party1" }
 
 		local before = env.auraSoundAdds
@@ -2889,7 +2889,7 @@ fw.describe("CustomAuras - sound only on the unit frames", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sound only forces spell tracking", function()
+fw.describe("PersonalAuras - sound only forces spell tracking", function()
 	fw.it("puts a filter group back onto spells when it turns sound only", function()
 		local group = groups:Normalise({
 			Unit = "player",
@@ -2916,7 +2916,7 @@ fw.describe("CustomAuras - sound only forces spell tracking", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sound only respects the unit's side", function()
+fw.describe("PersonalAuras - sound only respects the unit's side", function()
 	local function TargetGroup()
 		return AddGroup({
 			Unit = "targetfriendly",
@@ -2928,7 +2928,7 @@ fw.describe("CustomAuras - sound only respects the unit's side", function()
 
 	fw.it("registers a friendly target group while the target is friendly", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		env.enemies.target = nil
 
 		local before = env.auraSoundAdds
@@ -2941,7 +2941,7 @@ fw.describe("CustomAuras - sound only respects the unit's side", function()
 
 	fw.it("drops it once the target is hostile", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		env.enemies.target = true
 
 		local before = env.auraSoundAdds
@@ -2971,10 +2971,10 @@ fw.describe("CustomAuras - sound only respects the unit's side", function()
 	end)
 end)
 
-fw.describe("CustomAuras - sound only follows the token's occupant", function()
+fw.describe("PersonalAuras - sound only follows the token's occupant", function()
 	fw.it("registers a friendly target group when the friendly target arrives later", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 
 		-- Built while the target is hostile, so the reaction test refuses it to begin with.
 		env.enemies.target = true
@@ -3010,7 +3010,7 @@ fw.describe("CustomAuras - sound only follows the token's occupant", function()
 	end)
 end)
 
-fw.describe("CustomAuras - a spell list that never reached the engine", function()
+fw.describe("PersonalAuras - a spell list that never reached the engine", function()
 	fw.it("shows nothing rather than every aura on the unit", function()
 		ClearGroups()
 
@@ -3034,7 +3034,7 @@ fw.describe("CustomAuras - a spell list that never reached the engine", function
 	end)
 end)
 
-fw.describe("CustomAuras - what a container is created holding", function()
+fw.describe("PersonalAuras - what a container is created holding", function()
 	fw.it("never hands the engine an id map that matches everything", function()
 		ClearGroups()
 
@@ -3056,10 +3056,10 @@ fw.describe("CustomAuras - what a container is created holding", function()
 	end)
 end)
 
-fw.describe("CustomAuras - a drawn group's sound respects the unit's side", function()
+fw.describe("PersonalAuras - a drawn group's sound respects the unit's side", function()
 	fw.it("does not sound a friendly target group on a hostile target", function()
 		ClearGroups()
-		addon.Modules.CustomAuras.Sound:Clear()
+		addon.Modules.PersonalAuras.Sound:Clear()
 		env.enemies.target = true
 
 		local before = env.auraSoundAdds
@@ -3082,7 +3082,7 @@ fw.describe("CustomAuras - a drawn group's sound respects the unit's side", func
 	end)
 end)
 
-fw.describe("CustomAuras - coalescing the sound rebuild", function()
+fw.describe("PersonalAuras - coalescing the sound rebuild", function()
 	fw.it("rebuilds once for a burst of nameplate churn", function()
 		ClearGroups()
 		AddGroup({
@@ -3166,7 +3166,7 @@ fw.describe("CustomAuras - coalescing the sound rebuild", function()
 	end)
 end)
 
-fw.describe("CustomAuras - a teardown between the request and the rebuild", function()
+fw.describe("PersonalAuras - a teardown between the request and the rebuild", function()
 	fw.it("still rebuilds for an event that arrives after the teardown", function()
 		-- The stranded timer runs and refuses on the generation check. If the pending flag were
 		-- left set, the request below would think a rebuild was already on its way and drop it,

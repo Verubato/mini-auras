@@ -1,4 +1,4 @@
--- The custom aura options page, built against a db that already has a group in it.
+-- The personal aura options page, built against a db that already has a group in it.
 --
 -- The smoke test loads the addon with empty saved variables, so every "is a group selected?"
 -- branch in this page early-returns and the editor is never actually laid out. That blind spot
@@ -43,8 +43,8 @@ local function LoadWithGroup(spells)
 
 	local addon = context.Addon
 	local db = addon.Framework:GetSavedVars()
-	local groups = addon.Modules.CustomAuras.Groups
-	local options = db.Modules.CustomAurasModule
+	local groups = addon.Modules.PersonalAuras.Groups
+	local options = db.Modules.PersonalAurasModule
 	local group = groups:NewGroup(options, "Test Group")
 
 	group.Spells = spells or {}
@@ -64,9 +64,9 @@ local function ShowPage(addon, group)
 	-- options; nothing exists to drive before that.
 	addon.Config:EnsureWindow()
 
-	local content = addon.Config.TabController:GetContent("CustomAuras")
+	local content = addon.Config.TabController:GetContent("PersonalAuras")
 
-	fw.not_nil(content, "the custom auras tab exists")
+	fw.not_nil(content, "the personal auras tab exists")
 
 	local onShow = content:GetScript("OnShow")
 
@@ -158,7 +158,7 @@ local function TypeInto(box, text)
 	box:GetScript("OnEnterPressed")(box)
 end
 
-fw.describe("Custom auras page - typing a group's offset", function()
+fw.describe("Personal auras page - typing a group's offset", function()
 	fw.it("shows the screen position of a group anchored to the screen", function()
 		local addon, group = LoadWithGroup({ 45438 })
 
@@ -193,7 +193,7 @@ fw.describe("Custom auras page - typing a group's offset", function()
 	-- an offset from the plate rather than a point on the screen.
 	fw.it("writes to the frame offset for a group anchored to nameplates", function()
 		local addon, group = LoadWithGroup({ 118 })
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		group.Unit = "nameplate"
 		group.AuraType = "HARMFUL"
@@ -225,13 +225,13 @@ fw.describe("Custom auras page - typing a group's offset", function()
 	end)
 end)
 
-fw.describe("Custom auras page - controls inside a tab", function()
+fw.describe("Personal auras page - controls inside a tab", function()
 	-- Every control registers for refresh against its PARENT, so the ones inside a tab are on
 	-- the tab's list, not the editor's. Refreshing only the editor left them showing the values
 	-- they were built with, which is the state before any group existed.
 	fw.it("shows the selected group's values on the appearance sliders", function()
 		local addon, group = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		group.Icons.Size = 64
 		group.Icons.Spacing = 9
@@ -250,10 +250,10 @@ fw.describe("Custom auras page - controls inside a tab", function()
 	end)
 end)
 
-fw.describe("Custom auras page - the cast recorder", function()
+fw.describe("Personal auras page - the cast recorder", function()
 	fw.it("adds the spell when a recorded cast is clicked", function()
 		local addon, group = LoadWithGroup({})
-		local recorder = addon.Modules.CustomAuras.Recorder
+		local recorder = addon.Modules.PersonalAuras.Recorder
 		local spellId = 45438
 
 		ShowPage(addon, group)
@@ -274,13 +274,13 @@ fw.describe("Custom auras page - the cast recorder", function()
 	end)
 end)
 
-fw.describe("Custom auras page - a group saved by an older version", function()
+fw.describe("Personal auras page - a group saved by an older version", function()
 	-- Config:Init builds this page before any module's Init, so NormaliseGroups has not run yet.
 	-- A group stored before the filter settings existed therefore reaches the page with no
 	-- Filters, Candidates or Exclude table at all, and the page indexes all three directly.
 	fw.it("lays out a group that predates the filter settings", function()
 		local addon = LoadWithGroup({ 45438 })
-		local options = addon.Framework:GetSavedVars().Modules.CustomAurasModule
+		local options = addon.Framework:GetSavedVars().Modules.PersonalAurasModule
 		local group = options.Groups[1]
 
 		group.Filters = nil
@@ -298,8 +298,8 @@ fw.describe("Custom auras page - a group saved by an older version", function()
 	fw.it("lays out a second, unselected group that is also missing them", function()
 		-- Only the selected group goes through the editor, so the grid tiles have to be safe too.
 		local addon = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
-		local options = addon.Framework:GetSavedVars().Modules.CustomAurasModule
+		local groups = addon.Modules.PersonalAuras.Groups
+		local options = addon.Framework:GetSavedVars().Modules.PersonalAurasModule
 		local second = groups:NewGroup(options, "Older")
 
 		options.Groups[2] = second
@@ -312,7 +312,7 @@ fw.describe("Custom auras page - a group saved by an older version", function()
 	end)
 end)
 
-fw.describe("Custom auras page - the two tracking modes", function()
+fw.describe("Personal auras page - the two tracking modes", function()
 	---Every tri-state button the components grid built, found by the marker only they carry.
 	---@return table[]
 	local function ComponentButtons(groups)
@@ -351,7 +351,7 @@ fw.describe("Custom auras page - the two tracking modes", function()
 	-- pixel leaves all nine drawn on top of the message and the spell list underneath.
 	fw.it("hides the filter components while the group tracks spell ids", function()
 		local addon, group = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		group.TrackingMode = groups.TrackingMode.Spells
 		groups:Normalise(group)
@@ -365,7 +365,7 @@ fw.describe("Custom auras page - the two tracking modes", function()
 
 	fw.it("shows them again once the group tracks by filter", function()
 		local addon, group = LoadWithGroup({})
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		group.TrackingMode = groups.TrackingMode.Filters
 		groups:Normalise(group)
@@ -376,7 +376,7 @@ fw.describe("Custom auras page - the two tracking modes", function()
 	end)
 end)
 
-fw.describe("Custom auras page - walking the suggestions with the arrow keys", function()
+fw.describe("Personal auras page - walking the suggestions with the arrow keys", function()
 	---The spell picker's edit box, found by the placeholder only it carries.
 	---@return table?
 	local function Picker()
@@ -472,7 +472,7 @@ fw.describe("Custom auras page - walking the suggestions with the arrow keys", f
 	end)
 end)
 
-fw.describe("Custom auras page - selecting and deselecting", function()
+fw.describe("Personal auras page - selecting and deselecting", function()
 	---@param addon table
 	---@return boolean
 	local function EditorShown(addon)
@@ -507,7 +507,7 @@ fw.describe("Custom auras page - selecting and deselecting", function()
 
 		ShowPage(addon, group)
 
-		local background = _G["MiniAurasCustomAuraGrid"]
+		local background = _G["MiniAurasPersonalAuraGrid"]
 
 		fw.not_nil(background, "the grid takes the clicks its tiles do not")
 		background:GetScript("OnClick")(background)
@@ -516,7 +516,7 @@ fw.describe("Custom auras page - selecting and deselecting", function()
 	end)
 end)
 
-fw.describe("Custom auras page - reordering the grid", function()
+fw.describe("Personal auras page - reordering the grid", function()
 	-- Two tiles in a row, laid out the way the grid does it: 56 wide, 12 apart. The mock gives
 	-- every frame the same rect, so the drop hit test needs real ones to mean anything.
 	local TILE, GAP = 56, 12
@@ -544,8 +544,8 @@ fw.describe("Custom auras page - reordering the grid", function()
 	---@return table second
 	local function TwoGroups()
 		local addon = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
-		local options = addon.Framework:GetSavedVars().Modules.CustomAurasModule
+		local groups = addon.Modules.PersonalAuras.Groups
+		local options = addon.Framework:GetSavedVars().Modules.PersonalAurasModule
 		local second = groups:NewGroup(options, "Second")
 
 		second.Spells = { 118 }
@@ -648,10 +648,10 @@ local function EditorTabs()
 	return found
 end
 
-fw.describe("Custom auras page - tabs a group cannot use", function()
+fw.describe("Personal auras page - tabs a group cannot use", function()
 	fw.it("hides the three display tabs for a sound-only group", function()
 		local addon, group = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		group.Icons.Display = groups.DisplayStyle.SoundOnly
 		groups:Normalise(group)
@@ -669,7 +669,7 @@ fw.describe("Custom auras page - tabs a group cannot use", function()
 
 	fw.it("closes the gap the hidden tabs leave", function()
 		local addon, group = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		group.Icons.Display = groups.DisplayStyle.SoundOnly
 		groups:Normalise(group)
@@ -696,11 +696,11 @@ fw.describe("Custom auras page - tabs a group cannot use", function()
 	end)
 end)
 
-fw.describe("Custom auras page - sounds the filters cannot reach", function()
+fw.describe("Personal auras page - sounds the filters cannot reach", function()
 	fw.it("says so for a group that only wants its own casts", function()
 		local addon, group = LoadWithGroup({ 45438 })
 
-		group.Caster = addon.Modules.CustomAuras.Groups.Caster.Mine
+		group.Caster = addon.Modules.PersonalAuras.Groups.Caster.Mine
 		group.Sound.Applied = "Sonar"
 
 		ShowPage(addon, group)
@@ -719,7 +719,7 @@ fw.describe("Custom auras page - sounds the filters cannot reach", function()
 	end)
 end)
 
-fw.describe("Custom auras page - with a group configured", function()
+fw.describe("Personal auras page - with a group configured", function()
 	fw.it("lays the page out without touching anything that is not there", function()
 		local addon = LoadWithGroup({ 45438, 118 })
 
@@ -739,7 +739,7 @@ fw.describe("Custom auras page - with a group configured", function()
 
 		group.Unit = "nameplate"
 		group.AuraType = "HARMFUL"
-		addon.Modules.CustomAuras.Groups:Normalise(group)
+		addon.Modules.PersonalAuras.Groups:Normalise(group)
 
 		ShowPage(addon)
 	end)
@@ -748,7 +748,7 @@ fw.describe("Custom auras page - with a group configured", function()
 		-- The appearance tab collapses and reinstates a row per shape, so the page has to be
 		-- measurable for each of them, including the sound-only one that empties it entirely.
 		local addon, group = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		local shapes = {
 			groups.DisplayStyle.Bars,
@@ -766,7 +766,7 @@ fw.describe("Custom auras page - with a group configured", function()
 
 	fw.it("survives every unit the dropdown offers", function()
 		local addon, group = LoadWithGroup({ 45438 })
-		local groups = addon.Modules.CustomAuras.Groups
+		local groups = addon.Modules.PersonalAuras.Groups
 
 		for _, unit in ipairs(groups.Units) do
 			group.Unit = unit

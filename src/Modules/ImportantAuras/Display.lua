@@ -70,7 +70,7 @@ local IMPORTANT_GROUP_KEY = "helpfulimp"
 local HELPFUL_FILTER = "HELPFUL"
 -- An id nothing will ever have, for a tracked set that comes out empty. An EMPTY includeSpellIDs
 -- map reads as "no ids required", so the group would match every buff on the unit instead of none
--- of them - see the same trap in Modules/CustomAuras/Display.
+-- of them - see the same trap in Modules/PersonalAuras/Display.
 local NEVER_MATCHED_SPELL_ID = 2147483647
 -- The curated lists, each tied to the toggle that owns it and the group it lands in. The unflagged
 -- halves are only reachable at all because the groups filter by id.

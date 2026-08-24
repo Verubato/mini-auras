@@ -3,22 +3,22 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
-local display = addon.Modules.CustomAuras.Display
-local ui = addon.Config.CustomAurasUI
+local display = addon.Modules.PersonalAuras.Display
+local ui = addon.Config.PersonalAurasUI
 local verticalSpacing = mini.VerticalSpacing
 
--- The custom aura page: a grid of groups and an editor for the selected one. The pieces live in
--- the CustomAuras folder and share state through addon.Config.CustomAurasUI; this file only lays
+-- The personal aura page: a grid of groups and an editor for the selected one. The pieces live in
+-- the PersonalAuras folder and share state through addon.Config.PersonalAurasUI; this file only lays
 -- the page out and wires them together.
 --
 -- The editor's controls are built ONCE and read whatever is selected through ui.Current(), so
 -- switching groups is a MiniRefresh rather than a rebuild. Only the group grid and the spell
 -- list recycle rows.
 
----@class CustomAurasConfig
+---@class PersonalAurasConfig
 local M = {}
 
-config.CustomAuras = M
+config.PersonalAuras = M
 
 ---The tab framework measures its scroll child once, on first show, which is before anything has
 ---been added to the page.
@@ -63,7 +63,7 @@ function M:Build(panel)
 
 	local groupsDivider = mini:Divider({
 		Parent = panel,
-		Text = L["Custom Auras"],
+		Text = L["Personal Auras"],
 	})
 	groupsDivider:SetPoint("LEFT", panel, "LEFT")
 	groupsDivider:SetPoint("RIGHT", panel, "RIGHT")

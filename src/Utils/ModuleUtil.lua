@@ -38,7 +38,7 @@ local ModuleName = {
 	Trinkets = "TrinketsModule",
 	ImportantAuras = "ImportantAurasModule",
 	FrameAuras = "FrameAurasModule",
-	CustomAuras = "CustomAurasModule",
+	PersonalAuras = "PersonalAurasModule",
 }
 
 ---@class ModuleUtil
@@ -374,7 +374,7 @@ end
 ---The saved shape is the module-options one: Point, RelativePoint, RelativeTo (frame name,
 ---"UIParent" fallback) and Offset.X/Y. Two shape variations are honoured rather than forced:
 ---RelativeTo is only written when the table already carries the key, and a table without an
----Offset sub-table gets X/Y written directly (the custom aura groups' {Point, RelativePoint,
+---Offset sub-table gets X/Y written directly (the personal aura groups' {Point, RelativePoint,
 ---X, Y} position shape).
 ---
 ---Dropping the frame opens the position editor on it, and so does a click that is not a drag, so

@@ -20,7 +20,7 @@ local modules = {
 	addon.Modules.EnemyKickTrackerModule,
 	addon.Modules.ImportantAurasModule,
 	addon.Modules.FrameAurasModule,
-	addon.Modules.CustomAurasModule,
+	addon.Modules.PersonalAurasModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.AllyKickTrackerModule,
 	addon.Core.TrinketsTracker,
@@ -40,7 +40,7 @@ local modulesBySettingsKey = {
 	TrinketsModule = addon.Modules.TrinketsModule,
 	ImportantAurasModule = addon.Modules.ImportantAurasModule,
 	FrameAurasModule = addon.Modules.FrameAurasModule,
-	CustomAurasModule = addon.Modules.CustomAurasModule,
+	PersonalAurasModule = addon.Modules.PersonalAurasModule,
 }
 -- How long a burst of media registrations is allowed to settle before re-resolving. A media pack
 -- registers one entry at a time, so this coalesces a hundred callbacks into one refresh.
@@ -399,12 +399,12 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TargetAuras FrameAurasTargetAuras
 ---@field Module FrameAurasModule
 
----@class CustomAuras
----@field Groups CustomAurasGroups
----@field Sound CustomAurasSound
----@field Recorder CustomAurasRecorder
----@field Display CustomAurasDisplay
----@field Module CustomAurasModule
+---@class PersonalAuras
+---@field Groups PersonalAurasGroups
+---@field Sound PersonalAurasSound
+---@field Recorder PersonalAurasRecorder
+---@field Display PersonalAurasDisplay
+---@field Module PersonalAurasModule
 
 ---@class CrowdControl
 ---@field Display CrowdControlDisplay
@@ -454,13 +454,13 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field CrowdControlModule CrowdControlModule
 ---@field ImportantAurasModule ImportantAurasModule
 ---@field FrameAurasModule FrameAurasModule
----@field CustomAurasModule CustomAurasModule
+---@field PersonalAurasModule PersonalAurasModule
 ---@field EnemyKickTracker EnemyKickTracker
 ---@field AllyKickTracker AllyKickTracker
 ---@field Alerts Alerts
 ---@field ImportantAuras ImportantAuras
 ---@field FrameAuras FrameAuras
----@field CustomAuras CustomAuras
+---@field PersonalAuras PersonalAuras
 ---@field CrowdControl CrowdControl
 ---@field HealerCrowdControl HealerCrowdControl
 ---@field Trinkets Trinkets

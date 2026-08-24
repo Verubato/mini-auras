@@ -4,7 +4,7 @@ local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
 local moduleName = addon.Utils.ModuleName
-local groups = addon.Modules.CustomAuras.Groups
+local groups = addon.Modules.PersonalAuras.Groups
 -- A tri-state cycles through these in order, and shows the matching colour.
 local TRI_ORDER = { "OFF", "REQUIRE", "FORBID" }
 local TRI_COLORS = {
@@ -16,11 +16,11 @@ local TRI_COLUMNS = 3
 local TRI_ROW_HEIGHT = 24
 local TRI_WIDTH = 230
 
--- Shared state for the custom auras page, which is split across the files in this folder.
+-- Shared state for the personal auras page, which is split across the files in this folder.
 -- Everything is wired together when Config builds the page, so load order between the sibling
 -- files only matters in that this one loads first.
 
----@class CustomAurasUI
+---@class PersonalAurasUI
 local ui = {
 	---The id of the group the editor is showing, nil when nothing is selected.
 	SelectedId = nil,
@@ -39,14 +39,14 @@ local ui = {
 -- top edge, and a checkbox is half again as tall as the text beside it.
 ui.DropdownRowHeight = ui.LabelHeight + 30
 
-addon.Config.CustomAurasUI = ui
+addon.Config.PersonalAurasUI = ui
 
----@return CustomAurasModuleOptions
+---@return PersonalAurasModuleOptions
 function ui.Options()
-	return mini:GetSavedVars().Modules.CustomAurasModule
+	return mini:GetSavedVars().Modules.PersonalAurasModule
 end
 
----@return CustomAuraGroup?
+---@return PersonalAuraGroup?
 function ui.Current()
 	for _, group in ipairs(ui.Options().Groups) do
 		if group.Id == ui.SelectedId then
@@ -58,7 +58,7 @@ function ui.Current()
 end
 
 function ui.Apply()
-	config:Apply(moduleName.CustomAuras)
+	config:Apply(moduleName.PersonalAuras)
 end
 
 ---@param spellId number

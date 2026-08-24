@@ -3,7 +3,7 @@
 -- The page is mostly checkboxes, but the unflagged buff list is built from a generated table and
 -- has its own read/write path, with no other coverage: the smoke test never lays a page out, and
 -- luacheck cannot catch a nil global here because the addon's config suppresses undefined globals
--- so real WoW globals stay quiet. Same blind spot the custom auras page test exists to close.
+-- so real WoW globals stay quiet. Same blind spot the personal auras page test exists to close.
 
 local fw = require("Framework")
 local harness = require("AddonHarness")

@@ -3,8 +3,8 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
-local groups = addon.Modules.CustomAuras.Groups
-local ui = addon.Config.CustomAurasUI
+local groups = addon.Modules.PersonalAuras.Groups
+local ui = addon.Config.PersonalAurasUI
 local DROPDOWN_WIDTH = 180
 local ROW_GAP = 10
 -- The editor's own tab strip. The spacing is the strip's own default, named here because the
@@ -116,7 +116,7 @@ function ui.BuildEditor(editor)
 	---id, which a filter group does not have; a sound-only group draws nothing, so the three tabs
 	---that shape a display are about nothing at all. The display style itself sits on the trigger
 	---tab, which is what keeps hiding the other three from stranding anyone in sound-only.
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	---@param key string
 	---@return boolean
 	local function TabApplies(group, key)
@@ -133,7 +133,7 @@ function ui.BuildEditor(editor)
 
 	---Shows the tabs the group can use, closing the gap a hidden one leaves rather than parking
 	---the rest around a hole.
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	local function RefreshTabs(group)
 		local position = 0
 
@@ -205,7 +205,7 @@ function ui.BuildEditor(editor)
 	end
 
 	---Set once the sounds tab is built, below.
-	---@type fun(group: CustomAuraGroup)?
+	---@type fun(group: PersonalAuraGroup)?
 	local refreshCaveat
 
 	---@param key string
@@ -389,7 +389,7 @@ function ui.BuildEditor(editor)
 		return control
 	end
 
-	---@type CustomAurasEditorContext
+	---@type PersonalAurasEditorContext
 	local ctx = {
 		Editor = editor,
 		NewRow = NewRow,
@@ -447,7 +447,7 @@ function ui.BuildEditor(editor)
 	editor.SelectTab(tabStrip.GetSelected())
 end
 
----@class CustomAurasEditorContext
+---@class PersonalAurasEditorContext
 ---@field Editor table
 ---@field NewRow fun(owner: table, height: number, gap: number?): table
 ---@field SetRowGap fun(row: table, gap: number)

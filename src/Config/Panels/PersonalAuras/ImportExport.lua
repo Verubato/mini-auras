@@ -2,8 +2,8 @@
 local addonName, addon = ...
 local mini = addon.Framework
 local L = addon.L
-local groups = addon.Modules.CustomAuras.Groups
-local ui = addon.Config.CustomAurasUI
+local groups = addon.Modules.PersonalAuras.Groups
+local ui = addon.Config.PersonalAurasUI
 -- Every exported string starts with this, so an import can reject a profile string or a bad
 -- paste before decoding. The payload is deflated CBOR, then Base64. The trailing number is
 -- the payload schema, checked separately.
@@ -14,7 +14,7 @@ local SCHEMA_VERSION = 1
 
 local importWindow
 
----@param list CustomAuraGroup[]
+---@param list PersonalAuraGroup[]
 ---@return string
 local function Encode(list)
 	local payload = { V = SCHEMA_VERSION, Groups = list }
@@ -27,7 +27,7 @@ local function Encode(list)
 end
 
 ---@param text string
----@return CustomAuraGroup[]? imported
+---@return PersonalAuraGroup[]? imported
 ---@return string? error
 local function Decode(text)
 	text = text:gsub("%s+", "")
@@ -206,7 +206,7 @@ local function GetOrCreateImportWindow()
 	return win
 end
 
----@param list CustomAuraGroup[]
+---@param list PersonalAuraGroup[]
 function ui.ShowImportWindow(list)
 	local win = GetOrCreateImportWindow()
 

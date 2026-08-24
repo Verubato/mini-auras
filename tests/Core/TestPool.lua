@@ -140,7 +140,7 @@ fw.describe("Pool - RefreshFree", function()
 
 	fw.it("caller-owned lanes let two owners sweep one pool without clobbering", function()
 		-- The pool's default lane is last-writer-wins by design; owners that share a pool (the
-		-- CustomAuras shape pools) pass their own lane so a second owner's sweep cannot replace
+		-- PersonalAuras shape pools) pass their own lane so a second owner's sweep cannot replace
 		-- the first's mid-run.
 		local instance = PoolWithParked(6)
 		local seenA, collectA = Collector()

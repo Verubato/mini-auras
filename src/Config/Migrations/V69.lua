@@ -192,3 +192,38 @@ function M:UpgradeToVersion72(vars)
 	vars.Version = 72
 	return true
 end
+
+---The module renders "Personal Auras" now, and the saved key follows the page name.
+---@param vars table The live saved variables, or one profile's snapshot of them.
+local function RenamePersonalAuras(vars)
+	local modules = vars and vars.Modules
+
+	if not modules or modules.CustomAurasModule == nil then
+		return
+	end
+
+	-- Only when the new key is untaken: a db that already carries one has been through this
+	-- step, and the old table beside it is the stale half.
+	if modules.PersonalAurasModule == nil then
+		modules.PersonalAurasModule = modules.CustomAurasModule
+	end
+
+	modules.CustomAurasModule = nil
+end
+
+function M:UpgradeToVersion73(vars)
+	if vars.Version ~= 72 then return false end
+
+	RenamePersonalAuras(vars)
+
+	-- A profile switch writes its snapshot back over the live db wholesale, so one still holding
+	-- the old key would put it straight back.
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			RenamePersonalAuras(profile)
+		end
+	end
+
+	vars.Version = 73
+	return true
+end

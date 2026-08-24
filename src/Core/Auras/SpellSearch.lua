@@ -528,7 +528,7 @@ local function BuildSearchIndex()
 end
 
 ---Enough of the index to answer which ids share a spell's name, which is what an aura filter
----asks. Deliberately not the search list: a custom aura group with a spell in it would otherwise
+---asks. Deliberately not the search list: a personal aura group with a spell in it would otherwise
 ---build every generated row at login for a list nobody is looking at.
 local function EnsureVariants()
 	if entries then

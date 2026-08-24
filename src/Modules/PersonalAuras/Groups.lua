@@ -7,7 +7,7 @@ local sounds = addon.Core.Sounds
 local units = addon.Utils.UnitUtil
 local changeStamp = addon.Utils.ChangeStamp
 
--- The shape of a custom aura group, shared by the display, the options page and the import path.
+-- The shape of a personal aura group, shared by the display, the options page and the import path.
 --
 -- The rule the whole design turns on: 12.1 only honours includeSpellIDs for helpful auras on
 -- assistable units and harmful auras on the rest. Everywhere else the engine drops the map
@@ -23,7 +23,7 @@ local changeStamp = addon.Utils.ChangeStamp
 --
 -- Class and spec conditions are deliberately absent; profiles already switch on specialisation.
 
-addon.Modules.CustomAuras = addon.Modules.CustomAuras or {}
+addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
 -- Aura types, which are also the base of the container filter string.
 local HELPFUL = "HELPFUL"
@@ -217,10 +217,10 @@ local DEFAULT_ROW_Y = 80
 -- What each group's filters were last built from; see GetFilterGeneration.
 local filterStamp = changeStamp:New()
 
----@class CustomAurasGroups
+---@class PersonalAurasGroups
 local M = {}
 
-addon.Modules.CustomAuras.Groups = M
+addon.Modules.PersonalAuras.Groups = M
 
 M.AuraType = { Helpful = HELPFUL, Harmful = HARMFUL }
 M.Anchor = { Screen = SCREEN, Nameplate = NAMEPLATE, Frames = FRAMES, Arena = ARENA }
@@ -339,9 +339,9 @@ local function SpellList(stored)
 end
 
 ---A fresh group with everything filled in, and the module's id counter advanced past it.
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 ---@param name string?
----@return CustomAuraGroup
+---@return PersonalAuraGroup
 function M:NewGroup(options, name)
 	local id = options.NextId or 1
 	options.NextId = id + 1
@@ -355,7 +355,7 @@ end
 ---Fills in what a group is missing and clamps what it got wrong, in place. Run on every group at
 ---load and on every import: the data is user-editable and an import string comes from a stranger.
 ---@param group table
----@return CustomAuraGroup
+---@return PersonalAuraGroup
 function M:Normalise(group)
 	group.Id = tostring(group.Id or "g0")
 	group.Name = tostring(group.Name or "")
@@ -520,7 +520,7 @@ end
 ---Adds the groups a profile starts with, once. The flag is what stops them coming back after
 ---they are deleted, and is also what gets them into a profile that predates them: an install
 ---updating from an older version has no flag, so it seeds on the next load like a fresh one.
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 ---@return boolean seeded True only on the run that created them.
 function M:SeedDefaults(options)
 	if options.SeededDefaults then
@@ -554,10 +554,10 @@ end
 
 ---Copies a group, giving it a new id and a name that says what it came from. The copy lands
 ---next to the original in the list, which is where the eye expects it.
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 ---@param groupId string
 ---@param name string What to call the copy; the caller owns the wording.
----@return CustomAuraGroup? copy
+---@return PersonalAuraGroup? copy
 function M:Duplicate(options, groupId, name)
 	for index, group in ipairs(options.Groups) do
 		if group.Id == groupId then
@@ -579,7 +579,7 @@ end
 
 ---Moves one group to another's position, for the drag-to-reorder in the options grid. Order is
 ---presentation only: nothing about what a group shows depends on where it sits in the list.
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 ---@param fromId string
 ---@param toId string
 ---@return boolean moved
@@ -606,7 +606,7 @@ function M:Move(options, fromId, toId)
 end
 
 ---The one the user picked, else the first spell added, else a question mark.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return string|number
 function M:GetIcon(group)
 	if group.Icon ~= "" then
@@ -620,21 +620,21 @@ end
 
 ---True while a group narrows what it shows to a list of spell ids, which is the only setting
 ---the engine's assist rule applies to.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean
 function M:TracksSpells(group)
 	return group.TrackingMode == BY_SPELLS
 end
 
 ---True while a group draws bars rather than square icons.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean
 function M:DrawsBars(group)
 	return group.Icons.Display == AS_BARS
 end
 
 ---True while a group draws one picture rather than icons or bars.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean
 function M:DrawsTexture(group)
 	return group.Icons.Display == AS_TEXTURE
@@ -642,7 +642,7 @@ end
 
 ---Which shape a group draws, as one of the DisplayStyle values. A button's shape is baked in when
 ---it is created, so this is also the key the display pools its frames under.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return string
 function M:GetShape(group)
 	local display = group.Icons and group.Icons.Display
@@ -652,7 +652,7 @@ end
 
 ---How many auras a group can show at once. Art is one picture however many auras are up: the
 ---group is the picture, so a second copy of it would say nothing the first does not.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number
 function M:GetBudget(group)
 	return M:DrawsTexture(group) and 1 or MAX_ICONS
@@ -660,14 +660,14 @@ end
 
 ---True while a group draws nothing and only plays its sounds. Nil-safe on the appearance table,
 ---because the unit sanitiser asks this before it has filled one in.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean
 function M:IsSoundOnly(group)
 	return group.Icons ~= nil and group.Icons.Display == AS_SOUND
 end
 
 ---True while a group has at least one trigger set to something audible.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean
 function M:HasSound(group)
 	for _, trigger in ipairs(SOUND_TRIGGERS) do
@@ -682,7 +682,7 @@ end
 ---Whether the group's filters reach further than its sounds can. The engine plays a sound per
 ---(unit, spell id) with nothing in the registration to say who cast the aura, so a caster or
 ---flag narrowing shapes the display and is ignored by the sound.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean
 function M:SoundIgnoresFilters(group)
 	-- The same three things CollectSoundRequests asks before it registers anything: a group with
@@ -715,7 +715,7 @@ end
 
 ---The size a group's display is built at: a bar's height, a picture's height, or an icon's side.
 ---Every shape sizes what it holds (fonts, the bar's leading icon) from this one number.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number
 function M:GetSize(group)
 	if M:DrawsTexture(group) then
@@ -726,7 +726,7 @@ function M:GetSize(group)
 end
 
 ---The layer a group's frames are pinned to, or nil to follow whatever they hang off.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return string?
 function M:GetStrata(group)
 	return group.Strata ~= STRATA_AUTO and group.Strata or nil
@@ -751,7 +751,7 @@ end
 ---The real unit a group watches, or nil for one that lives on nameplates and for a role choice
 ---the group cannot fill. With two healers there is no better answer than a stable one, so the
 ---first in roster order wins.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return string?
 function M:GetToken(group)
 	local info = UNIT_INFO[group.Unit]
@@ -881,7 +881,7 @@ end
 
 ---Whether a tracked spell can ever match the group holding it. A container filters for helpful
 ---or harmful and nothing else, so a debuff in a buff group is invisible whatever unit it sits on.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@param spellId number
 ---@return boolean
 function M:SpellFitsAuraType(group, spellId)
@@ -897,7 +897,7 @@ function M:SpellFitsAuraType(group, spellId)
 end
 
 ---How many of a group's tracked spells are the opposite side to the one it filters for.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number
 function M:CountWrongTypeSpells(group)
 	local count = 0
@@ -917,7 +917,7 @@ end
 ---A spell on the wrong side is deliberately NOT a refusal: the client's answer is about what the
 ---spell can be cast at, which is a hair off what its aura counts as, and a group is better left
 ---running with a warning on it than switched off by a verdict that can be wrong.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean supported
 ---@return string? reason Key the options page maps to a message.
 function M:Supports(group)
@@ -954,7 +954,7 @@ end
 
 ---Whether the player's combat state is one the group asked to show in. Separate from Supports:
 ---this answer changes minute to minute, where Supports is about how the group is configured.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@param inCombat boolean
 ---@return boolean
 function M:ShowsInCombat(group, inCombat)
@@ -969,7 +969,7 @@ end
 
 ---Whether any group is conditional on combat, which is what decides whether the module has to
 ---listen for the regen events at all.
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 ---@return boolean
 function M:AnyCombatConditional(options)
 	for _, group in ipairs(options.Groups) do
@@ -982,7 +982,7 @@ function M:AnyCombatConditional(options)
 end
 
 ---A caveat worth showing next to a group that is legal but will only show on some units.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return string? reason
 function M:GetWarning(group)
 	local info = UNIT_INFO[group.Unit]
@@ -1006,7 +1006,7 @@ end
 
 ---Whether the group's filters care who cast the aura: the caster choice, the PLAYER component,
 ---or the from-my-side flag.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return boolean
 local function DependsOnCaster(group)
 	if group.Caster ~= CASTER_ANY then
@@ -1030,7 +1030,7 @@ end
 
 ---Whether the engine will honour this group's filters for the unit it is on right now. False
 ---means the display must budget it to zero, or the container matches auras the group excludes.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@param unit string
 ---@return boolean
 function M:CanFilterUnit(group, unit)
@@ -1088,7 +1088,7 @@ end
 
 ---The filter string the group's container parses auras with: the aura type, whoever the caster
 ---has to be, and whatever components the group requires or forbids.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return string
 function M:BuildFilterString(group)
 	local parts = { group.AuraType }
@@ -1117,7 +1117,7 @@ end
 ---The candidate filters a group's container tracks with. Only the spell id maps are subject to
 ---the engine's assist rule; everything else here applies on any unit.
 ---Returns a fresh table each time, because the engine keeps the reference it is handed.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return table filters
 function M:BuildFilters(group)
 	local filters = {}
@@ -1140,7 +1140,7 @@ function M:BuildFilters(group)
 end
 
 ---The engine sort the group's icon order maps to.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number method
 ---@return number direction
 function M:GetSortMethod(group)
@@ -1156,7 +1156,7 @@ end
 
 ---Changes whenever something the container was built from changes, so the display can tell a
 ---cosmetic edit from one that has to reach the engine.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number
 function M:GetFilterGeneration(group)
 	filterStamp:Begin(group.Id)
@@ -1188,7 +1188,7 @@ function M:ForgetFilterGeneration(groupId)
 	filterStamp:Forget(groupId)
 end
 
----@class CustomAuraGroup
+---@class PersonalAuraGroup
 ---@field Id string
 ---@field Name string
 ---@field Enabled boolean

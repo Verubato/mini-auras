@@ -355,9 +355,8 @@ L:SetDefaultStrings({
 	["Show self"] = "Show self",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Keep a bar at the top for your own interrupt, counting down to when it is ready.",
 
-	-- Custom Auras tab
-	["Custom Auras"] = "Custom Auras",
-	["Custom Auras_Short"] = "Personal Auras",
+	-- Personal Auras tab
+	["Personal Auras"] = "Personal Auras",
 	["Create your own custom mini weak auras."] = "Create your own custom mini weak auras.",
 	["Spell IDs only work for buffs on allies and debuffs on enemies."] = "Spell IDs only work for buffs on allies and debuffs on enemies.",
 	["Aura filters and sound only auras don't have this restriction."] = "Aura filters and sound only auras don't have this restriction.",

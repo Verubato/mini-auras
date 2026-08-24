@@ -352,9 +352,8 @@ L:RegisterLocale("ptBR", function() return {
 	["Show self"] = "Mostrar a si mesmo",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Mantem uma barra no topo para sua propria interrupcao, com a contagem ate ficar pronta.",
 
-	-- Custom Auras tab
-	["Custom Auras"] = "Auras personalizadas",
-	["Custom Auras_Short"] = "Auras pessoais",
+	-- Personal Auras tab
+	["Personal Auras"] = "Auras pessoais",
 	["Create your own custom mini weak auras."] = "Crie suas próprias mini weak auras.",
 	["Spell IDs only work for buffs on allies and debuffs on enemies."] = "Os IDs de magia só funcionam para benefícios em aliados e penalidades em inimigos.",
 	["Aura filters and sound only auras don't have this restriction."] = "Os filtros de aura e as auras somente som não têm essa restrição.",

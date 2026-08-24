@@ -107,7 +107,7 @@ function M.build()
 	_G.UnitNameFromGUID = function(guid)
 		return env.unitNames[guid]
 	end
-	-- Only the player is modelled: the class conditions on custom aura groups are about who the
+	-- Only the player is modelled: the class conditions on personal aura groups are about who the
 	-- user is playing, and nothing else in the addon asks a token for its base class.
 	_G.UnitClassBase = function(unit)
 		return unit == "player" and env.playerClass or nil

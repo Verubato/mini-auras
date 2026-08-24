@@ -170,7 +170,7 @@ fw.describe("MakeMovable - the position editor click", function()
 	end)
 
 	fw.it("writes X/Y directly for a position table with no Offset sub-table", function()
-		-- The custom aura groups' shape: the same editor drives both, and picking the wrong one
+		-- The personal aura groups' shape: the same editor drives both, and picking the wrong one
 		-- would save a group's position into a key nothing reads back.
 		local frame = acm.NewFrame("Frame", "TestMovableFlat")
 		local position = { Point = "TOPLEFT", RelativePoint = "TOPLEFT", X = 1, Y = 2 }

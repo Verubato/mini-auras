@@ -6,8 +6,8 @@ local moduleLifecycle = addon.Core.ModuleLifecycle
 local profileManager = addon.Core.ProfileManager
 local frames = addon.Core.Frames
 local moduleUtil = addon.Utils.ModuleUtil
-local groups = addon.Modules.CustomAuras.Groups
-local display = addon.Modules.CustomAuras.Display
+local groups = addon.Modules.PersonalAuras.Groups
+local display = addon.Modules.PersonalAuras.Display
 
 -- User-authored aura groups: pick a unit, list some spell ids, get icons when they land.
 
@@ -46,10 +46,10 @@ local gate
 -- hangs off the frames rather than at Init.
 local frameHooksInstalled = false
 
----@class CustomAurasModule : IModule
+---@class PersonalAurasModule : IModule
 local M = {}
-addon.Modules.CustomAuras.Module = M
-addon.Modules.CustomAurasModule = M
+addon.Modules.PersonalAuras.Module = M
+addon.Modules.PersonalAurasModule = M
 
 -- Deferred as well as coalesced: a raid forming fires the roster event per member, and the frame
 -- addons rebuild their own frames on it, so the anchors are only worth reading once settled.
@@ -57,9 +57,9 @@ local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
 end)
 
----@return CustomAurasModuleOptions?
+---@return PersonalAurasModuleOptions?
 local function GetOptions()
-	return db and db.Modules.CustomAurasModule
+	return db and db.Modules.PersonalAurasModule
 end
 
 ---No module-wide switch: a group carries its own, and no groups means no feature.
@@ -157,7 +157,7 @@ local function OnDisable()
 	display:Teardown()
 end
 
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 local function Apply(options)
 	local hasGroups = HasGroups()
 
@@ -224,7 +224,7 @@ function M:Init()
 	-- A stored profile can hold groups a migration wrote with only the fields it cared about,
 	-- counting on Normalise for the rest. Switching to one has to fill them in before the
 	-- display reads them.
-	profileManager:RegisterOnProfileChanged("CustomAuras", function()
+	profileManager:RegisterOnProfileChanged("PersonalAuras", function()
 		M:NormaliseGroups()
 	end)
 
@@ -240,8 +240,8 @@ function M:Init()
 	})
 end
 
----@class CustomAurasModule
----@field Init fun(self: CustomAurasModule)
----@field Refresh fun(self: CustomAurasModule)
----@field StartTesting fun(self: CustomAurasModule)
----@field StopTesting fun(self: CustomAurasModule)
+---@class PersonalAurasModule
+---@field Init fun(self: PersonalAurasModule)
+---@field Refresh fun(self: PersonalAurasModule)
+---@field StartTesting fun(self: PersonalAurasModule)
+---@field StopTesting fun(self: PersonalAurasModule)

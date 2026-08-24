@@ -1,13 +1,13 @@
 ---@type string, Addon
 local _, addon = ...
 local L = addon.L
-local groups = addon.Modules.CustomAuras.Groups
-local ui = addon.Config.CustomAurasUI
+local groups = addon.Modules.PersonalAuras.Groups
+local ui = addon.Config.PersonalAurasUI
 local CASTER_OPTIONS = { "ANY", "MINE", "OTHERS" }
 
 ---Builds the filters tab: the caster narrowing plus the aura-flag tri-states, both of which
 ---apply whichever way the group tracks.
----@param ctx CustomAurasEditorContext
+---@param ctx PersonalAurasEditorContext
 ---@return fun(shown: boolean?) refreshFlags
 function ui.BuildFiltersTab(ctx)
 	local filtersPanel = ctx.FiltersPanel

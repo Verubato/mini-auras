@@ -256,11 +256,11 @@ function M:EnsureWindow()
 			end,
 		},
 		{
-			Key = "CustomAuras",
-			Title = L["Custom Auras_Short"] or L["Custom Auras"],
-			Icon = NAV_ICON_BASE .. "CustomAuras.png",
+			Key = "PersonalAuras",
+			Title = L["Personal Auras"],
+			Icon = NAV_ICON_BASE .. "PersonalAuras.png",
 			Build = function(content)
-				M.CustomAuras:Build(content)
+				M.PersonalAuras:Build(content)
 			end,
 		},
 		{
@@ -498,5 +498,5 @@ end
 ---@field OtherAddons OtherAddonsConfig
 ---@field ImportantAuras ImportantAurasConfig
 ---@field FrameAuras FrameAurasConfig
----@field CustomAuras CustomAurasConfig
+---@field PersonalAuras PersonalAurasConfig
 ---@field Miscellaneous MiscellaneousConfig

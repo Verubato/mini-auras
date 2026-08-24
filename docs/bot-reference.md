@@ -27,7 +27,7 @@ MiniAuras. The old name survives in several places:
   time MiniAuras runs. The release zip ships a small "MiniCC (settings bridge for MiniAuras)"
   folder whose only job is to load the old settings file; it draws nothing.
 - Profile strings that start with `!MiniCC:2!` or `!MiniCC!` still import, and aura strings
-  starting with `!MiniCCAuras:1!` still import into Custom Auras.
+  starting with `!MiniCCAuras:1!` still import into Personal Auras.
 
 **Conflict: everything drawn twice.** If the real old MiniCC addon (not the bridge) is still
 installed and enabled next to MiniAuras, both addons anchor icons onto the same frames and
@@ -57,7 +57,7 @@ addon list files MiniAuras under a **Mini** category, alongside the author's oth
 
 **Test mode** draws fake icons on every enabled display so things can be positioned out of
 combat. While testing, the Test button pulses and reads "Testing...". Screen-anchored displays
-(Alerts, Healer, Enemy Kicks, Ally Kicks, screen-anchored custom aura groups) become draggable
+(Alerts, Healer, Enemy Kicks, Ally Kicks, screen-anchored personal aura groups) become draggable
 during test mode. Since 5.19.0 a draggable container also opens a small position window when it
 is clicked or when a drag ends, holding X and Y boxes with plus and minus buttons that step one
 pixel at a time, for placements a drag cannot hit exactly. Clicking the same container again
@@ -75,7 +75,7 @@ itself, so testing inside a battleground reads the Battlegrounds tick whichever 
 Left sidebar, grouped under four headings. Bracketed names are the sidebar labels where they
 differ from the page title.
 
-**General:** Home, Personal Auras (= Custom Auras), Important Auras, Frame Auras, Alerts,
+**General:** Home, Personal Auras, Important Auras, Frame Auras, Alerts,
 Nameplates, Portraits.
 
 **Crowd Control:** CC, Pet CC, Healer, Trinkets (= Party Trinkets).
@@ -105,7 +105,7 @@ mode still previews there.
 
 A module that "does not work" somewhere is usually just switched off for that content type.
 Exceptions: Portraits and Party Trinkets have a single **Enabled** switch; Enemy Kicks is
-enabled by role (see its section); Custom Auras has no module switch at all (each group has its
+enabled by role (see its section); Personal Auras has no module switch at all (each group has its
 own Enabled toggle). Since 5.19.2 a module switched off is never set up at all, so it registers
 no events and costs nothing, and switching it back on takes effect without a reload.
 
@@ -120,11 +120,11 @@ other.
 ### Anchoring
 
 - **Screen-anchored displays** (Alerts bars, Healer, Enemy Kicks, Ally Kicks, screen-anchored
-  custom aura groups) have a saved screen position and can be dragged while test mode is on
-  (Ally Kicks instead uses its Lock position toggle; a selected custom aura group can be
+  personal aura groups) have a saved screen position and can be dragged while test mode is on
+  (Ally Kicks instead uses its Lock position toggle; a selected personal aura group can be
   dragged without test mode).
 - **Frame-attached displays** (CC, Pet CC, Important Auras, Nameplate bars, Trinkets,
-  frame/nameplate/arena-anchored custom aura groups) have an X/Y offset from the frame they
+  frame/nameplate/arena-anchored personal aura groups) have an X/Y offset from the frame they
   hang off plus a **Grow** direction. Grow options vary by module:
   LEFT/RIGHT/CENTER/DOWN/UP for most frame-attached ones, LEFT/RIGHT/CENTER for nameplates,
   DOWN/UP for Ally Kicks, LEFT/RIGHT for Alerts.
@@ -185,8 +185,8 @@ category on or off, applies in combat as normal.
 - Every pair defaults to red (1, 0.2, 0.2) for Important and green (0.2, 1, 0.2) for
   Defensive. Class colouring is not on offer anywhere, because a unit's class is not something
   the addon can read from an aura container.
-- **Flat colour** (Trinkets, Enemy Kicks, Custom Auras): the user picks one colour for the
-  glow and border, because these icons carry no category to derive one from. Custom Auras
+- **Flat colour** (Trinkets, Enemy Kicks, Personal Auras): the user picks one colour for the
+  glow and border, because these icons carry no category to derive one from. Personal Auras
   carries a second, independent **Text colour** for its countdown, stack count and bar spell
   name; see its Appearance tab.
 
@@ -258,9 +258,9 @@ channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, defau
 
 ---
 
-## Custom Auras / Personal Auras
+## Personal Auras
 
-Sidebar: General > Personal Auras. Page title "Custom Auras". User-built "mini weak auras":
+Sidebar: General > Personal Auras. Page title "Personal Auras". User-built "mini weak auras":
 icons, bars or a piece of the game's own proc art (with optional sound) for buffs on allies and
 debuffs on enemies, or a sound on its own with nothing drawn at all.
 
@@ -1107,7 +1107,7 @@ Icons register under the Masque addon group **MiniCC**, in sub-groups named CC, 
 Alerts, Nameplates, Friendly Indicators, Custom Auras, Trinkets and Kick Timer.
 
 A skin is applied when an icon is created, so **reload after changing a skin** for it
-to reach icons that already exist. Some displays stay unskinned by design: custom aura groups
+to reach icons that already exist. Some displays stay unskinned by design: personal aura groups
 drawn as bars or as a texture, the round portrait icons (the skin would fight their own mask),
 and any button whose size the game keeps secret, which covers nameplate icons. If Masque itself errors while
 skinning, the display drops skinning for that sub-group for the rest of the session and prints
@@ -1144,7 +1144,7 @@ displays when frames are re-sorted.
 Global `MiniAurasApi.v1`, also reachable as `MiniCCApi.v1` (same table):
 
 - `RegisterFrameProvider(provider)`: adds unit frames from another addon; they receive the
-  same icons, cooldowns and glows as built-in sources (and Custom Auras "Unit Frames" groups
+  same icons, cooldowns and glows as built-in sources (and Personal Auras "Unit Frames" groups
   land on them too). The provider needs a unique `Name` and a `GetFrames()` returning an
   array of frames, and may supply `RegisterRefreshFrames(cb)` so it can tell MiniAuras when
   its frame list changes.
@@ -1197,7 +1197,7 @@ only appears once a group is selected. Click one of the aura tiles at the top of
 its settings open below; clicking empty grid space closes them again. Since 5.14.0 the page
 says so in place of the editor.
 
-**"A custom aura group shows nothing."** Usual causes: (1) it is in Spell IDs mode with an
+**"A personal aura group shows nothing."** Usual causes: (1) it is in Spell IDs mode with an
 empty spell list; (2) the spell ID added is the cast ID, not the aura the cast applies (the
 Record button records cast IDs; find the aura's ID instead); (3) it is a Debuff group on
 Self, My Pet or Unit Frames in Spell IDs mode, which the game forbids (switch to Aura
@@ -1238,7 +1238,7 @@ reset the profile to defaults (Profiles > Reset).
 already has: an update never removes it. A profile that lost it was either reset or created
 fresh on 5.14.0. Recreate it by hand as a Self group tracking 10060.
 
-**"Custom aura sound doesn't play."** The Sounds tab only exists for groups in Spell IDs
+**"Personal aura sound doesn't play."** The Sounds tab only exists for groups in Spell IDs
 mode; filter-mode groups cannot have sounds (sounds register per spell ID engine-side). Also
 check the trigger's sound is not "(None)" and check the chosen output channel's volume.
 After an addon update, new audio files need a full client restart, not just a reload.
@@ -1306,7 +1306,7 @@ cooldown.
 
 **"Bars/icons can't be moved."** Screen-anchored displays are dragged while test mode is on
 (`/miniauras test` or the Test button). Ally Kicks bars are dragged while "Lock position" is
-off. A custom aura group is dragged while it is selected in the editor (or in test mode),
+off. A personal aura group is dragged while it is selected in the editor (or in test mode),
 and can also be positioned exactly with its Offset X/Y boxes.
 
 **"Masque skin didn't apply / only some icons changed."** A skin is applied as each icon is

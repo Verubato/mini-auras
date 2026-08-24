@@ -2,9 +2,9 @@
 local _, addon = ...
 local L = addon.L
 local sounds = addon.Core.Sounds
-local groups = addon.Modules.CustomAuras.Groups
-local customAurasSound = addon.Modules.CustomAuras.Sound
-local ui = addon.Config.CustomAurasUI
+local groups = addon.Modules.PersonalAuras.Groups
+local personalAurasSound = addon.Modules.PersonalAuras.Sound
+local ui = addon.Config.PersonalAurasUI
 -- Two lines, because the caveat below does not fit on one at the editor's width.
 local MESSAGE_ROW_HEIGHT = 32
 -- Kept as one literal, however long the line runs: the locale tooling reads the key off the
@@ -18,8 +18,8 @@ local SOUND_LABELS = {
 }
 
 ---Builds the sounds tab: one picker per trigger, plus the channel they all play on.
----@param ctx CustomAurasEditorContext
----@return fun(group: CustomAuraGroup) refreshCaveat
+---@param ctx PersonalAurasEditorContext
+---@return fun(group: PersonalAuraGroup) refreshCaveat
 function ui.BuildSoundsTab(ctx)
 	local soundsPanel = ctx.SoundsPanel
 	local soundRow = ctx.NewRow(soundsPanel, ui.DropdownRowHeight)
@@ -35,7 +35,7 @@ function ui.BuildSoundsTab(ctx)
 	caveat:SetJustifyH("LEFT")
 	caveat:SetJustifyV("TOP")
 
-	---@param group CustomAuraGroup
+	---@param group PersonalAuraGroup
 	local function RefreshCaveat(group)
 		local show = groups:SoundIgnoresFilters(group)
 
@@ -83,7 +83,7 @@ function ui.BuildSoundsTab(ctx)
 					group.Sound[trigger] = value
 
 					if value ~= groups.NoSound then
-						customAurasSound:PlayPreview(value, group.Sound.Channel)
+						personalAurasSound:PlayPreview(value, group.Sound.Channel)
 					end
 
 					-- The caveat turns on with the group's first sound, which is this click.

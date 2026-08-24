@@ -354,9 +354,8 @@ L:RegisterLocale("koKR", function() return {
 	["Show self"] = "자신 표시",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "자신의 차단 주문을 맨 위에 고정하고 준비될 때까지 시간을 표시합니다.",
 
-	-- Custom Auras tab
-	["Custom Auras"] = "사용자 오라",
-	["Custom Auras_Short"] = "개인 오라",
+	-- Personal Auras tab
+	["Personal Auras"] = "개인 오라",
 	["Create your own custom mini weak auras."] = "나만의 미니 위크오라를 만드세요.",
 	["Spell IDs only work for buffs on allies and debuffs on enemies."] = "주문 ID는 아군의 버프와 적의 디버프에만 작동합니다.",
 	["Aura filters and sound only auras don't have this restriction."] = "효과 필터와 소리만 오라에는 이 제한이 없습니다.",

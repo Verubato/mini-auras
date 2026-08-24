@@ -354,9 +354,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Show self"] = "Показывать себя",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Закрепляет сверху полосу вашего прерывания с отсчётом до готовности.",
 
-	-- Custom Auras tab
-	["Custom Auras"] = "Свои ауры",
-	["Custom Auras_Short"] = "Личные ауры",
+	-- Personal Auras tab
+	["Personal Auras"] = "Личные ауры",
 	["Create your own custom mini weak auras."] = "Создайте свои собственные мини weak auras.",
 	["Spell IDs only work for buffs on allies and debuffs on enemies."] = "ID заклинаний работают только для усилений на союзниках и ослаблений на противниках.",
 	["Aura filters and sound only auras don't have this restriction."] = "Фильтры эффектов и ауры только со звуком не имеют этого ограничения.",

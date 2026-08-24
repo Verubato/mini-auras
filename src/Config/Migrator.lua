@@ -37,10 +37,10 @@ local function SaveOpaqueCaches(vars)
 		and vars.Modules.FrameAurasModule.Spells
 	saved._FrameAurasDisabledSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Disabled) or {}
 	saved._FrameAurasCustomSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Custom) or {}
-	-- Custom aura groups are authored entirely by the user, so the schema has nothing to compare
+	-- Personal aura groups are authored entirely by the user, so the schema has nothing to compare
 	-- them against and CleanTable would strip every one of them.
-	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
-	saved._CustomAuraGroups = customAuras and mini:CopyValueOrTable(customAuras.Groups) or {}
+	local personalAuras = vars.Modules and vars.Modules.PersonalAurasModule
+	saved._PersonalAuraGroups = personalAuras and mini:CopyValueOrTable(personalAuras.Groups) or {}
 	-- Same shape again: a spellId -> true hash against an empty schema.
 	local portrait = vars.Modules and vars.Modules.PortraitModule
 	saved._PortraitCustomSpells = portrait and mini:CopyValueOrTable(portrait.CustomSpells) or {}
@@ -71,9 +71,9 @@ local function RestoreOpaqueCaches(vars, saved)
 		frameAuras.Spells.Disabled = saved._FrameAurasDisabledSpells or {}
 		frameAuras.Spells.Custom = saved._FrameAurasCustomSpells or {}
 	end
-	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
-	if customAuras then
-		customAuras.Groups = saved._CustomAuraGroups or {}
+	local personalAuras = vars.Modules and vars.Modules.PersonalAurasModule
+	if personalAuras then
+		personalAuras.Groups = saved._PersonalAuraGroups or {}
 	end
 	local portrait = vars.Modules and vars.Modules.PortraitModule
 	if portrait then

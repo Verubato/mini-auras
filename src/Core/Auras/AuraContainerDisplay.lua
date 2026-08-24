@@ -2296,7 +2296,7 @@ end
 ---those are invisible to the caller's own options table, and leaving them out meant changing the
 ---glow type in the options never reached the already-built displays.
 ---
----One key per thing being watched: a nameplate bar's cache, a custom aura group, a module's one
+---One key per thing being watched: a nameplate bar's cache, a personal aura group, a module's one
 ---look. Two different looks compared under one key would read as changing on every call.
 ---@param key any
 ---@param style AuraDisplayStyle

@@ -15,8 +15,8 @@ local pool = addon.Core.Pool
 local sweep = addon.Core.Sweep
 local spellSearch = addon.Core.SpellSearch
 local positionEditor = addon.Core.PositionEditor
-local groups = addon.Modules.CustomAuras.Groups
-local sound = addon.Modules.CustomAuras.Sound
+local groups = addon.Modules.PersonalAuras.Groups
+local sound = addon.Modules.PersonalAuras.Sound
 
 -- One AuraContainer per group, or per group per visible nameplate, unit frame or arena enemy
 -- frame. Preview stand-ins go through an IconSlotContainer or a BarSlotContainer, whichever shape
@@ -27,13 +27,14 @@ local sound = addon.Modules.CustomAuras.Sound
 -- behind matches every aura on the unit. Both are pre-registered because aura groups can be
 -- reconfigured but never removed.
 
-addon.Modules.CustomAuras = addon.Modules.CustomAuras or {}
+addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
 -- Group keys on every container. Both always exist; only one is ever budgeted above zero.
 local HELPFUL_KEY = "helpful"
 local HARMFUL_KEY = "harmful"
 -- The MiniCCModule tag other addons read off our frames, and the Masque sub-group name for both
 -- the live icons and the preview, so a skin shows in the editor exactly as it will in play.
+-- The module's old name, kept because renaming it would orphan every skin already assigned.
 local MODULE_TAG = "Custom Auras"
 -- Ten covers a normal plate count without building forty for a group that may never fire.
 local PLATE_PREALLOCATE = 10
@@ -73,10 +74,10 @@ local PREVIEW_STACK_COUNT = "3"
 
 ---@type Db
 local db
----@type table<string, CustomAuraGroupState>
+---@type table<string, PersonalAuraGroupState>
 local states = {}
 -- Rebuilt on every refresh and handed to the sound module, which owns the registrations.
----@type CustomAuraSoundRequest[]
+---@type PersonalAuraSoundRequest[]
 local soundRequests = {}
 -- Scratch for sorting and deduplicating a group's per-copy unit tokens while the requests are
 -- collected.
@@ -116,10 +117,10 @@ local positionChangedCallbacks = {}
 ---@type table<string, Pool>
 local displayPools
 
----@class CustomAurasDisplay
+---@class PersonalAurasDisplay
 local M = {}
 
-addon.Modules.CustomAuras.Display = M
+addon.Modules.PersonalAuras.Display = M
 
 -- Coalesced to one pass per frame. Plates churn a handful at a time as people come in and out of
 -- range, and each rebuild walks every group's spell variants to check for a change that has usually
@@ -128,7 +129,7 @@ local QueueSoundRefresh, CancelSoundRefresh = moduleUtil:Coalesced(function()
 	M:RefreshSounds()
 end)
 
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return AuraDisplayStyle
 local function BuildStyle(group)
 	local icons = group.Icons
@@ -175,7 +176,7 @@ local function BuildStyle(group)
 	return style
 end
 
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number
 local function StyleGeneration(group)
 	return auraContainerDisplay:GetStyleGeneration(group.Id, BuildStyle(group),
@@ -195,7 +196,7 @@ end
 ---@param style AuraDisplayStyle?
 ---@param size number?
 ---@param spacing number?
----@return CustomAuraDisplayEntry
+---@return PersonalAuraDisplayEntry
 local function CreateEntry(shape, style, size, spacing)
 	local bars = shape == groups.DisplayStyle.Bars
 	local texture = shape == groups.DisplayStyle.Texture
@@ -236,7 +237,7 @@ local function CreateEntry(shape, style, size, spacing)
 	return { Display = display, Shape = shape }
 end
 
----@param entry CustomAuraDisplayEntry
+---@param entry PersonalAuraDisplayEntry
 local function ParkDisplay(entry)
 	entry.Display:SetEnabled(false)
 	entry.Display:Hide()
@@ -290,8 +291,8 @@ displayPools = {
 
 ---Hands back an entry with whatever groups it still owes queued behind it. Urgent, because this
 ---one is going on screen now, while the pool's own fill is working ahead of anyone asking.
----@param entry CustomAuraDisplayEntry
----@return CustomAuraDisplayEntry
+---@param entry PersonalAuraDisplayEntry
+---@return PersonalAuraDisplayEntry
 local function Queued(entry)
 	if entry.Display:HasPendingGroups() then
 		buildSweep:Append(entry.Display, DeclareNextGroup)
@@ -302,7 +303,7 @@ end
 
 ---Whether a pooled entry's buttons already carry the acquiring group's exact look. Asked while
 ---aura styling is restricted, where an entry carrying anything else could not be corrected.
----@param entry CustomAuraDisplayEntry
+---@param entry PersonalAuraDisplayEntry
 ---@param style AuraDisplayStyle
 ---@param size number
 ---@param spacing number
@@ -311,8 +312,8 @@ local function EntryCarriesStyle(entry, style, size, spacing)
 	return entry.Display:CarriesConfig(size, spacing, style)
 end
 
----@param state CustomAuraGroupState
----@return CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@return PersonalAuraDisplayEntry
 local function AcquireEntry(state)
 	local group = state.Group
 	local shape = groups:GetShape(group)
@@ -334,14 +335,14 @@ end
 ---Hands an entry back to the pool that built it. Always go through this: releasing a bar display
 ---into the icon pool would hand it to a group that then draws bars it never asked for, and no
 ---restyle can undo it.
----@param entry CustomAuraDisplayEntry
+---@param entry PersonalAuraDisplayEntry
 local function ReleaseEntry(entry)
 	displayPools[entry.Shape or groups.DisplayStyle.Icons]:Release(entry)
 end
 
 ---Creation arguments for a prewarmed entry, resolved per build so each one bakes the group's
 ---current look rather than whatever a captured scratch had decayed into.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return AuraDisplayStyle, number, number
 local function PrewarmCreateArgs(group)
 	return BuildStyle(group), groups:GetSize(group), group.Icons.Spacing
@@ -351,7 +352,7 @@ end
 ---expensive and cannot be made mid-combat without a hitch, so a group that will want one per
 ---nameplate says so up front - and since a restricted acquire only reuses an entry whose baked
 ---look matches, an unstyled pre-build would sit useless for exactly the matches it was made for.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@param count number
 local function PrewarmFor(state, count)
 	displayPools[groups:GetShape(state.Group)]:Prewarm(count, PrewarmCreateArgs, state.Group)
@@ -360,8 +361,8 @@ end
 ---Whether a parked entry still carries the current look of some other live group sharing the
 ---shape. Those entries are that group's restricted-reuse matches, so a sweep converting them
 ---would steal a match another group depends on; only entries no live group can use are taken.
----@param entry CustomAuraDisplayEntry
----@param sweepingState CustomAuraGroupState
+---@param entry PersonalAuraDisplayEntry
+---@param sweepingState PersonalAuraGroupState
 ---@return boolean
 local function EntryCarriesAnotherGroupsLook(entry, sweepingState)
 	local shape = groups:GetShape(sweepingState.Group)
@@ -382,8 +383,8 @@ end
 ---One parked entry converted to the group's current look, called from the pool's background
 ---sweep. Everything is resolved fresh per entry: the sweep runs over seconds, longer than the
 ---shared style scratch survives, and the group table itself moves on a profile switch.
----@param entry CustomAuraDisplayEntry
----@param state CustomAuraGroupState
+---@param entry PersonalAuraDisplayEntry
+---@param state PersonalAuraGroupState
 ---@return boolean? keepGoing
 local function SweepEntryStyle(entry, state)
 	-- A restricted restyle could not land anyway. Re-armed before abandoning, or the remainder
@@ -415,7 +416,7 @@ end
 ---Each state sweeps on its own lane: the shape pools are shared, and same-shape groups going
 ---stale in one refresh would otherwise replace each other's runs, leaving the losers' parked
 ---entries unswept with their flags already spent.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function SweepParkedIfStale(state)
 	if not state.StyleStale then
 		return
@@ -432,7 +433,7 @@ local function SweepParkedIfStale(state)
 end
 
 ---True while the icons are stand-ins: test mode covers every group, the options page one.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@return boolean
 local function IsPreviewing(state)
 	return testModeActive or state.Group.Id == previewGroupId
@@ -441,7 +442,7 @@ end
 ---The layer one copy of a group draws in. Always resolved to a real strata, never left unset:
 ---displays come from a shared pool, and a frame the last group pinned high would keep that layer
 ---for whoever takes it next. The host's own strata is what inheriting would have produced anyway.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@param host table The frame the copy hangs off, or UIParent for a screen-anchored group.
 ---@return string
 local function ResolveStrata(group, host)
@@ -450,8 +451,8 @@ end
 
 ---Applies the group's current geometry, style and spell filters to one display, then budgets the
 ---side of the container that the unit's assist state actually allows.
----@param state CustomAuraGroupState
----@param entry CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@param entry PersonalAuraDisplayEntry
 ---@param unit string? Nil when the group's role has nobody to point at.
 local function ConfigureDisplay(state, entry, unit)
 	local group = state.Group
@@ -503,7 +504,7 @@ end
 ---Stand-ins a preview actually draws: one per tracked spell for a spells group, the full set for
 ---a filter group. The drag areas are sized from this so no invisible grab space extends past the
 ---visible icons.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number
 local function PreviewCount(group)
 	-- Art is one picture whatever it tracks, so its stand-in is one too.
@@ -520,7 +521,7 @@ end
 
 ---A stand-in's footprint: bars are as wide as the group asks and as tall as its size, icons are
 ---square.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return number width
 ---@return number height
 local function PreviewSize(group)
@@ -540,8 +541,8 @@ end
 ---The stand-in container for one copy, matching the shape the live display draws. Built on first
 ---use and kept: an entry only ever comes from the pool of its own shape, so the container it grew
 ---is always the right one for whoever holds it next.
----@param state CustomAuraGroupState
----@param entry CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@param entry PersonalAuraDisplayEntry
 ---@return IconSlotContainer|BarSlotContainer
 local function EnsureTestContainer(state, entry, parent)
 	local group = state.Group
@@ -601,7 +602,7 @@ end
 
 ---A group's configured colour in the shape the slot containers take. Unlike ModuleUtil's icon
 ---colour this is never withheld: a bar's fill is coloured whatever the glow and border toggles say.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return table
 local function BarColor(group)
 	local configured = group.Icons.Color
@@ -617,8 +618,8 @@ end
 ---One fake icon or bar per tracked spell, so a group can be positioned without waiting for the
 ---aura. A group tracking by filter names no spells, so it borrows its own grid icon for every slot:
 ---the point of the preview is the geometry, and an empty one could not be dragged.
----@param state CustomAuraGroupState
----@param entry CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@param entry PersonalAuraDisplayEntry
 local function RenderTestIcons(state, entry)
 	local group = state.Group
 	local container = entry.Test
@@ -709,7 +710,7 @@ local function RenderTestIcons(state, entry)
 	end
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function UpdateAnchorSize(state)
 	local group = state.Group
 	local width, height = PreviewSize(group)
@@ -736,13 +737,13 @@ local function NotifyPositionChanged(groupId)
 	end
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function EnsureAnchor(state)
 	if state.Anchor then
 		return state.Anchor
 	end
 
-	local anchor = CreateFrame("Frame", addonName .. "CustomAura" .. state.Group.Id, UIParent)
+	local anchor = CreateFrame("Frame", addonName .. "PersonalAura" .. state.Group.Id, UIParent)
 	anchor:SetIgnoreParentScale(true)
 	anchor:EnableMouse(false)
 	anchor:SetMovable(false)
@@ -759,7 +760,7 @@ local function EnsureAnchor(state)
 	return anchor
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function PositionAnchor(state)
 	local anchor = state.Anchor
 	local position = state.Group.Position
@@ -824,7 +825,7 @@ end
 
 ---The editor writes the same offset a drag does. Kept per group rather than per copy, so clicking
 ---a second nameplate's copy of a group is a repeat click on what is already open.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@return PositionBinding
 local function OffsetBinding(state)
 	local binding = state.OffsetBinding
@@ -860,8 +861,8 @@ local function OffsetBinding(state)
 	return binding
 end
 
----@param state CustomAuraGroupState
----@param entry CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@param entry PersonalAuraDisplayEntry
 ---@param host table The nameplate, unit frame or arena frame the copy hangs off.
 local function EnsureDragHandle(state, entry, host)
 	local handle = entry.Handle
@@ -886,8 +887,8 @@ local function EnsureDragHandle(state, entry, host)
 	return handle
 end
 
----@param state CustomAuraGroupState
----@return CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@return PersonalAuraDisplayEntry
 local function EnsureScreenEntry(state)
 	if not state.Screen then
 		state.Screen = AcquireEntry(state)
@@ -896,7 +897,7 @@ local function EnsureScreenEntry(state)
 	return state.Screen
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function ReleaseScreen(state)
 	if state.Screen then
 		ReleaseEntry(state.Screen)
@@ -908,7 +909,7 @@ local function ReleaseScreen(state)
 	end
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function ReleasePlates(state)
 	for token, entry in pairs(state.Plates) do
 		ReleaseEntry(entry)
@@ -916,7 +917,7 @@ local function ReleasePlates(state)
 	end
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@param anchor table
 local function ReleaseFrameEntry(state, anchor)
 	local entry = state.Frames[anchor]
@@ -927,7 +928,7 @@ local function ReleaseFrameEntry(state, anchor)
 	end
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function ReleaseFrames(state)
 	for anchor, entry in pairs(state.Frames) do
 		ReleaseEntry(entry)
@@ -935,7 +936,7 @@ local function ReleaseFrames(state)
 	end
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function ReleaseArena(state)
 	for index, entry in pairs(state.Arena) do
 		ReleaseEntry(entry)
@@ -943,7 +944,7 @@ local function ReleaseArena(state)
 	end
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function Park(state)
 	ReleaseScreen(state)
 	ReleasePlates(state)
@@ -951,8 +952,8 @@ local function Park(state)
 	ReleaseArena(state)
 end
 
----@param groupDef CustomAuraGroup
----@return CustomAuraGroupState
+---@param groupDef PersonalAuraGroup
+---@return PersonalAuraGroupState
 local function EnsureState(groupDef)
 	local state = states[groupDef.Id]
 
@@ -999,7 +1000,7 @@ local function EnsureState(groupDef)
 	return state
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function RefreshScreenGroup(state)
 	local group = state.Group
 	local entry = EnsureScreenEntry(state)
@@ -1033,8 +1034,8 @@ local function RefreshScreenGroup(state)
 end
 
 ---Split out of the refresh because a drag runs it every frame and must not re-budget.
----@param state CustomAuraGroupState
----@param entry CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@param entry PersonalAuraDisplayEntry
 ---@param host table The nameplate, unit frame or arena frame the copy hangs off.
 local function AnchorEntry(state, entry, host)
 	local group = state.Group
@@ -1060,8 +1061,8 @@ local function AnchorEntry(state, entry, host)
 end
 
 ---Draws or puts away the stand-in icons and the drag handle for one copy.
----@param state CustomAuraGroupState
----@param entry CustomAuraDisplayEntry
+---@param state PersonalAuraGroupState
+---@param entry PersonalAuraDisplayEntry
 ---@param host table The nameplate, unit frame or arena frame the copy hangs off.
 ---@return boolean previewing
 local function ApplyPreview(state, entry, host)
@@ -1100,7 +1101,7 @@ local function ApplyPreview(state, entry, host)
 	return true
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@param token string
 local function RefreshPlateGroup(state, token)
 	local plate = C_NamePlate.GetNamePlateForUnit(token)
@@ -1135,7 +1136,7 @@ local function RefreshPlateGroup(state, token)
 end
 
 ---One copy per party or raid frame, whichever addon owns it.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@param anchor table
 ---@param unit string? The frame's new unit, when a set-unit hook already knows it.
 local function RefreshFrameGroup(state, anchor, unit)
@@ -1186,7 +1187,7 @@ end
 ---loads, and the default ones exist from login but sit hidden outside one, so a frame that is
 ---not actually visible falls through to a stand-in all the same. Shared by the refresh and the
 ---drag re-anchor, which must agree or a drag would tear the copy off its stand-in mid-move.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@param index number
 ---@return table?
 local function ResolveArenaFrame(state, index)
@@ -1203,7 +1204,7 @@ end
 
 ---One copy per arena enemy frame, whichever addon owns it. The token is fixed per index rather
 ---than read off the frame, so nothing depends on the frame carrying a unit attribute.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 ---@param index number
 local function RefreshArenaGroup(state, index)
 	local frame = ResolveArenaFrame(state, index)
@@ -1245,7 +1246,7 @@ end
 ---The units a sound-only group registers on. It builds no copies, so there is nothing to read
 ---the tokens off: the roster, the arena slots and the live plates are the list instead. This is
 ---also why the sound survives a unit frame the group could not find - nothing here is on screen.
----@param group CustomAuraGroup
+---@param group PersonalAuraGroup
 ---@return string[] tokens The shared scratch, valid until the next call.
 local function SoundOnlyTokens(group)
 	wipe(soundOnlyTokens)
@@ -1287,7 +1288,7 @@ local function SoundOnlyTokens(group)
 	return soundOnlyTokens
 end
 
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 local function CollectSoundRequests(state)
 	local group = state.Group
 
@@ -1413,7 +1414,7 @@ end
 ---frames that are not there, and takes them away again once it is not.
 ---Never while test mode runs: it owns the same frames, and driving them from both sides would
 ---leave whichever spoke last in charge.
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 ---@return boolean party
 ---@return boolean arena
 local function ShowPreviewFrames(options)
@@ -1463,7 +1464,7 @@ function M:SetPreviewGroup(groupId)
 	end
 
 	previewGroupId = groupId
-	addon.Modules.CustomAurasModule:Refresh()
+	addon.Modules.PersonalAurasModule:Refresh()
 end
 
 ---@return boolean
@@ -1502,7 +1503,7 @@ function M:AnchorGroup(groupId)
 end
 
 ---Builds what is missing, parks what is off, and re-registers the sounds.
----@param options CustomAurasModuleOptions
+---@param options PersonalAurasModuleOptions
 ---@param moduleEnabled boolean False while the module is off; a previewed group is still drawn.
 function M:Refresh(options, moduleEnabled)
 	wipe(soundRequests)
@@ -1646,7 +1647,7 @@ end
 ---Only live while previewing; otherwise the anchor eats clicks meant for what is behind it.
 ---There is nothing to see: the stand-in icons under the cursor are what you grab, which is why
 ---a group with nothing to draw is not previewed at all.
----@param state CustomAuraGroupState
+---@param state PersonalAuraGroupState
 function M:SetAnchorInteractive(state)
 	local anchor = state.Anchor
 
@@ -1778,7 +1779,7 @@ function M:Teardown()
 end
 
 ---Group id to its live state.
----@return table<string, CustomAuraGroupState>
+---@return table<string, PersonalAuraGroupState>
 function M:GetStates()
 	return states
 end
@@ -1787,7 +1788,7 @@ function M:Init()
 	db = mini:GetSavedVars()
 end
 
----@class CustomAuraDisplayEntry
+---@class PersonalAuraDisplayEntry
 ---@field Display AuraContainerDisplay
 ---@field Shape string Which pool built this entry, and therefore the shape of its buttons.
 ---@field Test IconSlotContainer|BarSlotContainer|nil
@@ -1796,8 +1797,8 @@ end
 ---@field StyleGeneration number?
 ---@field FilterGeneration number?
 
----@class CustomAuraGroupState
----@field Group CustomAuraGroup
+---@class PersonalAuraGroupState
+---@field Group PersonalAuraGroup
 ---@field Filters table
 ---@field FilterString string
 ---@field SortMethod number
@@ -1811,7 +1812,7 @@ end
 ---@field Allowed boolean Whether the group may show live auras right now.
 ---@field Anchor table? Screen anchor frame.
 ---@field OffsetBinding PositionBinding? Built on the first click of a copy's drag handle.
----@field Screen CustomAuraDisplayEntry?
----@field Plates table<string, CustomAuraDisplayEntry>
----@field Frames table<table, CustomAuraDisplayEntry> Keyed by the unit frame the copy hangs off.
----@field Arena table<number, CustomAuraDisplayEntry> Keyed by arena opponent index.
+---@field Screen PersonalAuraDisplayEntry?
+---@field Plates table<string, PersonalAuraDisplayEntry>
+---@field Frames table<table, PersonalAuraDisplayEntry> Keyed by the unit frame the copy hangs off.
+---@field Arena table<number, PersonalAuraDisplayEntry> Keyed by arena opponent index.

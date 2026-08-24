@@ -60,7 +60,7 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- for a group member outside the player's visible world (another instance or phase) -
 -- UnitCanAssist stays true there, and the unevaluable check is skipped the same silent way.
 -- The PLAYER filter-string token shares that failure. Displays using either must also gate on
--- UnitIsVisible (see CustomAuras CanFilterUnit).
+-- UnitIsVisible (see PersonalAuras CanFilterUnit).
 
 -- Spell-ID maps per category, keyed to match M.Filter so a caller holding a filter name can look
 -- up both. The generated Defensive list is not split into big/external - it does not have to be,

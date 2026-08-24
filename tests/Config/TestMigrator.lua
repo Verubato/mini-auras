@@ -162,7 +162,7 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 			Profiles = {
 				Mine = {
 					Modules = {
-						CustomAurasModule = { Groups = { { Id = "g1", Name = "Mine", SpellIds = { 123 } } } },
+						PersonalAurasModule = { Groups = { { Id = "g1", Name = "Mine", SpellIds = { 123 } } } },
 						ImportantAurasModule = { Spells = { Disabled = { [456] = true }, Custom = { [789] = true } } },
 					},
 				},
@@ -171,8 +171,8 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 
 		local mine = migrator:GetAndUpgradeDb().Profiles.Mine.Modules
 
-		assert(mine.CustomAurasModule.Groups[1].Name == "Mine", "authored aura group kept")
-		assert(mine.CustomAurasModule.Groups[1].SpellIds[1] == 123, "authored group contents kept")
+		assert(mine.PersonalAurasModule.Groups[1].Name == "Mine", "authored aura group kept")
+		assert(mine.PersonalAurasModule.Groups[1].SpellIds[1] == 123, "authored group contents kept")
 		assert(mine.ImportantAurasModule.Spells.Disabled[456] == true, "spell-id hash kept")
 		assert(mine.ImportantAurasModule.Spells.Custom[789] == true, "spell-id hash kept")
 	end)
@@ -748,6 +748,33 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Modules.RaidFrameAurasModule == nil, "and the stale one is dropped")
 	end)
 
+	fw.it("v73 renames the custom aura module key to personal auras", function()
+		local kept = { Groups = { { Id = "g1", Name = "Mine", Spells = { 123456 } } } }
+		local vars = {
+			Version = 72,
+			Modules = { CustomAurasModule = kept },
+			Profiles = { Other = { Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Theirs" } } } } } },
+		}
+
+		assert(migrator:UpgradeToVersion73(vars) == true)
+		assert(vars.Modules.PersonalAurasModule == kept, "the saved table moves across intact")
+		assert(vars.Modules.CustomAurasModule == nil, "and the old key is gone")
+		assert(vars.Profiles.Other.Modules.PersonalAurasModule.Groups[1].Name == "Theirs", "profiles move too")
+		assert(vars.Profiles.Other.Modules.CustomAurasModule == nil, "and their old key goes too")
+	end)
+
+	fw.it("v73 keeps the settings already under the new key", function()
+		local wanted = { Groups = { { Id = "g1", Name = "Mine" } } }
+		local vars = {
+			Version = 72,
+			Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Stale" } } }, PersonalAurasModule = wanted },
+		}
+
+		assert(migrator:UpgradeToVersion73(vars) == true)
+		assert(vars.Modules.PersonalAurasModule == wanted, "the newer table wins")
+		assert(vars.Modules.CustomAurasModule == nil, "and the stale one is dropped")
+	end)
+
 	fw.it("v62 pre-seeds the starter custom aura groups from the precog settings", function()
 		local vars = {
 			Version = 61,
@@ -1098,24 +1125,24 @@ fw.describe("Migrator - individual migrations", function()
 end)
 
 fw.describe("Migrator - opaque user data", function()
-	-- Custom aura groups are authored entirely by the user, so the schema ships an empty array to
+	-- Personal aura groups are authored entirely by the user, so the schema ships an empty array to
 	-- compare them against - which is exactly the shape CleanTable strips everything out of.
-	fw.it("keeps custom aura groups through the final CleanTable", function()
+	fw.it("keeps personal aura groups through the final CleanTable", function()
 		_G.MiniAurasDB = nil
 
 		local db = migrator:GetAndUpgradeDb()
 
-		db.Modules.CustomAurasModule.Groups[1] = {
+		db.Modules.PersonalAurasModule.Groups[1] = {
 			Id = "g1",
 			Name = "Ice Block",
 			Spells = { 45438 },
 			Icons = { Size = 55 },
 		}
-		db.Modules.CustomAurasModule.NextId = 2
+		db.Modules.PersonalAurasModule.NextId = 2
 
 		-- A soft reset runs the same save/clean/restore the upgrade path finishes with.
 		local cleaned = migrator:SoftReset()
-		local groups = cleaned.Modules.CustomAurasModule.Groups
+		local groups = cleaned.Modules.PersonalAurasModule.Groups
 
 		assert(groups[1], "the group survives")
 		assert(groups[1].Name == "Ice Block", "with its name")

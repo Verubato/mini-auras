@@ -7,7 +7,7 @@ local _, addon = ...
 -- that cannot even be used as a table key. What it records is the CAST id, which is usually but
 -- not always the id of the aura it applies.
 
-addon.Modules.CustomAuras = addon.Modules.CustomAuras or {}
+addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
 -- Long enough for a full rotation, short enough to still scan.
 local MAX_ENTRIES = 40
@@ -16,17 +16,17 @@ local MAX_ENTRIES = 40
 local eventsFrame
 local recording = false
 -- Newest first, which is the order the list is read in.
----@type CustomAuraRecordedCast[]
+---@type PersonalAuraRecordedCast[]
 local entries = {}
----@type table<number, CustomAuraRecordedCast>
+---@type table<number, PersonalAuraRecordedCast>
 local byId = {}
 ---@type fun()[]
 local changeCallbacks = {}
 
----@class CustomAurasRecorder
+---@class PersonalAurasRecorder
 local M = {}
 
-addon.Modules.CustomAuras.Recorder = M
+addon.Modules.PersonalAuras.Recorder = M
 
 local function NotifyChanged()
 	for _, fn in ipairs(changeCallbacks) do
@@ -114,7 +114,7 @@ function M:IsRecording()
 end
 
 ---The captured casts, newest first. Shared table, so do not keep or mutate it.
----@return CustomAuraRecordedCast[]
+---@return PersonalAuraRecordedCast[]
 function M:GetEntries()
 	return entries
 end
@@ -130,6 +130,6 @@ function M:OnChanged(fn)
 	changeCallbacks[#changeCallbacks + 1] = fn
 end
 
----@class CustomAuraRecordedCast
+---@class PersonalAuraRecordedCast
 ---@field SpellId number
 ---@field Count number

@@ -354,9 +354,8 @@ L:RegisterLocale("zhCN", function() return {
 	["Show self"] = "显示自己",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "在顶部固定一条自己打断的进度条，倒计时至就绪。",
 
-	-- Custom Auras tab
-	["Custom Auras"] = "自定义光环",
-	["Custom Auras_Short"] = "个人光环",
+	-- Personal Auras tab
+	["Personal Auras"] = "个人光环",
 	["Create your own custom mini weak auras."] = "创建你自己的迷你 WeakAuras。",
 	["Spell IDs only work for buffs on allies and debuffs on enemies."] = "法术 ID 仅适用于友方的增益和敌方的减益。",
 	["Aura filters and sound only auras don't have this restriction."] = "光环筛选和仅声音光环没有此限制。",
