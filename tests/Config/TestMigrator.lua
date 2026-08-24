@@ -242,6 +242,38 @@ fw.describe("Migrator - upgrade chain completeness", function()
 	end)
 end)
 
+fw.describe("Migrator - the deferred v26 scale step", function()
+	fw.it("carries its marker past the clean the upgrade finishes with", function()
+		-- The marker is not a shipped setting, so CleanTable would drop it before login ever gets
+		-- to read it, and the sizes it guards would stay unscaled forever.
+		_G.MiniAurasDB = {
+			Version = 25,
+			WhatsNew = {},
+			Modules = { CCModule = { Default = { Icons = { Size = 20 } } } },
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+		assert(db.PendingScaleMigration26 == true, "the marker reaches login")
+
+		UIParent:SetScale(1.25)
+		local applied = migrator:RunDeferredMigrations(db)
+		UIParent:SetScale(1)
+
+		assert(applied == true, "and login finds work to do")
+		assert(db.Modules.CrowdControl.Default.Icons.Size == 25, "the saved size is scaled")
+		assert(db.PendingScaleMigration26 == nil, "and the marker is spent")
+	end)
+
+	fw.it("invents no marker for a db that never passed through version 26", function()
+		_G.MiniAurasDB = nil
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(db.PendingScaleMigration26 == nil)
+		assert(migrator:RunDeferredMigrations(db) == false)
+	end)
+end)
+
 fw.describe("Migrator - full chain from a v1-era db", function()
 	fw.it("walks an ancient realistic db through every version to a valid current db", function()
 		-- A pre-versioning db as UpgradeToVersion1 expects (no Version key), with the fields

@@ -11,7 +11,17 @@ addon.Config.Migrator = M
 -- "Profiles", "ActiveProfile", and "AutoSwitch" are included here because CleanTable
 -- would otherwise wipe all stored profile snapshots (profile names are unknown keys
 -- relative to the dbDefaults.Profiles = {} template).
-local OPAQUE_CACHE_KEYS = { "SpecCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
+-- "PendingScaleMigration26" is the marker version 26 leaves for RunDeferredMigrations to find at
+-- login. The defaults do not carry it, so without this the clean below drops it first.
+local OPAQUE_CACHE_KEYS = {
+	"SpecCache",
+	"WhatsNew",
+	"NotifiedChanges",
+	"Profiles",
+	"ActiveProfile",
+	"AutoSwitch",
+	"PendingScaleMigration26",
+}
 -- The announcement categories whose TTS opt-out lists need the same protection.
 local TTS_MUTE_CATEGORIES = { "Important", "Defensive", "EnemyDebuff" }
 -- Import and export shipped in version 24. Nothing genuine is stamped below it, and the steps
