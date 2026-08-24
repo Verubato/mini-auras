@@ -1609,9 +1609,6 @@ local function InitializeLabelButton(instance, button)
 end
 
 ---How far one line of icons may reach before it wraps, or nil for a display that never wraps.
----
----A scaled group's icons are wider than the count they are measured as, so every one of them a
----group can put on a line is added on. Without it a line holding those icons wraps an icon early.
 ---@param instance AuraContainerDisplay
 ---@return number?
 local function LineSize(instance)

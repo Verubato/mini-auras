@@ -1004,6 +1004,23 @@ end)
 fw.describe("AuraContainerDisplay - deferred groups", function()
 	fw.before_each(acm.reset)
 
+	-- Nothing recomputes the wrap cap when a group is finally declared, so a budget that moved
+	-- while the group was still pending has to reach the cap when it moves.
+	fw.it("counts a budget that moved while a scaled group was still pending", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 0, SizeScale = 1.25 },
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { PerLine = 3, DeferGroups = true })
+
+		instance:SetMaxIcons("big", 2)
+		instance:FinishGroups()
+		instance:Show()
+
+		local cap = instance.Frame._flowMaxLineSize
+
+		assert(cap == 3 * 30 + 3 * 2 + 2 * 7.5, "the declared row carries both scaled icons, got " .. tostring(cap))
+	end)
+
 	-- The engine allocates a batch of buttons the moment a group is declared, whatever its
 	-- budget, so a group is the smallest piece a build can be split into. Prewarming leans on
 	-- that: the container first, then a group per turn of the background walker.
