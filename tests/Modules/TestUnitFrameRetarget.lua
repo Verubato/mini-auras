@@ -115,8 +115,8 @@ fw.describe("Important auras - the login layout pass", function()
 		fresh:Hide()
 	end)
 
-	-- Crowd control is the exception. It builds through the pass rather than waiting it out, and
-	-- carries the containers the settling frames leave behind for it.
+	-- Crowd control is the exception. It builds through the pass, and the frames that never keep a
+	-- unit leave their containers behind, which is the accepted cost.
 	fw.it("builds crowd control containers during it", function()
 		local fresh = env.addUnitFrame("party4", "CUF_LoadingCC")
 		local before = #env.containersForUnit("party4")

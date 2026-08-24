@@ -52,8 +52,8 @@ end
 
 local function OnEvent(_, event)
 	if event == "GROUP_ROSTER_UPDATE" or event == "LOADING_SCREEN_DISABLED" then
-		-- The screen ending is what makes the frames readable: nothing is built while one is up,
-		-- so this is the pass that builds what the world-entering pass had to skip.
+		-- The screen ending is what makes the frames readable, so this is the pass that re-points
+		-- the entries the layout put on frames that turned out to hold nobody.
 		QueueRefresh()
 	elseif event == "UNIT_PET" then
 		-- A pet was summoned/dismissed; refresh so the opt-in pet unit frame containers show/hide

@@ -345,7 +345,7 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	-- Frames pre-created at login are briefly shown pointed at "player", so this builds more
-	-- containers than end up keeping a unit. Skipping them here measures many times worse.
+	-- containers than end up keeping a unit. Guarding them out measured many times slower at login.
 
 	-- Nobody on the token, nothing to watch. Blizzard builds its party and raid frames for a full
 	-- group and calls SetUnit on every one of them at login, so a solo player's frames alone are
