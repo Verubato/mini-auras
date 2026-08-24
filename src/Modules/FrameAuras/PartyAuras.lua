@@ -559,8 +559,7 @@ local function BuildDebuffs(frame, unit, parent)
 	local groups = {}
 
 	-- Crowd control leads the row, in a group of its own because an icon's size is fixed per group
-	-- and this one is drawn larger than the rest. Left out until the player asks for it, since a
-	-- group is a batch of buttons the engine allocates on the spot.
+	-- and this one is drawn larger than the rest. Left out until the player asks for it.
 	if CrowdControlIcons() > 0 then
 		groups[#groups + 1] = CrowdControlGroup()
 	end
