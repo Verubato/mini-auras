@@ -1610,8 +1610,8 @@ end
 
 ---How far one line of icons may reach before it wraps, or nil for a display that never wraps.
 ---
----A scaled group's icons are wider than the count they are measured as, so the widest group's
----extra width is added on. Without it a line holding one of those icons wraps an icon early.
+---A scaled group's icons are wider than the count they are measured as, so every one of them a
+---group can put on a line is added on. Without it a line holding those icons wraps an icon early.
 ---@param instance AuraContainerDisplay
 ---@return number?
 local function LineSize(instance)
@@ -2169,6 +2169,12 @@ function M:SetMaxIcons(groupKey, maxIcons, urgent)
 	end
 
 	group.MaxIcons = maxIcons
+
+	-- The wrap cap counts how many of a scaled group's icons can share a line, so a budget that
+	-- moves has to be worked back into it.
+	if group.SizeScale and self.PerLine then
+		ApplyFlowLayout(self)
+	end
 
 	-- A group still waiting to be declared takes the budget when it is; the engine has nothing
 	-- to set it on yet.

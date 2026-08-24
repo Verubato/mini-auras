@@ -129,6 +129,24 @@ fw.describe("AuraContainerDisplay - creation", function()
 		assert(4 * 30 + 3 * 2 > cap, "and four plain ones still do not fit")
 	end)
 
+	-- Switching a category off and back on moves the group's budget, and the cap counts it.
+	fw.it("works the wrap cap out again when a scaled group's budget moves", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 2, SizeScale = 1.25 },
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { PerLine = 3 })
+
+		local full = instance.Frame._flowMaxLineSize
+
+		instance:SetMaxIcons("big", 0)
+
+		assert(instance.Frame._flowMaxLineSize == full - 2 * 7.5, "switching the group off drops its premium")
+
+		instance:SetMaxIcons("big", 2)
+
+		assert(instance.Frame._flowMaxLineSize == full, "switching it back on puts it back")
+	end)
+
 	fw.it("builds a glow frame per button", function()
 		local instance = newInstance()
 		assert(anyGlowFrames(instance), "glow overlays exist from creation")

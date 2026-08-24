@@ -46,7 +46,7 @@ local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
 local DEBUFF_CROWD_CONTROL_INDEX = 1
 local DEBUFF_PLAIN_INDEX = 2
 -- What crowd control is drawn at, as a share of the rest of the row. A stun on a party member is
--- worth more than the debuff beside it.
+-- worth more than the debuff beside it. Past 1.5 a full row would take one icon more than asked.
 local CROWD_CONTROL_SIZE_SCALE = 1.25
 -- The most icons the head of the row holds. Its own cap rather than the row's, because two stuns
 -- at once on one member is already unusual.
