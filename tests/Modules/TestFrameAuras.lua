@@ -137,6 +137,7 @@ local module = env.addon.Modules.FrameAurasModule
 local testSpells = env.addon.Core.TestSpells
 local trackedBuffs = env.addon.Core.TrackedBuffs
 local options = db.Modules.FrameAuras
+local moduleUtil = env.addon.Utils.ModuleUtil
 
 ---The lowest curated buff id, picked by value so the assertions survive a change to the list.
 ---@return number
@@ -1400,3 +1401,135 @@ fw.describe("Frame Auras - handing the target frame back", function()
 end)
 
 targetAuras.Available = TARGET_ROWS_SHIPPED
+
+-- The missing class buff mark, on a raid frame built here so nothing an earlier section drew can
+-- be mistaken for it. Priest, because Power Word: Fortitude lands as one aura rather than thirteen.
+local MARK_CLASS = "PRIEST"
+local MARK_SPELL = 21562
+local MARK_UNIT = "raid40"
+local markFrame = NewRaidFrame(40)
+-- Units the client says already carry the buff.
+local buffed = {}
+
+_G.C_UnitAuras.GetUnitAuraBySpellID = function(unit, spellId)
+	if buffed[unit] and spellId == MARK_SPELL then
+		return {}
+	end
+
+	return nil
+end
+
+---The mark drawn on a frame, or nil when the module never built one there. Marks are created once
+---and kept for the session, so a frame that has been marked before keeps its own.
+---@param frame table
+---@return table?
+local function MarkOn(frame)
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type ~= "AuraContainer" and candidate.Icon and candidate:GetParent() == frame then
+			return candidate
+		end
+	end
+
+	return nil
+end
+
+---@param frame table
+---@return boolean
+local function Marked(frame)
+	local mark = MarkOn(frame)
+
+	return mark ~= nil and mark:IsShown() == true
+end
+
+---@param instanceType string
+local function MoveTo(instanceType)
+	env.instanceType = instanceType
+	env.inInstance = instanceType ~= "none"
+	moduleUtil:InvalidateWorldState()
+end
+
+fw.describe("Frame Auras - where the missing class buff mark shows", function()
+	fw.before_each(function()
+		module:StopTesting()
+
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.TargetFocus.Enabled = false
+		options.ClassBuff.Enabled = true
+		options.ClassBuff.InstancesOnly = true
+
+		wow.setUnitClass("player", MARK_CLASS)
+		buffed[MARK_UNIT] = nil
+		_G.C_Housing = nil
+		MoveTo("none")
+
+		module:Refresh()
+	end)
+
+	fw.it("leaves the open world unmarked", function()
+		assert(not Marked(markFrame), "nobody is reminded about a group buff out in the world")
+	end)
+
+	fw.it("marks a member who is missing the buff inside a dungeon", function()
+		MoveTo("party")
+		module:Refresh()
+
+		assert(Marked(markFrame), "the mark is up where the group is about to pull")
+	end)
+
+	fw.it("counts a house as the open world", function()
+		-- A house loads as an instanced map, so the instance type on its own would put the mark up
+		-- in one.
+		_G.C_Housing = {
+			IsOnNeighborhoodMap = function()
+				return false
+			end,
+			IsInsideHouseOrPlot = function()
+				return true
+			end,
+		}
+
+		MoveTo("party")
+		module:Refresh()
+
+		_G.C_Housing = nil
+
+		assert(not Marked(markFrame), "there is nothing to pull in a house")
+	end)
+
+	fw.it("leaves a member who already has the buff alone inside a dungeon", function()
+		buffed[MARK_UNIT] = true
+		MoveTo("party")
+		module:Refresh()
+
+		assert(not Marked(markFrame), "a buffed member is not marked just because the zone changed")
+	end)
+
+	fw.it("takes the mark down again on the way out", function()
+		MoveTo("party")
+		module:Refresh()
+		MoveTo("none")
+		module:Refresh()
+
+		assert(not Marked(markFrame), "the mark goes with the dungeon rather than sticking")
+	end)
+
+	fw.it("marks the open world when the player asks for it everywhere", function()
+		options.ClassBuff.InstancesOnly = false
+		module:Refresh()
+
+		assert(Marked(markFrame), "the switch is what holds the mark back, not the module")
+	end)
+
+	fw.it("previews the mark in the open world", function()
+		module:StartTesting()
+
+		assert(Marked(markFrame), "a player who opened the preview asked to see it where they stand")
+
+		module:StopTesting()
+
+		assert(not Marked(markFrame), "and the preview leaves nothing behind on the way out")
+	end)
+end)
+
+DropRaidFrame(40)

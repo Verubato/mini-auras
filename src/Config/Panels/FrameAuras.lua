@@ -654,16 +654,25 @@ local function BuildClassBuff(content, options)
 	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
 
-	local enabled = Checkbox(content, options, "Enabled", L["Enable"],
-		L["Puts the buff's own icon on the frame, drained of colour, while the member is without it."])
-	enabled:SetPoint("TOPLEFT", blurb, "BOTTOMLEFT", 0, -verticalSpacing)
+	local top = CheckboxRow(content, options, {
+		{
+			Key = "Enabled",
+			Label = L["Enable"],
+			Tooltip = L["Puts the buff's own icon on the frame, drained of colour, while the member is without it."],
+		},
+		{
+			Key = "InstancesOnly",
+			Label = L["Instances only"],
+			Tooltip = L["Only marks a frame inside an instance, where a missing group buff costs something."],
+		},
+	}, blurb)
 
 	-- The corner the mark sits in is fixed. It stands in for something Blizzard would have drawn
 	-- itself, so where it goes is the frame's answer rather than the player's, exactly like the
 	-- buff and debuff rows on the other two tabs.
 	local size = Slider(content, options, "ClassBuff", "Size", L["Icon size"],
 		L["Icon height as a percentage of the unit frame's own height."])
-	size.Slider:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
+	size.Slider:SetPoint("TOPLEFT", top, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
 end
 
 ---@param content table

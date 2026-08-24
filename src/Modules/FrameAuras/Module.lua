@@ -9,9 +9,11 @@ local targetAuras = addon.Modules.FrameAuras.TargetAuras
 -- The buff and debuff rows on the party and raid frames, the missing class buff mark on the same
 -- frames, and the rows on the target and focus frames. Each carries its own switch.
 --
--- No ModuleLifecycle and no per-context enable table. These rows stand in for frames the game
+-- No ModuleLifecycle and no per-context enable table. The aura rows stand in for frames the game
 -- draws everywhere, so one that came and went with the zone would read as broken rather than as
 -- filtered, and the parts run their own enable edges instead.
+--
+-- The missing buff mark is the exception, and carries its own switch for where it shows.
 
 ---@class FrameAurasModule : IModule
 local M = {}

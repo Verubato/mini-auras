@@ -6,6 +6,7 @@ local eventGate = addon.Core.EventGate
 local frames = addon.Core.Frames
 local pixels = addon.Core.Pixels
 local classBuffs = addon.Core.ClassBuffs
+local moduleUtil = addon.Utils.ModuleUtil
 
 -- Marks a party or raid frame whose member is missing the group buff the player's class brings.
 -- The mark is the buff's own icon drained of colour, so it reads as absent.
@@ -111,6 +112,19 @@ local function Index(frame, unit)
 
 	framesByUnit[unit] = framesByUnit[unit] or {}
 	framesByUnit[unit][frame] = true
+end
+
+---A group buff missing out in the world is nobody's problem, so the mark holds until there is
+---something to pull.
+---@param options FrameAurasClassBuffOptions
+---@return boolean
+local function InWantedPlace(options)
+	if options.InstancesOnly ~= true then
+		return true
+	end
+
+	-- A house is an instanced map with nothing in it to fight, so it counts as the open world.
+	return moduleUtil:InstanceType() ~= "none" and not moduleUtil:IsInHousing()
 end
 
 ---The player's own class buff, worked out once.
@@ -357,7 +371,9 @@ function M:Refresh()
 		return
 	end
 
-	active = options.Enabled == true
+	-- A player opening the preview in the open world asked to see the mark, so where they are
+	-- standing is not the question.
+	active = options.Enabled == true and (testModeActive or InWantedPlace(options))
 
 	if active and not playerBuff then
 		playerBuff = PlayerBuff()

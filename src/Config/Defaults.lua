@@ -677,6 +677,9 @@ local dbDefaults = {
 			---@class FrameAurasClassBuffOptions
 			ClassBuff = {
 				Enabled = false,
+				-- A group buff nobody cast in the open world costs nothing, so the mark waits for a
+				-- place with a pull in it.
+				InstancesOnly = true,
 				-- Only the size. Which corner the mark sits in is the frame's answer rather than the
 				-- player's, like the corners the buff and debuff rows take.
 				Size = 35,
