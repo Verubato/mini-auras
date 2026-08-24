@@ -115,7 +115,9 @@ fw.describe("Important auras - the login layout pass", function()
 		fresh:Hide()
 	end)
 
-	fw.it("builds no crowd control containers during it either", function()
+	-- Crowd control is the exception. It builds through the pass rather than waiting it out, and
+	-- carries the containers the settling frames leave behind for it.
+	fw.it("builds crowd control containers during it", function()
 		local fresh = env.addUnitFrame("party4", "CUF_LoadingCC")
 		local before = #env.containersForUnit("party4")
 
@@ -123,16 +125,13 @@ fw.describe("Important auras - the login layout pass", function()
 
 		crowdControl:Refresh()
 
-		assert(#env.containersForUnit("party4") == before, "the layout pass builds nothing")
+		local built = #env.containersForUnit("party4")
 
 		env.loadingScreenUp = false
-
-		crowdControl:Refresh()
-
-		assert(#env.containersForUnit("party4") > before, "and the pass after the screen builds it")
-
 		env.unitFrames[#env.unitFrames] = nil
 		fresh:Hide()
+
+		assert(built > before, "the layout pass built nothing")
 	end)
 end)
 
