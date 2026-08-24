@@ -21,24 +21,42 @@ local function Load()
 	return harness.Run("MiniAuras", {}).Addon
 end
 
----Opens the options window the way a player does, with the client in or out of combat.
----@param inCombat boolean
-local function RunSlashCommand(inCombat)
+---Runs the action with the client in combat.
+---@param action fun()
+local function InCombat(action)
 	local wasInCombat = _G.InCombatLockdown
 
 	_G.InCombatLockdown = function()
-		return inCombat
+		return true
 	end
 
-	-- Restored even when the handler throws, so one failure does not leave every later test in
+	-- Restored even when the action throws, so one failure does not leave every later test in
 	-- the run believing it is in combat.
-	local ok, err = pcall(_G.SlashCmdList.MINIAURAS, "")
+	local ok, err = pcall(action)
 
 	_G.InCombatLockdown = wasInCombat
 
 	if not ok then
 		error(err, 0)
 	end
+end
+
+---Opens the options window the way a player does.
+local function RunSlashCommand()
+	_G.SlashCmdList.MINIAURAS("")
+end
+
+---Finds the button on the Interface > AddOns splash, the other way into the options window.
+---Nothing on the addon table holds it, so it is found by the text a player reads.
+---@return table? button
+local function FindSplashButton()
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.Click and frame.GetText and frame:GetText() == "Open Settings" then
+			return frame
+		end
+	end
+
+	return nil
 end
 
 fw.describe("Config - when the options window is built", function()
@@ -67,7 +85,7 @@ fw.describe("Config - when the options window is built", function()
 		local addon = Load()
 		local said = #WowMock.State.Prints
 
-		RunSlashCommand(true)
+		InCombat(RunSlashCommand)
 
 		assert(addon.Config.Window == nil, "the window was built in combat")
 
@@ -81,9 +99,25 @@ fw.describe("Config - when the options window is built", function()
 		local addon = Load()
 
 		addon.Config:EnsureWindow():Hide()
-		RunSlashCommand(true)
+		InCombat(RunSlashCommand)
 
 		assert(addon.Config.Window:IsShown(), "an already built window stayed shut in combat")
+	end)
+
+	-- The splash button also asks Blizzard's own panel to close behind it, and in combat that
+	-- hide waits for the fight. Scheduling it for a window that never opened empties the screen.
+	fw.it("leaves the settings panel alone when combat turned the splash button away", function()
+		local addon = Load()
+		local button = FindSplashButton()
+
+		fw.not_nil(button, "the splash has a button through to the options")
+
+		InCombat(function()
+			button:Click()
+		end)
+
+		assert(addon.Config.Window == nil, "the window was built in combat")
+		assert(not addon.Framework:HasPendingCombatWork(), "the settings panel hide was queued anyway")
 	end)
 end)
 

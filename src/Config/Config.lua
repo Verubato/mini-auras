@@ -31,10 +31,11 @@ end
 ---Opens the options window, or says why it cannot. Building the window asks the client for
 ---keyboard propagation, which combat refuses, so the first open has to wait for the fight to end.
 ---@param toggle boolean? True to close the window again when it is already open.
+---@return boolean opened False when combat turned the ask away.
 local function OpenWindow(toggle)
 	if not M.Window and InCombatLockdown() then
 		mini:NotifyWithPrefix(L["The options window can't open during combat."])
-		return
+		return false
 	end
 
 	local window = M:EnsureWindow()
@@ -44,6 +45,8 @@ local function OpenWindow(toggle)
 	else
 		window:Show()
 	end
+
+	return true
 end
 
 ---Builds the centred splash shown under Interface > AddOns: name, version and a button
@@ -99,6 +102,12 @@ local function BuildRedirectPanel(panel, version)
 	button:SetNormalFontObject(GameFontNormalMed3)
 	button:SetHighlightFontObject(GameFontHighlightMedium)
 	button:SetScript("OnClick", function()
+		-- Nothing to step aside for when combat turned the ask away, and scheduling the hide
+		-- anyway would empty the screen the moment the fight ended.
+		if not OpenWindow() then
+			return
+		end
+
 		-- Close Blizzard's settings window on the way out: it opened this one, and leaving it
 		-- sitting behind the config window is just a panel the user has to dismiss afterwards.
 		-- HideUIPanel is protected though, so in combat this waits rather than erroring - the
@@ -117,8 +126,6 @@ local function BuildRedirectPanel(panel, version)
 				HideSettings()
 			end
 		end
-
-		OpenWindow()
 	end)
 end
 
