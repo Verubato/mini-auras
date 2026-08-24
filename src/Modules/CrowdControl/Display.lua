@@ -165,6 +165,12 @@ local function UpdateKickIcon(entry)
 		return
 	end
 
+	-- Frames the client left dark keep their entries and their subscriptions, so the player taking
+	-- a kick reaches every one of them. Nothing they draw can be seen.
+	if entry.Anchor and entry.Anchor.IsVisible and not entry.Anchor:IsVisible() then
+		return
+	end
+
 	local options, isPet = GetEntryOptions(entry)
 	if not options then
 		return
