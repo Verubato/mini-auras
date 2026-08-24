@@ -460,3 +460,32 @@ fw.describe("CrowdControlModule 12.1 - a unit outside the visible world", functi
 		crowdControl:Refresh()
 	end)
 end)
+
+fw.describe("CrowdControlModule 12.1 - a kick on a frame the client left dark", function()
+	-- The login pass leaves an entry on every frame it touched, and each one stays subscribed to
+	-- its unit. Without the visibility guard the player taking a kick reaches all of them.
+	fw.it("renders for a frame on screen and skips one that is hidden", function()
+		ccFrame.unit = "party8"
+		ccFrame:Show()
+		crowdControl:Refresh()
+
+		assert(ccDisplay("party8"), "no display for the anchor's unit")
+
+		local before = env.kickReads.party8 or 0
+		local firedShown = env.fireKick("party8")
+		local shown = env.kickReads.party8 or 0
+
+		ccFrame:Hide()
+
+		local firedHidden = env.fireKick("party8")
+		local hidden = env.kickReads.party8 or 0
+
+		ccFrame:Show()
+
+		assert(firedShown > 0, "nothing was subscribed to the unit")
+		assert(shown > before, "a frame on screen did not render its kick")
+		-- Both counts, or a change that dropped the subscription on hide would read as a pass.
+		assert(firedHidden == firedShown, "the hidden frame gave its subscription up instead")
+		assert(hidden == shown, "a hidden frame rendered anyway")
+	end)
+end)

@@ -557,6 +557,11 @@ function M.build()
 	-- different unit have to move their kick subscription with it, and nothing else would show
 	-- that they forgot.
 	env.kickCalls = {}
+	-- Live subscriptions, so a test can land a kick and see who reacts.
+	env.kickSubs = {}
+	-- A subscriber that returns before reading a unit's kick did no work, which is the only sign
+	-- a render was skipped.
+	env.kickReads = {}
 	local kickKey = 0
 	local function recordKick(action, unit, key)
 		env.kickCalls[#env.kickCalls + 1] = { Action = action, Unit = unit, Key = key }
@@ -570,17 +575,49 @@ function M.build()
 			recordKick("Unwatch", unit)
 		end,
 		GetKick = function(_, unit)
+			env.kickReads[unit] = (env.kickReads[unit] or 0) + 1
+
 			return env.kicks[unit]
 		end,
-		Subscribe = function(_, unit)
+		Subscribe = function(_, unit, callback)
 			kickKey = kickKey + 1
 			recordKick("Subscribe", unit, kickKey)
+			env.kickSubs[kickKey] = { Unit = unit, Callback = callback }
+
 			return kickKey
 		end,
 		Unsubscribe = function(_, unit, key)
 			recordKick("Unsubscribe", unit, key)
+
+			-- A nil key reaches the real tracker harmlessly, so it must not bring a test file down
+			-- here either.
+			if key then
+				env.kickSubs[key] = nil
+			end
 		end,
 	}
+
+	---Lands a kick on a unit, calling back everyone still subscribed to it.
+	---@param unit string
+	---@return number fired
+	env.fireKick = function(unit)
+		local live, count = {}, 0
+
+		-- Snapshot first: a callback is free to subscribe, and adding to a table being walked is
+		-- undefined.
+		for key, sub in pairs(env.kickSubs) do
+			live[key] = sub
+		end
+
+		for _, sub in pairs(live) do
+			if sub.Unit == unit and sub.Callback then
+				sub.Callback()
+				count = count + 1
+			end
+		end
+
+		return count
+	end
 
 	---Kick tracker calls for a unit since the given index into env.kickCalls.
 	env.kickCallsSince = function(index, unit)
