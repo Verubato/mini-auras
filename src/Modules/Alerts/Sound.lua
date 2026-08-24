@@ -81,7 +81,7 @@ local allySoundGeneration = nil
 ---@param category string "Important", "Defensive" or "EnemyDebuff"
 ---@return table<number, boolean>
 local function MutedSpellIds(category)
-	local tts = db and db.Modules.AlertsModule.TTS
+	local tts = db and db.Modules.Alerts.TTS
 	local options = tts and tts[category]
 
 	return ttsMutes:EffectiveSet(category, options and options.MutedSpellIds)
@@ -125,7 +125,7 @@ function M:RefreshAllySounds(force)
 		return
 	end
 
-	local tts = db.Modules.AlertsModule.TTS
+	local tts = db.Modules.Alerts.TTS
 	local enabled = (tts and tts.EnemyDebuff and tts.EnemyDebuff.Enabled) or false
 	local active = enabled and moduleUtil:IsModuleEnabled(moduleName.Alerts) and not paused
 	local voicePack = active and ttsPacks:Resolve(tts and tts.VoicePack) or false
@@ -188,8 +188,8 @@ function M:RegisterToken(unitToken)
 	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
 		return
 	end
-	local sound = db.Modules.AlertsModule.Sound
-	local tts = db.Modules.AlertsModule.TTS
+	local sound = db.Modules.Alerts.Sound
+	local tts = db.Modules.Alerts.TTS
 	local importantEnabled = sound.Important and sound.Important.Enabled
 	local defensiveEnabled = sound.Defensive and sound.Defensive.Enabled
 	local importantTts = tts and tts.Important and tts.Important.Enabled
@@ -264,8 +264,8 @@ function M:Refresh(activeTokens)
 	-- swallow a settings change that only the ally registrations care about.
 	self:RefreshAllySounds()
 
-	local sound = db.Modules.AlertsModule.Sound
-	local tts = db.Modules.AlertsModule.TTS
+	local sound = db.Modules.Alerts.Sound
+	local tts = db.Modules.Alerts.TTS
 	local importantEnabled = (sound.Important and sound.Important.Enabled) or false
 	local defensiveEnabled = (sound.Defensive and sound.Defensive.Enabled) or false
 	local importantTts = (tts and tts.Important and tts.Important.Enabled) or false

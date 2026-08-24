@@ -23,7 +23,7 @@ local display = addon.Modules.PersonalAuras.Display
 local recorder = addon.Modules.PersonalAuras.Recorder
 local module = addon.Modules.PersonalAurasModule
 local db = env.db
-local options = db.Modules.PersonalAurasModule
+local options = db.Modules.PersonalAuras
 
 -- Everything below authors its own groups, so the starter ones are switched off before Init:
 -- they would otherwise be built against fixture spell names that are not installed yet, and
@@ -2358,7 +2358,7 @@ fw.describe("PersonalAuras - profile switching", function()
 
 		-- The shape the precog migration leaves in a stored profile: marked seeded, so
 		-- SeedDefaults stands down, with groups holding only the fields it carried over.
-		local snapshot = db.Profiles.Migrated.Modules.PersonalAurasModule
+		local snapshot = db.Profiles.Migrated.Modules.PersonalAuras
 		snapshot.SeededDefaults = true
 		snapshot.NextId = 2
 		snapshot.Groups = { {

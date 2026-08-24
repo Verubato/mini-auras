@@ -253,7 +253,7 @@ local function GetOptions()
 		return nil
 	end
 
-	return db.Modules.AlertsModule
+	return db.Modules.Alerts
 end
 
 ---@return boolean

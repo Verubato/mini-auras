@@ -16,7 +16,7 @@ local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 local db = env.db
-local alerts = db.Modules.AlertsModule
+local alerts = db.Modules.Alerts
 
 alerts.Enabled.Always = true
 alerts.Icons.Enabled = true
@@ -87,7 +87,7 @@ local function removePlate(token)
 	env.enemies[token] = nil
 end
 
-fw.describe("AlertsModule 12.1 - bar anchor handling", function()
+fw.describe("Alerts 12.1 - bar anchor handling", function()
 	fw.it("a refresh applies the saved anchor verbatim and never rewrites it", function()
 		-- Converting the anchor from the frame's rect on a refresh caused two reset bugs in a
 		-- row: the rect only matches the rendered row while test icons are up, so outside test
@@ -215,7 +215,7 @@ fw.describe("AlertsModule 12.1 - bar anchor handling", function()
 	end)
 end)
 
-fw.describe("AlertsModule 12.1 - how many pairs it prepares", function()
+fw.describe("Alerts 12.1 - how many pairs it prepares", function()
 	local display = env.addon.Modules.Alerts.Display
 	local moduleUtil = env.addon.Utils.ModuleUtil
 
@@ -255,7 +255,7 @@ fw.describe("AlertsModule 12.1 - how many pairs it prepares", function()
 	end)
 end)
 
-fw.describe("AlertsModule 12.1 - which plates get a pair", function()
+fw.describe("Alerts 12.1 - which plates get a pair", function()
 	fw.it("builds nothing for an NPC", function()
 		-- An alert is something another player did, and a busy zone is mostly NPCs. Each one tracked
 		-- would hold a live aura container and a set of sound registrations for as long as its plate
@@ -289,7 +289,7 @@ fw.describe("AlertsModule 12.1 - which plates get a pair", function()
 	end)
 end)
 
-fw.describe("AlertsModule 12.1 - prep room gating", function()
+fw.describe("Alerts 12.1 - prep room gating", function()
 	fw.it("the prep room hides and disables every display pair", function()
 		addEnemyPlate("nameplate1")
 		local containers = env.containersForUnit("nameplate1")
@@ -328,7 +328,7 @@ fw.describe("AlertsModule 12.1 - prep room gating", function()
 	end)
 end)
 
-fw.describe("AlertsModule 12.1 - split vs combined bars", function()
+fw.describe("Alerts 12.1 - split vs combined bars", function()
 	---Resolves a two-frame row into (start, follower): the chain imposes no token order, so which
 	---frame anchors the bar is the map's business; the shape - one at the bar, one chained off
 	---it - is what the row must always have.
@@ -416,7 +416,7 @@ end)
 --
 -- Class colouring is off throughout: it replaces the category tints outright, and these are the
 -- tests that pin the category path. TestAlertsClassColors covers the other one.
-fw.describe("AlertsModule 12.1 - the border and the glow", function()
+fw.describe("Alerts 12.1 - the border and the glow", function()
 	local display = env.addon.Modules.Alerts.Display
 
 	alerts.Icons.ClassColors = false
@@ -529,7 +529,7 @@ end)
 -- The live buttons take the same pair of switches. A button can only be styled when it is created,
 -- so moving either has to rebuild the pooled pairs; the ring itself is drawn by the addon here,
 -- because the engine only owns a border it was handed for dispel colouring.
-fw.describe("AlertsModule 12.1 - the border on the live bars", function()
+fw.describe("Alerts 12.1 - the border on the live bars", function()
 	local BORDER_ASSET = [[Interface\Buttons\UI-Debuff-Overlays]]
 
 	---The first defensive button on a token's live pair.
@@ -618,7 +618,7 @@ end)
 -- Budgets and tints are applied to the existing pairs at runtime, so only what is genuinely
 -- baked into the buttons (size, style) may rebuild them: every rebuild abandons the prewarmed
 -- frame set for good, and frames can never be freed.
-fw.describe("AlertsModule 12.1 - what may rebuild the display pairs", function()
+fw.describe("Alerts 12.1 - what may rebuild the display pairs", function()
 	---The live Def container for a token: earlier rebuilds leave abandoned containers still
 	---tagged with the token, so the enabled one - always the current pair's - is the one asked.
 	local function liveDefOf(token)

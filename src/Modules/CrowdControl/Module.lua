@@ -58,8 +58,8 @@ local function OnEvent(_, event)
 	elseif event == "UNIT_PET" then
 		-- A pet was summoned/dismissed; refresh so the opt-in pet unit frame containers show/hide
 		-- with it. Only relevant when IncludePetFrame is enabled, so skip the work otherwise.
-		local petOptions = db.Modules.PetCCModule
-		if petOptions and petOptions.IncludePetFrame and moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		local petOptions = db.Modules.PetCrowdControl
+		if petOptions and petOptions.IncludePetFrame and moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 			QueueRefresh()
 		end
 	end
@@ -72,7 +72,7 @@ end
 
 ---@return boolean
 local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC)
+	return moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
 end
 
 -- Live auras are pushed in by the aura containers, so only the fake ones rebuild here.

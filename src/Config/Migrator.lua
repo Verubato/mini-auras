@@ -27,11 +27,24 @@ local RENAMED_MODULE_KEYS = {
 	{ "AurasModule", "RaidFrameAurasModule" },
 	{ "RaidFrameAurasModule", "ImportantAurasModule" },
 	{ "CustomAurasModule", "PersonalAurasModule" },
+	-- Version 74 dropped the "Module" suffix every key carried and spelled CC out in full.
+	{ "CCModule", "CrowdControl" },
+	{ "PetCCModule", "PetCrowdControl" },
+	{ "HealerCCModule", "HealerCrowdControl" },
+	{ "PortraitModule", "Portrait" },
+	{ "AlertsModule", "Alerts" },
+	{ "NameplatesModule", "Nameplates" },
+	{ "EnemyKickTrackerModule", "EnemyKickTracker" },
+	{ "AllyKickTrackerModule", "AllyKickTracker" },
+	{ "TrinketsModule", "Trinkets" },
+	{ "ImportantAurasModule", "ImportantAuras" },
+	{ "FrameAurasModule", "FrameAuras" },
+	{ "PersonalAurasModule", "PersonalAuras" },
 }
 
 ---The alert module's TTS options, or nil on a db that predates them.
 local function TtsOptions(vars)
-	return vars.Modules and vars.Modules.AlertsModule and vars.Modules.AlertsModule.TTS
+	return vars.Modules and vars.Modules.Alerts and vars.Modules.Alerts.TTS
 end
 
 local function SaveOpaqueCaches(vars)
@@ -41,22 +54,22 @@ local function SaveOpaqueCaches(vars)
 	end
 	-- The auras module's tracked-spell deltas are spellId -> true hashes against an empty schema,
 	-- so CleanTable would strip every key; save and restore them like the top-level caches.
-	local importantAurasSpells = vars.Modules and vars.Modules.ImportantAurasModule
-		and vars.Modules.ImportantAurasModule.Spells
+	local importantAurasSpells = vars.Modules and vars.Modules.ImportantAuras
+		and vars.Modules.ImportantAuras.Spells
 	saved._ImportantAurasDisabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Disabled) or {}
 	saved._ImportantAurasCustomSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Custom) or {}
 	saved._ImportantAurasEnabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Enabled) or {}
 	-- The frame aura module's buff deltas are the same shape again.
-	local frameAurasSpells = vars.Modules and vars.Modules.FrameAurasModule
-		and vars.Modules.FrameAurasModule.Spells
+	local frameAurasSpells = vars.Modules and vars.Modules.FrameAuras
+		and vars.Modules.FrameAuras.Spells
 	saved._FrameAurasDisabledSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Disabled) or {}
 	saved._FrameAurasCustomSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Custom) or {}
 	-- Personal aura groups are authored entirely by the user, so the schema has nothing to compare
 	-- them against and CleanTable would strip every one of them.
-	local personalAuras = vars.Modules and vars.Modules.PersonalAurasModule
+	local personalAuras = vars.Modules and vars.Modules.PersonalAuras
 	saved._PersonalAuraGroups = personalAuras and mini:CopyValueOrTable(personalAuras.Groups) or {}
 	-- Same shape again: a spellId -> true hash against an empty schema.
-	local portrait = vars.Modules and vars.Modules.PortraitModule
+	local portrait = vars.Modules and vars.Modules.Portrait
 	saved._PortraitCustomSpells = portrait and mini:CopyValueOrTable(portrait.CustomSpells) or {}
 	-- The TTS per-spell switches are the same shape: spellId -> boolean against an empty schema.
 	local tts = TtsOptions(vars)
@@ -72,24 +85,24 @@ local function RestoreOpaqueCaches(vars, saved)
 	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
 		vars[key] = saved[key]
 	end
-	local importantAurasModule = vars.Modules and vars.Modules.ImportantAurasModule
-	if importantAurasModule then
-		importantAurasModule.Spells = importantAurasModule.Spells or {}
-		importantAurasModule.Spells.Disabled = saved._ImportantAurasDisabledSpells or {}
-		importantAurasModule.Spells.Custom = saved._ImportantAurasCustomSpells or {}
-		importantAurasModule.Spells.Enabled = saved._ImportantAurasEnabledSpells or {}
+	local importantAuras = vars.Modules and vars.Modules.ImportantAuras
+	if importantAuras then
+		importantAuras.Spells = importantAuras.Spells or {}
+		importantAuras.Spells.Disabled = saved._ImportantAurasDisabledSpells or {}
+		importantAuras.Spells.Custom = saved._ImportantAurasCustomSpells or {}
+		importantAuras.Spells.Enabled = saved._ImportantAurasEnabledSpells or {}
 	end
-	local frameAuras = vars.Modules and vars.Modules.FrameAurasModule
+	local frameAuras = vars.Modules and vars.Modules.FrameAuras
 	if frameAuras then
 		frameAuras.Spells = frameAuras.Spells or {}
 		frameAuras.Spells.Disabled = saved._FrameAurasDisabledSpells or {}
 		frameAuras.Spells.Custom = saved._FrameAurasCustomSpells or {}
 	end
-	local personalAuras = vars.Modules and vars.Modules.PersonalAurasModule
+	local personalAuras = vars.Modules and vars.Modules.PersonalAuras
 	if personalAuras then
 		personalAuras.Groups = saved._PersonalAuraGroups or {}
 	end
-	local portrait = vars.Modules and vars.Modules.PortraitModule
+	local portrait = vars.Modules and vars.Modules.Portrait
 	if portrait then
 		portrait.CustomSpells = saved._PortraitCustomSpells or {}
 	end
@@ -291,8 +304,8 @@ function M:MigrateProfilePayload(payload, fromVersion)
 	return true, false
 end
 
----Moves a profile payload's module settings onto the names the addon uses now. For a string
----exported before the version stamp, where the migrations cannot be replayed.
+---Moves a profile payload's settings onto the names the addon uses now. For a string exported
+---before the version stamp, where the migrations cannot be replayed.
 ---@param payload table? One profile's snapshot of the saved variables.
 function M:RenameLegacyModuleKeys(payload)
 	local modules = payload and payload.Modules
@@ -314,6 +327,9 @@ function M:RenameLegacyModuleKeys(payload)
 			modules[from] = nil
 		end
 	end
+
+	-- The prune on the next login drops any CC key still under its old name.
+	M:SpellOutCrowdControlKeys(payload)
 end
 
 ---Fills any missing keys in the live db from dbDefaults without overwriting existing values.
@@ -359,18 +375,18 @@ function M:RunDeferredMigrations(vars)
 	if vars.PendingScaleMigration26 then
 		local scale = UIParent:GetScale()
 		if vars.Modules then
-			local ccModule = vars.Modules.CCModule
-			if ccModule then
-				if ccModule.Default and ccModule.Default.Icons and ccModule.Default.Icons.Size then
-					ccModule.Default.Icons.Size = math.floor(ccModule.Default.Icons.Size * scale + 0.5)
+			local crowdControl = vars.Modules.CrowdControl
+			if crowdControl then
+				if crowdControl.Default and crowdControl.Default.Icons and crowdControl.Default.Icons.Size then
+					crowdControl.Default.Icons.Size = math.floor(crowdControl.Default.Icons.Size * scale + 0.5)
 				end
-				if ccModule.Raid and ccModule.Raid.Icons and ccModule.Raid.Icons.Size then
-					ccModule.Raid.Icons.Size = math.floor(ccModule.Raid.Icons.Size * scale + 0.5)
+				if crowdControl.Raid and crowdControl.Raid.Icons and crowdControl.Raid.Icons.Size then
+					crowdControl.Raid.Icons.Size = math.floor(crowdControl.Raid.Icons.Size * scale + 0.5)
 				end
 			end
-			local petCCModule = vars.Modules.PetCCModule
-			if petCCModule and petCCModule.Icons and petCCModule.Icons.Size then
-				petCCModule.Icons.Size = math.floor(petCCModule.Icons.Size * scale + 0.5)
+			local petCrowdControl = vars.Modules.PetCrowdControl
+			if petCrowdControl and petCrowdControl.Icons and petCrowdControl.Icons.Size then
+				petCrowdControl.Icons.Size = math.floor(petCrowdControl.Icons.Size * scale + 0.5)
 			end
 		end
 		vars.PendingScaleMigration26 = nil

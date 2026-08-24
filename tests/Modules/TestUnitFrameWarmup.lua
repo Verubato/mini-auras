@@ -22,8 +22,8 @@ local WARMUP_TICKS = 4
 local env = moduleEnv.build()
 local db = env.db
 
-env.setModuleEnabled("CCModule", true)
-env.setModuleEnabled("ImportantAurasModule", true)
+env.setModuleEnabled("CrowdControl", true)
+env.setModuleEnabled("ImportantAuras", true)
 
 env.addUnitFrame("party1", "CUF_Warmup")
 
@@ -37,8 +37,8 @@ env.loadModule("src/Modules/ImportantAuras/Module.lua")
 local importantAuras = env.addon.Modules.ImportantAurasModule
 importantAuras:Init()
 
-local ccOptions = db.Modules.CCModule.Default
-local importantOptions = db.Modules.ImportantAurasModule.Default
+local ccOptions = db.Modules.CrowdControl.Default
+local importantOptions = db.Modules.ImportantAuras.Default
 
 ---How many spares are waiting. A spare tracks nobody until a frame takes it, and the two modules
 ---are told apart by how many groups their displays carry.
@@ -63,9 +63,9 @@ end
 
 fw.describe("Unit frame auras - warming up ahead of a group", function()
 	fw.it("warms nothing up while the modules are switched off", function()
-		env.setModuleEnabled("CCModule", false)
-		env.setModuleEnabled("PetCCModule", false)
-		env.setModuleEnabled("ImportantAurasModule", false)
+		env.setModuleEnabled("CrowdControl", false)
+		env.setModuleEnabled("PetCrowdControl", false)
+		env.setModuleEnabled("ImportantAuras", false)
 
 		local before = env.auraContainerCount()
 
@@ -76,8 +76,8 @@ fw.describe("Unit frame auras - warming up ahead of a group", function()
 	end)
 
 	fw.it("takes no longer for the refreshes that land while the walk is still going", function()
-		env.setModuleEnabled("CCModule", true)
-		env.setModuleEnabled("ImportantAurasModule", true)
+		env.setModuleEnabled("CrowdControl", true)
+		env.setModuleEnabled("ImportantAuras", true)
 
 		refreshBoth()
 		acm.tickAll(1)
@@ -97,8 +97,8 @@ fw.describe("Unit frame auras - warming up ahead of a group", function()
 	end)
 
 	fw.it("builds containers for the frames a group has yet to fill", function()
-		env.setModuleEnabled("CCModule", true)
-		env.setModuleEnabled("ImportantAurasModule", true)
+		env.setModuleEnabled("CrowdControl", true)
+		env.setModuleEnabled("ImportantAuras", true)
 
 		refreshBoth()
 		acm.tickAll(400)

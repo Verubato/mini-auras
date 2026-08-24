@@ -27,18 +27,18 @@ local inRaid = false
 
 ---@class ModuleName
 local ModuleName = {
-	CrowdControl = "CCModule",
-	PetCC = "PetCCModule",
-	HealerCrowdControl = "HealerCCModule",
-	Portrait = "PortraitModule",
-	Alerts = "AlertsModule",
-	Nameplates = "NameplatesModule",
-	EnemyKickTracker = "EnemyKickTrackerModule",
-	AllyKickTracker = "AllyKickTrackerModule",
-	Trinkets = "TrinketsModule",
-	ImportantAuras = "ImportantAurasModule",
-	FrameAuras = "FrameAurasModule",
-	PersonalAuras = "PersonalAurasModule",
+	CrowdControl = "CrowdControl",
+	PetCrowdControl = "PetCrowdControl",
+	HealerCrowdControl = "HealerCrowdControl",
+	Portrait = "Portrait",
+	Alerts = "Alerts",
+	Nameplates = "Nameplates",
+	EnemyKickTracker = "EnemyKickTracker",
+	AllyKickTracker = "AllyKickTracker",
+	Trinkets = "Trinkets",
+	ImportantAuras = "ImportantAuras",
+	FrameAuras = "FrameAuras",
+	PersonalAuras = "PersonalAuras",
 }
 
 ---@class ModuleUtil
@@ -311,7 +311,7 @@ function M:InstanceType()
 	return instanceType
 end
 
----@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
+---@param moduleName string The module key (e.g., "Alerts", "CrowdControl")
 ---@return boolean
 function M:IsModuleEnabled(moduleName)
 	RefreshWorldState()

@@ -101,7 +101,7 @@ end
 ---@param addon table
 ---@return table<number, boolean>
 local function Spells(addon)
-	return addon.Framework:GetSavedVars().Modules.PortraitModule.CustomSpells
+	return addon.Framework:GetSavedVars().Modules.Portrait.CustomSpells
 end
 
 ---@param map table<number, boolean>

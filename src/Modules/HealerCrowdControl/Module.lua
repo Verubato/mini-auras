@@ -38,7 +38,7 @@ local function OnEvent(_, event)
 	end
 end
 
----@return HealerCCModuleOptions?
+---@return HealerCrowdControlModuleOptions?
 local function GetOptions()
 	return display:GetOptions()
 end
@@ -63,7 +63,7 @@ local function SeedStateBaselines()
 end
 
 ---Live icons are driven by the aura containers; only the fake ones rebuild here.
----@param options HealerCCModuleOptions
+---@param options HealerCrowdControlModuleOptions
 local function UpdateContent(options)
 	if not testModeActive then
 		return
@@ -122,7 +122,7 @@ local function OnDisable()
 	rosterGate:SetActive(false)
 end
 
----@param options HealerCCModuleOptions
+---@param options HealerCrowdControlModuleOptions
 local function Apply(options)
 	display:EnsureFrames()
 	display:ApplyOptions(options)
@@ -148,7 +148,7 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-	previousTestSoundEnabled = db.Modules.HealerCCModule.Sound.Enabled
+	previousTestSoundEnabled = db.Modules.HealerCrowdControl.Sound.Enabled
 
 	sound:Init()
 	display:Init()

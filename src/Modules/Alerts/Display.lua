@@ -141,14 +141,14 @@ M.ArenaPrewarmTokenCount = 3
 ---glow/border switches, since those are the only things they paint.
 ---@return boolean
 local function AlertTintShown()
-	local icons = db and db.Modules.AlertsModule.Icons
+	local icons = db and db.Modules.Alerts.Icons
 
 	return icons ~= nil and (icons.Glow == true or icons.Border == true)
 end
 
 ---@return boolean
 local function ClassColorsEnabled()
-	local icons = db and db.Modules.AlertsModule.Icons
+	local icons = db and db.Modules.Alerts.Icons
 
 	return icons ~= nil and icons.ClassColors == true and AlertTintShown()
 end
@@ -162,7 +162,7 @@ local function AlertGlowColors()
 		return nil, nil
 	end
 
-	local icons = db.Modules.AlertsModule.Icons
+	local icons = db.Modules.Alerts.Icons
 
 	return moduleUtil:FillColor(importantGlowColor, icons.ImportantColor, DEFAULT_IMPORTANT_GLOW_COLOR),
 		moduleUtil:FillColor(defensiveGlowColor, icons.DefensiveColor, DEFAULT_DEFENSIVE_GLOW_COLOR)
@@ -244,7 +244,7 @@ end
 ---rings in the same colour around one icon read as a smudge, so an active glow wins.
 ---@return boolean
 local function AlertBorderShown()
-	local icons = db and db.Modules.AlertsModule.Icons
+	local icons = db and db.Modules.Alerts.Icons
 
 	return icons ~= nil and icons.Border == true and icons.Glow ~= true
 end
@@ -253,7 +253,7 @@ end
 -- the anchor) needs a readable row width to center on, which the chained displays don't have, so
 -- anything but LEFT or RIGHT falls back to RIGHT.
 local function GetGrow()
-	local grow = db.Modules.AlertsModule.Grow
+	local grow = db.Modules.Alerts.Grow
 	if grow ~= "LEFT" and grow ~= "RIGHT" then
 		return "RIGHT"
 	end
@@ -313,7 +313,7 @@ end
 -- their (possibly secret) sizes; empty containers collapse to nothing.
 -- (Category overlap is handled by filter negation at group creation, not here.)
 local function ChainAlertDisplays()
-	local options = db.Modules.AlertsModule
+	local options = db.Modules.Alerts
 	local spacing = options.IconSpacing or 2
 	local splitBars = options.SplitBars
 	-- Same chain geometry the aura displays use when they follow a kick icon: continue the row
@@ -364,7 +364,7 @@ QueueChainAlertDisplays = moduleUtil:Coalesced(ChainAlertDisplays)
 
 ---Whether the alert bars should currently render at all.
 local function GetAlertBarsShown()
-	local options = db.Modules.AlertsModule
+	local options = db.Modules.Alerts
 	return moduleUtil:IsModuleEnabled(moduleName.Alerts)
 		and options.Icons.Enabled
 		and not inPrepRoom
@@ -374,7 +374,7 @@ end
 ---Fills the shared style scratch from the alert options.
 ---@return AuraDisplayStyle
 local function AlertStyle()
-	local options = db and db.Modules.AlertsModule
+	local options = db and db.Modules.Alerts
 	local style = auraContainerDisplay:BuildStandardStyle(options and options.Icons)
 	style.Border = AlertBorderShown()
 	style.ShowTooltips = not options or options.ShowTooltips ~= false
@@ -569,7 +569,7 @@ local function CreateAlertDisplayPair(unitToken, defer)
 	-- never gets to run and the icons keep the placeholder size for the whole match. Creating
 	-- them right means the common path needs no restyle at all. The constants stay as
 	-- fallbacks for the pre-creation that can run before the db is read.
-	local options = db and db.Modules.AlertsModule
+	local options = db and db.Modules.Alerts
 	local icons = options and options.Icons
 	local size = (icons and icons.Size) or DEFAULT_PAIR_SIZE
 	local maxIcons = (icons and icons.MaxIcons) or DEFAULT_PAIR_ICONS
@@ -666,7 +666,7 @@ end
 -- ApplyDisplayOptions), so only the size and style that genuinely bake in remain.
 ---@return number
 local function AlertPairGeneration()
-	local options = db and db.Modules.AlertsModule
+	local options = db and db.Modules.Alerts
 	local icons = options and options.Icons
 
 	return auraContainerDisplay:GetStyleGeneration(
@@ -841,7 +841,7 @@ local function RestyleParkedPair(entry)
 		return false
 	end
 
-	local options = db and db.Modules.AlertsModule
+	local options = db and db.Modules.Alerts
 	local icons = options and options.Icons
 	local size = (icons and icons.Size) or DEFAULT_PAIR_SIZE
 	local spacing = (options and options.IconSpacing) or DEFAULT_PAIR_SPACING
@@ -884,7 +884,7 @@ end
 ---off screen and there can be forty of them, so they go through the background walker.
 local function RestyleStaleDisplayPairs()
 	local generation = AlertPairGeneration()
-	local shape = AlertPairShape(db and db.Modules.AlertsModule)
+	local shape = AlertPairShape(db and db.Modules.Alerts)
 	local shapeMoved = shape ~= pairShape
 
 	if generation == pairGeneration and not shapeMoved then
@@ -1069,7 +1069,7 @@ end
 ---@param unitToken string
 function M:ApplyOneAndChain(unitToken)
 	local entry = EnsureDisplay(unitToken)
-	ApplyDisplayOptions(entry, unitToken, db.Modules.AlertsModule, GetAlertBarsShown())
+	ApplyDisplayOptions(entry, unitToken, db.Modules.Alerts, GetAlertBarsShown())
 	QueueChainAlertDisplays()
 end
 
@@ -1086,7 +1086,7 @@ function M:RefreshDisplays()
 		return
 	end
 
-	local options = db.Modules.AlertsModule
+	local options = db.Modules.Alerts
 	local showBars = GetAlertBarsShown()
 
 	-- The one place options reach the pairs, so it is where "the settings moved" is stamped.
@@ -1127,7 +1127,7 @@ function M:ClearBars()
 end
 
 function M:RefreshTestAlerts()
-	if not db.Modules.AlertsModule.Icons.Enabled then
+	if not db.Modules.Alerts.Icons.Enabled then
 		container:ResetAllSlots()
 		if importantContainer then
 			importantContainer:ResetAllSlots()
@@ -1135,7 +1135,7 @@ function M:RefreshTestAlerts()
 		return
 	end
 
-	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
+	local includeDefensives = db.Modules.Alerts.IncludeDefensives
 
 	-- The preview shows whichever colouring the live bars would use. With class colours on that is
 	-- the class owning each preview spell, which is what makes the row read the way a real one
@@ -1143,9 +1143,9 @@ function M:RefreshTestAlerts()
 	local importantTestColor, defensiveTestColor = AlertGlowColors()
 
 	testIconCtx.Now = GetTime()
-	testIconCtx.Glow = db.Modules.AlertsModule.Icons.Glow
-	testIconCtx.Reverse = db.Modules.AlertsModule.Icons.ReverseCooldown
-	testIconCtx.ShowTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
+	testIconCtx.Glow = db.Modules.Alerts.Icons.Glow
+	testIconCtx.Reverse = db.Modules.Alerts.Icons.ReverseCooldown
+	testIconCtx.ShowTooltips = db.Modules.Alerts.ShowTooltips ~= false
 	testIconCtx.Border = AlertBorderShown()
 
 	-- Defensives bar test icons. The stagger step only advances when an icon actually landed, so
@@ -1166,8 +1166,8 @@ function M:RefreshTestAlerts()
 	end
 
 	-- Important test icons (each test spell shown once). Split -> dedicated bar; combined -> main bar.
-	local splitBars = db.Modules.AlertsModule.SplitBars
-	local importantEnabled = db.Modules.AlertsModule.Important and db.Modules.AlertsModule.Important.Enabled
+	local splitBars = db.Modules.Alerts.SplitBars
+	local importantEnabled = db.Modules.Alerts.Important and db.Modules.Alerts.Important.Enabled
 	local impTarget = (splitBars and importantContainer) or container
 	local impSlot = splitBars and 0 or defSlot
 	if importantEnabled and impTarget then
@@ -1281,13 +1281,13 @@ function M:CreateFrames()
 		return
 	end
 
-	local options = db.Modules.AlertsModule
+	local options = db.Modules.Alerts
 	local count = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 
 	container = iconSlotContainer:New(UIParent, count, size, options.IconSpacing or 2, "Alerts", nil, "Alerts")
 	SetUpBarDragging(container, options, function()
-		local alertOptions = db.Modules.AlertsModule
+		local alertOptions = db.Modules.Alerts
 		return (alertOptions.SplitBars and alertOptions.Defensives) or alertOptions
 	end)
 	container.Frame:Show()

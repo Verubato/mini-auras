@@ -1,4 +1,4 @@
--- PortraitModule, 12.1 container path: the layered single-icon stack over a unit frame portrait.
+-- Portrait module, 12.1 container path: the layered single-icon stack over a unit frame portrait.
 --
 -- A portrait shows ONE icon but cannot ask which aura wins (aura presence is secret), so it gets
 -- five single-icon containers stacked by frame level and lets the higher-priority one cover the
@@ -18,7 +18,7 @@ local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 
-env.setModuleEnabled("PortraitModule", true)
+env.setModuleEnabled("Portrait", true)
 
 -- Blizzard unit frames. The portrait is a texture in the client; the mock models it as a child
 -- frame so it can carry a parent, a size and a rect.
@@ -83,10 +83,10 @@ local function expectedDisplayCount(unit)
 end
 
 local function portraitOptions()
-	return env.db.Modules.PortraitModule
+	return env.db.Modules.Portrait
 end
 
-fw.describe("PortraitModule 12.1 - the five-category stack", function()
+fw.describe("Portrait 12.1 - the five-category stack", function()
 	fw.it("builds one single-icon display per category on every portrait", function()
 		local disarmKey = env.addon.Core.AuraFilters.GroupKey.Disarm
 		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
@@ -144,7 +144,7 @@ fw.describe("PortraitModule 12.1 - the five-category stack", function()
 	end)
 end)
 
-fw.describe("PortraitModule 12.1 - the custom spell layer", function()
+fw.describe("Portrait 12.1 - the custom spell layer", function()
 	local CUSTOM_KEY = "portraitcustom"
 	local FEINT = 1966
 
@@ -224,7 +224,7 @@ fw.describe("PortraitModule 12.1 - the custom spell layer", function()
 	end)
 end)
 
-fw.describe("PortraitModule 12.1 - the demoted portrait layer", function()
+fw.describe("Portrait 12.1 - the demoted portrait layer", function()
 	fw.it("moves the portrait and its icons a strata below the unit frame", function()
 		-- Icons anchored over a portrait have to clear the portrait's own level, which used to
 		-- put them above the unit frame's border art too - the icon then drew over the ring
@@ -276,7 +276,7 @@ fw.describe("PortraitModule 12.1 - the demoted portrait layer", function()
 	end)
 end)
 
-fw.describe("PortraitModule 12.1 - frame level stacking", function()
+fw.describe("Portrait 12.1 - frame level stacking", function()
 	fw.it("stacks the displays UP from the container, kick slot on top", function()
 		-- Buttons render at the display's own level, so the lowest display must clear whatever
 		-- the portrait draws at, or the portrait hides them (the first PTR build's bug). The
@@ -323,7 +323,7 @@ fw.describe("PortraitModule 12.1 - frame level stacking", function()
 	end)
 end)
 
-fw.describe("PortraitModule 12.1 - wrapper-managed containers", function()
+fw.describe("Portrait 12.1 - wrapper-managed containers", function()
 	fw.it("every portrait container is suppressed by the Edit Mode preview", function()
 		-- Only containers built through AuraContainerDisplay are in the suppression list; a
 		-- hand-rolled one would happily paint placeholder auras over the portrait.
@@ -380,16 +380,16 @@ fw.describe("PortraitModule 12.1 - wrapper-managed containers", function()
 	end)
 end)
 
-fw.describe("PortraitModule 12.1 - enable/disable", function()
+fw.describe("Portrait 12.1 - enable/disable", function()
 	fw.it("disabling parks every display and re-enabling brings them back", function()
-		env.setModuleEnabled("PortraitModule", false)
+		env.setModuleEnabled("Portrait", false)
 		module:Refresh()
 
 		for _, display in ipairs(displaysFor("target")) do
 			assert(not display.Frame:IsEnabled() and not display.Frame:IsShown(), "parked while disabled")
 		end
 
-		env.setModuleEnabled("PortraitModule", true)
+		env.setModuleEnabled("Portrait", true)
 		module:Refresh()
 
 		for _, display in ipairs(displaysFor("target")) do

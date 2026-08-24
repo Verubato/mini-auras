@@ -310,7 +310,7 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-	options = db.Modules.TrinketsModule
+	options = db.Modules.Trinkets
 end
 
 ---@class TrinketWatcher

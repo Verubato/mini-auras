@@ -9,9 +9,9 @@ local env = moduleEnv.build()
 local db = env.db
 local addon = env.addon
 
-env.setModuleEnabled("CCModule", true)
-env.setModuleEnabled("PetCCModule", false)
-db.Modules.CCModule.Enabled.Always = false
+env.setModuleEnabled("CrowdControl", true)
+env.setModuleEnabled("PetCrowdControl", false)
+db.Modules.CrowdControl.Enabled.Always = false
 
 env.addUnitFrame("party1", "CUF_Preview1")
 env.addUnitFrame("party2", "CUF_Preview2")
@@ -56,7 +56,7 @@ fw.describe("CrowdControlModule - the test preview and the enable flags", functi
 		env.isRaid = false
 		env.invalidateWorldState()
 
-		local enabled = db.Modules.CCModule.Enabled
+		local enabled = db.Modules.CrowdControl.Enabled
 		enabled.World = true
 		enabled.Arena = true
 		enabled.Dungeons = true
@@ -70,7 +70,7 @@ fw.describe("CrowdControlModule - the test preview and the enable flags", functi
 	end)
 
 	fw.it("draws nothing on the raid tab while raids are off", function()
-		db.Modules.CCModule.Enabled.Raid = false
+		db.Modules.CrowdControl.Enabled.Raid = false
 
 		assert(Preview(true) == 0, "the previewed context is off")
 		assert(Preview(false) > 0, "the other tab is untouched")
@@ -79,8 +79,8 @@ fw.describe("CrowdControlModule - the test preview and the enable flags", functi
 	-- A dungeons-only module previewed from the open world: the tab it sits on covers dungeons,
 	-- but the player is in the world, and the world is where the preview draws.
 	fw.it("never borrows a context the player is not in", function()
-		db.Modules.CCModule.Enabled.World = false
-		db.Modules.CCModule.Enabled.Arena = false
+		db.Modules.CrowdControl.Enabled.World = false
+		db.Modules.CrowdControl.Enabled.Arena = false
 
 		assert(Preview(false) == 0, "dungeons being on does not carry the world")
 	end)
@@ -89,7 +89,7 @@ fw.describe("CrowdControlModule - the test preview and the enable flags", functi
 		env.inInstance = true
 		env.instanceType = "pvp"
 		env.invalidateWorldState()
-		db.Modules.CCModule.Enabled.BattleGrounds = false
+		db.Modules.CrowdControl.Enabled.BattleGrounds = false
 
 		assert(Preview(false) == 0, "a battleground reads the battleground flag")
 		assert(Preview(true) == 0, "whichever tab is up")

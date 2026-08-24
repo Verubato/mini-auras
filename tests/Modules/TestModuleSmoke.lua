@@ -36,16 +36,16 @@ env.healers.party2 = true
 -- initialised; the event frame each one registers is captured before the next load so the plate
 -- events can be driven per module.
 local MODULES = {
-	{ Name = "CrowdControlModule", Key = "CCModule",
+	{ Name = "CrowdControlModule", Key = "CrowdControl",
 		Files = { "CrowdControl/Display.lua", "CrowdControl/Module.lua" } },
-	{ Name = "ImportantAurasModule", Key = "ImportantAurasModule", Files = { "ImportantAuras/Display.lua", "ImportantAuras/Module.lua" } },
-	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule",
+	{ Name = "ImportantAurasModule", Key = "ImportantAuras", Files = { "ImportantAuras/Display.lua", "ImportantAuras/Module.lua" } },
+	{ Name = "HealerCrowdControlModule", Key = "HealerCrowdControl",
 		Files = { "HealerCrowdControl/Sound.lua", "HealerCrowdControl/Display.lua", "HealerCrowdControl/Module.lua" } },
-	{ Name = "PortraitModule", Key = "PortraitModule",
+	{ Name = "PortraitModule", Key = "Portrait",
 		Files = { "Portrait/Observer.lua", "Portrait/Display.lua", "Portrait/Anchors.lua", "Portrait/Module.lua" } },
-	{ Name = "NameplatesModule", Key = "NameplatesModule",
+	{ Name = "NameplatesModule", Key = "Nameplates",
 		Files = { "Nameplates/Display.lua", "Nameplates/Module.lua" } },
-	{ Name = "AlertsModule", Key = "AlertsModule",
+	{ Name = "AlertsModule", Key = "Alerts",
 		Files = { "Alerts/Sound.lua", "Alerts/Display.lua", "Alerts/Module.lua" } },
 }
 
@@ -128,7 +128,7 @@ fw.describe("12.1 smoke - full lifecycle across every container module", functio
 		-- did not, once, and every nameplate setting looked dead in test mode.
 		local nameplates = env.addon.Modules.Nameplates.Display
 		local module = env.addon.Modules.NameplatesModule
-		local barOptions = env.db.Modules.NameplatesModule.Enemy.Bar1
+		local barOptions = env.db.Modules.Nameplates.Enemy.Bar1
 
 		env.enemies.nameplate1 = true
 		env.addPlate("nameplate1")

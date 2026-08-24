@@ -29,7 +29,7 @@ addon.Modules.Nameplates.Display = M
 -- colouring is per category rather than per spell, since the engine tints a whole group.
 
 -- How a bar tints its icons, stored on its Icons.ColorMode. Dispel puts CC and disarm on the
--- game's debuff type palette; Custom puts them on the module's CCColor, which is the only way the
+-- game's debuff type palette; Custom puts them on the module's CrowdControlColor, which is the only way the
 -- two differ - defensives and importants take their own tints under both.
 local COLOR_MODE_NONE = "NONE"
 local COLOR_MODE_DISPEL = "DISPEL"
@@ -91,7 +91,7 @@ local COLORED_GROUP_KEYS = {
 -- spell list and precomputed length, and the glow colour. Colors is the per spell dispel palette,
 -- used in place of Color while the dispel colours are on.
 local TEST_BAR_CATEGORIES = {
-	{ Show = "ShowCC", Ids = TEST_CC_NAMEPLATE_SPELL_IDS, Count = TEST_CC_COUNT, Colors = TEST_CC_DISPEL_COLORS, Color = ccColor },
+	{ Show = "ShowCrowdControl", Ids = TEST_CC_NAMEPLATE_SPELL_IDS, Count = TEST_CC_COUNT, Colors = TEST_CC_DISPEL_COLORS, Color = ccColor },
 	{ Show = "ShowDefensives", Ids = TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS, Count = TEST_DEFENSIVE_COUNT, Color = defensiveColor },
 	{ Show = "ShowImportant", Ids = TEST_IMPORTANT_NAMEPLATE_SPELL_IDS, Count = TEST_IMPORTANT_COUNT, Color = importantColor },
 }
@@ -107,7 +107,7 @@ local NAMEPLATE_BAR1_KEY = addonName .. "_Bar1Container"
 local NAMEPLATE_BAR2_KEY = addonName .. "_Bar2Container"
 
 -- The two generic nameplate bars. Each bar independently shows CC, defensives, and/or important
--- buffs based on its ShowCC / ShowDefensives / ShowImportant options, and both bars can display
+-- buffs based on its ShowCrowdControl / ShowDefensives / ShowImportant options, and both bars can display
 -- at the same time.
 local BARS = {
 	{
@@ -330,7 +330,7 @@ end
 ---@param factionKey "Enemy"|"Friendly"
 ---@return boolean
 local function DisarmPossible(barOptions, factionKey)
-	return barOptions.ShowCC == true and factionKey == "Enemy"
+	return barOptions.ShowCrowdControl == true and factionKey == "Enemy"
 end
 
 ---The categories a bar's displays are built with, from its toggles.
@@ -338,7 +338,7 @@ end
 ---@return table<string, boolean>
 local function BarCategorySet(barOptions, factionKey)
 	return auraFilters:CategorySet(
-		barOptions.ShowCC,
+		barOptions.ShowCrowdControl,
 		barOptions.ShowDefensives,
 		barOptions.ShowImportant,
 		DisarmPossible(barOptions, factionKey)
@@ -404,7 +404,7 @@ end
 local function RefreshCategoryColors()
 	moduleUtil:FillColor(importantColor, nmModule and nmModule.ImportantColor, DEFAULT_IMPORTANT_COLOR)
 	moduleUtil:FillColor(defensiveColor, nmModule and nmModule.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
-	moduleUtil:FillColor(ccColor, nmModule and nmModule.CCColor, DEFAULT_CC_COLOR)
+	moduleUtil:FillColor(ccColor, nmModule and nmModule.CrowdControlColor, DEFAULT_CC_COLOR)
 end
 
 ---The tints a bar's aura groups take, keyed by group key. CC and disarm stay out under Dispel: a
@@ -487,7 +487,7 @@ local function BarLook(bar, barOptions, factionKey)
 		-- display no longer matches is restyled, while a category it was not built with can only
 		-- be had by building another one.
 		Categories = auraFilters:CategoryGeneration(
-			barOptions.ShowCC,
+			barOptions.ShowCrowdControl,
 			barOptions.ShowDefensives,
 			barOptions.ShowImportant,
 			DisarmPossible(barOptions, factionKey)
@@ -849,13 +849,13 @@ local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 	auraFilters:ApplyCategoryBudgets(
 		display,
 		maxIcons,
-		barOptions.ShowCC,
+		barOptions.ShowCrowdControl,
 		barOptions.ShowDefensives,
 		barOptions.ShowImportant,
 		-- Disarm rides the CC toggle, but only where the engine actually applies its spell-ID
 		-- filter: on an assistable unit the identity gate skips the map and the group would
 		-- show every debuff on the plate.
-		barOptions.ShowCC and not units:CanAssist(token)
+		barOptions.ShowCrowdControl and not units:CanAssist(token)
 	)
 
 	-- No SetStyle here: the style was applied when the display was built, and a signature change
@@ -881,7 +881,7 @@ local function EnsureBarDisplays(data, unitOptions)
 		local container = data[bar.DataField]
 		if barOptions and barOptions.Enabled and container then
 			local display = EnsureBarDisplay(data, bar, barOptions, factionKey)
-			local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
+			local kickActive = barOptions.ShowCrowdControl and kickTracker:GetKick(data.UnitToken) ~= nil
 			AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
 		else
 			local display = data[bar.DisplayField]
@@ -1188,7 +1188,7 @@ function M:Prewarm()
 	prewarmSweep:Run(queue, PrewarmQueuedBarDisplay)
 end
 
----Renders the kick icon into each ShowCC bar's kick container (slot 1) and re-anchors
+---Renders the kick icon into each ShowCrowdControl bar's kick container (slot 1) and re-anchors
 ---the aura displays around it. Schedules a follow-up when the kick expires, since no aura event
 ---will fire to clear it.
 ---@param data NameplateData
@@ -1204,7 +1204,7 @@ function M:UpdateKick(data)
 		local barOptions = unitOptions[bar.Key]
 		local container = data[bar.DataField]
 		if barOptions and barOptions.Enabled and container then
-			if barOptions.ShowCC and kickEntry then
+			if barOptions.ShowCrowdControl and kickEntry then
 				layerScratch.Texture = kickEntry.Texture
 				layerScratch.DurationObject = kickEntry.DurationObject
 				layerScratch.Alpha = true
@@ -1225,7 +1225,7 @@ function M:UpdateKick(data)
 
 			local display = data[bar.DisplayField]
 			if display then
-				AnchorBarDisplay(display, container, data.Nameplate, barOptions, barOptions.ShowCC and kickEntry ~= nil)
+				AnchorBarDisplay(display, container, data.Nameplate, barOptions, barOptions.ShowCrowdControl and kickEntry ~= nil)
 			end
 		end
 	end
@@ -1294,7 +1294,7 @@ function M:RefreshAnchorsAndSizes()
 						-- nobody can see. Its look is left stale and the refresh ending test mode settles it.
 						if not testModeActive then
 							local display = EnsureBarDisplay(data, bar, barOptions, factionKey)
-							local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
+							local kickActive = barOptions.ShowCrowdControl and kickTracker:GetKick(data.UnitToken) ~= nil
 
 							AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
 						end
@@ -1342,8 +1342,8 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
-	nmModule = db.Modules.NameplatesModule
+	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> Nameplates
+	nmModule = db.Modules.Nameplates
 end
 
 ---@class BarDisplayEntry

@@ -71,8 +71,9 @@ local LATEST_VERSION = migrator:GetAndUpgradeDb().Version
 assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest version")
 
 local expectedModules = {
-	"CCModule", "PetCCModule", "HealerCCModule", "PortraitModule", "AlertsModule",
-	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "ImportantAurasModule",
+	"CrowdControl", "PetCrowdControl", "HealerCrowdControl", "Portrait", "Alerts",
+	"Nameplates", "EnemyKickTracker", "AllyKickTracker", "Trinkets", "ImportantAuras",
+	"FrameAuras", "PersonalAuras",
 }
 
 -- Modules the addon no longer ships. Their settings are not in dbDefaults any more, so the final
@@ -95,7 +96,7 @@ fw.describe("Migrator - fresh install", function()
 		for _, name in ipairs(removedModules) do
 			assert(db.Modules[name] == nil, "removed module still seeded: " .. name)
 		end
-		assert(type(db.Modules.CCModule.Default.Icons.Size) == "number", "representative nested default")
+		assert(type(db.Modules.CrowdControl.Default.Icons.Size) == "number", "representative nested default")
 		assert(db.GlowType == "Slot Glow" and type(db.FontScale) == "number", "top-level defaults")
 	end)
 
@@ -119,8 +120,8 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 					GlowType = "Slot Glow",
 					CCNativeOrder = true,
 					Modules = {
-						CCModule = { Default = { Grow = "LEFT" } },
-						AlertsModule = {
+						CrowdControl = { Default = { Grow = "LEFT" } },
+						Alerts = {
 							Icons = { Size = 60, ColorByClass = true },
 							TTS = { VoicePack = "David", Volume = 100, SpeechRate = 3 },
 						},
@@ -136,10 +137,10 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 		local db = migrator:GetAndUpgradeDb()
 		local old = db.Profiles.Old
 
-		assert(old.Modules.CCModule.Default.Grow == "LEFT", "a shipped module's settings are untouched")
+		assert(old.Modules.CrowdControl.Default.Grow == "LEFT", "a shipped module's settings are untouched")
 		assert(old.GlowType == "Slot Glow", "a shipped top-level payload key is untouched")
-		assert(old.Modules.AlertsModule.Icons.Size == 60, "a shipped nested key is untouched")
-		assert(old.Modules.AlertsModule.TTS.VoicePack == "David", "a shipped nested key is untouched")
+		assert(old.Modules.Alerts.Icons.Size == 60, "a shipped nested key is untouched")
+		assert(old.Modules.Alerts.TTS.VoicePack == "David", "a shipped nested key is untouched")
 
 		for _, name in ipairs(removedModules) do
 			assert(old.Modules[name] == nil, "retired module survived in a snapshot: " .. name)
@@ -147,9 +148,9 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 		-- Retired keys nested inside a module that still ships, which a module-level sweep alone
 		-- could never reach.
 		assert(old.CCNativeOrder == nil, "retired top-level key survived")
-		assert(old.Modules.AlertsModule.Icons.ColorByClass == nil, "retired icon key survived")
-		assert(old.Modules.AlertsModule.TTS.Volume == nil, "retired TTS key survived")
-		assert(old.Modules.AlertsModule.TTS.SpeechRate == nil, "retired TTS key survived")
+		assert(old.Modules.Alerts.Icons.ColorByClass == nil, "retired icon key survived")
+		assert(old.Modules.Alerts.TTS.Volume == nil, "retired TTS key survived")
+		assert(old.Modules.Alerts.TTS.SpeechRate == nil, "retired TTS key survived")
 
 		assert(db.Profiles.Empty ~= nil and db.Profiles.NoModules ~= nil, "odd-shaped profiles survive")
 	end)
@@ -162,8 +163,8 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 			Profiles = {
 				Mine = {
 					Modules = {
-						PersonalAurasModule = { Groups = { { Id = "g1", Name = "Mine", SpellIds = { 123 } } } },
-						ImportantAurasModule = { Spells = { Disabled = { [456] = true }, Custom = { [789] = true } } },
+						PersonalAuras = { Groups = { { Id = "g1", Name = "Mine", SpellIds = { 123 } } } },
+						ImportantAuras = { Spells = { Disabled = { [456] = true }, Custom = { [789] = true } } },
 					},
 				},
 			},
@@ -171,10 +172,10 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 
 		local mine = migrator:GetAndUpgradeDb().Profiles.Mine.Modules
 
-		assert(mine.PersonalAurasModule.Groups[1].Name == "Mine", "authored aura group kept")
-		assert(mine.PersonalAurasModule.Groups[1].SpellIds[1] == 123, "authored group contents kept")
-		assert(mine.ImportantAurasModule.Spells.Disabled[456] == true, "spell-id hash kept")
-		assert(mine.ImportantAurasModule.Spells.Custom[789] == true, "spell-id hash kept")
+		assert(mine.PersonalAuras.Groups[1].Name == "Mine", "authored aura group kept")
+		assert(mine.PersonalAuras.Groups[1].SpellIds[1] == 123, "authored group contents kept")
+		assert(mine.ImportantAuras.Spells.Disabled[456] == true, "spell-id hash kept")
+		assert(mine.ImportantAuras.Spells.Custom[789] == true, "spell-id hash kept")
 	end)
 
 	fw.it("keeps the TTS per-spell switches across a login", function()
@@ -183,10 +184,10 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 		_G.MiniAurasDB = nil
 
 		local db = migrator:GetAndUpgradeDb()
-		db.Modules.AlertsModule.TTS.Important.MutedSpellIds[12472] = true
-		db.Modules.AlertsModule.TTS.Defensive.MutedSpellIds[235313] = false
+		db.Modules.Alerts.TTS.Important.MutedSpellIds[12472] = true
+		db.Modules.Alerts.TTS.Defensive.MutedSpellIds[235313] = false
 
-		local tts = migrator:GetAndUpgradeDb().Modules.AlertsModule.TTS
+		local tts = migrator:GetAndUpgradeDb().Modules.Alerts.TTS
 
 		assert(tts.Important.MutedSpellIds[12472] == true, "a muted spell stays muted")
 		assert(tts.Defensive.MutedSpellIds[235313] == false, "and a default-off spell stays switched on")
@@ -198,10 +199,10 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 		_G.MiniAurasDB = nil
 
 		local db = migrator:GetAndUpgradeDb()
-		db.Modules.PortraitModule.CustomSpells[1966] = true
-		db.Modules.PortraitModule.CustomSpells[79206] = true
+		db.Modules.Portrait.CustomSpells[1966] = true
+		db.Modules.Portrait.CustomSpells[79206] = true
 
-		local spells = migrator:GetAndUpgradeDb().Modules.PortraitModule.CustomSpells
+		local spells = migrator:GetAndUpgradeDb().Modules.Portrait.CustomSpells
 
 		assert(spells[1966] == true and spells[79206] == true, "the ticked buffs survive")
 	end)
@@ -219,7 +220,7 @@ fw.describe("Migrator - arbitrary input safety", function()
 			_G.MiniAurasDB = deepCopy(fixture)
 			local db = migrator:GetAndUpgradeDb()
 			assert(db.Version == LATEST_VERSION, label .. ": version healed")
-			assert(type(db.Modules) == "table" and db.Modules.CCModule, label .. ": modules present")
+			assert(type(db.Modules) == "table" and db.Modules.CrowdControl, label .. ": modules present")
 			assert(db.Foo == nil and db.Whatever == nil, label .. ": unknown keys cleaned")
 		end)
 	end
@@ -340,22 +341,22 @@ fw.describe("Migrator - full chain from a v37-era db preserves settings", functi
 
 		-- Untouched customizations survive the whole chain plus the final CleanTable.
 		assert(db.GlowType == "Pixel Glow", "custom glow type kept")
-		local cc = db.Modules.CCModule
+		local cc = db.Modules.CrowdControl
 		assert(cc.Default.Grow == "LEFT" and cc.Default.Offset.X == 7 and cc.Default.Icons.Size == 64, "CC customizations kept")
 		assert(cc.Enabled.World == false and cc.Enabled.Arena == true and cc.Enabled.BattleGrounds == true, "CC enabled flags kept")
-		assert(db.Modules.AlertsModule.Icons.Size == 60 and db.Modules.AlertsModule.Icons.MaxIcons == 6, "alerts icons kept")
-		assert(db.Modules.NameplatesModule.ScaleWithNameplate == false, "nameplate scale opt-out kept")
+		assert(db.Modules.Alerts.Icons.Size == 60 and db.Modules.Alerts.Icons.MaxIcons == 6, "alerts icons kept")
+		assert(db.Modules.Nameplates.ScaleWithNameplate == false, "nameplate scale opt-out kept")
 
 		-- v40: legacy sound file renamed in the live db AND inside stored profiles.
-		assert(db.Modules.HealerCCModule.Sound.File == "XiaYike.ogg", "sound renamed")
-		assert(db.Profiles.Default.Modules.HealerCCModule.Sound.File == "XiaYike.ogg", "sound renamed inside profile")
+		assert(db.Modules.HealerCrowdControl.Sound.File == "XiaYike.ogg", "sound renamed")
+		assert(db.Profiles.Default.Modules.HealerCrowdControl.Sound.File == "XiaYike.ogg", "sound renamed inside profile")
 
 		-- v38: existing installs get nameplate tooltips off (fresh installs default on).
-		-- v49: CC -> Bar1 (ShowCC), Combined -> Bar2 (ShowDefensives), settings carried.
-		local enemy = db.Modules.NameplatesModule.Enemy
+		-- v49: CC -> Bar1 (ShowCrowdControl), Combined -> Bar2 (ShowDefensives), settings carried.
+		local enemy = db.Modules.Nameplates.Enemy
 		assert(enemy.CC == nil and enemy.Combined == nil, "old sections consumed")
-		assert(enemy.Bar1.Icons.Size == 44 and enemy.Bar1.ShowCC == true and enemy.Bar1.ShowDefensives == false, "CC became Bar1")
-		assert(enemy.Bar2.Icons.Size == 41 and enemy.Bar2.ShowCC == false and enemy.Bar2.ShowDefensives == true, "Combined became Bar2")
+		assert(enemy.Bar1.Icons.Size == 44 and enemy.Bar1.ShowCrowdControl == true and enemy.Bar1.ShowDefensives == false, "CC became Bar1")
+		assert(enemy.Bar2.Icons.Size == 41 and enemy.Bar2.ShowCrowdControl == false and enemy.Bar2.ShowDefensives == true, "Combined became Bar2")
 		assert(enemy.Bar1.ShowTooltips == false, "existing installs keep tooltips off")
 
 		-- v52: ShowImportant lands on the enabled bar that shows defensives (enemy Bar2 here).
@@ -366,11 +367,11 @@ fw.describe("Migrator - full chain from a v37-era db preserves settings", functi
 		assert(db.Modules.EnemyCooldownTrackerModule == nil, "removed tracker settings cleaned away")
 
 		-- v54/v55: per-module icon padding seeded from the old global IconSpacing.
-		assert(db.Modules.AlertsModule.IconSpacing == 5, "alerts padding seeded")
+		assert(db.Modules.Alerts.IconSpacing == 5, "alerts padding seeded")
 		assert(enemy.Bar1.Icons.Spacing == 5 and enemy.Bar2.Icons.Spacing == 5, "nameplate bar padding seeded")
 		assert(cc.Default.IconSpacing == 5 and cc.Raid.IconSpacing == 5, "CC padding seeded")
-		assert(db.Modules.HealerCCModule.IconSpacing == 5, "healer padding seeded")
-		assert(db.Modules.EnemyKickTrackerModule.IconSpacing == 5, "kick timer padding seeded")
+		assert(db.Modules.HealerCrowdControl.IconSpacing == 5, "healer padding seeded")
+		assert(db.Modules.EnemyKickTracker.IconSpacing == 5, "kick timer padding seeded")
 	end)
 end)
 
@@ -448,6 +449,25 @@ fw.describe("Migrator - individual migrations", function()
 		assert(migrator:UpgradeToVersion23(vars) == true)
 		assert(vars.Modules.AlertsModule.Sound.Important.File == "AirHorn.ogg")
 		assert(vars.Modules.AlertsModule.TTS.Defensive.Enabled == false)
+	end)
+
+	fw.it("v23 cleans against its own defaults rather than today's", function()
+		-- The step ends with a CleanTable, and against the live defaults every rename since would
+		-- reach back and strip what this db still carries under the old name.
+		local vars = {
+			Version = 22,
+			WhatsNew = {},
+			Modules = {
+				AlertsModule = { Icons = { Size = 60 } },
+				KickTimerModule = { Icons = { Size = 44 } },
+				FriendlyIndicatorModule = { Icons = { Size = 30 } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion23(vars) == true)
+		assert(vars.Modules.AlertsModule.Icons.Size == 60, "a key the suffix rename moved is kept")
+		assert(vars.Modules.KickTimerModule.Icons.Size == 44, "so is one a later step renames")
+		assert(vars.Modules.FriendlyIndicatorModule.Icons.Size == 30)
 	end)
 
 	fw.it("v25 renames Enabled.Raids->BattleGrounds and Dungeons->PvE", function()
@@ -773,6 +793,104 @@ fw.describe("Migrator - individual migrations", function()
 		assert(migrator:UpgradeToVersion73(vars) == true)
 		assert(vars.Modules.PersonalAurasModule == wanted, "the newer table wins")
 		assert(vars.Modules.CustomAurasModule == nil, "and the stale one is dropped")
+	end)
+
+	fw.it("v74 drops the Module suffix from every module key, profiles included", function()
+		local kept = { Default = { Grow = "LEFT" } }
+		local vars = {
+			Version = 73,
+			Modules = {
+				CCModule = kept,
+				PetCCModule = { Icons = { Size = 30 } },
+				HealerCCModule = { Icons = { Size = 48 } },
+				PortraitModule = { CustomSpells = { [1966] = true } },
+				AlertsModule = { Icons = { Size = 60 } },
+				NameplatesModule = { ScaleWithNameplate = false },
+				EnemyKickTrackerModule = { IconSpacing = 5 },
+				AllyKickTrackerModule = { Grow = "RIGHT" },
+				TrinketsModule = { Icons = { Size = 22 } },
+				ImportantAurasModule = { Spells = { Custom = { [789] = true } } },
+				FrameAurasModule = { Buffs = { Enabled = true } },
+				PersonalAurasModule = { Groups = { { Id = "g1", Name = "Mine" } } },
+			},
+			Profiles = { Other = { Modules = { AlertsModule = { Icons = { Size = 41 } } } } },
+		}
+
+		assert(migrator:UpgradeToVersion74(vars) == true)
+
+		local modules = vars.Modules
+		assert(modules.CrowdControl == kept, "the saved table moves across intact")
+		assert(modules.PetCrowdControl.Icons.Size == 30)
+		assert(modules.HealerCrowdControl.Icons.Size == 48)
+		assert(modules.Portrait.CustomSpells[1966] == true)
+		assert(modules.Alerts.Icons.Size == 60)
+		assert(modules.Nameplates.ScaleWithNameplate == false)
+		assert(modules.EnemyKickTracker.IconSpacing == 5)
+		assert(modules.AllyKickTracker.Grow == "RIGHT")
+		assert(modules.Trinkets.Icons.Size == 22)
+		assert(modules.ImportantAuras.Spells.Custom[789] == true)
+		assert(modules.FrameAuras.Buffs.Enabled == true)
+		assert(modules.PersonalAuras.Groups[1].Name == "Mine")
+
+		for key in pairs(modules) do
+			assert(not key:find("Module$"), "a suffixed key survived: " .. key)
+		end
+
+		assert(vars.Profiles.Other.Modules.Alerts.Icons.Size == 41, "profiles move too")
+		assert(vars.Profiles.Other.Modules.AlertsModule == nil, "and their old key goes too")
+	end)
+
+	fw.it("v74 spells CC out in full wherever it was abbreviated", function()
+		local vars = {
+			Version = 73,
+			Modules = {
+				NameplatesModule = {
+					CCColor = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
+					Enemy = { Bar1 = { ShowCC = true }, Bar2 = { ShowCC = false } },
+					Friendly = { Bar1 = { ShowCC = false }, Bar2 = { ShowCC = true } },
+				},
+				ImportantAurasModule = { Default = { ShowCC = true }, Raid = { ShowCC = false } },
+				FrameAurasModule = { Debuffs = { ShowCC = true } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion74(vars) == true)
+
+		local nameplates = vars.Modules.Nameplates
+		assert(nameplates.CrowdControlColor.R == 0.64 and nameplates.CCColor == nil, "the tint is renamed")
+		assert(nameplates.Enemy.Bar1.ShowCrowdControl == true and nameplates.Enemy.Bar1.ShowCC == nil)
+		assert(nameplates.Enemy.Bar2.ShowCrowdControl == false)
+		assert(nameplates.Friendly.Bar1.ShowCrowdControl == false)
+		assert(nameplates.Friendly.Bar2.ShowCrowdControl == true)
+		assert(vars.Modules.ImportantAuras.Default.ShowCrowdControl == true)
+		assert(vars.Modules.ImportantAuras.Raid.ShowCrowdControl == false)
+		assert(vars.Modules.FrameAuras.Debuffs.ShowCrowdControl == true)
+	end)
+
+	fw.it("v74 keeps the settings already under the new key", function()
+		local wanted = { Default = { Grow = "LEFT" } }
+		local vars = {
+			Version = 73,
+			Modules = {
+				CCModule = { Default = { Grow = "RIGHT" } },
+				CrowdControl = wanted,
+				FrameAurasModule = { Debuffs = { ShowCC = true, ShowCrowdControl = false } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion74(vars) == true)
+		assert(vars.Modules.CrowdControl == wanted, "the newer table wins")
+		assert(vars.Modules.CCModule == nil, "and the stale one is dropped")
+		assert(vars.Modules.FrameAuras.Debuffs.ShowCrowdControl == false, "the same holds a level down")
+		assert(vars.Modules.FrameAuras.Debuffs.ShowCC == nil)
+	end)
+
+	fw.it("v74 leaves a db carrying none of the old keys alone", function()
+		local vars = { Version = 73, Modules = { CrowdControl = { Default = { Grow = "LEFT" } } } }
+
+		assert(migrator:UpgradeToVersion74(vars) == true)
+		assert(vars.Modules.CrowdControl.Default.Grow == "LEFT")
+		assert(vars.Version == 74)
 	end)
 
 	fw.it("v62 pre-seeds the starter custom aura groups from the precog settings", function()
@@ -1132,17 +1250,17 @@ fw.describe("Migrator - opaque user data", function()
 
 		local db = migrator:GetAndUpgradeDb()
 
-		db.Modules.PersonalAurasModule.Groups[1] = {
+		db.Modules.PersonalAuras.Groups[1] = {
 			Id = "g1",
 			Name = "Ice Block",
 			Spells = { 45438 },
 			Icons = { Size = 55 },
 		}
-		db.Modules.PersonalAurasModule.NextId = 2
+		db.Modules.PersonalAuras.NextId = 2
 
 		-- A soft reset runs the same save/clean/restore the upgrade path finishes with.
 		local cleaned = migrator:SoftReset()
-		local groups = cleaned.Modules.PersonalAurasModule.Groups
+		local groups = cleaned.Modules.PersonalAuras.Groups
 
 		assert(groups[1], "the group survives")
 		assert(groups[1].Name == "Ice Block", "with its name")
@@ -1189,7 +1307,7 @@ fw.describe("Migrator - adopting the MiniCC saved variable", function()
 		local db = migrator:GetAndUpgradeDb()
 
 		assert(db.Version == LATEST_VERSION)
-		assert(type(db.Modules.CCModule) == "table")
+		assert(type(db.Modules.CrowdControl) == "table")
 	end)
 
 	fw.it("remembers when first-time setup ran without the old table", function()
@@ -1215,9 +1333,33 @@ fw.describe("Migrator - imported profile payloads", function()
 		local payload = { Modules = { FriendlyIndicatorModule = kept } }
 
 		migrator:RenameLegacyModuleKeys(payload)
-		assert(payload.Modules.ImportantAurasModule == kept, "it lands on the name in use today")
+		assert(payload.Modules.ImportantAuras == kept, "it lands on the name in use today")
 		assert(payload.Modules.FriendlyIndicatorModule == nil, "and none of the steps leave a key behind")
 		assert(payload.Modules.AurasModule == nil and payload.Modules.RaidFrameAurasModule == nil)
+		assert(payload.Modules.ImportantAurasModule == nil, "including the suffixed one v74 dropped")
+	end)
+
+	fw.it("spells out the CC keys nested inside a module", function()
+		-- Every string exported before the version stamp lands here, and the prune on the next
+		-- login drops whatever the rename leaves under the old name.
+		local payload = {
+			Modules = {
+				NameplatesModule = {
+					CCColor = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
+					Enemy = { Bar1 = { ShowCC = true } },
+				},
+				ImportantAurasModule = { Raid = { ShowCC = true } },
+				FrameAurasModule = { Debuffs = { ShowCC = true } },
+			},
+		}
+
+		migrator:RenameLegacyModuleKeys(payload)
+
+		local nameplates = payload.Modules.Nameplates
+		assert(nameplates.CrowdControlColor.R == 0.64 and nameplates.CCColor == nil)
+		assert(nameplates.Enemy.Bar1.ShowCrowdControl == true and nameplates.Enemy.Bar1.ShowCC == nil)
+		assert(payload.Modules.ImportantAuras.Raid.ShowCrowdControl == true)
+		assert(payload.Modules.FrameAuras.Debuffs.ShowCrowdControl == true)
 	end)
 
 	fw.it("renames the personal aura module key", function()
@@ -1225,19 +1367,20 @@ fw.describe("Migrator - imported profile payloads", function()
 		local payload = { Modules = { CustomAurasModule = kept } }
 
 		migrator:RenameLegacyModuleKeys(payload)
-		assert(payload.Modules.PersonalAurasModule == kept, "the authored groups survive the import")
+		assert(payload.Modules.PersonalAuras == kept, "the authored groups survive the import")
 		assert(payload.Modules.CustomAurasModule == nil, "and the old key is gone")
 	end)
 
 	fw.it("keeps the settings already under the new key", function()
 		local wanted = { Groups = { { Id = "g1", Name = "Mine" } } }
 		local payload = {
-			Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Stale" } } }, PersonalAurasModule = wanted },
+			Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Stale" } } }, PersonalAuras = wanted },
 		}
 
 		migrator:RenameLegacyModuleKeys(payload)
-		assert(payload.Modules.PersonalAurasModule == wanted, "the newer table wins")
+		assert(payload.Modules.PersonalAuras == wanted, "the newer table wins")
 		assert(payload.Modules.CustomAurasModule == nil, "and the stale one is dropped")
+		assert(payload.Modules.PersonalAurasModule == nil, "along with the step it passed through")
 	end)
 
 	fw.it("replays the migrations a stamped payload still needs", function()
@@ -1252,17 +1395,17 @@ fw.describe("Migrator - imported profile payloads", function()
 		}
 
 		assert(migrator:MigrateProfilePayload(payload, 48) == true)
-		local bar1 = payload.Modules.NameplatesModule.Enemy.Bar1
+		local bar1 = payload.Modules.Nameplates.Enemy.Bar1
 		assert(bar1 and bar1.Icons.Size == 33, "the old section lands on the bar that replaced it")
-		assert(bar1.ShowCC == true, "with the toggle v49 gives it")
-		assert(payload.Modules.NameplatesModule.Enemy.CC == nil, "and the old key is gone")
+		assert(bar1.ShowCrowdControl == true, "with the toggle v49 gives it")
+		assert(payload.Modules.Nameplates.Enemy.CC == nil, "and the old key is gone")
 	end)
 
 	fw.it("carries a stamped payload's module renames across as well", function()
 		local payload = { Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Mine" } } } } }
 
 		assert(migrator:MigrateProfilePayload(payload, 72) == true)
-		local groups = payload.Modules.PersonalAurasModule.Groups
+		local groups = payload.Modules.PersonalAuras.Groups
 		assert(groups and groups[1].Name == "Mine", "the authored groups reach the new key")
 	end)
 
@@ -1287,12 +1430,12 @@ fw.describe("Migrator - imported profile payloads", function()
 	fw.it("refuses a version older than import and export existed", function()
 		-- Version 12 rebinds to the live saved variables and cleans them against its own defaults,
 		-- so entering the chain below 24 would wreck the db of whoever pasted the string.
-		_G.MiniAurasDB = { Version = LATEST_VERSION, Modules = { CCModule = {} } }
+		_G.MiniAurasDB = { Version = LATEST_VERSION, Modules = { CrowdControl = {} } }
 		local payload = { Modules = {} }
 		local applied, isNewer = migrator:MigrateProfilePayload(payload, 11)
 
 		assert(applied == false and isNewer == false, "refused, and not as a future version")
-		assert(_G.MiniAurasDB.Modules.CCModule ~= nil, "the live db is untouched")
+		assert(_G.MiniAurasDB.Modules.CrowdControl ~= nil, "the live db is untouched")
 	end)
 
 	fw.it("applies the deferred scale migration instead of dropping it", function()
@@ -1305,7 +1448,7 @@ fw.describe("Migrator - imported profile payloads", function()
 
 		assert(applied == true)
 		assert(payload.PendingScaleMigration26 == nil, "the flag does not reach the profile")
-		assert(payload.Modules.CCModule.Default.Icons.Size == 25, "and the size it guards was scaled")
+		assert(payload.Modules.CrowdControl.Default.Icons.Size == 25, "and the size it guards was scaled")
 	end)
 
 	fw.it("filters a whole saved-vars table down to a payload", function()
@@ -1319,15 +1462,15 @@ fw.describe("Migrator - imported profile payloads", function()
 		}
 
 		assert(migrator:MigrateProfilePayload(vars, 53) == true)
-		assert(vars.Modules.AlertsModule.IconSpacing == 6, "v54 seeds the module padding from it")
+		assert(vars.Modules.Alerts.IconSpacing == 6, "v54 seeds the module padding from it")
 		assert(vars.IconSpacing == nil and vars.SpecCache == nil, "and nothing outside a payload survives")
 	end)
 
 	fw.it("filters a payload already on the current version", function()
-		local payload = { Modules = { PersonalAurasModule = { Groups = { { Id = "g1" } } } } }
+		local payload = { Modules = { PersonalAuras = { Groups = { { Id = "g1" } } } } }
 
 		assert(migrator:MigrateProfilePayload(payload, LATEST_VERSION) == true)
-		assert(payload.Modules.PersonalAurasModule.Groups[1].Id == "g1", "nothing is disturbed")
+		assert(payload.Modules.PersonalAuras.Groups[1].Id == "g1", "nothing is disturbed")
 	end)
 
 	fw.it("replays cleanly from every version a string can be stamped with", function()
@@ -1360,7 +1503,7 @@ fw.describe("Migrator - imported profile payloads", function()
 		_G.MiniAurasDB.Profiles.Imported = payload
 
 		local db = migrator:GetAndUpgradeDb()
-		local groups = db.Profiles.Imported.Modules.PersonalAurasModule.Groups
+		local groups = db.Profiles.Imported.Modules.PersonalAuras.Groups
 		assert(groups and groups[1].Name == "Mine", "the login prune keeps what the rename moved")
 	end)
 end)
@@ -1368,18 +1511,18 @@ end)
 fw.describe("Migrator - defaults helpers", function()
 	fw.it("GetModuleDefaults returns isolated deep copies", function()
 		local first = migrator:GetModuleDefaults()
-		first.CCModule.Default.Icons.Size = 999
+		first.CrowdControl.Default.Icons.Size = 999
 		local second = migrator:GetModuleDefaults()
-		assert(second.CCModule.Default.Icons.Size ~= 999, "mutating one copy must not leak into the next")
+		assert(second.CrowdControl.Default.Icons.Size ~= 999, "mutating one copy must not leak into the next")
 	end)
 
 	fw.it("FillDefaults adds missing keys without overwriting existing values", function()
 		_G.MiniAurasDB = nil
 		local db = migrator:GetAndUpgradeDb()
 		db.FontScale = 1.25
-		db.Modules.CCModule.Default.Icons.Size = 48
+		db.Modules.CrowdControl.Default.Icons.Size = 48
 		migrator:FillDefaults()
-		assert(db.FontScale == 1.25 and db.Modules.CCModule.Default.Icons.Size == 48, "existing values kept")
-		assert(db.Modules.AlertsModule ~= nil, "missing keys restored")
+		assert(db.FontScale == 1.25 and db.Modules.CrowdControl.Default.Icons.Size == 48, "existing values kept")
+		assert(db.Modules.Alerts ~= nil, "missing keys restored")
 	end)
 end)

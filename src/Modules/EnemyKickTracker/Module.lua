@@ -110,7 +110,7 @@ end
 
 ---@return EnemyKickTrackerModuleOptions?
 local function GetOptions()
-	return db and db.Modules.EnemyKickTrackerModule
+	return db and db.Modules.EnemyKickTracker
 end
 
 ---@return boolean

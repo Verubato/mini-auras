@@ -14,8 +14,8 @@ local env = moduleEnv.build()
 local db = env.db
 local auraFilters = env.addon.Core.AuraFilters
 
-env.setModuleEnabled("CCModule", true)
-env.setModuleEnabled("ImportantAurasModule", true)
+env.setModuleEnabled("CrowdControl", true)
+env.setModuleEnabled("ImportantAuras", true)
 
 local ccFrame = env.addUnitFrame("party1", "CUF_CC")
 local fiFrame = env.addUnitFrame("party2", "CUF_FI")
@@ -179,19 +179,19 @@ fw.describe("CrowdControlModule 12.1 - unit frame anchors", function()
 	fw.it("the display survives a disable/enable cycle on the same anchor", function()
 		local display = ccDisplay("party4")
 
-		env.setModuleEnabled("CCModule", false)
-		env.setModuleEnabled("PetCCModule", false)
+		env.setModuleEnabled("CrowdControl", false)
+		env.setModuleEnabled("PetCrowdControl", false)
 		crowdControl:Refresh()
 		assert(not display._enabled and not display:IsShown(), "parked while the module is off")
 
-		env.setModuleEnabled("CCModule", true)
+		env.setModuleEnabled("CrowdControl", true)
 		crowdControl:Refresh()
 		assert(display._enabled and display:IsShown(), "live again")
 		assert(display:GetUnit() == "party4", "still pointed at the right unit")
 	end)
 end)
 
-fw.describe("ImportantAurasModule 12.1 - unit frame anchors", function()
+fw.describe("ImportantAuras 12.1 - unit frame anchors", function()
 	fw.it("budgets the four categories from the per-instance toggles", function()
 		-- After a Refresh, not straight off Init: the module's ApplyInitialState only builds the
 		-- entries (ApplyOptions runs on the addon-wide Refresh that follows), so a display created
@@ -199,11 +199,11 @@ fw.describe("ImportantAurasModule 12.1 - unit frame anchors", function()
 		importantAurasModule:Refresh()
 
 		local display = assert(fiDisplay("party2"), "no display for the anchor's unit")
-		local options = db.Modules.ImportantAurasModule.Default
+		local options = db.Modules.ImportantAuras.Default
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 
 		local cc = assert(display._groups[auraFilters.GroupKey.CrowdControl], "missing the cc group")
-		assert(cc.maxFrameCount == (options.ShowCC and maxIcons or 0), "cc budget")
+		assert(cc.maxFrameCount == (options.ShowCrowdControl and maxIcons or 0), "cc budget")
 
 		-- Either helpful toggle keeps both helpful groups budgeted: a curated spell can sit in
 		-- both categories, so the toggles pick the tracked ids rather than a budget each.
@@ -215,8 +215,8 @@ fw.describe("ImportantAurasModule 12.1 - unit frame anchors", function()
 
 	fw.it("a category toggle re-budgets only that category", function()
 		local display = fiDisplay("party2")
-		local options = db.Modules.ImportantAurasModule.Default
-		options.ShowCC = true
+		local options = db.Modules.ImportantAuras.Default
+		options.ShowCrowdControl = true
 		importantAurasModule:Refresh()
 
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
@@ -254,11 +254,11 @@ fw.describe("ImportantAurasModule 12.1 - unit frame anchors", function()
 		-- The budgets live on the group specs, which the display keeps; a re-point that rebuilt
 		-- them from defaults would quietly turn categories back on.
 		local display = fiDisplay("party5")
-		local options = db.Modules.ImportantAurasModule.Default
+		local options = db.Modules.ImportantAuras.Default
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount ==
-			(options.ShowCC and maxIcons or 0), "cc budget intact")
+			(options.ShowCrowdControl and maxIcons or 0), "cc budget intact")
 		assert(helpfulBudget(display) ==
 			((options.ShowDefensives or options.ShowImportant) and maxIcons or 0),
 			"helpful budget intact")
@@ -296,7 +296,7 @@ fw.describe("Unit frames nobody is on", function()
 	end)
 end)
 
-fw.describe("ImportantAurasModule 12.1 - a party member who turns hostile", function()
+fw.describe("ImportantAuras 12.1 - a party member who turns hostile", function()
 	local acm = require("AuraContainerMock")
 
 	fw.it("drops the helpful budget when a duel starts", function()
@@ -325,7 +325,7 @@ fw.describe("ImportantAurasModule 12.1 - a party member who turns hostile", func
 	end)
 end)
 
-fw.describe("ImportantAurasModule 12.1 - a frame handed an enemy unit", function()
+fw.describe("ImportantAuras 12.1 - a frame handed an enemy unit", function()
 	local raidDisplay = env.addon.Modules.ImportantAuras.Display
 
 	fw.it("drops the helpful budget when the frame is re-pointed at one", function()
@@ -362,7 +362,7 @@ fw.describe("ImportantAurasModule 12.1 - a frame handed an enemy unit", function
 	end)
 end)
 
-fw.describe("ImportantAurasModule 12.1 - a unit outside the visible world", function()
+fw.describe("ImportantAuras 12.1 - a unit outside the visible world", function()
 	fw.it("shows nothing at all for one", function()
 		env.enemies.party6 = nil
 		env.phased.party6 = nil

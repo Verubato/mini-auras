@@ -69,7 +69,7 @@ local function AddIcon(duration, icon)
 	end
 
 	local key = math.random()
-	local iconOptions = db.Modules.EnemyKickTrackerModule.Icons
+	local iconOptions = db.Modules.EnemyKickTracker.Icons
 
 	kickBar.Container:SetSlot(slotIndex, {
 		Texture = icon,
@@ -99,7 +99,7 @@ local function AddIcon(duration, icon)
 end
 
 local function CreateFrames()
-	local options = db.Modules.EnemyKickTrackerModule
+	local options = db.Modules.EnemyKickTracker
 	local iconOptions = options.Icons
 	local size = tonumber(iconOptions.Size) or 50
 	local spacing = options.IconSpacing or 2

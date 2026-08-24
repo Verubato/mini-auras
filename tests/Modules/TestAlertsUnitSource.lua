@@ -14,7 +14,7 @@ local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 local db = env.db
-local alerts = db.Modules.AlertsModule
+local alerts = db.Modules.Alerts
 
 alerts.Enabled.Always = true
 alerts.Icons.Enabled = true
@@ -84,7 +84,7 @@ end
 -- Runs FIRST, and has to: a display pair is kept for the rest of the session once built, so a
 -- later test entering an arena would leave the arena pairs standing and "nothing was built yet"
 -- could never fail.
-fw.describe("AlertsModule - when the arena pairs get built", function()
+fw.describe("Alerts - when the arena pairs get built", function()
 	local alertsDisplay = env.addon.Modules.Alerts.Display
 
 	fw.it("builds none of them behind the loading screen", function()
@@ -130,7 +130,7 @@ fw.describe("AlertsModule - when the arena pairs get built", function()
 	end)
 end)
 
-fw.describe("AlertsModule - picking the token source", function()
+fw.describe("Alerts - picking the token source", function()
 	fw.it("reads arena tokens in a 3v3", function()
 		enterArena(3)
 
@@ -206,7 +206,7 @@ fw.describe("AlertsModule - picking the token source", function()
 	end)
 end)
 
-fw.describe("AlertsModule - moving between the two sources", function()
+fw.describe("Alerts - moving between the two sources", function()
 	fw.it("releases the plate displays when the arena tokens take over", function()
 		enterWorld()
 		addEnemyPlate("nameplate1")
@@ -322,7 +322,7 @@ fw.describe("AlertsModule - moving between the two sources", function()
 	end)
 end)
 
-fw.describe("AlertsModule - arena tokens outside the visible world", function()
+fw.describe("Alerts - arena tokens outside the visible world", function()
 	local alertsDisplay = env.addon.Modules.Alerts.Display
 
 	-- A buff on an enemy has no working spell-id filter, so the category token carries the group
@@ -461,7 +461,7 @@ fw.describe("AlertsModule - arena tokens outside the visible world", function()
 	end)
 end)
 
-fw.describe("AlertsModule - arena tokens changing hands", function()
+fw.describe("Alerts - arena tokens changing hands", function()
 	---Re-pointing a container at nobody and back is the only change the engine sees when a token
 	---keeps its name but changes occupant, so that is what these count.
 	local function setUnitCalls(token)

@@ -142,7 +142,7 @@ local anchorScratch = {}
 ---@param options ImportantAurasInstanceOptions
 ---@return table filtersByGroup Group key -> candidate filters.
 local function GetHelpfulFilters(options)
-	local overrides = db.Modules.ImportantAurasModule.Spells
+	local overrides = db.Modules.ImportantAuras.Spells
 
 	-- The inputs, not the output: the curated lists are static for the session, so the toggles
 	-- and the override sets are everything that can move the answer. A profile switch replaces
@@ -255,7 +255,7 @@ local function BuildGroups(maxIcons, options, colors)
 end
 
 local function GetOptions()
-	local m = db.Modules.ImportantAurasModule
+	local m = db.Modules.ImportantAuras
 	if not m then
 		return nil
 	end
@@ -279,7 +279,7 @@ end
 
 ---Refills the category tints from the module options. The test icons read these tables directly.
 local function RefreshCategoryColors()
-	local module = db and db.Modules.ImportantAurasModule
+	local module = db and db.Modules.ImportantAuras
 
 	moduleUtil:FillColor(importantColor, module and module.ImportantColor, DEFAULT_IMPORTANT_COLOR)
 	moduleUtil:FillColor(defensiveColor, module and module.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
@@ -360,7 +360,7 @@ local function ApplyUnitGates(entry, options)
 	local visible = units:IsVisible(entry.Unit)
 	local helpful = visible and (options.ShowDefensives or options.ShowImportant)
 		and units:CanAssist(entry.Unit) and maxIcons or 0
-	local crowdControl = visible and options.ShowCC and maxIcons or 0
+	local crowdControl = visible and options.ShowCrowdControl and maxIcons or 0
 
 	if entry.Display then
 		-- Both helpful groups take the same budget: a category switched off has an empty id set
@@ -705,7 +705,7 @@ local function ApplyEntryOptions(entry, anchor, options)
 	if entry.Display then
 		style = BuildStyle(options)
 
-		-- ShowCC maps to a zero icon budget for its group. The helpful side cannot: a curated
+		-- ShowCrowdControl maps to a zero icon budget for its group. The helpful side cannot: a curated
 		-- spell can sit in either category, so the toggles select the tracked spell ids instead
 		-- and only a display with neither category on goes to zero. Both sides also answer to the
 		-- per-unit gates, which ApplyUnitGates owns.
@@ -863,7 +863,7 @@ function M:RefreshTestIcons()
 		end
 	end
 
-	local ccCount = options.ShowCC and #testCcSpells or 0
+	local ccCount = options.ShowCrowdControl and #testCcSpells or 0
 	local defensiveCount = options.ShowDefensives and #testDefensiveSpells or 0
 	local importantCount = options.ShowImportant and #testImportantSpells or 0
 	local showKicks = options.ShowKicks
@@ -1019,5 +1019,5 @@ end
 ---@class ImportantAurasModuleOptions
 ---@field ShowDefensives boolean Curated defensive and healer throughput cooldowns.
 ---@field ShowImportant boolean Curated important buffs and offensive cooldowns.
----@field ShowCC boolean
+---@field ShowCrowdControl boolean
 

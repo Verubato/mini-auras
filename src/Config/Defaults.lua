@@ -4,7 +4,7 @@ local _, addon = ...
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
-	Version = 73,
+	Version = 74,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -46,7 +46,7 @@ local dbDefaults = {
 	MissedLegacyImport = false,
 	Modules = {
 		---@class CrowdControlModuleOptions
-		CCModule = {
+		CrowdControl = {
 			Enabled = {
 				World = true,
 				Arena = true,
@@ -109,7 +109,7 @@ local dbDefaults = {
 
 		---@class PetCrowdControlModuleOptions
 		---@field IncludePetFrame boolean Also anchor a CC container to the player's own pet unit frame (Blizzard PetFrame).
-		PetCCModule = {
+		PetCrowdControl = {
 			Enabled = {
 				World = false,
 				Arena = false,
@@ -145,7 +145,7 @@ local dbDefaults = {
 		},
 
 		---@class HealerCrowdControlModuleOptions
-		HealerCCModule = {
+		HealerCrowdControl = {
 			Enabled = {
 				World = true,
 				Arena = true,
@@ -190,7 +190,7 @@ local dbDefaults = {
 		},
 		---@class PortraitModuleOptions
 		---@field CustomSpells table<number, boolean> Ticked buffs. Opaque to CleanTable, which would strip every id against the empty template - see Config/Migrator.
-		PortraitModule = {
+		Portrait = {
 			Enabled = {
 				Always = true,
 			},
@@ -202,7 +202,7 @@ local dbDefaults = {
 			CustomSpells = {},
 		},
 		---@class AlertsModuleOptions
-		AlertsModule = {
+		Alerts = {
 			Enabled = {
 				World = true,
 				Arena = true,
@@ -323,7 +323,7 @@ local dbDefaults = {
 			ShowTooltips = false,
 		},
 		---@class NameplateModuleOptions
-		NameplatesModule = {
+		Nameplates = {
 			Enabled = {
 				World = true,
 				Arena = true,
@@ -342,7 +342,7 @@ local dbDefaults = {
 			DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 			-- Taken by CC and disarm on the bars whose UseDispelColors is off; the ones still on
 			-- the dispel palette ignore it.
-			CCColor = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
+			CrowdControlColor = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 
 			---@class NameplateFactionOptions
 			Friendly = {
@@ -350,7 +350,7 @@ local dbDefaults = {
 				---@class NameplateSpellTypeOptions
 				Bar1 = {
 					Enabled = false,
-					ShowCC = true,
+					ShowCrowdControl = true,
 					ShowDefensives = false,
 					ShowImportant = false,
 					Grow = "LEFT",
@@ -365,7 +365,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						-- How this bar tints its icons, one of NameplatesDisplay.ColorMode. NONE
 						-- leaves them untinted, DISPEL puts CC and disarm on the game's debuff
-						-- type palette, CUSTOM puts them on the module's CCColor.
+						-- type palette, CUSTOM puts them on the module's CrowdControlColor.
 						ColorMode = "DISPEL",
 						MaxIcons = 5,
 						ShowMilliseconds = true,
@@ -377,7 +377,7 @@ local dbDefaults = {
 				},
 				Bar2 = {
 					Enabled = false,
-					ShowCC = false,
+					ShowCrowdControl = false,
 					ShowDefensives = true,
 					ShowImportant = true,
 					Grow = "RIGHT",
@@ -403,7 +403,7 @@ local dbDefaults = {
 				IgnorePets = true,
 				Bar1 = {
 					Enabled = true,
-					ShowCC = true,
+					ShowCrowdControl = true,
 					ShowDefensives = false,
 					ShowImportant = false,
 					Grow = "LEFT",
@@ -426,7 +426,7 @@ local dbDefaults = {
 				},
 				Bar2 = {
 					Enabled = true,
-					ShowCC = false,
+					ShowCrowdControl = false,
 					ShowDefensives = true,
 					ShowImportant = true,
 					Grow = "RIGHT",
@@ -450,7 +450,7 @@ local dbDefaults = {
 			},
 		},
 		---@class EnemyKickTrackerModuleOptions
-		EnemyKickTrackerModule = {
+		EnemyKickTracker = {
 			Enabled = {
 				Always = false,
 				Caster = true,
@@ -478,7 +478,7 @@ local dbDefaults = {
 			},
 		},
 		---@class AllyKickTrackerModuleOptions
-		AllyKickTrackerModule = {
+		AllyKickTracker = {
 			-- Dungeons only out of the box: that is where interrupt rotations are coordinated.
 			-- Everywhere else the list is opt-in rather than another thing on a busy screen.
 			Enabled = {
@@ -520,7 +520,7 @@ local dbDefaults = {
 			},
 		},
 		---@class TrinketsModuleOptions
-		TrinketsModule = {
+		Trinkets = {
 			Enabled = {
 				Always = true,
 			},
@@ -552,7 +552,7 @@ local dbDefaults = {
 			},
 		},
 		---@class ImportantAurasModuleOptions
-		ImportantAurasModule = {
+		ImportantAuras = {
 			-- Helpful auras here are chosen by spell id rather than by Blizzard's category
 			-- flags, so anything can be tracked - including spells the game never flags. Stored
 			-- as deltas against the curated lists rather than a copy of them, so the saved
@@ -585,7 +585,7 @@ local dbDefaults = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
 				ShowImportant = true,
-				ShowCC = false,
+				ShowCrowdControl = false,
 				ShowKicks = false,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
@@ -607,7 +607,7 @@ local dbDefaults = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
 				ShowImportant = true,
-				ShowCC = true,
+				ShowCrowdControl = true,
 				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
@@ -633,7 +633,7 @@ local dbDefaults = {
 		-- on, so an update that switched it on would rearrange a UI nobody asked it to touch.
 		---@class FrameAurasModuleOptions
 		---@field Spells { Disabled: table<number, boolean>, Custom: table<number, boolean> } Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
-		FrameAurasModule = {
+		FrameAuras = {
 			-- Deltas against the curated buff list rather than a copy of it, so the saved variables
 			-- stay small and a later version's curated spells still reach an existing profile.
 			Spells = {
@@ -676,7 +676,7 @@ local dbDefaults = {
 				Dispellable = false,
 				ShortOnly = false,
 				-- Same again: crowd control has its own row on the Important Auras page.
-				ShowCC = false,
+				ShowCrowdControl = false,
 				-- No "Mine" switch, unlike the buff side: everything landing on a group member came from
 				-- somebody else, so filtering to your own would only ever empty the row.
 			},
@@ -713,7 +713,7 @@ local dbDefaults = {
 		},
 		---@class PersonalAurasModuleOptions
 		---@field Groups PersonalAuraGroup[] User-authored groups. Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
-		PersonalAurasModule = {
+		PersonalAuras = {
 			-- No module-wide Enabled table: each group carries its own switch.
 			-- Everything here is authored by the user, so there is nothing sensible to ship.
 			Groups = {},

@@ -53,8 +53,8 @@ local frameScratch = {}
 local function Options()
 	local db = mini:GetSavedVars()
 
-	return db and db.Modules and db.Modules.FrameAurasModule
-		and db.Modules.FrameAurasModule.ClassBuff or nil
+	return db and db.Modules and db.Modules.FrameAuras
+		and db.Modules.FrameAuras.ClassBuff or nil
 end
 
 ---Blizzard's own party and raid member frames, and nothing else. Refilled in place.

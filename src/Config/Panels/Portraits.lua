@@ -49,10 +49,10 @@ function M:Build(panel)
 		LabelText = L["Enabled"],
 		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
-			return db.Modules.PortraitModule.Enabled.Always
+			return db.Modules.Portrait.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Modules.PortraitModule.Enabled.Always = value
+			db.Modules.Portrait.Enabled.Always = value
 			config:Apply(moduleName.Portrait)
 		end,
 	})
@@ -64,10 +64,10 @@ function M:Build(panel)
 		LabelText = L["Reverse swipe"],
 		Tooltip = L["Reverses the direction of the cooldown swipe."],
 		GetValue = function()
-			return db.Modules.PortraitModule.ReverseCooldown
+			return db.Modules.Portrait.ReverseCooldown
 		end,
 		SetValue = function(value)
-			db.Modules.PortraitModule.ReverseCooldown = value
+			db.Modules.Portrait.ReverseCooldown = value
 			config:Apply(moduleName.Portrait)
 		end,
 	})
@@ -111,10 +111,10 @@ function M:Build(panel)
 			Parent = grid,
 			LabelText = tostring(spellId),
 			GetValue = function()
-				return db.Modules.PortraitModule.CustomSpells[spellId] == true
+				return db.Modules.Portrait.CustomSpells[spellId] == true
 			end,
 			SetValue = function(value)
-				db.Modules.PortraitModule.CustomSpells[spellId] = value or nil
+				db.Modules.Portrait.CustomSpells[spellId] = value or nil
 				config:Apply(moduleName.Portrait)
 			end,
 		})

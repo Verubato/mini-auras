@@ -69,7 +69,7 @@ end
 ---~1k spells, so this is strictly incremental: only healers that joined get registered and only
 ---those that left get removed. A change to the sound file/channel itself invalidates everything.
 local function RegisterAuraSounds(activePool)
-	local options = db.Modules.HealerCCModule
+	local options = db.Modules.HealerCrowdControl
 	local enabled = options.Sound.Enabled
 		and moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
 		and next(activePool) ~= nil
@@ -108,7 +108,7 @@ end
 
 ---Plays the configured file directly. Used by the config preview, which has to demo the file
 ---even though the live sound is engine-side.
----@param options HealerCCModuleOptions
+---@param options HealerCrowdControlModuleOptions
 function M:PlayPreview(options)
 	PlaySoundFile(addon.Core.Sounds:Resolve(options.Sound.File), options.Sound.Channel or "Master")
 end

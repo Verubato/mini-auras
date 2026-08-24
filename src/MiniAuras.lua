@@ -27,20 +27,20 @@ local modules = {
 }
 
 -- Maps a settings table's db.Modules key back to the module that renders it, so a config change
--- can refresh just the module it touched. PetCC rides the CC module rather than owning a renderer.
+-- can refresh just the module it touched. PetCrowdControl rides the CrowdControl module rather than owning a renderer.
 local modulesBySettingsKey = {
-	CCModule = addon.Modules.CrowdControlModule,
-	PetCCModule = addon.Modules.CrowdControlModule,
-	HealerCCModule = addon.Modules.HealerCrowdControlModule,
-	PortraitModule = addon.Modules.PortraitModule,
-	AlertsModule = addon.Modules.AlertsModule,
-	NameplatesModule = addon.Modules.NameplatesModule,
-	EnemyKickTrackerModule = addon.Modules.EnemyKickTrackerModule,
-	AllyKickTrackerModule = addon.Modules.AllyKickTrackerModule,
-	TrinketsModule = addon.Modules.TrinketsModule,
-	ImportantAurasModule = addon.Modules.ImportantAurasModule,
-	FrameAurasModule = addon.Modules.FrameAurasModule,
-	PersonalAurasModule = addon.Modules.PersonalAurasModule,
+	CrowdControl = addon.Modules.CrowdControlModule,
+	PetCrowdControl = addon.Modules.CrowdControlModule,
+	HealerCrowdControl = addon.Modules.HealerCrowdControlModule,
+	Portrait = addon.Modules.PortraitModule,
+	Alerts = addon.Modules.AlertsModule,
+	Nameplates = addon.Modules.NameplatesModule,
+	EnemyKickTracker = addon.Modules.EnemyKickTrackerModule,
+	AllyKickTracker = addon.Modules.AllyKickTrackerModule,
+	Trinkets = addon.Modules.TrinketsModule,
+	ImportantAuras = addon.Modules.ImportantAurasModule,
+	FrameAuras = addon.Modules.FrameAurasModule,
+	PersonalAuras = addon.Modules.PersonalAurasModule,
 }
 -- How long a burst of media registrations is allowed to settle before re-resolving. A media pack
 -- registers one entry at a time, so this coalesces a hundred callbacks into one refresh.

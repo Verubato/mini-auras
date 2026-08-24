@@ -15,7 +15,7 @@ env.loadModule("src/Modules/Alerts/Sound.lua")
 local sound = addon.Modules.Alerts.Sound
 local ttsSounds = addon.Core.AuraTtsSounds
 local defaultOff = addon.Core.AuraCategoryIds.TtsDefaultOff
-local tts = db.Modules.AlertsModule.TTS
+local tts = db.Modules.Alerts.TTS
 
 local PLATE = "nameplate1"
 local ICY_VEINS = 12472
@@ -39,15 +39,15 @@ local function LiveSpellIds()
 end
 
 local function Reset()
-	env.setModuleEnabled("AlertsModule", true)
+	env.setModuleEnabled("Alerts", true)
 	tts.Important.Enabled = true
 	tts.Defensive.Enabled = true
 	tts.EnemyDebuff.Enabled = false
 	tts.Important.MutedSpellIds = {}
 	tts.Defensive.MutedSpellIds = {}
 	tts.EnemyDebuff.MutedSpellIds = {}
-	db.Modules.AlertsModule.Sound.Important.Enabled = false
-	db.Modules.AlertsModule.Sound.Defensive.Enabled = false
+	db.Modules.Alerts.Sound.Important.Enabled = false
+	db.Modules.Alerts.Sound.Defensive.Enabled = false
 
 	sound:RemoveAllTokens()
 	sound:RemoveAllySounds()
@@ -79,7 +79,7 @@ fw.describe("Alerts TTS - per-spell muting", function()
 		-- Deathmark lands on the rogue's TARGET, so on an enemy plate it is an ally's cast:
 		-- neither the clip nor the alert sound may come from the plate, only the ally-side
 		-- incoming announcement.
-		db.Modules.AlertsModule.Sound.Important.Enabled = true
+		db.Modules.Alerts.Sound.Important.Enabled = true
 		tts.EnemyDebuff.Enabled = true
 		sound:Refresh({ [PLATE] = true })
 		sound:RefreshAllySounds(true)

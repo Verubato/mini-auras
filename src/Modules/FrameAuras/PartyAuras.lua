@@ -137,7 +137,7 @@ local buildSweep = sweep:New(true)
 local function Options()
 	local db = mini:GetSavedVars()
 
-	return db and db.Modules and db.Modules.FrameAurasModule or nil
+	return db and db.Modules and db.Modules.FrameAuras or nil
 end
 
 ---@param side "Buffs"|"Debuffs"
@@ -289,7 +289,7 @@ end
 local function DebuffFilter()
 	local options = SideOptions("Debuffs") or {}
 
-	if options.ShowCC == true then
+	if options.ShowCrowdControl == true then
 		return DEBUFF_FILTER
 	end
 
@@ -414,7 +414,7 @@ local function TestSpellList(side)
 		if options.ShowDefensives == true then
 			testListScratch[#testListScratch + 1] = set.Defensive
 		end
-	elseif options.ShowCC == true then
+	elseif options.ShowCrowdControl == true then
 		testListScratch[#testListScratch + 1] = set.CrowdControl
 	end
 

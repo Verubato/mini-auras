@@ -97,8 +97,8 @@ local purgePreviewSpells = {}
 local function Options()
 	local db = mini:GetSavedVars()
 
-	return db and db.Modules and db.Modules.FrameAurasModule
-		and db.Modules.FrameAurasModule.TargetFocus or nil
+	return db and db.Modules and db.Modules.FrameAuras
+		and db.Modules.FrameAuras.TargetFocus or nil
 end
 
 ---Adds any host frame that now exists and is not already tracked. Blizzard builds these with the

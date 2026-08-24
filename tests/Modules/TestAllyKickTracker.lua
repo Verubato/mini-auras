@@ -18,7 +18,7 @@ local moduleEnv = require("ModuleEnv")
 local env = moduleEnv.build()
 local db = env.db
 local addon = env.addon
-local options = db.Modules.AllyKickTrackerModule
+local options = db.Modules.AllyKickTracker
 
 -- The spec the player resolves to, which decides whether they get an own row and which interrupt
 -- it shows. Unresolved by default, so most of the file exercises the history rows alone.
@@ -52,7 +52,7 @@ local RECORD_DURATION = 15
 local WIND_SHEAR = 57994
 local ELEMENTAL_SHAMAN = 262
 
-env.setModuleEnabled("AllyKickTrackerModule", true)
+env.setModuleEnabled("AllyKickTracker", true)
 options.MaxBars = 5
 options.ShowOwnCooldown = false
 
@@ -188,7 +188,7 @@ local function Reset()
 	-- Off by default here so the history rows are the only thing under test; the own row
 	-- has its own block below.
 	options.ShowOwnCooldown = false
-	env.setModuleEnabled("AllyKickTrackerModule", true)
+	env.setModuleEnabled("AllyKickTracker", true)
 	observer:Clear()
 	module:Refresh()
 end
@@ -455,21 +455,21 @@ fw.describe("AllyKickTracker - the list", function()
 
 	fw.it("hides everything while the module is disabled", function()
 		Interrupted("nameplate1")
-		env.setModuleEnabled("AllyKickTrackerModule", false)
+		env.setModuleEnabled("AllyKickTracker", false)
 		module:Refresh()
 
 		assert(not root:IsShown(), "a disabled module draws nothing")
 		assert(#VisibleBars() == 0, "and leaves no rows behind")
 		assert(not observer:IsWatching(), "and stops listening")
 
-		env.setModuleEnabled("AllyKickTrackerModule", true)
+		env.setModuleEnabled("AllyKickTracker", true)
 		module:Refresh()
 		assert(observer:IsWatching(), "enabling it starts the watcher again")
 	end)
 
 	fw.it("stops listening for interrupts while disabled", function()
 		-- Unregistered rather than merely ignored: a disabled module costs nothing per event.
-		env.setModuleEnabled("AllyKickTrackerModule", false)
+		env.setModuleEnabled("AllyKickTracker", false)
 		module:Refresh()
 
 		assert(acm.lastFrameForEvent("UNIT_SPELLCAST_INTERRUPTED") == nil,

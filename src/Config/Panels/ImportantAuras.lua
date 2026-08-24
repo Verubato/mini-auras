@@ -143,21 +143,21 @@ local function BuildInstance(panel, options, defaults)
 	showDefensivesChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * catOffset, 0)
 	showDefensivesChk:SetPoint("TOP", excludePlayerChk, "BOTTOM", 0, -verticalSpacing)
 
-	local showCCChk = mini:Checkbox({
+	local showCrowdControlChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show CC"],
 		Tooltip = L["Show CC icons."],
 		GetValue = function()
-			return options.ShowCC
+			return options.ShowCrowdControl
 		end,
 		SetValue = function(value)
-			options.ShowCC = value
+			options.ShowCrowdControl = value
 			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
-	showCCChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (1 + catOffset), 0)
-	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+	showCrowdControlChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (1 + catOffset), 0)
+	showCrowdControlChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
 	local showKicksChk = mini:Checkbox({
 		Parent = parent,
@@ -319,7 +319,7 @@ end
 ---the same generated data as the spell lists, so this depends on nothing outside them.
 ---@return {Key: string, Title: string, SpellIds: number[]}[]
 local function SpellGroups()
-	local overrides = mini:GetSavedVars().Modules.ImportantAurasModule.Spells
+	local overrides = mini:GetSavedVars().Modules.ImportantAuras.Spells
 	local classNames = LocalizedClassList() or {}
 	local buckets = {}
 
@@ -375,7 +375,7 @@ end
 ---@param parent table Tab content frame
 local function BuildSpells(parent)
 	local db = mini:GetSavedVars()
-	local overrides = db.Modules.ImportantAurasModule.Spells
+	local overrides = db.Modules.ImportantAuras.Spells
 	local sidebarWidth, rowHeight, iconSize = 120, 26, 18
 	-- Two columns: a spell row is nowhere near as wide as the tab, so one column wasted most of
 	-- the horizontal space and made the list scroll far sooner than it needed to.
@@ -645,7 +645,7 @@ function M:Build(panel, default, raid)
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
 	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider,
-		db.Modules.ImportantAurasModule.Enabled, nil, moduleName.ImportantAuras)
+		db.Modules.ImportantAuras.Enabled, nil, moduleName.ImportantAuras)
 
 	-- Sized so the whole page sits inside the window's scroll viewport: the instance panels'
 	-- controls end well above this, and anything taller leaves a scrollbar into blank space.
@@ -687,13 +687,13 @@ function M:Build(panel, default, raid)
 	})
 
 	local defaultContent = tabCtrl:GetContent("default")
-	local defaultPanel = BuildInstance(defaultContent, default, dbDefaults.Modules.ImportantAurasModule.Default)
+	local defaultPanel = BuildInstance(defaultContent, default, dbDefaults.Modules.ImportantAuras.Default)
 	defaultPanel:SetPoint("TOPLEFT",  defaultContent, "TOPLEFT",  0, 0)
 	defaultPanel:SetPoint("TOPRIGHT", defaultContent, "TOPRIGHT", 0, 0)
 	defaultPanel:SetHeight(subPanelHeight)
 
 	local raidContent = tabCtrl:GetContent("raid")
-	local raidPanel = BuildInstance(raidContent, raid, dbDefaults.Modules.ImportantAurasModule.Raid)
+	local raidPanel = BuildInstance(raidContent, raid, dbDefaults.Modules.ImportantAuras.Raid)
 	raidPanel:SetPoint("TOPLEFT",  raidContent, "TOPLEFT",  0, 0)
 	raidPanel:SetPoint("TOPRIGHT", raidContent, "TOPRIGHT", 0, 0)
 	raidPanel:SetHeight(subPanelHeight)
@@ -705,7 +705,7 @@ function M:Build(panel, default, raid)
 
 	local coloursContent = tabCtrl:GetContent("colours")
 	if coloursContent then
-		BuildColours(coloursContent, db.Modules.ImportantAurasModule)
+		BuildColours(coloursContent, db.Modules.ImportantAuras)
 	end
 
 	panel.OnMiniRefresh = function()

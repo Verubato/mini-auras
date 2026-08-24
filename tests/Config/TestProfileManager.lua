@@ -98,25 +98,25 @@ fw.describe("ProfileManager - switching", function()
 		-- These are spellId -> true hashes against an empty default schema, the same shape that
 		-- CleanTable strips on a soft reset. Profiles copy them wholesale instead, so a custom
 		-- spell added under one profile must not leak into another.
-		local spells = db.Modules.ImportantAurasModule.Spells
+		local spells = db.Modules.ImportantAuras.Spells
 		spells.Custom[123456] = true
 		spells.Enabled[235313] = true
 		spells.Disabled[45438] = true
 
 		profileManager:CreateProfile("Spells", nil)
 		profileManager:SwitchProfile("Spells")
-		db.Modules.ImportantAurasModule.Spells.Custom[123456] = nil
+		db.Modules.ImportantAuras.Spells.Custom[123456] = nil
 
 		profileManager:SwitchProfile("Default")
-		assert(db.Modules.ImportantAurasModule.Spells.Custom[123456],
+		assert(db.Modules.ImportantAuras.Spells.Custom[123456],
 			"the custom id came back with its own profile")
-		assert(db.Modules.ImportantAurasModule.Spells.Disabled[45438],
+		assert(db.Modules.ImportantAuras.Spells.Disabled[45438],
 			"and so did the disabled one")
-		assert(db.Modules.ImportantAurasModule.Spells.Enabled[235313],
+		assert(db.Modules.ImportantAuras.Spells.Enabled[235313],
 			"and the opt-in for an off-by-default spell")
 
 		profileManager:SwitchProfile("Spells")
-		assert(not db.Modules.ImportantAurasModule.Spells.Custom[123456],
+		assert(not db.Modules.ImportantAuras.Spells.Custom[123456],
 			"the other profile kept its own removal")
 
 		profileManager:SwitchProfile("Default")
@@ -127,23 +127,23 @@ fw.describe("ProfileManager - switching", function()
 		-- Snapshot current state into a second profile, then diverge the live db.
 		profileManager:CreateProfile("Alt", nil)
 		db.FontScale = 1.4
-		db.Modules.CCModule.Default.Icons.Size = 48
+		db.Modules.CrowdControl.Default.Icons.Size = 48
 
 		-- References captured "at Build time" by config UI closures.
 		local modulesRef = db.Modules
-		local iconsRef = db.Modules.CCModule.Default.Icons
+		local iconsRef = db.Modules.CrowdControl.Default.Icons
 
 		profileManager:SwitchProfile("Alt")
 		assert(db.ActiveProfile == "Alt")
 		assert(db.FontScale ~= 1.4, "Alt restored the pre-divergence FontScale")
 		assert(iconsRef.Size ~= 48, "Alt restored the pre-divergence icon size")
 		assert(db.Modules == modulesRef, "db.Modules identity preserved")
-		assert(db.Modules.CCModule.Default.Icons == iconsRef, "nested table identity preserved")
+		assert(db.Modules.CrowdControl.Default.Icons == iconsRef, "nested table identity preserved")
 
 		-- Switching saved the divergent state into Default; switching back restores it.
 		profileManager:SwitchProfile("Default")
 		assert(db.FontScale == 1.4 and iconsRef.Size == 48, "Default kept the divergent values")
-		assert(db.Modules == modulesRef and db.Modules.CCModule.Default.Icons == iconsRef, "identities stable across both switches")
+		assert(db.Modules == modulesRef and db.Modules.CrowdControl.Default.Icons == iconsRef, "identities stable across both switches")
 	end)
 
 	fw.it("fires callbacks and a refresh on switch", function()
@@ -184,8 +184,8 @@ fw.describe("ProfileManager - lifecycle operations", function()
 	fw.it("CreateProfile copies a source deeply (no shared tables)", function()
 		profileManager:CreateProfile("Copy", "Alt")
 		assert(db.Profiles.Copy, "copy created")
-		db.Profiles.Copy.Modules.CCModule.Default.Icons.Size = 999
-		assert(db.Profiles.Alt.Modules.CCModule.Default.Icons.Size ~= 999, "source unaffected by mutating the copy")
+		db.Profiles.Copy.Modules.CrowdControl.Default.Icons.Size = 999
+		assert(db.Profiles.Alt.Modules.CrowdControl.Default.Icons.Size ~= 999, "source unaffected by mutating the copy")
 	end)
 
 	fw.it("CreateProfile refuses duplicates and empty names", function()
@@ -235,7 +235,7 @@ fw.describe("ProfileManager - lifecycle operations", function()
 		-- payload is a nil-index in the first colour swatch a panel rebinds.
 		profileManager:CreateProfile("AOld", nil)
 		db.Profiles.AOld.FadeWithParent = nil
-		db.Profiles.AOld.Modules.AlertsModule.Icons.ImportantColor = nil
+		db.Profiles.AOld.Modules.Alerts.Icons.ImportantColor = nil
 
 		profileManager:CreateProfile("Doomed", nil)
 		profileManager:SwitchProfile("Doomed")
@@ -243,7 +243,7 @@ fw.describe("ProfileManager - lifecycle operations", function()
 
 		assert(db.ActiveProfile == "AOld", "switchover landed on the old snapshot")
 		assert(db.FadeWithParent ~= nil, "missing top-level key healed")
-		assert(db.Modules.AlertsModule.Icons.ImportantColor ~= nil, "missing nested key healed")
+		assert(db.Modules.Alerts.Icons.ImportantColor ~= nil, "missing nested key healed")
 
 		profileManager:SwitchProfile("Default")
 		profileManager:DeleteProfile("AOld")

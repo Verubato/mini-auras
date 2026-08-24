@@ -1444,7 +1444,7 @@ fw.describe("AuraFilters - category partitioning", function()
 		local groups = instance.Frame._groups
 		assert(groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == 0, "cc off")
 		assert(groups[auraFilters.GroupKey.Disarm].maxFrameCount == 4,
-			"disarm has its own switch (callers gate it on assistability, not on ShowCC alone)")
+			"disarm has its own switch (callers gate it on assistability, not on ShowCrowdControl alone)")
 		assert(groups[auraFilters.GroupKey.BigDefensive].maxFrameCount == 4, "big defensive on")
 		assert(groups[auraFilters.GroupKey.ExternalDefensive].maxFrameCount == 4,
 			"the defensives toggle covers BOTH defensive groups")

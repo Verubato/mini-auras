@@ -12,7 +12,7 @@ local IMPORTANT_GROUP_KEY = "helpfulimp"
 local env = moduleEnv.build()
 local db = env.db
 
-env.setModuleEnabled("ImportantAurasModule", true)
+env.setModuleEnabled("ImportantAuras", true)
 
 env.addUnitFrame("party1", "CUF_Filters")
 
@@ -21,8 +21,8 @@ env.loadModule("src/Modules/ImportantAuras/Module.lua")
 
 local module = env.addon.Modules.ImportantAurasModule
 local categoryIds = env.addon.Core.AuraCategoryIds
-local options = db.Modules.ImportantAurasModule.Default
-local spells = db.Modules.ImportantAurasModule.Spells
+local options = db.Modules.ImportantAuras.Default
+local spells = db.Modules.ImportantAuras.Spells
 
 module:Init()
 
@@ -80,9 +80,9 @@ local function TrackedIds()
 	return ids
 end
 
-fw.describe("ImportantAurasModule - the tracked spell ids", function()
+fw.describe("ImportantAuras - the tracked spell ids", function()
 	fw.before_each(function()
-		options.ShowCC = false
+		options.ShowCrowdControl = false
 		options.ShowKicks = false
 		options.ShowDefensives = true
 		options.ShowImportant = true
@@ -192,7 +192,7 @@ fw.describe("ImportantAurasModule - the tracked spell ids", function()
 	end)
 end)
 
-fw.describe("ImportantAurasModule - anchors that are out of sight", function()
+fw.describe("ImportantAuras - anchors that are out of sight", function()
 	-- An entry outlives its anchor: WoW frames can never be freed, so a raid's worth of them is
 	-- still here in a five-man. They are skipped rather than restyled, and the risk that guards
 	-- against is a stale one coming back.
@@ -233,7 +233,7 @@ fw.describe("ImportantAurasModule - anchors that are out of sight", function()
 	end)
 end)
 
-fw.describe("ImportantAurasModule - groups declared after the display", function()
+fw.describe("ImportantAuras - groups declared after the display", function()
 	-- A display is created with none of its groups; the background walker declares them a group
 	-- per turn, so a roster turning up does not build them all in one frame. The filters a
 	-- display was built with can be well out of date by then.
@@ -265,7 +265,7 @@ fw.describe("ImportantAurasModule - groups declared after the display", function
 	end)
 end)
 
-fw.describe("ImportantAurasModule - an anchor returning without a refresh", function()
+fw.describe("ImportantAuras - an anchor returning without a refresh", function()
 	-- A refresh skips styling for an anchor nobody can see, so the entry carries whatever it had.
 	-- The unit-frame visibility hook can bring that frame back with no refresh behind it, which is
 	-- the one path that has to put the styling right on its own.
@@ -323,7 +323,7 @@ fw.describe("ImportantAurasModule - an anchor returning without a refresh", func
 		frame:Hide()
 		module:Refresh()
 
-		env.setModuleEnabled("ImportantAurasModule", false)
+		env.setModuleEnabled("ImportantAuras", false)
 		module:Refresh()
 		assert(not display._enabled, "fixture: the module tore its display down")
 
@@ -340,7 +340,7 @@ fw.describe("ImportantAurasModule - an anchor returning without a refresh", func
 
 		assert(not display._enabled, "the hook must not wake a disabled module's display back up")
 
-		env.setModuleEnabled("ImportantAurasModule", true)
+		env.setModuleEnabled("ImportantAuras", true)
 		module:Refresh()
 	end)
 end)

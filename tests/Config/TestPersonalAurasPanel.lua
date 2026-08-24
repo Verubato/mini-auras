@@ -44,7 +44,7 @@ local function LoadWithGroup(spells)
 	local addon = context.Addon
 	local db = addon.Framework:GetSavedVars()
 	local groups = addon.Modules.PersonalAuras.Groups
-	local options = db.Modules.PersonalAurasModule
+	local options = db.Modules.PersonalAuras
 	local group = groups:NewGroup(options, "Test Group")
 
 	group.Spells = spells or {}
@@ -280,7 +280,7 @@ fw.describe("Personal auras page - a group saved by an older version", function(
 	-- Filters, Candidates or Exclude table at all, and the page indexes all three directly.
 	fw.it("lays out a group that predates the filter settings", function()
 		local addon = LoadWithGroup({ 45438 })
-		local options = addon.Framework:GetSavedVars().Modules.PersonalAurasModule
+		local options = addon.Framework:GetSavedVars().Modules.PersonalAuras
 		local group = options.Groups[1]
 
 		group.Filters = nil
@@ -299,7 +299,7 @@ fw.describe("Personal auras page - a group saved by an older version", function(
 		-- Only the selected group goes through the editor, so the grid tiles have to be safe too.
 		local addon = LoadWithGroup({ 45438 })
 		local groups = addon.Modules.PersonalAuras.Groups
-		local options = addon.Framework:GetSavedVars().Modules.PersonalAurasModule
+		local options = addon.Framework:GetSavedVars().Modules.PersonalAuras
 		local second = groups:NewGroup(options, "Older")
 
 		options.Groups[2] = second
@@ -545,7 +545,7 @@ fw.describe("Personal auras page - reordering the grid", function()
 	local function TwoGroups()
 		local addon = LoadWithGroup({ 45438 })
 		local groups = addon.Modules.PersonalAuras.Groups
-		local options = addon.Framework:GetSavedVars().Modules.PersonalAurasModule
+		local options = addon.Framework:GetSavedVars().Modules.PersonalAuras
 		local second = groups:NewGroup(options, "Second")
 
 		second.Spells = { 118 }

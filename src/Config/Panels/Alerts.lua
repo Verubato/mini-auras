@@ -258,7 +258,7 @@ local function BuildSettingsTab(parent, options)
 		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 100,
-		Default = dbDefaults.Modules.AlertsModule.Icons.Size,
+		Default = dbDefaults.Modules.Alerts.Icons.Size,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
@@ -273,7 +273,7 @@ local function BuildSettingsTab(parent, options)
 		Tooltip = L["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."],
 		Min = 1,
 		Max = 10,
-		Default = dbDefaults.Modules.AlertsModule.Icons.MaxIcons,
+		Default = dbDefaults.Modules.Alerts.Icons.MaxIcons,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
@@ -288,8 +288,8 @@ local function BuildSettingsTab(parent, options)
 		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
-		Default = dbDefaults.Modules.AlertsModule.IconSpacing,
-		Fallback = dbDefaults.Modules.AlertsModule.IconSpacing,
+		Default = dbDefaults.Modules.Alerts.IconSpacing,
+		Fallback = dbDefaults.Modules.Alerts.IconSpacing,
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",
@@ -577,7 +577,7 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.AlertsModule.Enabled, nil, moduleName.Alerts)
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.Alerts.Enabled, nil, moduleName.Alerts)
 
 	-- Sized for the spell list: it is a scrolling grid, and the other tabs' blank tail is a
 	-- better trade than a list showing four rows at a time.

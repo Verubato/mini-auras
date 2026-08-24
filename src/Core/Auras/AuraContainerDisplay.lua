@@ -2073,7 +2073,7 @@ function M:SetCandidateFilters(groupKey, filters)
 end
 
 ---Sets a group's icon budget. A value of 0 hides the group entirely (used for per-category
----toggles like ShowCC/ShowDefensives), so a mistyped key would silently switch a whole category
+---toggles like ShowCrowdControl/ShowDefensives), so a mistyped key would silently switch a whole category
 ---off - hence the warning rather than a quiet return.
 ---@param groupKey string
 ---@param maxIcons number

@@ -59,7 +59,7 @@ end)
 
 ---@return PersonalAurasModuleOptions?
 local function GetOptions()
-	return db and db.Modules.PersonalAurasModule
+	return db and db.Modules.PersonalAuras
 end
 
 ---No module-wide switch: a group carries its own, and no groups means no feature.

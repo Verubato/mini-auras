@@ -17,7 +17,7 @@ local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 local db = env.db
-local alerts = db.Modules.AlertsModule
+local alerts = db.Modules.Alerts
 
 alerts.Enabled.Always = true
 alerts.Icons.Enabled = true
@@ -113,7 +113,7 @@ local function enterArenaWithSpecs(...)
 	events:TriggerEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 end
 
-fw.describe("AlertsModule - colouring the icons by class", function()
+fw.describe("Alerts - colouring the icons by class", function()
 	fw.it("takes an arena opponent's colour from their specialisation", function()
 		-- The unit's own class is secret in here. The spec is not, and a spec belongs to exactly
 		-- one class, which is the only route to a readable colour.
@@ -142,7 +142,7 @@ fw.describe("AlertsModule - colouring the icons by class", function()
 	end)
 end)
 
-fw.describe("AlertsModule - the test mode preview", function()
+fw.describe("Alerts - the test mode preview", function()
 	local display = env.addon.Modules.Alerts.Display
 
 	---The colours the preview drew its icon borders in.
@@ -246,7 +246,7 @@ fw.describe("AlertsModule - the test mode preview", function()
 	end)
 end)
 
-fw.describe("AlertsModule - a token that changes class between matches", function()
+fw.describe("Alerts - a token that changes class between matches", function()
 	fw.it("does not reuse the pair built for the previous class", function()
 		-- The bug this guards is silent and lasts a whole match: reusing arena1's rogue pair for
 		-- a mage rings every alert in the rogue colour, and no restyle can reach those buttons

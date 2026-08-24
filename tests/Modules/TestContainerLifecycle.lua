@@ -17,15 +17,15 @@ local PREWARM_TOKENS = 14
 local WALK_TICKS = 5
 
 -- Force everything relevant on, world context.
-db.Modules.AlertsModule.Enabled.Always = true
-db.Modules.AlertsModule.Icons.Enabled = true
-db.Modules.AlertsModule.SplitBars = false
-db.Modules.NameplatesModule.Enabled.Always = true
-db.Modules.NameplatesModule.Enemy.Bar1.Enabled = true
-db.Modules.NameplatesModule.Enemy.Bar2.Enabled = false
-db.Modules.HealerCCModule.Enabled.Always = true
-db.Modules.HealerCCModule.Sound.Enabled = true
-db.Modules.HealerCCModule.Icons.Enabled = true
+db.Modules.Alerts.Enabled.Always = true
+db.Modules.Alerts.Icons.Enabled = true
+db.Modules.Alerts.SplitBars = false
+db.Modules.Nameplates.Enabled.Always = true
+db.Modules.Nameplates.Enemy.Bar1.Enabled = true
+db.Modules.Nameplates.Enemy.Bar2.Enabled = false
+db.Modules.HealerCrowdControl.Enabled.Always = true
+db.Modules.HealerCrowdControl.Sound.Enabled = true
+db.Modules.HealerCrowdControl.Icons.Enabled = true
 
 -- Load modules one at a time, capturing each module's event frame before the next load.
 env.loadModule("src/Modules/Alerts/Sound.lua")
@@ -68,7 +68,7 @@ local function countAuraSoundSpells()
 	return n
 end
 
-fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
+fw.describe("Alerts 12.1 - display pair lifecycle", function()
 	-- A pair's two containers are built one after the other, Def then Imp, so the live pair for a
 	-- token is the last two carrying it. Counting groups no longer tells them apart: a container
 	-- is built with only the groups the current mode renders on it.
@@ -186,9 +186,9 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 	fw.it("Grow LEFT flips the chain: right edges pinned, negative spacing steps", function()
 		-- Read rather than set: spacing is baked into the buttons, so changing it here would
 		-- rebuild every pair mid-file and leave the lookups below on the parked ones.
-		local spacing = db.Modules.AlertsModule.IconSpacing
+		local spacing = db.Modules.Alerts.IconSpacing
 
-		db.Modules.AlertsModule.Grow = "LEFT"
+		db.Modules.Alerts.Grow = "LEFT"
 		env.addon.Modules.AlertsModule:Refresh()
 
 		-- The chain imposes no token order, so the geometry is asserted by role: the one display
@@ -208,7 +208,7 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		end
 
 		-- Back to the default; on 12.1 that behaves as RIGHT (LEFT edges, positive spacing).
-		db.Modules.AlertsModule.Grow = "CENTER"
+		db.Modules.Alerts.Grow = "CENTER"
 		env.addon.Modules.AlertsModule:Refresh()
 		for _, def in ipairs(defs) do
 			local point, relativeTo, relativePoint, x = def:GetPoint(1)
@@ -245,8 +245,8 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 
 		-- nameplate2, nameplate7 and nameplate10 are active from the earlier tests.
 		local baseline = net()
-		db.Modules.AlertsModule.Sound.Important.Enabled = true
-		db.Modules.AlertsModule.Sound.Defensive.Enabled = true
+		db.Modules.Alerts.Sound.Important.Enabled = true
+		db.Modules.Alerts.Sound.Defensive.Enabled = true
 		env.addon.Modules.AlertsModule:Refresh()
 		assert(net() - baseline == perToken * 3, "3 active tokens registered, net " .. (net() - baseline))
 
@@ -275,8 +275,8 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		env.plates.nameplate11 = nil
 
 		-- Turning the sounds off clears the remaining registrations, warm ones included.
-		db.Modules.AlertsModule.Sound.Important.Enabled = false
-		db.Modules.AlertsModule.Sound.Defensive.Enabled = false
+		db.Modules.Alerts.Sound.Important.Enabled = false
+		db.Modules.Alerts.Sound.Defensive.Enabled = false
 		env.addon.Modules.AlertsModule:Refresh()
 		assert(net() - baseline == 0, "disable clears every registration")
 
@@ -284,7 +284,7 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 	end)
 end)
 
-fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
+fw.describe("Nameplates 12.1 - pooled bar displays", function()
 	-- A plate's display is handed over without its groups: a crowd of plates arrives in one frame
 	-- and each group costs a batch of buttons, so the walker declares them a group per turn.
 	-- Reading them back means letting that run.
@@ -307,15 +307,15 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		-- Only the categories this bar can show are built at all: the engine allocates a batch of
 		-- buttons per group whatever the budget, so a group for a switched-off category is that
 		-- batch spent on something the bar can never draw.
-		local barOptions = db.Modules.NameplatesModule.Enemy.Bar1
+		local barOptions = db.Modules.Nameplates.Enemy.Bar1
 		local expected = barOptions.Icons.MaxIcons
-		assert((display._groups.cc ~= nil) == (barOptions.ShowCC == true), "cc group follows its toggle")
+		assert((display._groups.cc ~= nil) == (barOptions.ShowCrowdControl == true), "cc group follows its toggle")
 		assert((display._groups.important ~= nil) == (barOptions.ShowImportant == true),
 			"important group follows its toggle")
 		assert((display._groups.bigdef ~= nil) == (barOptions.ShowDefensives == true),
 			"the defensive groups follow their toggle")
 
-		if barOptions.ShowCC then
+		if barOptions.ShowCrowdControl then
 			assert(display._groups.cc.maxFrameCount == expected, "cc budget")
 			assert(display._groups.disarm.maxFrameCount == expected,
 				"disarm rides the CC toggle on an enemy plate")
@@ -325,7 +325,7 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 	fw.it("switching a category on swaps in a display built with it", function()
 		-- A group can never be added to a container, so a category coming on cannot be settled by
 		-- re-budgeting what a plate already holds: it needs a display built with that group.
-		local barOptions = db.Modules.NameplatesModule.Enemy.Bar1
+		local barOptions = db.Modules.Nameplates.Enemy.Bar1
 		local before = barOptions.ShowImportant
 
 		env.enemies.np_cat = true
@@ -378,10 +378,10 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 	fw.it("a friendly plate's disarm group is budgeted to zero", function()
 		-- The disarm group's only real filter is its spell-ID map, which the engine skips for
 		-- debuffs on assistable units - left budgeted it would show every debuff on the plate.
-		local friendlyBar = db.Modules.NameplatesModule.Friendly.Bar1
-		local enabledBefore, showCcBefore = friendlyBar.Enabled, friendlyBar.ShowCC
+		local friendlyBar = db.Modules.Nameplates.Friendly.Bar1
+		local enabledBefore, showCrowdControlBefore = friendlyBar.Enabled, friendlyBar.ShowCrowdControl
 		friendlyBar.Enabled = true
-		friendlyBar.ShowCC = true
+		friendlyBar.ShowCrowdControl = true
 
 		env.addPlate("np_friend")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_friend")
@@ -397,7 +397,7 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_friend")
 		env.plates.np_friend = nil
 		friendlyBar.Enabled = enabledBefore
-		friendlyBar.ShowCC = showCcBefore
+		friendlyBar.ShowCrowdControl = showCrowdControlBefore
 	end)
 
 	fw.it("plate removal parks the display on the plate it was drawing on", function()
@@ -447,14 +447,14 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		env.enemies.np_imp = true
 		env.minorUnits.np_imp = true
 		env.pets.np_imp = true
-		db.Modules.NameplatesModule.Enemy.IgnorePets = false
+		db.Modules.Nameplates.Enemy.IgnorePets = false
 		env.addPlate("np_imp")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_imp")
 
 		local imp = env.containersForUnit("np_imp")[1]
 		assert(imp and imp._enabled, "a minion is still shown while IgnorePets is off")
 
-		db.Modules.NameplatesModule.Enemy.IgnorePets = true
+		db.Modules.Nameplates.Enemy.IgnorePets = true
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_imp")
 		assert(not imp._enabled, "and released once IgnorePets is back on")
 
@@ -470,13 +470,13 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 	fw.it("an IgnorePets flip releases an already-tracked pet plate's display", function()
 		env.enemies.np_pet = true
 		env.pets.np_pet = true
-		db.Modules.NameplatesModule.Enemy.IgnorePets = false
+		db.Modules.Nameplates.Enemy.IgnorePets = false
 		env.addPlate("np_pet")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_pet")
 		local display = env.containersForUnit("np_pet")[1]
 		assert(display and display._enabled, "pet tracked while IgnorePets is off")
 
-		db.Modules.NameplatesModule.Enemy.IgnorePets = true
+		db.Modules.Nameplates.Enemy.IgnorePets = true
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_pet")
 		assert(not display._enabled and not display:IsShown(), "flip released the display")
 	end)
@@ -485,8 +485,8 @@ end)
 fw.describe("Duel faction flip - poll-based re-registration", function()
 	fw.it("alerts: a friendly plate that turns enemy gains displays and sound registrations", function()
 		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
-		db.Modules.AlertsModule.Sound.Important.Enabled = true
-		db.Modules.AlertsModule.Sound.Defensive.Enabled = true
+		db.Modules.Alerts.Sound.Important.Enabled = true
+		db.Modules.Alerts.Sound.Defensive.Enabled = true
 		env.addon.Modules.AlertsModule:Refresh()
 		local function net()
 			return env.auraSoundAdds - env.auraSoundRemoves
@@ -523,15 +523,15 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 		-- Restore the shared sound state and counters for the healer tests below.
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate20")
 		env.plates.nameplate20 = nil
-		db.Modules.AlertsModule.Sound.Important.Enabled = false
-		db.Modules.AlertsModule.Sound.Defensive.Enabled = false
+		db.Modules.Alerts.Sound.Important.Enabled = false
+		db.Modules.Alerts.Sound.Defensive.Enabled = false
 		env.addon.Modules.AlertsModule:Refresh()
 		env.auraSoundAdds, env.auraSoundRemoves = adds0, removes0
 	end)
 
 	fw.it("nameplates: the same flip rebuilds the bars with the other faction's options", function()
-		db.Modules.NameplatesModule.Friendly.Bar1.Enabled = false
-		db.Modules.NameplatesModule.Friendly.Bar2.Enabled = false
+		db.Modules.Nameplates.Friendly.Bar1.Enabled = false
+		db.Modules.Nameplates.Friendly.Bar2.Enabled = false
 
 		local plate = env.addPlate("np_duel")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_duel")
@@ -600,7 +600,7 @@ fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", functio
 
 	fw.it("a sound-file change clears and re-registers", function()
 		local addsBefore = env.auraSoundAdds
-		db.Modules.HealerCCModule.Sound.File = "AirHorn.ogg"
+		db.Modules.HealerCrowdControl.Sound.File = "AirHorn.ogg"
 		healerCC:Refresh()
 		assert(env.auraSoundRemoves == addsBefore, "every previous registration removed")
 		assert(env.auraSoundAdds == addsBefore + ccSpellCount, "full set re-registered")
@@ -635,7 +635,7 @@ fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", functio
 	fw.it("disabling the sound clears everything", function()
 		local addsBefore = env.auraSoundAdds
 		local removesBefore = env.auraSoundRemoves
-		db.Modules.HealerCCModule.Sound.Enabled = false
+		db.Modules.HealerCrowdControl.Sound.Enabled = false
 		healerCC:Refresh()
 		assert(env.auraSoundAdds == addsBefore, "no new registrations")
 		assert(env.auraSoundRemoves == removesBefore + 2 * ccSpellCount, "all registrations removed")
@@ -684,7 +684,7 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 	end)
 
 	fw.it("a text size change restyles the label fontstrings", function()
-		db.Modules.HealerCCModule.Font.Size = 48
+		db.Modules.HealerCrowdControl.Font.Size = 48
 		healerCC:Refresh()
 		local label = splitContainers("party1")
 		local text = label._buttons[1]._createdFontStrings[1]
@@ -693,13 +693,13 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 	end)
 
 	fw.it("turning the warning text off parks the label containers, on brings them back", function()
-		db.Modules.HealerCCModule.ShowWarningText = false
+		db.Modules.HealerCrowdControl.ShowWarningText = false
 		healerCC:Refresh()
 		local label, icons = splitContainers("party1")
 		assert(not label._enabled and not label._shown, "label container parked")
 		assert(icons._enabled and icons._shown, "icon container unaffected")
 
-		db.Modules.HealerCCModule.ShowWarningText = true
+		db.Modules.HealerCrowdControl.ShowWarningText = true
 		healerCC:Refresh()
 		label = splitContainers("party1")
 		assert(label._enabled and label._shown, "label container back")
@@ -748,7 +748,7 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 	end)
 end)
 
-fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
+fw.describe("Nameplates 12.1 - the pool never leaks", function()
 	-- Every path that stops tracking a plate has to hand its displays back. A display that
 	-- escapes the pool has no symptom until the pool runs dry and plates start building
 	-- containers on demand - and then two plates can end up sharing one, which draws one
@@ -804,22 +804,22 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 	fw.it("toggling a bar releases and re-acquires rather than discarding", function()
 		-- Flipping an enabled bar is what drives RebuildContainers, i.e. a re-ADD for every
 		-- live plate.
-		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = true
+		db.Modules.Nameplates.Enemy.Bar2.Enabled = true
 		nameplates:Refresh()
 		assert(#activeDisplays("np_leak1") == 2, "both bars have a display")
 		local created = env.auraContainerCount()
 
-		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = false
+		db.Modules.Nameplates.Enemy.Bar2.Enabled = false
 		nameplates:Refresh()
 		assert(#activeDisplays("np_leak1") == 1, "the disabled bar gave its display back")
 		assert(env.auraContainerCount() == created, "released, not discarded")
 
-		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = true
+		db.Modules.Nameplates.Enemy.Bar2.Enabled = true
 		nameplates:Refresh()
 		assert(#activeDisplays("np_leak1") == 2, "and it comes back")
 		assert(env.auraContainerCount() == created, "out of the pool, without building anything new")
 
-		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = false
+		db.Modules.Nameplates.Enemy.Bar2.Enabled = false
 		nameplates:Refresh()
 	end)
 
@@ -854,7 +854,7 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		assert(display, "tracked by the one enabled bar")
 		local created = env.auraContainerCount()
 
-		local icons = db.Modules.NameplatesModule.Enemy.Bar1.Icons
+		local icons = db.Modules.Nameplates.Enemy.Bar1.Icons
 		local originalSize = icons.Size
 
 		for size = 30, 40 do
@@ -886,7 +886,7 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		removePlate("np_refit")
 		assert(display._parent == plate, "parked on its plate")
 
-		local icons = db.Modules.NameplatesModule.Enemy.Bar1.Icons
+		local icons = db.Modules.Nameplates.Enemy.Bar1.Icons
 		local originalSize = icons.Size
 		icons.Size = originalSize + 7
 		nameplates:Refresh()
@@ -910,8 +910,8 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		-- keeps its own cached display: the first flip builds the second one, every later flip
 		-- swaps with no restyle and builds nothing.
 		-- Mirror the enemy bar's configuration so only the size differs.
-		local enemyBar = db.Modules.NameplatesModule.Enemy.Bar1
-		local friendlyBar = db.Modules.NameplatesModule.Friendly.Bar1
+		local enemyBar = db.Modules.Nameplates.Enemy.Bar1
+		local friendlyBar = db.Modules.Nameplates.Friendly.Bar1
 		for key, value in pairs(enemyBar) do
 			if key ~= "Icons" then
 				friendlyBar[key] = value
@@ -966,7 +966,7 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		env.enemies.np_flip = nil
 
 		removePlate("np_flip")
-		db.Modules.NameplatesModule.Friendly.Bar1.Enabled = false
+		db.Modules.Nameplates.Friendly.Bar1.Enabled = false
 		nameplates:Refresh()
 	end)
 
@@ -980,15 +980,15 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 
 		local created = env.auraContainerCount()
 
-		env.setModuleEnabled("NameplatesModule", false)
+		env.setModuleEnabled("Nameplates", false)
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_drop")
 
 		assert(not display._enabled and not display:IsShown(), "parked when it stopped qualifying")
 		assert(display._parent ~= _G.UIParent, "and left on its plate")
 
 		-- Re-qualifying reuses the same display rather than building another.
-		env.setModuleEnabled("NameplatesModule", true)
-		db.Modules.NameplatesModule.Enemy.Bar1.Enabled = true
+		env.setModuleEnabled("Nameplates", true)
+		db.Modules.Nameplates.Enemy.Bar1.Enabled = true
 		addPlate("np_drop")
 
 		assert(activeDisplays("np_drop")[1] == display, "the parked display is picked back up")
@@ -1004,9 +1004,9 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 	end)
 end)
 
-fw.describe("AlertsModule 12.1 - enemy debuff announcements", function()
+fw.describe("Alerts 12.1 - enemy debuff announcements", function()
 	local alerts = env.addon.Modules.AlertsModule
-	local tts = db.Modules.AlertsModule.TTS
+	local tts = db.Modules.Alerts.TTS
 	-- The player is always watched; the rest of the side comes from the roster.
 	env.friendlyUnits = { "player", "party1", "party2" }
 	local allyTokens = #env.friendlyUnits
@@ -1074,7 +1074,7 @@ fw.describe("AlertsModule 12.1 - enemy debuff announcements", function()
 	end)
 end)
 
-fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
+fw.describe("Nameplates 12.1 - prewarming the plate displays", function()
 	-- Building an AuraContainer costs milliseconds, and building one the moment a plate spawns puts
 	-- that cost in the middle of a fight. The displays are built up front instead, during a loading
 	-- screen, where a long frame costs nothing because nothing is being drawn.
@@ -1171,14 +1171,14 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 	fw.it("does not build displays for a bar that is switched off", function()
 		local created = env.auraContainerCount()
 
-		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = true
+		db.Modules.Nameplates.Enemy.Bar2.Enabled = true
 		refreshDuringLoadingScreen()
 		local withBar2 = env.auraContainerCount()
 		local built = withBar2 - created
 		assert(built > 0 and built <= PREWARM_TOKENS,
 			"switching a bar on prepares its own set and no more, got " .. built)
 
-		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = false
+		db.Modules.Nameplates.Enemy.Bar2.Enabled = false
 		refreshDuringLoadingScreen()
 
 		assert(env.auraContainerCount() == withBar2,
@@ -1214,7 +1214,7 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 	end)
 end)
 
-fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
+fw.describe("Alerts 12.1 - prewarming the display pairs", function()
 	local alerts = env.addon.Modules.AlertsModule
 
 	-- The set is paced through the background walker a group at a time, so a test wanting all of
@@ -1342,7 +1342,7 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 	-- old look), UpdateContent would then drop all forty, and only the handful of tracked tokens
 	-- would be rebuilt - silently forfeiting the prewarm on every look change.
 	fw.it("still has pairs ready after a change to the baked-in look", function()
-		local icons = db.Modules.AlertsModule.Icons
+		local icons = db.Modules.Alerts.Icons
 		local originalSize = icons.Size
 
 		icons.Size = (originalSize or 24) + 6

@@ -40,7 +40,7 @@ local function BuildPetInstance(panel, options)
 		BattleGrounds = L["Enable pet frame CC in battlegrounds."],
 		Dungeons = L["Enable pet frame CC in dungeons."],
 		Raid = L["Enable pet frame CC in raids."],
-	}, moduleName.PetCC)
+	}, moduleName.PetCrowdControl)
 
 	local settingsDivider = mini:Divider({
 		Parent = parent,
@@ -59,7 +59,7 @@ local function BuildPetInstance(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.Glow = value
-			config:Apply(moduleName.PetCC)
+			config:Apply(moduleName.PetCrowdControl)
 		end,
 	})
 
@@ -75,7 +75,7 @@ local function BuildPetInstance(panel, options)
 		SetValue = function(value)
 			options.Icons.ColorByDispelType = value
 			UpdateCcSwatch()
-			config:Apply(moduleName.PetCC)
+			config:Apply(moduleName.PetCrowdControl)
 		end,
 	})
 
@@ -91,7 +91,7 @@ local function BuildPetInstance(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.ReverseCooldown = value
-			config:Apply(moduleName.PetCC)
+			config:Apply(moduleName.PetCrowdControl)
 		end,
 	})
 
@@ -107,7 +107,7 @@ local function BuildPetInstance(panel, options)
 		end,
 		SetValue = function(value)
 			options.ShowTooltips = value
-			config:Apply(moduleName.PetCC)
+			config:Apply(moduleName.PetCrowdControl)
 		end,
 	})
 
@@ -117,10 +117,10 @@ local function BuildPetInstance(panel, options)
 	local size = helpers:BuildSizeControls({
 		Parent = parent,
 		Icons = options.Icons,
-		PixelDefault = dbDefaults.Modules.PetCCModule.Icons.Size,
-		PercentDefault = dbDefaults.Modules.PetCCModule.Icons.SizePercent,
+		PixelDefault = dbDefaults.Modules.PetCrowdControl.Icons.Size,
+		PercentDefault = dbDefaults.Modules.PetCrowdControl.Icons.SizePercent,
 		Width = sliderWidth,
-		SettingsKey = moduleName.PetCC,
+		SettingsKey = moduleName.PetCrowdControl,
 	})
 
 	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
@@ -135,7 +135,7 @@ local function BuildPetInstance(panel, options)
 		end,
 		SetValue = function(value)
 			options.IncludePetFrame = value
-			config:Apply(moduleName.PetCC)
+			config:Apply(moduleName.PetCrowdControl)
 		end,
 	})
 
@@ -153,7 +153,7 @@ local function BuildPetInstance(panel, options)
 		SetValue = function(r, g, b, a)
 			local color = options.Icons.Color
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply(moduleName.PetCC)
+			config:Apply(moduleName.PetCrowdControl)
 		end,
 	})
 
@@ -180,7 +180,7 @@ local function BuildPetInstance(panel, options)
 		Target = options,
 		Key = "Grow",
 		Width = DROPDOWN_WIDTH,
-		SettingsKey = moduleName.PetCC,
+		SettingsKey = moduleName.PetCrowdControl,
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", includePetFrameChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
@@ -193,12 +193,12 @@ local function BuildPetInstance(panel, options)
 		Tooltip = L["Most icons shown at once on each unit."],
 		Min = 1,
 		Max = 5,
-		Default = dbDefaults.Modules.PetCCModule.Icons.Count,
-		Fallback = dbDefaults.Modules.PetCCModule.Icons.Count,
+		Default = dbDefaults.Modules.PetCrowdControl.Icons.Count,
+		Fallback = dbDefaults.Modules.PetCrowdControl.Icons.Count,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Count",
-		SettingsKey = moduleName.PetCC,
+		SettingsKey = moduleName.PetCrowdControl,
 	})
 
 	maxIcons.Slider:SetPoint("LEFT", size.Pixel.Slider, "RIGHT", horizontalSpacing, 0)
@@ -209,12 +209,12 @@ local function BuildPetInstance(panel, options)
 		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
-		Default = dbDefaults.Modules.PetCCModule.IconSpacing,
-		Fallback = dbDefaults.Modules.PetCCModule.IconSpacing,
+		Default = dbDefaults.Modules.PetCrowdControl.IconSpacing,
+		Fallback = dbDefaults.Modules.PetCrowdControl.IconSpacing,
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",
-		SettingsKey = moduleName.PetCC,
+		SettingsKey = moduleName.PetCrowdControl,
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -223,7 +223,7 @@ local function BuildPetInstance(panel, options)
 		Parent = parent,
 		Offset = options.Offset,
 		Width = sliderWidth,
-		SettingsKey = moduleName.PetCC,
+		SettingsKey = moduleName.PetCrowdControl,
 	})
 
 	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -256,7 +256,7 @@ function M:Build(panel)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local petPanel = BuildPetInstance(panel, db.Modules.PetCCModule)
+	local petPanel = BuildPetInstance(panel, db.Modules.PetCrowdControl)
 	petPanel:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	petPanel:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
 	petPanel:SetHeight(SUB_PANEL_HEIGHT)

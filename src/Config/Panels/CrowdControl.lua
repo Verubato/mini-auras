@@ -258,7 +258,7 @@ function M:Build(panel, default, raid)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.CCModule.Enabled,
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.CrowdControl.Enabled,
 		nil, moduleName.CrowdControl)
 
 	local subPanelHeight = 340
@@ -291,13 +291,13 @@ function M:Build(panel, default, raid)
 	})
 
 	local defaultContent = tabCtrl:GetContent("default")
-	local defaultPanel = BuildInstance(defaultContent, default, dbDefaults.Modules.CCModule.Default)
+	local defaultPanel = BuildInstance(defaultContent, default, dbDefaults.Modules.CrowdControl.Default)
 	defaultPanel:SetPoint("TOPLEFT",  defaultContent, "TOPLEFT",  0, 0)
 	defaultPanel:SetPoint("TOPRIGHT", defaultContent, "TOPRIGHT", 0, 0)
 	defaultPanel:SetHeight(subPanelHeight)
 
 	local raidContent = tabCtrl:GetContent("raid")
-	local raidPanel = BuildInstance(raidContent, raid, dbDefaults.Modules.CCModule.Raid)
+	local raidPanel = BuildInstance(raidContent, raid, dbDefaults.Modules.CrowdControl.Raid)
 	raidPanel:SetPoint("TOPLEFT",  raidContent, "TOPLEFT",  0, 0)
 	raidPanel:SetPoint("TOPRIGHT", raidContent, "TOPRIGHT", 0, 0)
 	raidPanel:SetHeight(subPanelHeight)

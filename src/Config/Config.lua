@@ -268,7 +268,7 @@ function M:EnsureWindow()
 			Title = L["Important Auras"],
 			Icon = NAV_ICON_BASE .. "ImportantAuras.png",
 			Build = function(content)
-				local m = db.Modules.ImportantAurasModule
+				local m = db.Modules.ImportantAuras
 				M.ImportantAuras:Build(content, m.Default, m.Raid)
 			end,
 		},
@@ -285,7 +285,7 @@ function M:EnsureWindow()
 			Title = L["Alerts"],
 			Icon = NAV_ICON_BASE .. "Alerts.png",
 			Build = function(content)
-				M.Alerts:Build(content, db.Modules.AlertsModule)
+				M.Alerts:Build(content, db.Modules.Alerts)
 			end,
 		},
 		{
@@ -293,7 +293,7 @@ function M:EnsureWindow()
 			Title = L["Nameplates_Short"] or L["Nameplates"],
 			Icon = NAV_ICON_BASE .. "Nameplates.png",
 			Build = function(content)
-				M.Nameplates:Build(content, db.Modules.NameplatesModule)
+				M.Nameplates:Build(content, db.Modules.Nameplates)
 			end,
 		},
 		{
@@ -310,7 +310,7 @@ function M:EnsureWindow()
 			Title = L["CC"],
 			Icon = NAV_ICON_BASE .. "CC.png",
 			Build = function(content)
-				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
+				M.CrowdControl:Build(content, db.Modules.CrowdControl.Default, db.Modules.CrowdControl.Raid)
 			end,
 		},
 		{
@@ -326,7 +326,7 @@ function M:EnsureWindow()
 			Title = L["Healer"],
 			Icon = NAV_ICON_BASE .. "Healer.png",
 			Build = function(content)
-				M.Healer:Build(content, db.Modules.HealerCCModule)
+				M.Healer:Build(content, db.Modules.HealerCrowdControl)
 			end,
 		},
 		{
@@ -343,7 +343,7 @@ function M:EnsureWindow()
 			Title = L["Ally Kicks_Short"] or L["Ally Kicks"],
 			Icon = NAV_ICON_BASE .. "AllyKickTracker.png",
 			Build = function(content)
-				M.AllyKickTracker:Build(content, db.Modules.AllyKickTrackerModule)
+				M.AllyKickTracker:Build(content, db.Modules.AllyKickTracker)
 			end,
 		},
 		{

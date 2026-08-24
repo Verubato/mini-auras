@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
-local dbDefaults = addon.Config.Defaults
 local M = addon.Config.Migrator
 
 function M:UpgradeToVersion19(vars)
@@ -92,9 +91,328 @@ function M:UpgradeToVersion23(vars)
 		},
 	}
 
-	-- might as well clean up any garbage while we're here
-	-- do this before we add stuff to what's new otherwise it'll get cleared
-	mini:CleanTable(vars, dbDefaults, true, true)
+	local v23Defaults = {
+		Version = 23,
+		WhatsNew = {},
+		NotifiedChanges = true,
+		GlowType = "Proc Glow",
+		FontScale = 1.0,
+		Modules = {
+			CCModule = {
+				Enabled = {
+					Always = true,
+					Arena = true,
+					Raids = false,
+					Dungeons = true,
+				},
+
+				Default = {
+					ExcludePlayer = false,
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+					Grow = "RIGHT",
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ReverseCooldown = true,
+						ColorByDispelType = true,
+					},
+				},
+
+				Raid = {
+					ExcludePlayer = false,
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+					Grow = "CENTER",
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ReverseCooldown = true,
+						ColorByDispelType = true,
+					},
+				},
+			},
+			HealerCCModule = {
+				Enabled = {
+					Always = true,
+					Arena = true,
+					Raids = false,
+					Dungeons = true,
+				},
+
+				Sound = {
+					Enabled = true,
+					Channel = "Master",
+					File = "Sonar.ogg",
+				},
+
+				Point = "CENTER",
+				RelativePoint = "TOP",
+				RelativeTo = "UIParent",
+				Offset = {
+					X = 0,
+					Y = -200,
+				},
+
+				Icons = {
+					Size = 72,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+				},
+
+				Font = {
+					File = "Fonts\\FRIZQT__.TTF",
+					Size = 32,
+					Flags = "OUTLINE",
+				},
+
+				ShowWarningText = true,
+			},
+			PortraitModule = {
+				Enabled = {
+					Always = true,
+				},
+
+				ReverseCooldown = true,
+			},
+			AlertsModule = {
+				Enabled = {
+					Always = true,
+				},
+
+				IncludeBigDefensives = true,
+				Point = "CENTER",
+				RelativePoint = "TOP",
+				RelativeTo = "UIParent",
+
+				Offset = {
+					X = 0,
+					Y = -100,
+				},
+
+				Sound = {
+					Important = {
+						Enabled = true,
+						Channel = "Master",
+						File = "Notification18.ogg",
+					},
+					Defensive = {
+						Enabled = true,
+						Channel = "Master",
+						File = "Notification38.ogg",
+					},
+				},
+
+				TTS = {
+					Volume = 100,
+					Important = {
+						Enabled = false,
+					},
+					Defensive = {
+						Enabled = false,
+					},
+				},
+
+				Icons = {
+					Size = 72,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByClass = true,
+				},
+			},
+			NameplatesModule = {
+				Enabled = {
+					Always = true,
+					Arena = true,
+					Raids = false,
+					Dungeons = false,
+				},
+
+				Friendly = {
+					IgnorePets = true,
+					CC = {
+						Enabled = false,
+						Grow = "RIGHT",
+						Offset = {
+							X = 2,
+							Y = 0,
+						},
+
+						Icons = {
+							Size = 50,
+							Glow = true,
+							ReverseCooldown = true,
+							ColorByCategory = true,
+							MaxIcons = 5,
+						},
+					},
+					Important = {
+						Enabled = false,
+						Grow = "LEFT",
+						Offset = {
+							X = -2,
+							Y = 0,
+						},
+
+						Icons = {
+							Size = 50,
+							Glow = true,
+							ReverseCooldown = true,
+							ColorByCategory = true,
+							MaxIcons = 5,
+						},
+					},
+					Combined = {
+						Enabled = false,
+						Grow = "RIGHT",
+						Offset = {
+							X = 2,
+							Y = 0,
+						},
+
+						Icons = {
+							Size = 50,
+							Glow = true,
+							ReverseCooldown = true,
+							ColorByCategory = true,
+							MaxIcons = 5,
+						},
+					},
+				},
+				Enemy = {
+					IgnorePets = true,
+					CC = {
+						Enabled = true,
+						Grow = "RIGHT",
+						Offset = {
+							X = 2,
+							Y = 0,
+						},
+
+						Icons = {
+							Size = 50,
+							Glow = true,
+							ReverseCooldown = true,
+							ColorByCategory = true,
+							MaxIcons = 5,
+						},
+					},
+					Important = {
+						Enabled = true,
+						Grow = "LEFT",
+						Offset = {
+							X = -2,
+							Y = 0,
+						},
+
+						Icons = {
+							Size = 50,
+							Glow = true,
+							ReverseCooldown = true,
+							ColorByCategory = true,
+							MaxIcons = 5,
+						},
+					},
+					Combined = {
+						Enabled = false,
+						Grow = "RIGHT",
+						Offset = {
+							X = 2,
+							Y = 0,
+						},
+
+						Icons = {
+							Size = 50,
+							Glow = true,
+							ReverseCooldown = true,
+							ColorByCategory = true,
+							MaxIcons = 5,
+						},
+					},
+				},
+			},
+			KickTimerModule = {
+				Enabled = {
+					Always = false,
+					Caster = true,
+					Healer = true,
+				},
+
+				Point = "CENTER",
+				RelativeTo = "UIParent",
+				RelativePoint = "CENTER",
+				Offset = {
+					X = 0,
+					Y = -200,
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = false,
+					ReverseCooldown = true,
+				},
+			},
+			TrinketsModule = {
+				Enabled = {
+					Always = true,
+				},
+
+				ExcludePlayer = false,
+
+				Point = "RIGHT",
+				RelativePoint = "LEFT",
+				Offset = {
+					X = -2,
+					Y = 0,
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = false,
+					ReverseCooldown = false,
+					ShowText = true,
+				},
+
+				Font = {
+					File = "GameFontHighlightSmall",
+				},
+			},
+			FriendlyIndicatorModule = {
+				Enabled = {
+					Always = true,
+					Arena = true,
+					Raids = true,
+					Dungeons = true,
+				},
+
+				ExcludePlayer = false,
+
+				Offset = {
+					X = 0,
+					Y = 0,
+				},
+				Grow = "CENTER",
+
+				Icons = {
+					Size = 40,
+					Glow = true,
+					ReverseCooldown = true,
+					MaxIcons = 1,
+				},
+			},
+		},
+	}
+
+	-- Cleaned against version 23's own defaults rather than the live ones, so a later schema
+	-- change cannot reach back and strip what a db this old still carries.
+	mini:CleanTable(vars, v23Defaults, true, true)
 
 	table.insert(vars.WhatsNew, " - Added important and defensive alert sound effects.")
 	table.insert(vars.WhatsNew, " - Added text to speech functionality in the alerts module (i.e. GladiatorlosSA).")

@@ -43,7 +43,7 @@ end
 
 ---@return PortraitModuleOptions?
 local function GetOptions()
-	return db and db.Modules.PortraitModule
+	return db and db.Modules.Portrait
 end
 
 ---Also refreshes the `enabled` cache the suspension push reads.

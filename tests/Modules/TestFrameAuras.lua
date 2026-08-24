@@ -136,7 +136,7 @@ local TARGET_ROWS_SHIPPED = targetAuras.Available
 local module = env.addon.Modules.FrameAurasModule
 local testSpells = env.addon.Core.TestSpells
 local trackedBuffs = env.addon.Core.TrackedBuffs
-local options = db.Modules.FrameAurasModule
+local options = db.Modules.FrameAuras
 
 ---The lowest curated buff id, picked by value so the assertions survive a change to the list.
 ---@return number
@@ -735,7 +735,7 @@ fw.describe("Frame Auras - test mode", function()
 
 	fw.it("puts a stun in the debuff preview only while crowd control is let in", function()
 		options.Debuffs.Enabled = true
-		options.Debuffs.ShowCC = false
+		options.Debuffs.ShowCrowdControl = false
 
 		module:StartTesting()
 
@@ -746,13 +746,13 @@ fw.describe("Frame Auras - test mode", function()
 
 		module:StopTesting()
 		ResetFills()
-		options.Debuffs.ShowCC = true
+		options.Debuffs.ShowCrowdControl = true
 		module:StartTesting()
 
 		assert(Includes(fills[1].Spells, stun), "letting it in puts one in the row")
 		assert(fills[1].Spells[1] == stun, "and it leads, the way a flagged category does in play")
 
-		options.Debuffs.ShowCC = false
+		options.Debuffs.ShowCrowdControl = false
 	end)
 
 	fw.it("puts a defensive in the buff preview only while defensives are let in", function()

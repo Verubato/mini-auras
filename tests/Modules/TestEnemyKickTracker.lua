@@ -11,7 +11,7 @@ local env = moduleEnv.build()
 local db = env.db
 
 -- The player's own spec drives IsEnabledForPlayer; Always sidesteps it for most of these.
-local options = db.Modules.EnemyKickTrackerModule
+local options = db.Modules.EnemyKickTracker
 options.Enabled.Always = true
 
 env.loadModule("src/Modules/EnemyKickTracker/Observer.lua")
@@ -56,7 +56,7 @@ local function usedSlots()
 	return count
 end
 
-fw.describe("EnemyKickTrackerModule - arena gating", function()
+fw.describe("EnemyKickTracker - arena gating", function()
 	fw.it("registers the arena team's cast events on entering an arena", function()
 		enterWorld()
 
@@ -82,7 +82,7 @@ fw.describe("EnemyKickTrackerModule - arena gating", function()
 	end)
 end)
 
-fw.describe("EnemyKickTrackerModule - interrupt to icon", function()
+fw.describe("EnemyKickTracker - interrupt to icon", function()
 	local function castFrame()
 		return assert(castFrameFor("player"), "player cast frame")
 	end
@@ -134,7 +134,7 @@ fw.describe("EnemyKickTrackerModule - interrupt to icon", function()
 	end)
 end)
 
-fw.describe("EnemyKickTrackerModule - lifecycle", function()
+fw.describe("EnemyKickTracker - lifecycle", function()
 	fw.it("test mode fills the bar and leaving it empties the bar again", function()
 		display:Clear()
 		local before = usedSlots()

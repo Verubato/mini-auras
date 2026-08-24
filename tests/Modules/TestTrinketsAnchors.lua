@@ -21,7 +21,7 @@ end
 env.inInstance = true
 env.instanceType = "arena"
 env.invalidateWorldState()
-env.setModuleEnabled("TrinketsModule", true)
+env.setModuleEnabled("Trinkets", true)
 
 env.loadModule("src/Core/Trinkets/TrinketsTracker.lua")
 env.addon.Core.TrinketsTracker:Init()
@@ -78,7 +78,7 @@ local second = env.addUnitFrame("party1", "TrinketAnchorB")
 
 second:Hide()
 
-fw.describe("TrinketsModule - the frame the icon hangs off", function()
+fw.describe("Trinkets - the frame the icon hangs off", function()
 	fw.it("takes the party frame that is on screen", function()
 		trinkets:Refresh()
 
@@ -127,7 +127,7 @@ fw.describe("TrinketsModule - the frame the icon hangs off", function()
 	end)
 end)
 
-fw.describe("TrinketsModule - the arena's own cooldown feed", function()
+fw.describe("Trinkets - the arena's own cooldown feed", function()
 	fw.it("retakes the anchors, so a set from the loading screen is replaced", function()
 		-- The tracker fires with no unit when its arena gate opens and on every match-state
 		-- change after it. By then every frame addon has had its chance to build, which makes

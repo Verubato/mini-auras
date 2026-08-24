@@ -41,10 +41,10 @@ function M:Build(panel)
 		LabelText = L["Healer"],
 		Tooltip = L["Whether to enable or disable this module if you are a healer."],
 		GetValue = function()
-			return db.Modules.EnemyKickTrackerModule.Enabled.Healer
+			return db.Modules.EnemyKickTracker.Enabled.Healer
 		end,
 		SetValue = function(value)
-			db.Modules.EnemyKickTrackerModule.Enabled.Healer = value
+			db.Modules.EnemyKickTracker.Enabled.Healer = value
 			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
@@ -56,10 +56,10 @@ function M:Build(panel)
 		LabelText = L["Caster"],
 		Tooltip = L["Whether to enable or disable this module if you are a caster."],
 		GetValue = function()
-			return db.Modules.EnemyKickTrackerModule.Enabled.Caster
+			return db.Modules.EnemyKickTracker.Enabled.Caster
 		end,
 		SetValue = function(value)
-			db.Modules.EnemyKickTrackerModule.Enabled.Caster = value
+			db.Modules.EnemyKickTracker.Enabled.Caster = value
 			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
@@ -72,10 +72,10 @@ function M:Build(panel)
 		LabelText = L["Any"],
 		Tooltip = L["Whether to enable or disable this module regardless of what spec you are."],
 		GetValue = function()
-			return db.Modules.EnemyKickTrackerModule.Enabled.Always
+			return db.Modules.EnemyKickTracker.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Modules.EnemyKickTrackerModule.Enabled.Always = value
+			db.Modules.EnemyKickTracker.Enabled.Always = value
 			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
@@ -96,10 +96,10 @@ function M:Build(panel)
 		LabelText = L["Show border"],
 		Tooltip = L["Draw a border around the icons."],
 		GetValue = function()
-			return db.Modules.EnemyKickTrackerModule.Icons.Border
+			return db.Modules.EnemyKickTracker.Icons.Border
 		end,
 		SetValue = function(value)
-			db.Modules.EnemyKickTrackerModule.Icons.Border = value
+			db.Modules.EnemyKickTracker.Icons.Border = value
 			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
@@ -112,11 +112,11 @@ function M:Build(panel)
 		Tooltip = L["Change the colour of the icon's glow and border."],
 		HasOpacity = false,
 		GetValue = function()
-			local color = db.Modules.EnemyKickTrackerModule.Icons.Color
+			local color = db.Modules.EnemyKickTracker.Icons.Color
 			return color.R, color.G, color.B, color.A
 		end,
 		SetValue = function(r, g, b, a)
-			local color = db.Modules.EnemyKickTrackerModule.Icons.Color
+			local color = db.Modules.EnemyKickTracker.Icons.Color
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply(moduleName.EnemyKickTracker)
 		end,
@@ -132,9 +132,9 @@ function M:Build(panel)
 		Tooltip = L["Width and height of each icon."],
 		Min = 20,
 		Max = 120,
-		Default = dbDefaults.Modules.EnemyKickTrackerModule.Icons.Size,
+		Default = dbDefaults.Modules.EnemyKickTracker.Icons.Size,
 		Width = sliderWidth,
-		Target = db.Modules.EnemyKickTrackerModule.Icons,
+		Target = db.Modules.EnemyKickTracker.Icons,
 		Key = "Size",
 		SettingsKey = moduleName.EnemyKickTracker,
 	})
@@ -147,10 +147,10 @@ function M:Build(panel)
 		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
-		Default = dbDefaults.Modules.EnemyKickTrackerModule.IconSpacing,
-		Fallback = dbDefaults.Modules.EnemyKickTrackerModule.IconSpacing,
+		Default = dbDefaults.Modules.EnemyKickTracker.IconSpacing,
+		Fallback = dbDefaults.Modules.EnemyKickTracker.IconSpacing,
 		Width = sliderWidth,
-		Target = db.Modules.EnemyKickTrackerModule,
+		Target = db.Modules.EnemyKickTracker,
 		Key = "IconSpacing",
 		SettingsKey = moduleName.EnemyKickTracker,
 	})

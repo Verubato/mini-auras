@@ -43,7 +43,7 @@ addon.Config.PersonalAurasUI = ui
 
 ---@return PersonalAurasModuleOptions
 function ui.Options()
-	return mini:GetSavedVars().Modules.PersonalAurasModule
+	return mini:GetSavedVars().Modules.PersonalAuras
 end
 
 ---@return PersonalAuraGroup?

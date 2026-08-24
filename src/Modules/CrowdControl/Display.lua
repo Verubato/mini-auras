@@ -85,7 +85,7 @@ local function DeclareNextGroup(display)
 end
 
 local function GetOptions()
-	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
+	return instanceOptions:IsRaid() and db.Modules.CrowdControl.Raid or db.Modules.CrowdControl.Default
 end
 
 ---The one tint every CC icon takes, or nil while the game's dispel palette is colouring them.
@@ -127,10 +127,10 @@ local function GetEntryOptions(entry)
 	local isPet = units:IsPetOrMinion(entry.Unit)
 
 	if isPet then
-		if not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		if not moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 			return nil, isPet
 		end
-		return db.Modules.PetCCModule, isPet
+		return db.Modules.PetCrowdControl, isPet
 	end
 
 	if not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
@@ -368,7 +368,7 @@ local function EnsureWatcher(anchor, unit)
 
 	local isPet = units:IsPetOrMinion(unit)
 
-	if isPet and not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+	if isPet and not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 		local existing = watchers[anchor]
 		if existing then
 			if existing.Display then
@@ -382,7 +382,7 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	local memberOptions = GetOptions()
-	local petOptions = db.Modules.PetCCModule
+	local petOptions = db.Modules.PetCrowdControl
 	local options = isPet and petOptions or memberOptions
 
 	if not options then
@@ -530,7 +530,7 @@ local function GetEntryState(entry, options, moduleEnabled, petEnabled)
 		return moduleEnabled, options, false
 	end
 
-	local petOptions = db.Modules.PetCCModule
+	local petOptions = db.Modules.PetCrowdControl
 	-- In test mode always treat pet as enabled so icons show
 	local entryEnabled = testModeActive or petEnabled
 
@@ -576,7 +576,7 @@ function M:ReapplyUnitGates(unit)
 	end
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
 
 	for _, entry in pairs(watchers) do
 		if entry.Unit == unit then
@@ -625,7 +625,7 @@ function M:EnsureWatchers()
 	frames:ForEachAnchor(true, testModeActive, EnsureWatcher)
 
 	-- Pet frames never appear in the anchor walk - discover them directly.
-	if testModeActive or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+	if testModeActive or moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 		for i = 1, 6 do
 			local frame = _G["CompactPartyFramePet" .. i]
 			if frame and (frame:IsVisible() or testModeActive) then
@@ -643,7 +643,7 @@ function M:EnsureWatchers()
 
 		-- The player's own pet unit frame is opt-in via IncludePetFrame. Supports the Blizzard pet
 		-- frame and the standalone pet frames of other unit-frame addons (ElvUI, UUF, MSUF, etc.).
-		local petOptions = db.Modules.PetCCModule
+		local petOptions = db.Modules.PetCrowdControl
 		if petOptions and petOptions.IncludePetFrame then
 			for _, frame in ipairs(GetPetUnitFrames()) do
 				if frame:IsVisible() or testModeActive then
@@ -680,7 +680,7 @@ end
 function M:EnsureFrames()
 	local options = GetOptions()
 	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
 
 	for _, entry in pairs(watchers) do
 		local entryEnabled = GetEntryState(entry, options, ccEnabled, petEnabled)
@@ -696,7 +696,7 @@ end
 ---@param options CrowdControlInstanceOptions
 function M:ApplyOptions(options)
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
 
 	for anchor, entry in pairs(watchers) do
 		local entryEnabled, entryOptions, isPet = GetEntryState(entry, options, moduleEnabled, petEnabled)
@@ -717,8 +717,8 @@ function M:RefreshTestIcons()
 	end
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
-	local petOptions = db.Modules.PetCCModule
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
+	local petOptions = db.Modules.PetCrowdControl
 
 	for anchor, entry in pairs(watchers) do
 		local isPet = units:IsPetOrMinion(entry.Unit)
@@ -793,7 +793,7 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
 	local isPet = units:IsPetOrMinion(entry.Unit)
 
 	-- If this is a pet frame and pet CC is disabled, keep it hidden
@@ -836,7 +836,7 @@ function M:OnCufSetUnit(frame, unit)
 
 	local isPet = units:IsPetOrMinion(unit)
 	if isPet then
-		if not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		if not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 			return
 		end
 	else

@@ -65,7 +65,7 @@ addon.Modules.AllyKickTrackerModule = M
 
 ---@return AllyKickTrackerModuleOptions?
 local function GetOptions()
-	return db and db.Modules.AllyKickTrackerModule
+	return db and db.Modules.AllyKickTracker
 end
 
 ---@return boolean

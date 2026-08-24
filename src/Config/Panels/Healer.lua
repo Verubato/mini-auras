@@ -44,7 +44,7 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.HealerCCModule.Enabled,
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.HealerCrowdControl.Enabled,
 		nil, moduleName.HealerCrowdControl)
 
 	local settingsDivider = mini:Divider({
@@ -201,7 +201,7 @@ function M:Build(panel, options)
 		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 100,
-		Default = dbDefaults.Modules.HealerCCModule.Icons.Size,
+		Default = dbDefaults.Modules.HealerCrowdControl.Icons.Size,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
@@ -216,8 +216,8 @@ function M:Build(panel, options)
 		Tooltip = L["Most icons shown at once on each unit."],
 		Min = 1,
 		Max = 5,
-		Default = dbDefaults.Modules.HealerCCModule.Icons.MaxIcons,
-		Fallback = dbDefaults.Modules.HealerCCModule.Icons.MaxIcons,
+		Default = dbDefaults.Modules.HealerCrowdControl.Icons.MaxIcons,
+		Fallback = dbDefaults.Modules.HealerCrowdControl.Icons.MaxIcons,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
@@ -233,8 +233,8 @@ function M:Build(panel, options)
 		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
-		Default = dbDefaults.Modules.HealerCCModule.IconSpacing,
-		Fallback = dbDefaults.Modules.HealerCCModule.IconSpacing,
+		Default = dbDefaults.Modules.HealerCrowdControl.IconSpacing,
+		Fallback = dbDefaults.Modules.HealerCrowdControl.IconSpacing,
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",

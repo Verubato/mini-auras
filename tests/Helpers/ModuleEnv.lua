@@ -706,7 +706,7 @@ function M.build()
 	---Switches a module on or off for EVERY context. Setting `Always` alone is not enough - the
 	---per-context flags (World, Arena, ...) still enable a module on their own, so a test that
 	---only clears `Always` is testing an enabled module.
-	---@param moduleKey string db.Modules key, e.g. "CCModule".
+	---@param moduleKey string db.Modules key, e.g. "CrowdControl".
 	---@param enabled boolean
 	env.setModuleEnabled = function(moduleKey, enabled)
 		local settings = assert(env.db.Modules[moduleKey], "no module " .. moduleKey).Enabled

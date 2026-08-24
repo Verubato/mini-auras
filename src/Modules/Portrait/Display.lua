@@ -94,7 +94,7 @@ end
 local function BuildPortraitStyle()
 	-- No Icons options table here: the cooldown direction lives on the module options root.
 	local style = auraContainerDisplay:BuildStandardStyle(nil)
-	style.ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown or false
+	style.ReverseCooldown = db.Modules.Portrait.ReverseCooldown or false
 	style.ShowTooltips = false
 
 	return style
@@ -125,7 +125,7 @@ end
 ---the reference it is handed.
 ---@return table? candidateFilters nil while the list is empty.
 local function BuildCustomFilters()
-	local spells = db.Modules.PortraitModule.CustomSpells
+	local spells = db.Modules.Portrait.CustomSpells
 
 	-- next, not #: the ticked spells are a hash, whose length is always zero.
 	if not spells or next(spells) == nil then
@@ -465,7 +465,7 @@ function M:UpdateKickIcon(unit, container)
 		slotOptions.Texture = kickEntry.Texture
 		slotOptions.DurationObject = kickEntry.DurationObject
 		slotOptions.Alpha = true
-		slotOptions.ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown
+		slotOptions.ReverseCooldown = db.Modules.Portrait.ReverseCooldown
 		slotOptions.FontScale = db.FontScale
 		slotOptions.Color = kickEntry.Color
 	end
@@ -503,7 +503,7 @@ function M:RefreshTestIcons()
 			DurationObject = wowEx:CreateDuration(now, 15),
 			Alpha = true,
 			Glow = false,
-			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+			ReverseCooldown = db.Modules.Portrait.ReverseCooldown,
 			FontScale = db.FontScale,
 		})
 	end

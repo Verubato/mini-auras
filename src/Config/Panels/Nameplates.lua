@@ -68,21 +68,21 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 
 	enabledChk:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
 
-	local showCcChk = mini:Checkbox({
+	local showCrowdControlChk = mini:Checkbox({
 		Parent = container,
 		LabelText = L["Show CC"],
 		Tooltip = L["Show crowd control spells in this bar."],
 		GetValue = function()
-			return options.ShowCC
+			return options.ShowCrowdControl
 		end,
 		SetValue = function(value)
-			options.ShowCC = value
+			options.ShowCrowdControl = value
 			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
-	showCcChk:SetPoint("LEFT", parent, "LEFT", topColWidth, 0)
-	showCcChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	showCrowdControlChk:SetPoint("LEFT", parent, "LEFT", topColWidth, 0)
+	showCrowdControlChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	local showDefChk = mini:Checkbox({
 		Parent = container,
@@ -351,11 +351,11 @@ local function BuildSettingsTab(parent, options)
 		Tooltip = L["Change the colour of the glow on crowd control spells."],
 		HasOpacity = false,
 		GetValue = function()
-			local color = options.CCColor
+			local color = options.CrowdControlColor
 			return color.R, color.G, color.B, color.A
 		end,
 		SetValue = function(r, g, b, a)
-			local color = options.CCColor
+			local color = options.CrowdControlColor
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply(moduleName.Nameplates)
 		end,
@@ -424,7 +424,7 @@ function M:Build(parent, options)
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
 	local enabledEverywhere = helpers:BuildEnableRow(parent, enabledDivider,
-		db.Modules.NameplatesModule.Enabled, nil, moduleName.Nameplates)
+		db.Modules.Nameplates.Enabled, nil, moduleName.Nameplates)
 
 	local subPanelHeight = 285
 
@@ -448,7 +448,7 @@ function M:Build(parent, options)
 		},
 	})
 
-	local plateDefaults = dbDefaults.Modules.NameplatesModule
+	local plateDefaults = dbDefaults.Modules.Nameplates
 
 	BuildSettingsTab(tabCtrl:GetContent("settings"), options)
 	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1, plateDefaults.Enemy.Bar1)

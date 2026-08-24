@@ -243,7 +243,7 @@ end
 
 ---@return NameplatesModuleOptions?
 local function GetOptions()
-	-- Cached in Init off db.Modules.NameplatesModule.
+	-- Cached in Init off db.Modules.Nameplates.
 	return nmModule
 end
 
@@ -369,8 +369,8 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
-	nmModule = db.Modules.NameplatesModule
+	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> Nameplates
+	nmModule = db.Modules.Nameplates
 
 	display:Init()
 

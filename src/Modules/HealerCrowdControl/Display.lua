@@ -85,7 +85,7 @@ local function UpdateAnchorSize()
 		return
 	end
 
-	local options = db.Modules.HealerCCModule
+	local options = db.Modules.HealerCrowdControl
 	local iconSize = tonumber(options.Icons.Size) or 32
 	-- The anchor's own fontstring stands in for the live text: the label containers carry the
 	-- same string at the same size, and their (possibly secret) frames must never be read.
@@ -103,7 +103,7 @@ end
 ---each other avoids reading their (possibly secret) sizes; empty containers collapse so the row
 ---only occupies space for healers that are actually CC'd.
 local function LayoutHealerDisplays()
-	local options = db.Modules.HealerCCModule
+	local options = db.Modules.HealerCrowdControl
 	local spacing = options.IconSpacing or 2
 
 	wipe(healerOrderScratch)
@@ -175,7 +175,7 @@ end
 
 ---Applies size/style options to every healer display.
 local function RefreshHealerDisplays()
-	local options = db.Modules.HealerCCModule
+	local options = db.Modules.HealerCrowdControl
 	local iconSize = tonumber(options.Icons.Size) or 32
 	local fontSize = tonumber(options.Font.Size) or 32
 	local showText = options.ShowWarningText == true
@@ -268,7 +268,7 @@ local function ApplyUnitGates(item)
 
 	if item.Display then
 		item.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl,
-			visible and IconBudget(db.Modules.HealerCCModule) or 0, true)
+			visible and IconBudget(db.Modules.HealerCrowdControl) or 0, true)
 	end
 
 	if item.LabelDisplay then
@@ -282,7 +282,7 @@ local function RefreshHealers()
 	DiscardActiveEntries()
 
 	local healers = units:FindHealers()
-	local options = db.Modules.HealerCCModule
+	local options = db.Modules.HealerCrowdControl
 	local restricted = wowEx:IsAuraStylingRestricted()
 
 	-- Re-add healers from the new set
@@ -375,7 +375,7 @@ local function RefreshHealers()
 	sound:Refresh(activePool)
 	-- The anchor is the fixed positioning frame for the healer displays; with aura presence
 	-- unreadable, it stays shown while the module is active and the icons come and go inside.
-	if next(activePool) ~= nil and db.Modules.HealerCCModule.Icons.Enabled ~= false then
+	if next(activePool) ~= nil and db.Modules.HealerCrowdControl.Icons.Enabled ~= false then
 		healerAnchor:Show()
 	else
 		healerAnchor:Hide()
@@ -383,7 +383,7 @@ local function RefreshHealers()
 end
 
 local function CreateFrames()
-	local options = db.Modules.HealerCCModule
+	local options = db.Modules.HealerCrowdControl
 
 	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
 	healerAnchor:Hide()
@@ -392,7 +392,7 @@ local function CreateFrames()
 	healerAnchor:SetIgnoreParentScale(true)
 	-- A function rather than the table: a profile switch replaces the options wholesale.
 	moduleUtil:MakeMovable(healerAnchor, function()
-		return db.Modules.HealerCCModule
+		return db.Modules.HealerCrowdControl
 	end)
 
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
@@ -441,13 +441,13 @@ function M:ReapplyUnitGates(unit)
 	end
 end
 
----@return HealerCCModuleOptions?
+---@return HealerCrowdControlModuleOptions?
 function M:GetOptions()
 	if not db then
 		return nil
 	end
 
-	return db.Modules.HealerCCModule
+	return db.Modules.HealerCrowdControl
 end
 
 ---@param value boolean
@@ -503,7 +503,7 @@ function M:EnsureFrames()
 	RefreshHealers()
 end
 
----@param options HealerCCModuleOptions
+---@param options HealerCrowdControlModuleOptions
 function M:ApplyOptions(options)
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(
@@ -528,7 +528,7 @@ function M:ApplyOptions(options)
 end
 
 function M:RefreshTestFrame()
-	local options = db.Modules.HealerCCModule
+	local options = db.Modules.HealerCrowdControl
 
 	if not iconsContainer or not options then
 		return

@@ -120,7 +120,7 @@ end
 
 ---@param parent table
 ---@param options table
----@param part string The FrameAurasModule sub-table this belongs to, which is where the range is.
+---@param part string The FrameAuras sub-table this belongs to, which is where the range is.
 ---@param key string
 ---@param label string
 ---@param tooltip string
@@ -134,7 +134,7 @@ local function Slider(parent, options, part, key, label, tooltip)
 		Tooltip = tooltip,
 		Min = range.Min,
 		Max = range.Max,
-		Default = dbDefaults.Modules.FrameAurasModule[part][key],
+		Default = dbDefaults.Modules.FrameAuras[part][key],
 		Width = controlWidth,
 		Target = options,
 		Key = key,
@@ -609,7 +609,7 @@ local function BuildDebuffs(content, options)
 			Tooltip = L["Shows only the debuffs that run for less than a minute."],
 		},
 		{
-			Key = "ShowCC",
+			Key = "ShowCrowdControl",
 			Label = L["Crowd control"],
 			Tooltip = L["Lets crowd control into this row. Off by default, because Important Auras already draws it."],
 		},
@@ -755,7 +755,7 @@ function M:Build(panel)
 	switchColumnWidth = mini:ColumnWidth(SWITCH_COLUMNS, 0, 0)
 
 	local db = mini:GetSavedVars()
-	local options = db.Modules.FrameAurasModule
+	local options = db.Modules.FrameAuras
 
 	local lines = mini:TextBlock({
 		Parent = panel,

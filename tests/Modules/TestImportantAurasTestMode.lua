@@ -9,7 +9,7 @@ local moduleEnv = require("ModuleEnv")
 local env = moduleEnv.build()
 local db = env.db
 
-env.setModuleEnabled("ImportantAurasModule", true)
+env.setModuleEnabled("ImportantAuras", true)
 
 env.addUnitFrame("party1", "CUF_Test")
 
@@ -18,7 +18,7 @@ env.loadModule("src/Modules/ImportantAuras/Module.lua")
 
 local module = env.addon.Modules.ImportantAurasModule
 local testSpells = env.addon.Core.TestSpells
-local options = db.Modules.ImportantAurasModule.Default
+local options = db.Modules.ImportantAuras.Default
 
 module:Init()
 
@@ -47,9 +47,9 @@ local function Preview()
 	return drawn
 end
 
-fw.describe("ImportantAurasModule - the test mode preview", function()
+fw.describe("ImportantAuras - the test mode preview", function()
 	fw.before_each(function()
-		options.ShowCC = false
+		options.ShowCrowdControl = false
 		options.ShowKicks = false
 		options.ShowDefensives = true
 		options.ShowImportant = true
@@ -73,7 +73,7 @@ fw.describe("ImportantAurasModule - the test mode preview", function()
 	end)
 
 	fw.it("gives every enabled category a slot when they cannot all fit", function()
-		options.ShowCC = true
+		options.ShowCrowdControl = true
 
 		local icons = Preview()
 

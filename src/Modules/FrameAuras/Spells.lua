@@ -26,7 +26,7 @@ M.CustomGroupKey = CUSTOM_GROUP_KEY
 local function Options()
 	local db = mini:GetSavedVars()
 
-	return db and db.Modules and db.Modules.FrameAurasModule or nil
+	return db and db.Modules and db.Modules.FrameAuras or nil
 end
 
 ---The two override maps, created on first read. A profile written before the module existed has

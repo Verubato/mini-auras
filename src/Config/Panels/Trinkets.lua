@@ -23,10 +23,10 @@ function M:Build(panel)
 		LabelText = L["Enabled"],
 		Tooltip = L["Whether to enable or disable this module."],
 		GetValue = function()
-			return db.Modules.TrinketsModule.Enabled.Always
+			return db.Modules.Trinkets.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Modules.TrinketsModule.Enabled.Always = value
+			db.Modules.Trinkets.Enabled.Always = value
 			config:Apply(moduleName.Trinkets)
 		end,
 	})
@@ -38,10 +38,10 @@ function M:Build(panel)
 		LabelText = L["Exclude self"],
 		Tooltip = L["Exclude yourself from showing trinket icons."],
 		GetValue = function()
-			return db.Modules.TrinketsModule.ExcludePlayer
+			return db.Modules.Trinkets.ExcludePlayer
 		end,
 		SetValue = function(value)
-			db.Modules.TrinketsModule.ExcludePlayer = value
+			db.Modules.Trinkets.ExcludePlayer = value
 			config:Apply(moduleName.Trinkets)
 		end,
 	})
@@ -55,11 +55,11 @@ function M:Build(panel)
 		Tooltip = L["Change the colour of the icon's glow and border."],
 		HasOpacity = false,
 		GetValue = function()
-			local color = db.Modules.TrinketsModule.Icons.Color
+			local color = db.Modules.Trinkets.Icons.Color
 			return color.R, color.G, color.B, color.A
 		end,
 		SetValue = function(r, g, b, a)
-			local color = db.Modules.TrinketsModule.Icons.Color
+			local color = db.Modules.Trinkets.Icons.Color
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply(moduleName.Trinkets)
 		end,
@@ -78,10 +78,10 @@ function M:Build(panel)
 		LabelText = L["Show border"],
 		Tooltip = L["Draw a border around the icons."],
 		GetValue = function()
-			return db.Modules.TrinketsModule.Icons.Border
+			return db.Modules.Trinkets.Icons.Border
 		end,
 		SetValue = function(value)
-			db.Modules.TrinketsModule.Icons.Border = value
+			db.Modules.Trinkets.Icons.Border = value
 			config:Apply(moduleName.Trinkets)
 		end,
 	})
@@ -101,9 +101,9 @@ function M:Build(panel)
 		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 100,
-		Default = dbDefaults.Modules.TrinketsModule.Icons.Size,
+		Default = dbDefaults.Modules.Trinkets.Icons.Size,
 		Width = columns * columnWidth - horizontalSpacing,
-		Target = db.Modules.TrinketsModule.Icons,
+		Target = db.Modules.Trinkets.Icons,
 		Key = "Size",
 		SettingsKey = moduleName.Trinkets,
 	})
@@ -112,7 +112,7 @@ function M:Build(panel)
 
 	local offsetXSlider = helpers:BuildOffsetSliders({
 		Parent = panel,
-		Offset = db.Modules.TrinketsModule.Offset,
+		Offset = db.Modules.Trinkets.Offset,
 		Width = (columns / 2) * columnWidth - horizontalSpacing,
 		Range = 200,
 		SettingsKey = moduleName.Trinkets,
