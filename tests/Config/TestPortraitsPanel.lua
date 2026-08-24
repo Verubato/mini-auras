@@ -51,7 +51,7 @@ end
 ---@return table? button
 local function FindSplashButton()
 	for _, frame in ipairs(WowMock.Frames) do
-		if frame.Click and frame.GetText and frame:GetText() == "Open Settings" then
+		if frame:GetText() == "Open Settings" then
 			return frame
 		end
 	end
@@ -118,6 +118,21 @@ fw.describe("Config - when the options window is built", function()
 
 		assert(addon.Config.Window == nil, "the window was built in combat")
 		assert(not addon.Framework:HasPendingCombatWork(), "the settings panel hide was queued anyway")
+	end)
+
+	fw.it("still closes the settings panel when the splash button opens a window built earlier", function()
+		local addon = Load()
+		local button = FindSplashButton()
+
+		fw.not_nil(button, "the splash has a button through to the options")
+		addon.Config:EnsureWindow():Hide()
+
+		InCombat(function()
+			button:Click()
+		end)
+
+		assert(addon.Config.Window:IsShown(), "an already built window stayed shut in combat")
+		assert(addon.Framework:HasPendingCombatWork(), "the settings panel was left sitting behind it")
 	end)
 end)
 

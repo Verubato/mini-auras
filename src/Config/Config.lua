@@ -31,7 +31,7 @@ end
 ---Opens the options window, or says why it cannot. Building the window asks the client for
 ---keyboard propagation, which combat refuses, so the first open has to wait for the fight to end.
 ---@param toggle boolean? True to close the window again when it is already open.
----@return boolean opened False when combat turned the ask away.
+---@return boolean handled False when combat turned the ask away.
 local function OpenWindow(toggle)
 	if not M.Window and InCombatLockdown() then
 		mini:NotifyWithPrefix(L["The options window can't open during combat."])
@@ -102,8 +102,8 @@ local function BuildRedirectPanel(panel, version)
 	button:SetNormalFontObject(GameFontNormalMed3)
 	button:SetHighlightFontObject(GameFontHighlightMedium)
 	button:SetScript("OnClick", function()
-		-- Nothing to step aside for when combat turned the ask away, and scheduling the hide
-		-- anyway would empty the screen the moment the fight ended.
+		-- Scheduling the hide for a window that never opened would empty the screen the moment
+		-- the fight ended.
 		if not OpenWindow() then
 			return
 		end
