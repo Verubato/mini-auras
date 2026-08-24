@@ -2518,7 +2518,7 @@ end
 ---then shows or hides the reveal per restyle.
 ---@field Style AuraDisplayStyle? Style to build the buttons with. Pass it whenever the display
 ---may be created while auras are secret - a later SetStyle cannot reach the buttons there.
----@field MasqueGroup string? Masque sub-group name (e.g. "CC", "Alerts"), matching the legacy
+---@field MasqueGroup string? Masque sub-group name (e.g. "Crowd Control", "Alerts"), matching the legacy
 ---container's so one skin choice covers both paths. Omit for displays that should not be skinned.
 ---@field PerLine number? Wrap the row onto a new line every this many icons. Omit for a display
 ---that draws one row, which is every one of them but the frame aura rows.

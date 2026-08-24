@@ -51,7 +51,7 @@ local DEFAULT_CC_COLOR = { R = 0.64, G = 0.21, B = 0.93 }
 -- display's style reads [1..3], the IconSlotContainer test icons read r/g/b.
 local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
 -- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
-local MASQUE_GROUP = "CC"
+local MASQUE_GROUP = "Crowd Control"
 -- How many frames' worth of containers to have ready before a group turns up. A party is five,
 -- which is the size a solo player is most likely to become; past that the walker keeps up with
 -- the frames appearing, because a raid fills in over several seconds anyway.

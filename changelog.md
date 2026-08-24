@@ -5,6 +5,7 @@
 - Added a "Show when" option to a personal aura's trigger, so a group can be limited to in combat or out of combat.
 - Added a Frame Auras module, which draws the auras on Blizzard's own party and raid frames in place of the ones the game puts there. Three parts, each with its own switch: the group buff row (with a tracked spell list and a pandemic glow), the group debuff row, and a mark for a member missing your class buff. All three ship switched off.
 - Renamed "Group Auras" to "Important Auras", so the new module's name is not read as the same thing.
+- Renamed the Masque addon group from "MiniCC" to "MiniAuras", and its sub-groups to the current module names: "CC" is now "Crowd Control", "Healer CC" is "Healer Crowd Control", "Friendly Indicators" is "Important Auras", "Custom Auras" is "Personal Auras", and "Kick Timer" is "Enemy Kicks". Masque remembers a skin against the group name, so pick your skins again on the renamed groups.
 
 ## 5.22.0
 

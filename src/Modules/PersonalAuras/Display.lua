@@ -34,8 +34,7 @@ local HELPFUL_KEY = "helpful"
 local HARMFUL_KEY = "harmful"
 -- The MiniCCModule tag other addons read off our frames, and the Masque sub-group name for both
 -- the live icons and the preview, so a skin shows in the editor exactly as it will in play.
--- The module's old name, kept because renaming it would orphan every skin already assigned.
-local MODULE_TAG = "Custom Auras"
+local MODULE_TAG = "Personal Auras"
 -- Ten covers a normal plate count without building forty for a group that may never fire.
 local PLATE_PREALLOCATE = 10
 -- Background walker declaring the groups of entries as they are handed out. Urgent: an entry

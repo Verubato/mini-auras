@@ -12,6 +12,9 @@ addon.Modules.EnemyKickTracker = addon.Modules.EnemyKickTracker or {}
 local M = {}
 addon.Modules.EnemyKickTracker.Display = M
 
+-- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
+local MASQUE_GROUP = "Enemy Kicks"
+
 ---@type Db
 local db
 local testModeActive = false
@@ -104,9 +107,7 @@ local function CreateFrames()
 	local size = tonumber(iconOptions.Size) or 50
 	local spacing = options.IconSpacing or 2
 
-	-- "Kick Timer" is the module's old name, kept because it is the Masque group name (and the
-	-- public MiniCCModule frame tag); renaming it would orphan skins users already assigned.
-	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing, "Kick Timer", nil, "Kick Timer")
+	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
 	-- Dragging is armed here but only enabled in test mode (SetAnchorInteractive).
 	container.Frame:SetMovable(false)
 	container.Frame:EnableMouse(false)

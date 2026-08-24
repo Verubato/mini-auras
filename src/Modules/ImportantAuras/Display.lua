@@ -93,9 +93,8 @@ local defensiveColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 local helpfulColors = {}
 local HELPFUL_GROUP_KEYS = { DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }
 
--- The module's old name, kept because it is the Masque group name (and the public MiniCCModule
--- frame tag). Renaming it would orphan every skin users have already assigned to this group.
-local MASQUE_GROUP = "Friendly Indicators"
+-- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
+local MASQUE_GROUP = "Important Auras"
 -- How many frames' worth of containers to have ready before a group turns up. A party is five,
 -- which is the size a solo player is most likely to become; past that the walker keeps up with
 -- the frames appearing, because a raid fills in over several seconds anyway.

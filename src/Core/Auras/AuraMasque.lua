@@ -84,7 +84,7 @@ function M:ResolveGroup(instance, groupName)
 
 	-- Same addon and sub-group names the legacy containers use, so a skin picked on one path is
 	-- already applied on the other.
-	return masque:Group("MiniCC", groupName)
+	return masque:Group("MiniAuras", groupName)
 end
 
 ---Hands one button to Masque. Called from initializeFrame, after the button has been sized and

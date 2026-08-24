@@ -1103,8 +1103,16 @@ skinning).
 
 ### Masque
 
-Icons register under the Masque addon group **MiniCC**, in sub-groups named CC, Healer CC,
-Alerts, Nameplates, Friendly Indicators, Custom Auras, Trinkets and Kick Timer.
+Icons register under the Masque addon group **MiniAuras**, in sub-groups named Crowd Control,
+Healer Crowd Control, Alerts, Nameplates, Important Auras, Frame Auras, Personal Auras,
+Trinkets, and Enemy Kicks.
+
+The addon group used to be MiniCC, and several sub-groups carried older module names. Masque
+stores a skin choice against the group name, so a skin picked before the rename stays on the old
+group and the renamed one falls back to the default. Pick the skin again on the new group.
+
+Each sub-group name is also the `MiniCCModule` tag MiniAuras writes on the container frames,
+which other addons read to find them, so those values changed with the group names.
 
 A skin is applied when an icon is created, so **reload after changing a skin** for it
 to reach icons that already exist. Some displays stay unskinned by design: personal aura groups

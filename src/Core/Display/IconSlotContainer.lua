@@ -604,7 +604,7 @@ end
 ---@param count number of slots to create (default: 3)
 ---@param size number of each icon slot (default: 20)
 ---@param spacing number between slots (default: 2)
----@param groupName string? Masque sub-group name (e.g. "CC", "Trinkets"). Omit to skip Masque.
+---@param groupName string? Masque sub-group name (e.g. "Crowd Control", "Trinkets"). Omit to skip Masque.
 ---@param noBorder boolean? When true, skips creating the border texture on each layer.
 ---@param moduleName string? Overrides the MiniCCModule label set on Frame. Defaults to groupName.
 ---@return IconSlotContainer
@@ -629,7 +629,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 	instance.GrowUp = false
 	instance.NoBorder = noBorder or false
 	instance.Frame.MiniCCModule = moduleName or nil
-	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
+	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniAuras", groupName) or nil
 
 	instance:SetCount(count)
 

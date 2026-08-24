@@ -33,6 +33,8 @@ addon.Modules.HealerCrowdControl.Display = M
 -- ApplyUnitGates zeroes their budgets, because the engine cannot filter their auras at all
 -- (see Core/AuraFilters).
 
+-- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
+local MASQUE_GROUP = "Healer Crowd Control"
 -- Ceiling on the per-healer icon budget, and the one label slot: one CC aura is enough to warrant
 -- the text. Containers are built at the ceiling, so the slider only re-budgets what is there.
 -- One look per module, so one key each for the icons and for the whole parked-entry test.
@@ -341,12 +343,12 @@ local function RefreshHealers()
 					{ auraFilters:GroupSpec("CrowdControl", IconBudget(options)) },
 					tonumber(options.Icons.Size) or 32,
 					options.IconSpacing or 2,
-					"Healer CC",
+					MASQUE_GROUP,
 					-- Seeded at creation, not left to the restyle below. A healer display is
 					-- built the moment a healer turns up, which in an arena is mid-match while
 					-- auras are secret and every button setter is refused. Its buttons would
 					-- then keep the unstyled look, no glow and no border, for the whole game.
-					{ Style = BuildStyle(options), MasqueGroup = "Healer CC" }
+					{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP }
 				),
 			}
 			-- The warning text: a label-only container on the same CC filter, so the engine
@@ -358,7 +360,7 @@ local function RefreshHealers()
 				{ auraFilters:GroupSpec("CrowdControl", LABEL_MAX_ICONS) },
 				tonumber(options.Font.Size) or 32,
 				0,
-				"Healer CC",
+				MASQUE_GROUP,
 				{ Label = L["Healer in CC!"], Style = BuildLabelStyle(options) }
 			)
 			-- Every healer's label lands on this same point on purpose - see the header comment.
@@ -412,7 +414,7 @@ local function CreateFrames()
 	UpdateAnchorSize()
 
 	-- Icons sit at the bottom of the anchor, text sits at the top.
-	iconsContainer = iconSlotContainer:New(healerAnchor, MAX_CC_ICONS, tonumber(options.Icons.Size) or 32, options.IconSpacing or 2, "Healer CC", nil, "Healer CC")
+	iconsContainer = iconSlotContainer:New(healerAnchor, MAX_CC_ICONS, tonumber(options.Icons.Size) or 32, options.IconSpacing or 2, MASQUE_GROUP, nil, MASQUE_GROUP)
 	iconsContainer.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 	iconsContainer.Frame:Show()
 end
