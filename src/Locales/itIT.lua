@@ -131,6 +131,7 @@ L:RegisterLocale("itIT", function() return {
 	["Please paste a profile string to import."] = "Incolla una stringa del profilo da importare.",
 	["Profile imported successfully."] = "Profilo importato con successo.",
 	["Profile string is corrupted."] = "La stringa del profilo è corrotta.",
+	["This profile was exported by a newer version of the addon."] = "Questo profilo è stato esportato da una versione più recente dell'addon.",
 
 	-- Profiles tab
 	["Active Profile"] = "Profilo attivo",

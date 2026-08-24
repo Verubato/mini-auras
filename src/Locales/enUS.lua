@@ -132,6 +132,7 @@ L:SetDefaultStrings({
 	["Please paste a profile string to import."] = "Please paste a profile string to import.",
 	["Profile imported successfully."] = "Profile imported successfully.",
 	["Profile string is corrupted."] = "Profile string is corrupted.",
+	["This profile was exported by a newer version of the addon."] = "This profile was exported by a newer version of the addon.",
 
 	-- Profiles tab
 	["Active Profile"] = "Active Profile",

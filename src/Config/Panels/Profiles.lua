@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local profileManager = addon.Core.ProfileManager
+local migrator = addon.Config.Migrator
 
 ---@class ProfilesConfig
 local M = {}
@@ -14,6 +15,7 @@ local SPEC_COL_W = 160
 
 -- The payload is deflated CBOR, then Base64. Early 5.0 alphas handed out the same payload as
 -- "!MiniAuras:2!" (a number carried over from MiniCC), so a format change bumps to :3, not :2.
+-- The Version stamp is not a format change. A build that predates it drops the extra key.
 local PROFILE_PREFIX    = "!MiniAuras:1!"
 -- Strings handed out under the old addon name. Same payload but not compressed;
 -- "!MiniCC!" is older still and carries the whole saved-vars table.
@@ -26,7 +28,12 @@ local function ExportCurrentProfile()
 	local db = mini:GetSavedVars()
 	local profileData = db.Profiles and db.Profiles[db.ActiveProfile]
 	if not profileData then return "" end
-	local serialized = C_EncodingUtil.SerializeCBOR(profileData)
+
+	-- Stamped so an import into a later build knows which migrations the payload still needs.
+	local payload = mini:CopyValueOrTable(profileData)
+	payload.Version = db.Version
+
+	local serialized = C_EncodingUtil.SerializeCBOR(payload)
 	local compressed = C_EncodingUtil.CompressString(serialized,
 		Enum.CompressionMethod.Deflate, Enum.CompressionLevel.OptimizeForSize)
 	return PROFILE_PREFIX .. C_EncodingUtil.EncodeBase64(compressed)
@@ -69,15 +76,28 @@ local function ImportAsProfile(str, name)
 		return false, L["Profile string is corrupted."]
 	end
 
-	-- Legacy strings contain the full saved-vars table; extract the profile payload.
-	local profileData
-	if isLegacy then
-		profileData = {}
-		for _, k in ipairs(addon.Core.ProfileManager.PayloadKeys) do
-			if data[k] ~= nil then profileData[k] = data[k] end
+	-- Without this a setting the addon has since moved lands under a key nothing reads, and the
+	-- next login prunes it away for good. A legacy string is the whole saved-vars table, so it
+	-- goes through whole.
+	local profileData = data
+	local migrated, isNewer = migrator:MigrateProfilePayload(profileData, data.Version)
+
+	if isNewer then
+		return false, L["This profile was exported by a newer version of the addon."]
+	end
+
+	if not migrated then
+		if isLegacy then
+			profileData = {}
+			for _, k in ipairs(addon.Core.ProfileManager.PayloadKeys) do
+				if data[k] ~= nil then profileData[k] = data[k] end
+			end
 		end
-	else
-		profileData = data
+
+		profileData.Version = nil
+		-- A string too old to carry a version gets the module renames alone, which is the part
+		-- that loses a whole page of settings at a time.
+		migrator:RenameLegacyModuleKeys(profileData)
 	end
 
 	local db = mini:GetSavedVars()

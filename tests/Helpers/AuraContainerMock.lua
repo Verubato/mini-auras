@@ -303,6 +303,12 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:GetHeight()
 		return frame._height
 	end
+	function frame:SetScale(scale)
+		frame._scale = scale
+	end
+	function frame:GetScale()
+		return frame._scale or 1
+	end
 	-- Rect queries return nil until a test supplies one with SetMockRect (frames are never
 	-- laid out here); anchor-normalization code treats nil as "rect unavailable" and skips.
 	function frame:SetMockRect(left, bottom, width, height)

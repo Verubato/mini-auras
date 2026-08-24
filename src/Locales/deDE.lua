@@ -131,6 +131,7 @@ L:RegisterLocale("deDE", function() return {
 	["Please paste a profile string to import."] = "Bitte eine Profilzeichenkette zum Importieren einfügen.",
 	["Profile imported successfully."] = "Profil erfolgreich importiert.",
 	["Profile string is corrupted."] = "Profilzeichenkette ist beschädigt.",
+	["This profile was exported by a newer version of the addon."] = "Dieses Profil wurde mit einer neueren Version des Addons exportiert.",
 
 	-- Profiles tab
 	["Active Profile"] = "Aktives Profil",

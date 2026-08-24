@@ -1209,6 +1209,162 @@ fw.describe("Migrator - adopting the MiniCC saved variable", function()
 	end)
 end)
 
+fw.describe("Migrator - imported profile payloads", function()
+	fw.it("collapses a whole rename chain in one pass", function()
+		local kept = { Default = { ShowCC = true } }
+		local payload = { Modules = { FriendlyIndicatorModule = kept } }
+
+		migrator:RenameLegacyModuleKeys(payload)
+		assert(payload.Modules.ImportantAurasModule == kept, "it lands on the name in use today")
+		assert(payload.Modules.FriendlyIndicatorModule == nil, "and none of the steps leave a key behind")
+		assert(payload.Modules.AurasModule == nil and payload.Modules.RaidFrameAurasModule == nil)
+	end)
+
+	fw.it("renames the personal aura module key", function()
+		local kept = { Groups = { { Id = "g1", Name = "Mine" } } }
+		local payload = { Modules = { CustomAurasModule = kept } }
+
+		migrator:RenameLegacyModuleKeys(payload)
+		assert(payload.Modules.PersonalAurasModule == kept, "the authored groups survive the import")
+		assert(payload.Modules.CustomAurasModule == nil, "and the old key is gone")
+	end)
+
+	fw.it("keeps the settings already under the new key", function()
+		local wanted = { Groups = { { Id = "g1", Name = "Mine" } } }
+		local payload = {
+			Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Stale" } } }, PersonalAurasModule = wanted },
+		}
+
+		migrator:RenameLegacyModuleKeys(payload)
+		assert(payload.Modules.PersonalAurasModule == wanted, "the newer table wins")
+		assert(payload.Modules.CustomAurasModule == nil, "and the stale one is dropped")
+	end)
+
+	fw.it("replays the migrations a stamped payload still needs", function()
+		-- Version 48 predates the nameplate bar rework, which v49 maps onto Bar1 and Bar2. A
+		-- key-rename repair cannot reach inside a module like this.
+		local payload = {
+			Modules = {
+				NameplatesModule = {
+					Enemy = { CC = { Enabled = true, Icons = { Size = 33 } } },
+				},
+			},
+		}
+
+		assert(migrator:MigrateProfilePayload(payload, 48) == true)
+		local bar1 = payload.Modules.NameplatesModule.Enemy.Bar1
+		assert(bar1 and bar1.Icons.Size == 33, "the old section lands on the bar that replaced it")
+		assert(bar1.ShowCC == true, "with the toggle v49 gives it")
+		assert(payload.Modules.NameplatesModule.Enemy.CC == nil, "and the old key is gone")
+	end)
+
+	fw.it("carries a stamped payload's module renames across as well", function()
+		local payload = { Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Mine" } } } } }
+
+		assert(migrator:MigrateProfilePayload(payload, 72) == true)
+		local groups = payload.Modules.PersonalAurasModule.Groups
+		assert(groups and groups[1].Name == "Mine", "the authored groups reach the new key")
+	end)
+
+	fw.it("returns only payload keys, so nothing a step wrote outside one survives", function()
+		-- v53 appends to WhatsNew and clears NotifiedChanges, neither of which a profile carries.
+		local payload = { GlowType = "Slot Glow", Modules = {} }
+
+		assert(migrator:MigrateProfilePayload(payload, 52) == true)
+		assert(payload.Version == nil and payload.WhatsNew == nil and payload.NotifiedChanges == nil,
+			"the stamp and the announcements are dropped")
+		assert(payload.GlowType == "Slot Glow", "and the settings a profile does carry are kept")
+	end)
+
+	fw.it("reports a payload stamped ahead of the version we ship", function()
+		local payload = { Modules = { CustomAurasModule = { Groups = {} } } }
+		local applied, isNewer = migrator:MigrateProfilePayload(payload, 999)
+
+		assert(applied == false and isNewer == true, "the caller can tell the user to update")
+		assert(payload.Modules.CustomAurasModule ~= nil, "and it is left untouched")
+	end)
+
+	fw.it("refuses a version older than import and export existed", function()
+		-- Version 12 rebinds to the live saved variables and cleans them against its own defaults,
+		-- so entering the chain below 24 would wreck the db of whoever pasted the string.
+		_G.MiniAurasDB = { Version = LATEST_VERSION, Modules = { CCModule = {} } }
+		local payload = { Modules = {} }
+		local applied, isNewer = migrator:MigrateProfilePayload(payload, 11)
+
+		assert(applied == false and isNewer == false, "refused, and not as a future version")
+		assert(_G.MiniAurasDB.Modules.CCModule ~= nil, "the live db is untouched")
+	end)
+
+	fw.it("applies the deferred scale migration instead of dropping it", function()
+		-- The live db defers this because the UI scale is not readable at login. An import is not
+		-- at login, and the flag is not a payload key, so it would be filtered away unapplied.
+		UIParent:SetScale(1.25)
+		local payload = { Modules = { CCModule = { Default = { Icons = { Size = 20 } } } } }
+		local applied = migrator:MigrateProfilePayload(payload, 25)
+		UIParent:SetScale(1)
+
+		assert(applied == true)
+		assert(payload.PendingScaleMigration26 == nil, "the flag does not reach the profile")
+		assert(payload.Modules.CCModule.Default.Icons.Size == 25, "and the size it guards was scaled")
+	end)
+
+	fw.it("filters a whole saved-vars table down to a payload", function()
+		-- A legacy string carries the whole table, and the steps read top-level keys off it that a
+		-- profile does not carry.
+		local vars = {
+			IconSpacing = 6,
+			SpecCache = { anything = true },
+			GlowType = "Slot Glow",
+			Modules = { AlertsModule = {} },
+		}
+
+		assert(migrator:MigrateProfilePayload(vars, 53) == true)
+		assert(vars.Modules.AlertsModule.IconSpacing == 6, "v54 seeds the module padding from it")
+		assert(vars.IconSpacing == nil and vars.SpecCache == nil, "and nothing outside a payload survives")
+	end)
+
+	fw.it("filters a payload already on the current version", function()
+		local payload = { Modules = { PersonalAurasModule = { Groups = { { Id = "g1" } } } } }
+
+		assert(migrator:MigrateProfilePayload(payload, LATEST_VERSION) == true)
+		assert(payload.Modules.PersonalAurasModule.Groups[1].Id == "g1", "nothing is disturbed")
+	end)
+
+	fw.it("replays cleanly from every version a string can be stamped with", function()
+		-- A step that throws is swallowed into the fallback, so a payload silently keeps an old
+		-- shape. Walking every start version is what catches a step reaching outside a profile.
+		for version = 24, LATEST_VERSION do
+			local payload = { Modules = { CCModule = { Default = { Icons = { Size = 20 } } } } }
+			assert(migrator:MigrateProfilePayload(payload, version) == true,
+				"version " .. version .. " did not reach " .. LATEST_VERSION)
+		end
+	end)
+
+	fw.it("refuses a payload with no version rather than guessing one", function()
+		local payload = { Modules = {} }
+
+		assert(migrator:MigrateProfilePayload(payload, nil) == false)
+	end)
+
+	fw.it("leaves a payload that carries no modules alone", function()
+		local payload = { GlowType = "Slot Glow" }
+
+		migrator:RenameLegacyModuleKeys(payload)
+		assert(payload.Modules == nil, "nothing is invented for it")
+	end)
+
+	fw.it("survives the renamed keys reaching PruneRemovedSettingsFromProfiles", function()
+		_G.MiniAurasDB = { Version = LATEST_VERSION, Profiles = {} }
+		local payload = { Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Mine" } } } } }
+		migrator:RenameLegacyModuleKeys(payload)
+		_G.MiniAurasDB.Profiles.Imported = payload
+
+		local db = migrator:GetAndUpgradeDb()
+		local groups = db.Profiles.Imported.Modules.PersonalAurasModule.Groups
+		assert(groups and groups[1].Name == "Mine", "the login prune keeps what the rename moved")
+	end)
+end)
+
 fw.describe("Migrator - defaults helpers", function()
 	fw.it("GetModuleDefaults returns isolated deep copies", function()
 		local first = migrator:GetModuleDefaults()

@@ -131,6 +131,7 @@ L:RegisterLocale("koKR", function() return {
 	["Please paste a profile string to import."] = "가져올 프로필 문자열을 붙여넣으세요.",
 	["Profile imported successfully."] = "프로필을 성공적으로 가져왔습니다.",
 	["Profile string is corrupted."] = "프로필 문자열이 손상되었습니다.",
+	["This profile was exported by a newer version of the addon."] = "이 프로필은 더 새로운 버전의 애드온에서 내보냈습니다.",
 
 	-- Profiles tab
 	["Active Profile"] = "현재 프로필",

@@ -131,6 +131,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Please paste a profile string to import."] = "Пожалуйста, вставьте строку профиля для импорта.",
 	["Profile imported successfully."] = "Профиль успешно импортирован.",
 	["Profile string is corrupted."] = "Строка профиля повреждена.",
+	["This profile was exported by a newer version of the addon."] = "Этот профиль был экспортирован более новой версией аддона.",
 
 	-- Profiles tab
 	["Active Profile"] = "Активный профиль",

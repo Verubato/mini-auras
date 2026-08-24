@@ -131,6 +131,7 @@ L:RegisterLocale("frFR", function() return {
 	["Please paste a profile string to import."] = "Collez une chaîne de profil à importer.",
 	["Profile imported successfully."] = "Profil importé avec succès.",
 	["Profile string is corrupted."] = "La chaîne de profil est corrompue.",
+	["This profile was exported by a newer version of the addon."] = "Ce profil a été exporté par une version plus récente de l'addon.",
 
 	-- Profiles tab
 	["Active Profile"] = "Profil actif",

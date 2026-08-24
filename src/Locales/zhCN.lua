@@ -131,6 +131,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Please paste a profile string to import."] = "请粘贴要导入的配置字符串。",
 	["Profile imported successfully."] = "配置导入成功。",
 	["Profile string is corrupted."] = "配置字符串已损坏。",
+	["This profile was exported by a newer version of the addon."] = "该配置由更新版本的插件导出。",
 
 	-- Profiles tab
 	["Active Profile"] = "当前配置",

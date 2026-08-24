@@ -14,6 +14,20 @@ addon.Config.Migrator = M
 local OPAQUE_CACHE_KEYS = { "SpecCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
 -- The announcement categories whose TTS opt-out lists need the same protection.
 local TTS_MUTE_CATEGORIES = { "Important", "Defensive", "EnemyDebuff" }
+-- Import and export shipped in version 24. Nothing genuine is stamped below it, and the steps
+-- before it clean and rebind against the live saved variables rather than the table handed in.
+local OLDEST_IMPORTABLE_VERSION = 24
+-- Every module key a migration has renamed, oldest first so a chain collapses in one pass.
+local RENAMED_MODULE_KEYS = {
+	{ "CcModule", "CCModule" },
+	{ "HealerCcModule", "HealerCCModule" },
+	{ "PrecogGuesserModule", "PrecogModule" },
+	{ "KickTimerModule", "EnemyKickTrackerModule" },
+	{ "FriendlyIndicatorModule", "AurasModule" },
+	{ "AurasModule", "RaidFrameAurasModule" },
+	{ "RaidFrameAurasModule", "ImportantAurasModule" },
+	{ "CustomAurasModule", "PersonalAurasModule" },
+}
 
 ---The alert module's TTS options, or nil on a db that predates them.
 local function TtsOptions(vars)
@@ -214,6 +228,92 @@ function M:GetAndUpgradeDb()
 	end
 
 	return vars
+end
+
+---Runs the upgrade chain over an imported profile payload, from the version its export stamped
+---to the one the addon ships. A whole saved-vars table is accepted too, and comes back cut down
+---to the keys a profile carries.
+---@param payload table The decoded payload, rewritten in place on success.
+---@param fromVersion number? The db version the exporting build was on.
+---@return boolean applied False leaves the payload untouched.
+---@return boolean isNewer Whether it was refused for being stamped ahead of what we ship.
+function M:MigrateProfilePayload(payload, fromVersion)
+	if type(payload) ~= "table" or type(fromVersion) ~= "number" then
+		return false, false
+	end
+
+	if fromVersion > dbDefaults.Version then
+		return false, true
+	end
+
+	if fromVersion < OLDEST_IMPORTABLE_VERSION then
+		return false, false
+	end
+
+	-- Migrated on a copy so a step that throws half way cannot leave the payload part upgraded.
+	local working = mini:CopyValueOrTable(payload)
+	working.Version = fromVersion
+	-- Steps up to 39 append to this without checking it is there, and a profile does not carry it.
+	working.WhatsNew = working.WhatsNew or {}
+
+	while working.Version < dbDefaults.Version do
+		local from = working.Version
+		local upgradeFn = M["UpgradeToVersion" .. (from + 1)]
+
+		if not upgradeFn then
+			return false, false
+		end
+
+		local ok, result = pcall(upgradeFn, self, working)
+
+		-- A step reporting success without moving the version has not done what it says, and the
+		-- loop would call it forever.
+		if not ok or not result or working.Version ~= from + 1 then
+			return false, false
+		end
+	end
+
+	-- Deferred on the live db because the UI scale is not readable at login. An import happens
+	-- long after that, so it can be settled here.
+	M:RunDeferredMigrations(working)
+
+	for key in pairs(payload) do
+		payload[key] = nil
+	end
+
+	-- Steps write outside a profile's slice, so only the payload keys come back.
+	for _, key in ipairs(addon.Core.ProfileManager.PayloadKeys) do
+		if working[key] ~= nil then
+			payload[key] = working[key]
+		end
+	end
+
+	return true, false
+end
+
+---Moves a profile payload's module settings onto the names the addon uses now. For a string
+---exported before the version stamp, where the migrations cannot be replayed.
+---@param payload table? One profile's snapshot of the saved variables.
+function M:RenameLegacyModuleKeys(payload)
+	local modules = payload and payload.Modules
+
+	if type(modules) ~= "table" then
+		return
+	end
+
+	for _, rename in ipairs(RENAMED_MODULE_KEYS) do
+		local from, to = rename[1], rename[2]
+
+		if modules[from] ~= nil then
+			-- A payload carrying both names has already been through this, so the old key beside
+			-- the new one is the stale half.
+			if modules[to] == nil then
+				modules[to] = modules[from]
+			end
+
+			modules[from] = nil
+		end
+	end
 end
 
 ---Fills any missing keys in the live db from dbDefaults without overwriting existing values.
