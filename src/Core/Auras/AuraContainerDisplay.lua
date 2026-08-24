@@ -1622,15 +1622,19 @@ local function LineSize(instance)
 	end
 
 	local size = instance.Size
-	local widest = size
+	local premium = 0
 
 	for _, group in ipairs(instance.Groups) do
-		widest = math.max(widest, GroupSize(instance, group))
+		local extra = GroupSize(instance, group) - size
+
+		if extra > 0 then
+			premium = premium + extra * math.min(group.MaxIcons or 3, perLine)
+		end
 	end
 
-	-- One gap of slack on top, because the engine adds a line up in its own order and a cap landing
-	-- on the exact figure is a rounding error away from wrapping. One more icon still cannot fit.
-	return perLine * size + perLine * instance.Spacing + widest - size
+	-- Every scaled icon a group can land on one line counts, or a full line wraps one icon early.
+	-- The premium stays under an icon and its gap, so a line that was full still takes no more.
+	return perLine * size + perLine * instance.Spacing + premium
 end
 
 ---@param instance AuraContainerDisplay
@@ -1658,7 +1662,7 @@ local function ApplyFlowLayout(instance)
 	end
 end
 
----Fills one group's layout table. Spacing keys are passed under BOTH the older and newer PTR
+---Fills one group's layout table. Spacing keys are passed under both the older and newer PTR
 ---spellings (elementSpacing/lineSpacing was renamed to elementSpacingX/elementSpacingY in a later
 ---12.1 build); validators ignore unknown keys, so this works on either build.
 ---The table belongs to the group and is refilled rather than rebuilt per call, so the engine may
@@ -1898,6 +1902,9 @@ function M:AddPendingGroup(group)
 
 	group.Pending = true
 	group.BornMaxIcons = group.MaxIcons or 3
+
+	-- The answer is worked out once from the groups, so adding one has to make it ask again.
+	self.CarriesIdentityFilters = nil
 
 	local index = #self.Groups + 1
 
@@ -2615,7 +2622,6 @@ end
 ---@field GroupsByKey table<string, AuraDisplayGroupSpec>
 ---@field Grow string
 ---@field Style AuraDisplayStyle
----@field Layout table
 ---@field Buttons table[]
 ---@field ButtonWidgets table<table, table>
 ---@field DesiredShown boolean

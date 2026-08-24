@@ -802,7 +802,7 @@ local function ApplySettings(entry)
 		-- nothing at all.
 		entry.Debuffs:SetProcessingPolicy(ClassifiesDebuffs())
 
-		-- Only what the groups are narrowed by; both filter strings are fixed.
+		-- The filter strings are fixed, so only the candidate filters are re-published.
 		for _, key in ipairs(DEBUFF_GROUP_KEYS) do
 			if entry.Debuffs:HasGroup(key) then
 				entry.Debuffs:SetCandidateFilters(key, DebuffCandidates())

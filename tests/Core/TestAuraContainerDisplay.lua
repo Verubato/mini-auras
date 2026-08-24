@@ -123,8 +123,9 @@ fw.describe("AuraContainerDisplay - creation", function()
 
 		local cap = scaled.Frame._flowMaxLineSize
 
-		assert(cap == plainCap + 7.5, "the cap carries the scaled icon's extra width, got " .. tostring(cap))
+		assert(cap == plainCap + 2 * 7.5, "the cap carries both scaled icons' extra width, got " .. tostring(cap))
 		assert(37.5 + 30 + 30 + 2 * 2 < cap, "so a line holding one scaled icon still takes three")
+		assert(37.5 + 37.5 + 30 + 2 * 2 < cap, "and the group's full budget of them still takes three")
 		assert(4 * 30 + 3 * 2 > cap, "and four plain ones still do not fit")
 	end)
 
