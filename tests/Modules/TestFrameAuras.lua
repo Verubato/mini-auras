@@ -155,8 +155,11 @@ end
 local CURATED = CuratedId()
 -- An id the curated list will never hold, for the hand-added cases.
 local CUSTOM = 99000001
--- The one aura group the debuff row draws through.
+-- The two aura groups the debuff row draws through: crowd control leads it, larger than the rest.
 local DEBUFF_GROUP = "FrameDebuffs"
+local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
+-- What the head of the row is drawn at, as a share of the rest of it.
+local CROWD_CONTROL_SCALE = 1.25
 
 local function ResetSpells()
 	options.Spells.Disabled = {}
@@ -922,6 +925,178 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		options.Debuffs.Dispellable = false
 		DropRaidFrame(23)
+	end)
+end)
+
+---The container the debuff row draws through on a frame, found by the group every one of them
+---carries whatever the switches say.
+---@param frame table
+---@return table?
+local function DebuffRow(frame)
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
+			and candidate._groups[DEBUFF_GROUP] then
+			return candidate
+		end
+	end
+
+	return nil
+end
+
+fw.describe("Frame Auras - crowd control at the head of the debuff row", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.Dispellable = false
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+	end)
+
+	fw.it("keeps crowd control out of the row until the player asks for it", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(31)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+
+		assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP] == nil,
+			"a switch that is off builds no group, and a group is a batch of buttons")
+		assert(row._groups[DEBUFF_GROUP].filterString:find("!CROWD_CONTROL", 1, true),
+			"and the row negates it, which is what keeps one aura out of both halves")
+
+		DropRaidFrame(31)
+	end)
+
+	fw.it("leads the row with a group of its own, a quarter again the size of the rest", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(32)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the group")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(cc.filterString:find("CROWD_CONTROL", 1, true)
+			and not cc.filterString:find("!CROWD_CONTROL", 1, true),
+			"the head of the row is the crowd control half of it, got " .. tostring(cc.filterString))
+		assert(cc.layout.layoutIndex < plain.layout.layoutIndex, "and it is laid out ahead of the rest")
+
+		local size = plain.layout.elementHeight
+
+		assert(size > 0, "the row has a size to be measured against")
+		assert(math.abs(cc.layout.elementHeight - size * CROWD_CONTROL_SCALE) < 0.01,
+			"the engine spaces the head of the row at the larger size, got " .. tostring(cc.layout.elementHeight))
+		assert(math.abs(cc.buttons[1]:GetHeight() - size * CROWD_CONTROL_SCALE) < 0.01,
+			"and the button is drawn at it, got " .. tostring(cc.buttons[1]:GetHeight()))
+		assert(math.abs(plain.buttons[1]:GetHeight() - size) < 0.01,
+			"while the rest of the row keeps the row's own size")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(32)
+	end)
+
+	fw.it("gives the group to a row that was built before the switch was thrown", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(33)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+
+		assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP] == nil, "built without the group")
+
+		options.Debuffs.ShowCrowdControl = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(ContainersOn(fresh) == 1, "nothing built a second row for the frame")
+
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP],
+			"the row it already had grew the group, rather than waiting out a reload")
+
+		assert(cc.maxFrameCount > 0, "with a budget to draw on")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(33)
+	end)
+
+	fw.it("closes the group down again when the switch goes off", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(34)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the group is there while the switch is on")
+
+		assert(cc.maxFrameCount > 0, "and drawing")
+
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(cc.maxFrameCount == 0, "the switch closes the budget, which is all a group can be told")
+
+		DropRaidFrame(34)
+	end)
+
+	-- The switch can move while a row is still being built, which is the state a spare handed to a
+	-- frame is in as well.
+	fw.it("hands the group to a row mid-build, and draws it first anyway", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(36)
+
+		-- No pump: the row exists, but the walker has yet to declare a thing on it.
+		partyAuras:Refresh()
+
+		options.Debuffs.ShowCrowdControl = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the group went in with the rest of the build")
+
+		assert(cc.layout.layoutIndex < row._groups[DEBUFF_GROUP].layout.layoutIndex,
+			"and leads the row, though it was declared after it")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(36)
+	end)
+
+	fw.it("narrows the head of the row by whatever the rest of it is narrowed by", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.ShortOnly = true
+
+		local fresh = NewRaidFrame(35)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the group")
+
+		assert(cc.candidateFilters and cc.candidateFilters.maxDuration == 60,
+			"the two switches on the page are about the row, not about one category of it")
+
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.ShortOnly = false
+		DropRaidFrame(35)
 	end)
 end)
 

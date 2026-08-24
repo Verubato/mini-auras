@@ -80,6 +80,53 @@ fw.describe("AuraContainerDisplay - creation", function()
 		assert(group.layout.elementWidth == 30 and group.layout.elementHeight == 30, "element sizes")
 	end)
 
+	-- One group may lead a row at a size the rest of it is not drawn at, which only works if each
+	-- group is declared with a layout table of its own.
+	fw.it("draws a scaled group larger, and leaves the rest of the row alone", function()
+		local instance = newInstance({
+			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 2, SizeScale = 1.25, LayoutIndex = 1 },
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3, LayoutIndex = 2 },
+		})
+
+		local big = instance.Frame._groups.big
+		local plain = instance.Frame._groups.plain
+
+		assert(big.layout.elementWidth == 37.5 and big.layout.elementHeight == 37.5,
+			"the engine spaces the scaled group at its own size, got " .. tostring(big.layout.elementHeight))
+		assert(plain.layout.elementWidth == 30 and plain.layout.elementHeight == 30,
+			"and the rest of the row at the display's, got " .. tostring(plain.layout.elementHeight))
+		assert(big.layout.layoutIndex == 1 and plain.layout.layoutIndex == 2, "each carries where it sits")
+		assert(big.buttons[1]:GetHeight() == 37.5, "the scaled group's buttons are drawn at it")
+		assert(plain.buttons[1]:GetHeight() == 30, "the plain group's are not")
+
+		instance:ApplyConfig(40, 2, { Glow = false })
+
+		assert(instance.Frame._groups.big.layout.elementHeight == 50, "a resize keeps the share")
+		assert(instance.Frame._groups.plain.layout.elementHeight == 40, "for both of them")
+	end)
+
+	-- The cap is a width, and a scaled group's icons are wider than the count they are measured as.
+	fw.it("widens the wrap cap for a scaled group, so a line still holds what it was asked for", function()
+		local plainOnly = display:New(_G.UIParent, "target", {
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { PerLine = 3 })
+
+		local plainCap = plainOnly.Frame._flowMaxLineSize
+
+		assert(plainCap == 3 * 30 + 2 * 2, "three icons and the gaps between them, got " .. tostring(plainCap))
+
+		local scaled = display:New(_G.UIParent, "target", {
+			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 2, SizeScale = 1.25 },
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { PerLine = 3 })
+
+		local cap = scaled.Frame._flowMaxLineSize
+
+		assert(cap == plainCap + 7.5, "the cap carries the scaled icon's extra width, got " .. tostring(cap))
+		assert(37.5 + 30 + 30 + 2 * 2 <= cap, "so a line holding one scaled icon still takes three")
+		assert(4 * 30 + 3 * 2 > cap, "and four plain ones still do not fit")
+	end)
+
 	fw.it("builds a glow frame per button", function()
 		local instance = newInstance()
 		assert(anyGlowFrames(instance), "glow overlays exist from creation")
@@ -988,6 +1035,27 @@ fw.describe("AuraContainerDisplay - deferred groups", function()
 		assert(group.maxFrameCountAtCreation == 1, "declared with the budget it was born with")
 		assert(group.maxFrameCount == 0, "and closed again straight after")
 		assert(#group.buttons > 0, "so it has buttons to open with later")
+	end)
+
+	-- For a category the player switched on after the display was built. Nothing frees a display,
+	-- so the alternative is a row that stays wrong until a reload.
+	fw.it("takes a group added after it was built, and paces it like the rest", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "a", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
+		}, 30, 2, "Test", { DeferGroups = true })
+
+		instance:FinishGroups()
+
+		assert(instance:AddPendingGroup({ Key = "b", FilterString = "HELPFUL|IMPORTANT", MaxIcons = 3 }),
+			"the group was taken")
+		assert(instance:HasGroup("b"), "and the display knows it carries it")
+		assert(instance.Frame._groups.b == nil, "nothing is declared until the caller paces it")
+
+		assert(instance:AddNextGroup(), "which is the same walk a deferred build takes")
+		assert(instance.Frame._groups.b.maxFrameCount == 3, "declared with its own budget")
+
+		assert(not instance:AddPendingGroup({ Key = "b", FilterString = "HELPFUL", MaxIcons = 1 }),
+			"a key the display already carries is refused")
 	end)
 
 	fw.it("FinishGroups is what a caller runs before anything is shown on it", function()

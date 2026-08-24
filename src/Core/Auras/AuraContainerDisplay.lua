@@ -815,6 +815,21 @@ local function TextureWidth(instance)
 	return instance.Style.TextureWidth or instance.Size
 end
 
+---The icon size one group's buttons are drawn at. A group may ask for a share of the display's own
+---size, which is what lets one category lead a row at a size the rest of it is not drawn at.
+---@param instance AuraContainerDisplay
+---@param group AuraDisplayGroupSpec?
+---@return number
+local function GroupSize(instance, group)
+	local scale = group and group.SizeScale
+
+	if not scale then
+		return instance.Size
+	end
+
+	return instance.Size * scale
+end
+
 ---A texture button carries one picture and none of the icon chrome. The art is fixed at styling
 ---time and never touched again: which aura is up is secret, so a texture that changed per aura
 ---could not be chosen anyway - the group is the picture, and the engine showing the button is
@@ -1012,7 +1027,7 @@ local function CenterStacks(instance, button, widgets)
 	if font then
 		fontUtil:Apply(stacks, fontSize, fontFlags, fontUtil:BaseFace(cdText))
 	else
-		fontUtil:UpdateFontSize(stacks, instance.Size, nil, instance.Style.FontScale or 1.0)
+		fontUtil:UpdateFontSize(stacks, GroupSize(instance, widgets.Group), nil, instance.Style.FontScale or 1.0)
 	end
 end
 
@@ -1185,7 +1200,7 @@ local function StyleButton(instance, button)
 	end
 
 	local style = instance.Style
-	local size = instance.Size
+	local size = GroupSize(instance, widgets.Group)
 	local bar = widgets.Bar
 
 	if widgets.Art then
@@ -1594,6 +1609,9 @@ local function InitializeLabelButton(instance, button)
 end
 
 ---How far one line of icons may reach before it wraps, or nil for a display that never wraps.
+---
+---A scaled group's icons are wider than the count they are measured as, so the widest group's
+---extra width is added on. Without it a line holding one of those icons wraps an icon early.
 ---@param instance AuraContainerDisplay
 ---@return number?
 local function LineSize(instance)
@@ -1603,7 +1621,14 @@ local function LineSize(instance)
 		return nil
 	end
 
-	return perLine * instance.Size + math.max(0, perLine - 1) * instance.Spacing
+	local size = instance.Size
+	local widest = size
+
+	for _, group in ipairs(instance.Groups) do
+		widest = math.max(widest, GroupSize(instance, group))
+	end
+
+	return perLine * size + math.max(0, perLine - 1) * instance.Spacing + widest - size
 end
 
 ---@param instance AuraContainerDisplay
@@ -1631,24 +1656,28 @@ local function ApplyFlowLayout(instance)
 	end
 end
 
----Fills the instance's own layout table. Spacing keys are passed under BOTH the older and newer
----PTR spellings (elementSpacing/lineSpacing was renamed to elementSpacingX/elementSpacingY in a
----later 12.1 build); validators ignore unknown keys, so this works on either build.
----The table is per-instance and reused rather than rebuilt per call: every group on a display
----always gets the same layout, so sharing one table across them is safe even if the engine
----retains the reference.
+---Fills one group's layout table. Spacing keys are passed under BOTH the older and newer PTR
+---spellings (elementSpacing/lineSpacing was renamed to elementSpacingX/elementSpacingY in a later
+---12.1 build); validators ignore unknown keys, so this works on either build.
+---The table belongs to the group and is refilled rather than rebuilt per call, so the engine may
+---retain the reference.
 ---@param instance AuraContainerDisplay
+---@param group AuraDisplayGroupSpec
 ---@return table
-local function BuildGroupLayout(instance)
-	local layout = instance.Layout
+local function BuildGroupLayout(instance, group)
+	local layout = group.OwnLayout or {}
+	local size = GroupSize(instance, group)
+
+	group.OwnLayout = layout
 	layout.elementSpacing = instance.Spacing
 	layout.lineSpacing = instance.Spacing
 	layout.elementSpacingX = instance.Spacing
 	layout.elementSpacingY = instance.Spacing
 	-- Bars and art are as wide as the style asks and as tall as the size; icons are square.
 	layout.elementWidth = instance.Texture and TextureWidth(instance)
-		or instance.Bar and BarWidth(instance) or instance.Size
-	layout.elementHeight = instance.Size
+		or instance.Bar and BarWidth(instance) or size
+	layout.elementHeight = size
+	layout.layoutIndex = group.LayoutIndex
 
 	return layout
 end
@@ -1658,7 +1687,7 @@ local function ApplyGroupLayout(instance)
 	for _, group in ipairs(instance.Groups) do
 		-- A group still to be declared takes the layout with it; AddGroup builds a fresh one.
 		if not group.Pending then
-			instance.Frame:SetAuraGroupLayout(group.Key, BuildGroupLayout(instance))
+			instance.Frame:SetAuraGroupLayout(group.Key, BuildGroupLayout(instance, group))
 		end
 	end
 
@@ -1697,7 +1726,7 @@ local function AddGroup(instance, group)
 		initializeFrame = function(button)
 			instance.Initialize(instance, button, group)
 		end,
-		layout = BuildGroupLayout(instance),
+		layout = BuildGroupLayout(instance, group),
 	})
 
 	if group.MaxIcons and group.MaxIcons ~= born then
@@ -1742,7 +1771,6 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- Owned by the instance and mutated in place by StoreStyle; callers never hand us a table
 	-- we keep, so they are free to pass a reused scratch.
 	instance.Style = {}
-	instance.Layout = {}
 	instance.Buttons = {}
 	-- button -> { Cooldown, BorderTextures, Glow, GlowStyle, Bar, ... } for restyling. The rest of
 	-- the fields are what each styling step last applied, so an unchanged restyle is a no-op.
@@ -1849,6 +1877,35 @@ function M:AddNextGroup()
 
 	AddGroup(self, group)
 	self.NextPendingGroup = index + 1
+
+	return true
+end
+
+---Adds a group to a display that already exists, left pending like a deferred build's own so the
+---caller paces its declaration. For a category the player switched on after the display was
+---built: nothing frees a display, so the alternative is a row that stays wrong until a reload.
+---
+---The engine draws groups in declaration order unless they carry a LayoutIndex, so a group that
+---has to lead a row it was added to must bring one.
+---@param group AuraDisplayGroupSpec
+---@return boolean added False when the display already carries the key.
+function M:AddPendingGroup(group)
+	if self.GroupsByKey[group.Key] then
+		return false
+	end
+
+	group.Pending = true
+	group.BornMaxIcons = group.MaxIcons or 3
+
+	local index = #self.Groups + 1
+
+	self.Groups[index] = group
+	self.GroupsByKey[group.Key] = group
+	StoreGroupGlow(self)
+
+	if not self.NextPendingGroup then
+		self.NextPendingGroup = index
+	end
 
 	return true
 end
@@ -2483,6 +2540,12 @@ end
 ---@field MaxIcons number? Icon budget for this group (default 3).
 ---@field CandidateFilters table? 12.1 candidate filters (e.g. { includeSpellIDs = ..., maxDuration = 4.1 }). Every standard category passes an includeSpellIDs map here - see Core/AuraFilters for why it is needed on top of the filter string.
 ---@field SortDirection number? AuraContainerSortDirection value (default Normal; Reverse = newest first).
+---@field SizeScale number? What this group's icons are drawn at, as a share of the display's own
+---size. Unset draws them at it, which is what every group but a deliberately larger one wants.
+---@field LayoutIndex number? Where this group sits in the row, for a display whose groups are not
+---declared in the order they are drawn in. Unset leaves the engine on declaration order.
+---@field OwnLayout table? The layout table this group is declared and re-declared with, refilled
+---rather than rebuilt so the engine may keep the reference. Never set by a caller.
 ---@field Glow boolean? Whether this group's icons carry the glow, overriding the display-wide
 ---Style.Glow so one container can light up a single category. Unset follows the display. Changed
 ---after creation with SetGroupGlow.

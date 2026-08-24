@@ -632,6 +632,9 @@ local function NewAuraContainer(name, parent, template)
 	function container:SetFlowLayoutGrowthDirection(h, v)
 		container._flowGrowth = { h = h, v = v }
 	end
+	function container:SetFlowLayoutMaximumLineSize(size)
+		container._flowMaxLineSize = size
+	end
 
 	return container
 end

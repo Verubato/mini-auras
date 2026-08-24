@@ -22,8 +22,9 @@ local spells = addon.Modules.FrameAuras.Spells
 local BUFF_GROUP = "FrameBuffs"
 local BUFF_PANDEMIC_GROUP = "FrameBuffsPandemic"
 local DEBUFF_GROUP = "FrameDebuffs"
+local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
 local BUFF_GROUP_KEYS = { BUFF_PANDEMIC_GROUP, BUFF_GROUP }
-local DEBUFF_GROUP_KEYS = { DEBUFF_GROUP }
+local DEBUFF_GROUP_KEYS = { DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }
 -- The categories the game flags never come into the buff row: what reaches the corner is decided
 -- by the switches on its own page. The token is the coarse half of "only what you cast".
 local BUFF_FILTER = "HELPFUL"
@@ -36,6 +37,21 @@ local DEBUFF_FILTER = "HARMFUL"
 local EXCLUDE_IMPORTANT = "|!IMPORTANT"
 local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
+-- The debuff row's two halves. Crowd control leads it in a group of its own, so the other half
+-- always negates it: the negation is what keeps one aura out of both.
+local DEBUFF_PLAIN_FILTER = DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
+local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
+-- Where each half sits in the row. Spelled out because the crowd control group is declared after
+-- the other one when the player switches it on mid-session, and the engine falls back to the order
+-- groups were declared in.
+local DEBUFF_CROWD_CONTROL_INDEX = 1
+local DEBUFF_PLAIN_INDEX = 2
+-- What crowd control is drawn at, as a share of the rest of the row. A stun on a party member is
+-- worth more than the debuff beside it.
+local CROWD_CONTROL_SIZE_SCALE = 1.25
+-- The most icons the head of the row holds. Its own cap rather than the row's, because two stuns
+-- at once on one member is already unusual.
+local MAX_CROWD_CONTROL_ICONS = 2
 -- What "under a minute" means to the engine: a bound on an aura's whole duration rather than on
 -- what is left of it. Any value at all also drops the auras that never run out.
 local SHORT_AURA_SECONDS = 60
@@ -284,18 +300,6 @@ local function BuffFilter()
 	return filter
 end
 
----The aura filter string the debuff groups run under.
----@return string
-local function DebuffFilter()
-	local options = SideOptions("Debuffs") or {}
-
-	if options.ShowCrowdControl == true then
-		return DEBUFF_FILTER
-	end
-
-	return DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
-end
-
 ---The tracked ids as the engine wants them, built on first use and again after any refresh.
 ---@return table pandemic, table plain
 local function BuffCandidates()
@@ -332,9 +336,12 @@ end
 
 ---The debuff filters, built the same way and for the same reason.
 ---
----One group, ranked by the game's own raid frame debuff order, which already leads with encounter
----mechanics and the debuffs it flags as priority. So all that is left to narrow by is the two
----switches on the page, and with neither of them on the engine is handed nothing at all.
+---Both groups run under these: the two switches on the page are about the row rather than about a
+---category of it, so a stun the player cannot dispel is dropped exactly as a debuff would be.
+---
+---Ranked by the game's own raid frame debuff order, which already leads with encounter mechanics
+---and the debuffs it flags as priority. So all that is left to narrow by is the two switches, and
+---with neither of them on the engine is handed nothing at all.
 ---@return table? Nil when the row is not narrowed, which the engine reads as "everything".
 local function DebuffCandidates()
 	if debuffCandidatesBuilt then
@@ -382,6 +389,36 @@ end
 ---@return number
 local function PandemicIcons()
 	return math.min(MaxIcons("Buffs"), spells:PandemicCount())
+end
+
+---How many icons the crowd control group at the head of the row may draw, and none at all until
+---the player asks for it. Never more than the row's own budget.
+---@return number
+local function CrowdControlIcons()
+	local options = SideOptions("Debuffs")
+
+	if not options or options.ShowCrowdControl ~= true then
+		return 0
+	end
+
+	return math.min(MaxIcons("Debuffs"), MAX_CROWD_CONTROL_ICONS)
+end
+
+---The budget one group draws on. A group that leads a row carries its own, so what it draws is not
+---taken out of the row behind it.
+---@param side "Buffs"|"Debuffs"
+---@param key string
+---@return number
+local function GroupIcons(side, key)
+	if key == BUFF_PANDEMIC_GROUP then
+		return PandemicIcons()
+	end
+
+	if key == DEBUFF_CROWD_CONTROL_GROUP then
+		return CrowdControlIcons()
+	end
+
+	return MaxIcons(side)
 end
 
 ---@param side "Buffs"|"Debuffs"
@@ -500,18 +537,44 @@ local function BuildBuffs(frame, unit, parent)
 	})
 end
 
+---The crowd control group at the head of the debuff row. Built fresh each time: a display stamps
+---its own state on the spec it is handed and keeps the reference.
+---@return AuraDisplayGroupSpec
+local function CrowdControlGroup()
+	return {
+		Key = DEBUFF_CROWD_CONTROL_GROUP,
+		FilterString = DEBUFF_CROWD_CONTROL_FILTER,
+		MaxIcons = CrowdControlIcons(),
+		CandidateFilters = DebuffCandidates(),
+		SizeScale = CROWD_CONTROL_SIZE_SCALE,
+		LayoutIndex = DEBUFF_CROWD_CONTROL_INDEX,
+	}
+end
+
 ---@param frame table? As BuildBuffs.
 ---@param unit string?
 ---@param parent table? Defaults to the frame.
 ---@return AuraContainerDisplay
 local function BuildDebuffs(frame, unit, parent)
 	local candidates = DebuffCandidates()
-	local maxIcons = MaxIcons("Debuffs")
-	local filter = DebuffFilter()
+	local groups = {}
 
-	local display = auraContainerDisplay:New(parent or frame, unit or "none", {
-		{ Key = DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = candidates },
-	}, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
+	-- Crowd control leads the row, in a group of its own because an icon's size is fixed per group
+	-- and this one is drawn larger than the rest. Left out until the player asks for it: a group is
+	-- a batch of buttons the engine allocates on the spot, and the switch is off on a fresh install.
+	if CrowdControlIcons() > 0 then
+		groups[#groups + 1] = CrowdControlGroup()
+	end
+
+	groups[#groups + 1] = {
+		Key = DEBUFF_GROUP,
+		FilterString = DEBUFF_PLAIN_FILTER,
+		MaxIcons = MaxIcons("Debuffs"),
+		CandidateFilters = candidates,
+		LayoutIndex = DEBUFF_PLAIN_INDEX,
+	}
+
+	local display = auraContainerDisplay:New(parent or frame, unit or "none", groups, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle("Debuffs"),
 		MasqueGroup = MASQUE_GROUP,
 		PerLine = PerRow("Debuffs"),
@@ -522,13 +585,41 @@ local function BuildDebuffs(frame, unit, parent)
 
 	if sort then
 		for _, key in ipairs(DEBUFF_GROUP_KEYS) do
-			display:SetSortMethod(key, sort)
+			if display:HasGroup(key) then
+				display:SetSortMethod(key, sort)
+			end
 		end
 	end
 
 	display:SetProcessingPolicy(ClassifiesDebuffs())
 
 	return display
+end
+
+---Gives a debuff row the crowd control group the player has just switched on. Nothing frees a
+---display, so a row built before the switch would otherwise stay without one until a reload.
+---@param display AuraContainerDisplay
+local function AddCrowdControlGroup(display)
+	-- Nothing is built for a row that is switched off, however its own switches are set. The
+	-- refresh that turns the row back on is what builds this.
+	if not active.Debuffs or CrowdControlIcons() == 0 or display:HasGroup(DEBUFF_CROWD_CONTROL_GROUP) then
+		return
+	end
+
+	-- Whatever the display already owes is on the walker, and one item walks the lot.
+	local walking = display:HasPendingGroups()
+
+	display:AddPendingGroup(CrowdControlGroup())
+
+	local sort = DebuffSort()
+
+	if sort then
+		display:SetSortMethod(DEBUFF_CROWD_CONTROL_GROUP, sort)
+	end
+
+	if not walking then
+		buildSweep:Append(display, DeclareNextGroup)
+	end
 end
 
 ---Pins one side's row into its corner of the frame, and puts it over the frame's own artwork.
@@ -667,7 +758,7 @@ local function ApplySide(display, frame, side, groupKeys)
 
 	for _, key in ipairs(groupKeys) do
 		if display:HasGroup(key) then
-			display:SetMaxIcons(key, key == BUFF_PANDEMIC_GROUP and PandemicIcons() or MaxIcons(side))
+			display:SetMaxIcons(key, GroupIcons(side, key))
 		end
 	end
 
@@ -705,13 +796,20 @@ local function ApplySettings(entry)
 	end
 
 	if entry.Debuffs then
+		-- Before the budgets go out, so a group that has just been added takes one.
+		AddCrowdControlGroup(entry.Debuffs)
 		ApplySide(entry.Debuffs, frame, "Debuffs", DEBUFF_GROUP_KEYS)
 
 		-- The policy first: a group asking for a classification the display is not making matches
 		-- nothing at all.
 		entry.Debuffs:SetProcessingPolicy(ClassifiesDebuffs())
-		entry.Debuffs:SetFilterString(DEBUFF_GROUP, DebuffFilter())
-		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, DebuffCandidates())
+
+		-- Only what the groups are narrowed by; both filter strings are fixed.
+		for _, key in ipairs(DEBUFF_GROUP_KEYS) do
+			if entry.Debuffs:HasGroup(key) then
+				entry.Debuffs:SetCandidateFilters(key, DebuffCandidates())
+			end
+		end
 	end
 end
 
@@ -782,11 +880,13 @@ local function SparesWanted(side)
 	return PREWARM_FRAMES - built - #spares[side]
 end
 
----What a side's rows are shaped like right now. A spare bakes its groups and their budgets in when
----it is built, and neither can be changed afterwards: the engine hands out a group's buttons from
----the count it was declared with, and a group that was never declared cannot be added to a display
----that has already been shown. So a spare built under different settings is not a spare, and one
----handed to a frame anyway would draw the wrong row for the rest of the session.
+---What a side's rows are shaped like right now. A spare bakes its groups' budgets in when it is
+---built and they can never be raised: the engine hands out a group's buttons from the count it was
+---declared with. So a spare built under different settings is not a spare, and one handed to a
+---frame anyway would draw the wrong row for the rest of the session.
+---
+---Crowd control is left out of the answer. Its group is added to whichever display a frame ends up
+---with, so a spare built before the switch was thrown is still the spare that frame wants.
 ---@param side "Buffs"|"Debuffs"
 ---@return string
 local function ShapeOf(side)
