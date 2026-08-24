@@ -1628,7 +1628,9 @@ local function LineSize(instance)
 		widest = math.max(widest, GroupSize(instance, group))
 	end
 
-	return perLine * size + math.max(0, perLine - 1) * instance.Spacing + widest - size
+	-- One gap of slack on top, because the engine adds a line up in its own order and a cap landing
+	-- on the exact figure is a rounding error away from wrapping. One more icon still cannot fit.
+	return perLine * size + perLine * instance.Spacing + widest - size
 end
 
 ---@param instance AuraContainerDisplay
@@ -1902,6 +1904,12 @@ function M:AddPendingGroup(group)
 	self.Groups[index] = group
 	self.GroupsByKey[group.Key] = group
 	StoreGroupGlow(self)
+
+	-- A group drawn larger than the display widens where a line wraps, and nothing else on the
+	-- path that adds one re-applies that.
+	if self.PerLine then
+		ApplyFlowLayout(self)
+	end
 
 	if not self.NextPendingGroup then
 		self.NextPendingGroup = index

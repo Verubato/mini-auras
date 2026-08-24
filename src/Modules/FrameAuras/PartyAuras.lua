@@ -37,8 +37,7 @@ local DEBUFF_FILTER = "HARMFUL"
 local EXCLUDE_IMPORTANT = "|!IMPORTANT"
 local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
--- The debuff row's two halves. Crowd control leads it in a group of its own, so the other half
--- always negates it: the negation is what keeps one aura out of both.
+-- The debuff row's two halves. The plain half negates crowd control so no aura lands in both.
 local DEBUFF_PLAIN_FILTER = DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
 local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
 -- Where each half sits in the row. Spelled out because the crowd control group is declared after
@@ -560,8 +559,8 @@ local function BuildDebuffs(frame, unit, parent)
 	local groups = {}
 
 	-- Crowd control leads the row, in a group of its own because an icon's size is fixed per group
-	-- and this one is drawn larger than the rest. Left out until the player asks for it: a group is
-	-- a batch of buttons the engine allocates on the spot, and the switch is off on a fresh install.
+	-- and this one is drawn larger than the rest. Left out until the player asks for it, since a
+	-- group is a batch of buttons the engine allocates on the spot.
 	if CrowdControlIcons() > 0 then
 		groups[#groups + 1] = CrowdControlGroup()
 	end

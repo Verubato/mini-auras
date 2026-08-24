@@ -1016,6 +1016,10 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 
 		assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP] == nil, "built without the group")
 
+		local capped = row._flowMaxLineSize
+
+		assert(capped and capped > 0, "and a line to wrap at")
+
 		options.Debuffs.ShowCrowdControl = true
 		partyAuras:Refresh()
 		acm.tickAll(400)
@@ -1026,6 +1030,8 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 			"the row it already had grew the group, rather than waiting out a reload")
 
 		assert(cc.maxFrameCount > 0, "with a budget to draw on")
+		assert(row._flowMaxLineSize > capped,
+			"and the line it wraps at made room for the larger icon, got " .. tostring(row._flowMaxLineSize))
 
 		options.Debuffs.ShowCrowdControl = false
 		DropRaidFrame(33)

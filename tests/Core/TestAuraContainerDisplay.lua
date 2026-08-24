@@ -113,7 +113,8 @@ fw.describe("AuraContainerDisplay - creation", function()
 
 		local plainCap = plainOnly.Frame._flowMaxLineSize
 
-		assert(plainCap == 3 * 30 + 2 * 2, "three icons and the gaps between them, got " .. tostring(plainCap))
+		assert(plainCap == 3 * 30 + 3 * 2, "three icons, their gaps, and one gap of slack, got " .. tostring(plainCap))
+		assert(4 * 30 + 3 * 2 > plainCap, "the slack still leaves a fourth icon out")
 
 		local scaled = display:New(_G.UIParent, "target", {
 			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 2, SizeScale = 1.25 },
@@ -123,7 +124,7 @@ fw.describe("AuraContainerDisplay - creation", function()
 		local cap = scaled.Frame._flowMaxLineSize
 
 		assert(cap == plainCap + 7.5, "the cap carries the scaled icon's extra width, got " .. tostring(cap))
-		assert(37.5 + 30 + 30 + 2 * 2 <= cap, "so a line holding one scaled icon still takes three")
+		assert(37.5 + 30 + 30 + 2 * 2 < cap, "so a line holding one scaled icon still takes three")
 		assert(4 * 30 + 3 * 2 > cap, "and four plain ones still do not fit")
 	end)
 
