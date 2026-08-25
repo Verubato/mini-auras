@@ -157,6 +157,8 @@ local CURATED = CuratedId()
 -- An id the curated list will never hold, for the hand-added cases.
 local CUSTOM = 99000001
 -- The two aura groups the debuff row draws through: crowd control leads it, larger than the rest.
+-- The aura groups the rows draw through. Crowd control leads the debuff row, larger than the rest.
+local PARTY_BUFF_GROUP = "FrameBuffs"
 local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
 -- What the head of the row is drawn at, as a share of the rest of it.
@@ -198,6 +200,21 @@ local function Fire(event)
 			handler(frame, event)
 		end
 	end
+end
+
+---The aura container carrying a given group on a frame, or nil where nothing built one.
+---@param frame table
+---@param groupKey string
+---@return table?
+local function GroupRowOn(frame, groupKey)
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
+			and candidate._groups[groupKey] then
+			return candidate
+		end
+	end
+
+	return nil
 end
 
 fw.describe("Frame Auras - the tracked buff list", function()
@@ -838,6 +855,44 @@ fw.describe("Frame Auras - test mode", function()
 		DropRaidFrame(20)
 		options.Buffs.Enabled = false
 		partyAuras:Refresh()
+	end)
+
+	fw.it("stops the client tracking a row the layout pass built on an empty frame", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewRaidFrame(24)
+		local realExists = _G.UnitExists
+
+		-- Forty-five containers the client still weighs auras against is the cost this is here to
+		-- catch.
+		env.loadingScreenUp = true
+
+		partyAuras:Refresh()
+
+		-- The groups only declare once the screen is off the walker's way.
+		env.loadingScreenUp = false
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = GroupRowOn(frame, PARTY_BUFF_GROUP)
+
+		assert(row, "the layout pass built the row")
+
+		_G.UnitExists = function()
+			return false
+		end
+
+		partyAuras:Refresh()
+
+		local tracking = row._enabled
+
+		_G.UnitExists = realExists
+		DropRaidFrame(24)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(tracking == false, "the client is still weighing every aura against an empty row")
 	end)
 
 	fw.it("waits for a definite answer before building a frame's rows", function()

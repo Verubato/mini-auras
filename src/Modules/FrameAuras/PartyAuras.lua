@@ -812,10 +812,12 @@ local function ApplyEntry(entry)
 	-- the two would otherwise sit on top of each other.
 	if testModeActive then
 		if entry.Buffs then
+			entry.Buffs:SetEnabled(false)
 			entry.Buffs:SetShown(false)
 		end
 
 		if entry.Debuffs then
+			entry.Debuffs:SetEnabled(false)
 			entry.Debuffs:SetShown(false)
 		end
 
@@ -839,12 +841,18 @@ local function ApplyEntry(entry)
 	-- Always, unlike the rest, because who is on the frame is exactly what a re-point changes.
 	local occupied = HasUnit(entry.Unit) and frames:IsAnchorUsable(entry.Frame)
 
+	-- A container the client is still tracking weighs every aura on the unit against its groups
+	-- whether or not anything is drawn, and a raid is forty frames of that.
 	if entry.Buffs then
-		entry.Buffs:SetShown(active.Buffs and occupied)
+		local wanted = active.Buffs and occupied
+		entry.Buffs:SetEnabled(wanted)
+		entry.Buffs:SetShown(wanted)
 	end
 
 	if entry.Debuffs then
-		entry.Debuffs:SetShown(active.Debuffs and occupied)
+		local wanted = active.Debuffs and occupied
+		entry.Debuffs:SetEnabled(wanted)
+		entry.Debuffs:SetShown(wanted)
 	end
 end
 
