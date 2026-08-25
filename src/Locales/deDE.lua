@@ -473,6 +473,7 @@ L:RegisterLocale("deDE", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Ersetzt Blizzards Auren auf den Ziel- und Fokusfenstern durch diese.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Ersetzt Blizzards Stärkungszauber auf den Gruppen- und Schlachtzugsfenstern durch diese.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Ersetzt Blizzards Schwächungszauber auf den Gruppen- und Schlachtzugsfenstern durch diese.",
+	["Defensives"] = "Defensive",
 	["Filtered"] = "Gefiltert",
 	["Glow colour"] = "Leuchtfarbe",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Blendet Stärkungszauber aus, die länger als zwei Minuten laufen, also fast alles, was ein Ziel mit sich herumträgt.",

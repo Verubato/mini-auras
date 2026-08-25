@@ -471,6 +471,7 @@ L:RegisterLocale("itIT", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Sostituisce le aure di Blizzard sui riquadri di bersaglio e focus con queste.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Sostituisce i benefici di Blizzard sui riquadri di gruppo e incursione con questi.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Sostituisce le penalità di Blizzard sui riquadri di gruppo e incursione con queste.",
+	["Defensives"] = "Difensivi",
 	["Filtered"] = "Filtrato",
 	["Glow colour"] = "Colore del bagliore",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Nasconde i benefici che durano più di due minuti, cioè quasi tutto quello che un bersaglio si porta dietro.",

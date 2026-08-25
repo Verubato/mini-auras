@@ -126,3 +126,23 @@ fw.describe("Frame Auras page - the countdown numbers on each row", function()
 		assert(frameAuras.Debuffs.EnableNumbers == false, "the debuff tab's switch writes the debuff row")
 	end)
 end)
+
+fw.describe("Frame Auras page - the buff row's switches", function()
+	fw.it("names the defensives switch in the plural, and writes it where the row reads it", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local switch = SwitchFor(addon, addon.L["Defensives"])
+
+		fw.not_nil(switch, "the buff row offers the defensives")
+
+		local options = addon.Framework:GetSavedVars().Modules.FrameAuras.Buffs
+
+		assert(options.ShowDefensives == false, "they ship off")
+
+		switch:GetScript("OnClick")(switch)
+
+		assert(options.ShowDefensives == true, "and the switch turns them on")
+	end)
+end)

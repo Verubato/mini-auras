@@ -473,6 +473,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "用這些光環替換暴雪在目標和專注目標框架上的光環。",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "用這些增益替換暴雪在隊伍和團隊框架上的增益。",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "用這些減益替換暴雪在隊伍和團隊框架上的減益。",
+	["Defensives"] = "防禦",
 	["Filtered"] = "已篩選",
 	["Glow colour"] = "發光顏色",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "隱藏持續時間超過兩分鐘的增益，目標身上的增益大多屬於這一類。",

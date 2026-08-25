@@ -473,6 +473,7 @@ L:RegisterLocale("koKR", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "대상 및 주시 대상 프레임의 블리자드 오라를 이것으로 대체합니다.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "파티 및 공격대 프레임의 블리자드 버프를 이것으로 대체합니다.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "파티 및 공격대 프레임의 블리자드 디버프를 이것으로 대체합니다.",
+	["Defensives"] = "방어",
 	["Filtered"] = "필터 적용",
 	["Glow colour"] = "발광 색상",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "2분보다 오래 지속되는 버프를 숨깁니다. 대상이 지니고 다니는 버프 대부분이 여기에 해당합니다.",

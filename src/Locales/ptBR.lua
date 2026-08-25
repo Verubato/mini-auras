@@ -471,6 +471,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Substitui as auras da Blizzard nos quadros de alvo e foco por estas.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Substitui os bônus da Blizzard nos quadros de grupo e raide por estes.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Substitui as penalidades da Blizzard nos quadros de grupo e raide por estas.",
+	["Defensives"] = "Defensivos",
 	["Filtered"] = "Filtrado",
 	["Glow colour"] = "Cor do brilho",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Oculta os bônus que duram mais de dois minutos, que é quase tudo o que um alvo carrega consigo.",

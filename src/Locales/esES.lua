@@ -473,6 +473,7 @@ L:RegisterLocale("esES", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Sustituye las auras de Blizzard en los marcos de objetivo y foco por estas.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Sustituye los beneficios de Blizzard en los marcos de grupo y banda por estos.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Sustituye los perjuicios de Blizzard en los marcos de grupo y banda por estos.",
+	["Defensives"] = "Defensivos",
 	["Filtered"] = "Filtrado",
 	["Glow colour"] = "Color del brillo",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Oculta los beneficios que duran más de dos minutos, que es casi todo lo que lleva encima un objetivo.",

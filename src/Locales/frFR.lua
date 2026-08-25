@@ -471,6 +471,7 @@ L:RegisterLocale("frFR", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Remplace les auras de Blizzard sur les cadres de cible et de focalisation par celles-ci.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Remplace les améliorations de Blizzard sur les cadres de groupe et de raid par celles-ci.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Remplace les affaiblissements de Blizzard sur les cadres de groupe et de raid par ceux-ci.",
+	["Defensives"] = "Défensifs",
 	["Filtered"] = "Filtré",
 	["Glow colour"] = "Couleur de la lueur",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Masque les améliorations qui durent plus de deux minutes, soit l'essentiel de ce qu'une cible porte sur elle.",

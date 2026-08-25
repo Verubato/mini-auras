@@ -513,7 +513,7 @@ local function BuildBuffs(content, options)
 		},
 		{
 			Key = "ShowDefensives",
-			Label = L["Defensive"],
+			Label = L["Defensives"],
 			Tooltip = L["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."],
 		},
 		{

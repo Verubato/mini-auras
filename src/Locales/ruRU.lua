@@ -473,6 +473,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Заменяет ауры Blizzard на рамках цели и фокуса этими.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Заменяет усиления Blizzard на рамках группы и рейда этими.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Заменяет ослабления Blizzard на рамках группы и рейда этими.",
+	["Defensives"] = "Защитные",
 	["Filtered"] = "С фильтром",
 	["Glow colour"] = "Цвет свечения",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Скрывает усиления длительностью больше двух минут, а это почти всё, что цель носит на себе.",

@@ -474,6 +474,7 @@ L:SetDefaultStrings({
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Replaces Blizzard's auras on the target and focus frames with these ones.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Replaces Blizzard's buffs on the party and raid frames with these ones.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Replaces Blizzard's debuffs on the party and raid frames with these ones.",
+	["Defensives"] = "Defensives",
 	["Filtered"] = "Filtered",
 	["Glow colour"] = "Glow colour",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Hides buffs that run longer than two minutes, which is most of what a target is carrying around.",
