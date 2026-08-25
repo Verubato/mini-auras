@@ -187,6 +187,7 @@ local dbDefaults = {
 			},
 
 			ShowWarningText = true,
+			WarningTextColor = { R = 1, G = 0.1, B = 0.1 },
 			ShowTooltips = false,
 		},
 		---@class PortraitModuleOptions

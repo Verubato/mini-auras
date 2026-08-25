@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a colour picker for the Healer Crowd Control warning text, so the "Healer in CC!" label can take a colour of your own instead of the stock red.
 - Important aura icons now start at 20 pixels in raids and battlegrounds rather than 25. Existing profiles keep the size they already have.
 - Pointed everyone at the new Frame Auras module once on the next login, since stopping Blizzard's own buffs and debuffs from overlapping on the raid frames is what most people want it for.
 - Told Korean players about the new "MiniAuras - Korean Voice Pack" addon, and Chinese players where the Mandarin voices went, once each on the next login. Neither note goes to a client that is offered no pack of its own.

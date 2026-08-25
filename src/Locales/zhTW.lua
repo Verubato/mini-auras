@@ -261,6 +261,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Show warning text"] = "警告文字",
 	["Text Size"] = "文字大小",
 	["Size of the warning text."] = "警告文字的字級。",
+	["Change the colour of the 'Healer in CC!' warning text."] = "更改'治療者被控!'警告文字的顏色。",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "敵方打斷",

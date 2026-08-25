@@ -261,6 +261,7 @@ L:RegisterLocale("frFR", function() return {
 	["Show warning text"] = "Texte d'alerte",
 	["Text Size"] = "Taille du texte",
 	["Size of the warning text."] = "Taille du texte d'avertissement.",
+	["Change the colour of the 'Healer in CC!' warning text."] = "Change la couleur du texte d'avertissement « Heal sous CC ! ».",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Interruptions ennemies",

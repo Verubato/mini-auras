@@ -26,6 +26,7 @@ function M:Build(panel, options)
 	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
+	local UpdateWarningColorSwatch
 
 	local lines = mini:TextBlock({
 		Parent = panel,
@@ -95,6 +96,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.ShowWarningText = value
+			UpdateWarningColorSwatch()
 			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
@@ -148,6 +150,39 @@ function M:Build(panel, options)
 	})
 
 	showTooltipsChk:SetPoint("TOPLEFT", showIconsChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local warningColorSwatch = mini:ColorSwatch({
+		Parent = panel,
+		LabelText = L["Text colour"],
+		Tooltip = L["Change the colour of the 'Healer in CC!' warning text."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.WarningTextColor
+			return color.R, color.G, color.B, 1
+		end,
+		SetValue = function(r, g, b)
+			local color = options.WarningTextColor
+			color.R, color.G, color.B = r, g, b
+			config:Apply(moduleName.HealerCrowdControl)
+		end,
+	})
+
+	warningColorSwatch:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
+	warningColorSwatch:SetPoint("TOP", showTooltipsChk, "TOP", 0,
+		-math.floor((showTooltipsChk:GetHeight() - warningColorSwatch:GetHeight()) / 2))
+
+	-- With the warning text switched off there is nothing for the swatch to colour, so it goes
+	-- away rather than sitting there doing nothing.
+	function UpdateWarningColorSwatch()
+		local shown = options.ShowWarningText == true
+
+		warningColorSwatch:SetShown(shown)
+		warningColorSwatch.Label:SetShown(shown)
+	end
+
+	UpdateWarningColorSwatch()
+
+	panel.OnMiniRefresh = UpdateWarningColorSwatch
 
 	-- On 12.1 the sound plays engine-side via C_UnitAuras.AddAuraSound (registered per healer
 	-- and per known CC spell in the module), so the option works on both paths.

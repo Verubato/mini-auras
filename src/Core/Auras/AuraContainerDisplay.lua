@@ -79,6 +79,8 @@ local EMPTY_BAR_OPTIONS = {}
 
 -- Fallback tint for the pandemic (refresh-window) reveal, for a style that names no colour.
 local PANDEMIC_COLOR = { 1, 0.1, 0.1 }
+-- Warning red for a Label display whose style names no colour.
+local LABEL_COLOR = { 1, 0.1, 0.1 }
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
@@ -728,6 +730,7 @@ local function StyleDiffersFromStored(instance, style)
 	local color = style.GlowColor
 	local pandemic = style.PandemicColor
 	local text = style.TextColor
+	local label = style.LabelColor
 
 	if not stored.Populated
 		or stored.DisableSwipe ~= ((db and db.DisableSwipe) or false)
@@ -745,7 +748,10 @@ local function StyleDiffersFromStored(instance, style)
 		or stored.PandemicColorB ~= (pandemic and pandemic[3])
 		or stored.TextColorR ~= (text and text[1])
 		or stored.TextColorG ~= (text and text[2])
-		or stored.TextColorB ~= (text and text[3]) then
+		or stored.TextColorB ~= (text and text[3])
+		or stored.LabelColorR ~= (label and label[1])
+		or stored.LabelColorG ~= (label and label[2])
+		or stored.LabelColorB ~= (label and label[3]) then
 		return true
 	end
 
@@ -774,6 +780,7 @@ local function StoreStyle(instance, style)
 	local color = style.GlowColor
 	local pandemic = style.PandemicColor
 	local text = style.TextColor
+	local label = style.LabelColor
 
 	for _, field in ipairs(STYLE_FIELDS) do
 		stored[field] = style[field]
@@ -797,6 +804,9 @@ local function StoreStyle(instance, style)
 	stored.TextColorR = text and text[1]
 	stored.TextColorG = text and text[2]
 	stored.TextColorB = text and text[3]
+	stored.LabelColorR = label and label[1]
+	stored.LabelColorG = label and label[2]
+	stored.LabelColorB = label and label[3]
 	stored.Populated = true
 
 	return true
@@ -863,6 +873,10 @@ end
 ---@param style AuraDisplayStyle
 local function StyleLabel(button, widgets, style)
 	fontUtil:Apply(widgets.Label, style.LabelFontSize or 20, style.LabelFontFlags)
+	widgets.Label:SetTextColor(
+		style.LabelColorR or LABEL_COLOR[1],
+		style.LabelColorG or LABEL_COLOR[2],
+		style.LabelColorB or LABEL_COLOR[3])
 	button:EnableMouse(false)
 end
 
@@ -1629,7 +1643,6 @@ local function InitializeLabelButton(instance, button)
 	local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	text:SetPoint("CENTER", button, "CENTER", 0, 0)
 	text:SetText(instance.Label)
-	text:SetTextColor(1, 0.1, 0.1)
 	text:SetShadowColor(0, 0, 0, 1)
 	text:SetShadowOffset(1, -1)
 
@@ -2384,6 +2397,7 @@ function M:GetStyleScratch()
 	styleScratch.GlowColor = nil
 	styleScratch.PandemicColor = nil
 	styleScratch.TextColor = nil
+	styleScratch.LabelColor = nil
 
 	return styleScratch
 end
@@ -2445,6 +2459,7 @@ function M:GetStyleGeneration(key, style, size, spacing)
 	styleStamps:AddColor(style.PandemicColor)
 	styleStamps:Add(auraCountdownText:GetColorGeneration())
 	styleStamps:AddColor(style.TextColor)
+	styleStamps:AddColor(style.LabelColor)
 
 	return styleStamps:Commit()
 end
@@ -2585,6 +2600,8 @@ end
 ---from the global db by StoreStyle, never by a caller.
 ---@field LabelFontFlags string? Font flags ("OUTLINE" etc.) for a Label display's fontstrings.
 ---Resolved from the global db by StoreStyle, never by a caller.
+---@field LabelColor number[]? {r, g, b} for a Label display's text, warning red when unset.
+---Copied component-wise like GlowColor, so callers may pass a reused scratch.
 ---@field BarWidth number? Width of each bar in pixels (default 150). The bar's height is the
 ---display's size, so one setter covers both shapes. Bar displays only, and inert elsewhere.
 ---@field BarTexture string? Bar fill texture name, resolved through Core/Display/Media/BarTextures.

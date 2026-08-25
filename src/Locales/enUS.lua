@@ -262,6 +262,7 @@ L:SetDefaultStrings({
 	["Show warning text"] = "Warning text",
 	["Text Size"] = "Text Size",
 	["Size of the warning text."] = "Size of the warning text.",
+	["Change the colour of the 'Healer in CC!' warning text."] = "Change the colour of the 'Healer in CC!' warning text.",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Enemy Kicks",

@@ -261,6 +261,7 @@ L:RegisterLocale("deDE", function() return {
 	["Show warning text"] = "Warntext",
 	["Text Size"] = "Textgröße",
 	["Size of the warning text."] = "Größe des Warntextes.",
+	["Change the colour of the 'Healer in CC!' warning text."] = "Ändert die Farbe des Warntextes 'Heiler unter Kontrolle!'.",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Gegnerische Unterbrechungen",

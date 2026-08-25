@@ -261,6 +261,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Show warning text"] = "Texto de aviso",
 	["Text Size"] = "Tamanho do texto",
 	["Size of the warning text."] = "Tamanho do texto de aviso.",
+	["Change the colour of the 'Healer in CC!' warning text."] = "Altera a cor do texto de aviso 'Curandeiro sob controle!'.",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Interrupções inimigas",

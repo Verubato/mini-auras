@@ -261,6 +261,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Show warning text"] = "Предупреждение",
 	["Text Size"] = "Размер текста",
 	["Size of the warning text."] = "Размер текста предупреждения.",
+	["Change the colour of the 'Healer in CC!' warning text."] = "Меняет цвет текста предупреждения 'Целитель в СС'.",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Прерывания врагов",

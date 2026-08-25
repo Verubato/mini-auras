@@ -261,6 +261,7 @@ L:RegisterLocale("koKR", function() return {
 	["Show warning text"] = "경고 텍스트",
 	["Text Size"] = "텍스트 크기",
 	["Size of the warning text."] = "경고 문구의 글자 크기입니다.",
+	["Change the colour of the 'Healer in CC!' warning text."] = "'치유사가 군중 제어당함!' 경고 문구의 색상을 변경합니다.",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "적 차단",

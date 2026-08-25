@@ -644,6 +644,7 @@ end)
 
 fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", function()
 	local healerCC = env.addon.Modules.HealerCrowdControlModule
+	local options = db.Modules.HealerCrowdControl
 
 	-- The label container is the one whose buttons carry a fontstring and no icon texture.
 	-- The icon container's buttons always start with the icon.
@@ -658,6 +659,31 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 			end
 		end
 		return label, icons
+	end
+
+	---A healer's label fontstring. Checked against the warning text, so a container that merely
+	---looks like the label one cannot stand in for it.
+	local function warningText(token)
+		local label = splitContainers(token)
+		local text = label and label._buttons[1]._createdFontStrings[1]
+
+		assert(text and text._lastArgs.SetText[1] == env.addon.L["Healer in CC!"],
+			"a label fontstring carrying the warning text for " .. token)
+
+		return text
+	end
+
+	local function warningColor(token)
+		return unpack(warningText(token)._lastArgs.SetTextColor)
+	end
+
+	---The anchor's own fontstring, which is the one the test-mode preview draws.
+	local function previewText()
+		for _, frame in ipairs(acm.frames) do
+			if frame._name == "MiniAurasHealerContainer" then
+				return frame.HealerWarning
+			end
+		end
 	end
 
 	fw.it("every healer carries an icon container and a label container", function()
@@ -709,6 +735,62 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 		local before = env.auraContainerCount()
 		healerCC:Refresh()
 		assert(env.auraContainerCount() == before, "no new containers on an unchanged roster")
+	end)
+
+	fw.it("an untouched profile keeps the stock red", function()
+		local r, g, b = warningColor("party1")
+
+		assert(r == 1 and g == 0.1 and b == 0.1,
+			("expected the stock red, got %s %s %s"):format(tostring(r), tostring(g), tostring(b)))
+	end)
+
+	fw.it("a picked colour reaches the warning text", function()
+		options.WarningTextColor.R, options.WarningTextColor.G, options.WarningTextColor.B = 0.25, 0.5, 0.75
+		healerCC:Refresh()
+
+		local r, g, b = warningColor("party1")
+		assert(r == 0.25 and g == 0.5 and b == 0.75,
+			("expected the picked colour, got %s %s %s"):format(tostring(r), tostring(g), tostring(b)))
+	end)
+
+	fw.it("the preview takes the colour the live text does", function()
+		-- Its own colour, so the case still compares two colours if the one before it starts
+		-- restoring the stock red.
+		options.WarningTextColor.R, options.WarningTextColor.G, options.WarningTextColor.B = 0.2, 0.4, 0.6
+		healerCC:Refresh()
+
+		local text = previewText()
+
+		assert(text, "the anchor carries a warning fontstring")
+
+		local applied = text._lastArgs.SetTextColor
+
+		assert(applied, "the preview fontstring was coloured")
+
+		local r, g, b = warningColor("party1")
+
+		assert(applied[1] == r and applied[2] == g and applied[3] == b,
+			("expected %s %s %s, got %s %s %s"):format(tostring(r), tostring(g), tostring(b),
+				tostring(applied[1]), tostring(applied[2]), tostring(applied[3])))
+	end)
+
+	fw.it("a colour change reaches a parked label container", function()
+		-- A healer joining while aura styling is restricted takes a parked entry and cannot restyle
+		-- it, so the pool has to be brought onto the new colour while it sits there.
+		env.healers.party2 = nil
+		healerCC:Refresh()
+
+		options.WarningTextColor.R, options.WarningTextColor.G, options.WarningTextColor.B = 0, 0.5, 1
+		healerCC:Refresh()
+
+		local r, g, b = warningColor("party2")
+		assert(r == 0 and g == 0.5 and b == 1,
+			("expected the parked container to follow, got %s %s %s")
+				:format(tostring(r), tostring(g), tostring(b)))
+
+		options.WarningTextColor.R, options.WarningTextColor.G, options.WarningTextColor.B = 1, 0.1, 0.1
+		env.healers.party2 = true
+		healerCC:Refresh()
 	end)
 
 	fw.it("a healer leaving the visible world is re-budgeted without a module refresh", function()

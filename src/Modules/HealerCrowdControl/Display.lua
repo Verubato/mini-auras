@@ -33,10 +33,13 @@ local PARKED_OPTIONS_KEY = "HealerCcParkedOptions"
 local MAX_CC_ICONS = 5
 -- One CC aura is enough to warrant the warning text.
 local LABEL_MAX_ICONS = 1
+-- The stock red, for a profile that names no colour of its own.
+local DEFAULT_WARNING_COLOR = { R = 1, G = 0.1, B = 0.1 }
 local testModeActive = false
 -- Sorted healer-unit scratch so the display chain has a stable order. In pairs order the healer
 -- rows would swap places between refreshes.
 local healerOrderScratch = {}
+local warningColorScratch = {}
 
 ---@type Db
 local db
@@ -71,6 +74,13 @@ local function IconBudget(options)
 	local budget = tonumber(options.Icons.MaxIcons) or MAX_CC_ICONS
 
 	return math.max(0, math.min(math.floor(budget), MAX_CC_ICONS))
+end
+
+---The warning text's colour, filled into the shared scratch. Callers read it and let it go.
+---@param options table
+---@return number[]
+local function WarningColor(options)
+	return moduleUtil:FillColor(warningColorScratch, options.WarningTextColor, DEFAULT_WARNING_COLOR)
 end
 
 local function UpdateAnchorSize()
@@ -144,6 +154,7 @@ local function BuildLabelStyle(options)
 
 	style.LabelFontSize = tonumber(options.Font.Size) or 32
 	style.LabelFontFlags = options.Font.Flags
+	style.LabelColor = WarningColor(options)
 	style.ShowTooltips = false
 
 	return style
@@ -195,12 +206,14 @@ local function RefreshHealerDisplays()
 	-- hidden, so on the spot rather than staggered. Gated on the options actually moving, since this
 	-- runs on every roster event, and skipped with the latch left stale while restricted, where the
 	-- restyle could not land and the next unrestricted refresh retries.
-	-- The label's font rides in the same stamp, since it is baked into the parked entries too.
+	-- The label's font and colour ride in the same stamp, since they are baked into the parked
+	-- entries too.
 	optionsStamp:Begin(PARKED_OPTIONS_KEY)
 	optionsStamp:Add(auraContainerDisplay:GetStyleGeneration(PARKED_STYLE_KEY, BuildStyle(options),
 		iconSize, options.IconSpacing or 2))
 	optionsStamp:Add(fontSize)
 	optionsStamp:Add(options.Font.Flags)
+	optionsStamp:AddColor(WarningColor(options))
 
 	local generation = optionsStamp:Commit()
 
@@ -393,7 +406,6 @@ local function CreateFrames()
 	-- picked.
 	fontUtil:Apply(text, options.Font.Size, options.Font.Flags)
 	text:SetText(L["Healer in CC!"])
-	text:SetTextColor(1, 0.1, 0.1)
 	text:SetShadowColor(0, 0, 0, 1)
 	text:SetShadowOffset(1, -1)
 	text:Show()
@@ -507,6 +519,10 @@ function M:ApplyOptions(options)
 	)
 
 	fontUtil:Apply(healerAnchor.HealerWarning, options.Font.Size, options.Font.Flags)
+
+	local warningColor = WarningColor(options)
+
+	healerAnchor.HealerWarning:SetTextColor(warningColor[1], warningColor[2], warningColor[3])
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 	iconsContainer:SetSpacing(options.IconSpacing or 2)
 

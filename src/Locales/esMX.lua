@@ -262,6 +262,7 @@ L:RegisterLocale("esMX", function() return {
 	["Show warning text"] = "Texto de aviso",
 	["Text Size"] = "Tamaño de texto",
 	["Size of the warning text."] = "Tamaño del texto de aviso.",
+	["Change the colour of the 'Healer in CC!' warning text."] = "Cambia el color del texto de aviso '¡Sanador bajo control!'.",
 
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Interrupciones enemigas",
