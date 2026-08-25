@@ -307,14 +307,21 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 		db.FrameAuraCVars = { Buffs = "1" }
 		cvars.raidFramesDisplayBuffs = "0"
 
+		-- The debuff side is the other half of the same pass: off, nothing held for it, and the
+		-- player keeping Blizzard's row hidden by their own choice. It must be left alone.
+		cvars.raidFramesDisplayDebuffs = "0"
+
 		partyAuras:Refresh()
 
 		local handed = LastWrite("raidFramesDisplayBuffs")
+		local untouched = LastWrite("raidFramesDisplayDebuffs")
 
 		db.FrameAuraCVars = nil
 		cvars.raidFramesDisplayBuffs = "1"
+		cvars.raidFramesDisplayDebuffs = "1"
 
 		assert(handed == "1", "the row was left hidden with nothing drawing it, got " .. tostring(handed))
+		assert(untouched == nil, "a row this module never took was handed back, got " .. tostring(untouched))
 	end)
 
 	fw.it("leaves the cvars alone for a side that was already off at login", function()
