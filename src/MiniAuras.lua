@@ -169,10 +169,7 @@ local function OnEvent(_, event, unit)
 			local tabController = addon.Config.TabController
 			if tabController then
 				for _, key in ipairs({ "CC", "PetCC" }) do
-					local ccPanel = tabController:GetContent(key)
-					if ccPanel and ccPanel.MiniRefresh then
-						ccPanel:MiniRefresh()
-					end
+					mini.GUI.RefreshPanelTree(tabController:GetContent(key))
 				end
 			end
 		end

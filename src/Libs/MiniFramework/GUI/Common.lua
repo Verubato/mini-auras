@@ -183,6 +183,23 @@ function GUI.AddControlForRefresh(panel, control)
 	end
 end
 
+---Re-reads a page and every panel registered below it. A page built out of sub-tabs owns no
+---controls itself, so it carries no MiniRefresh of its own.
+---@param frame table?
+function GUI.RefreshPanelTree(frame)
+	if not frame then
+		return
+	end
+
+	if frame.MiniRefresh then
+		frame:MiniRefresh()
+
+		return
+	end
+
+	RefreshChildPanels(frame)
+end
+
 function GUI.ConfigureNumericBox(box, allowNegative)
 	if not allowNegative then
 		box:SetNumeric(true)

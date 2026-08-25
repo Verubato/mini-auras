@@ -399,7 +399,7 @@ function M:Build(panel)
 					if tabController then
 						for i = 1, #tabController.Tabs do
 							local content = tabController:GetContent(tabController.Tabs[i].Key)
-							if content and content.MiniRefresh then content:MiniRefresh() end
+							mini.GUI.RefreshPanelTree(content)
 						end
 					end
 					addon:Refresh()
@@ -531,10 +531,7 @@ function M:Build(panel)
 		local tabController = addon.Config.TabController
 		if not tabController then return end
 		for i = 1, #tabController.Tabs do
-			local content = tabController:GetContent(tabController.Tabs[i].Key)
-			if content and content.MiniRefresh then
-				content:MiniRefresh()
-			end
+			mini.GUI.RefreshPanelTree(tabController:GetContent(tabController.Tabs[i].Key))
 		end
 	end)
 end
