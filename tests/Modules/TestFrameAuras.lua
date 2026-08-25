@@ -156,6 +156,8 @@ end
 local CURATED = CuratedId()
 -- An id the curated list will never hold, for the hand-added cases.
 local CUSTOM = 99000001
+-- The second Lifebloom, which the client names after the spell it copies.
+local FULL_BLOOM = 290754
 -- The aura groups the rows draw through. Crowd control leads the debuff row, larger than the rest.
 local PARTY_BUFF_GROUP = "FrameBuffs"
 local DEBUFF_GROUP = "FrameDebuffs"
@@ -208,6 +210,14 @@ fw.describe("Frame Auras - the tracked buff list", function()
 		assert(spells:IsCurated(CURATED), "the sample id should be curated")
 		assert(spells:IsTracked(CURATED), "a curated spell starts tracked")
 		assert(not spells:IsTracked(CUSTOM), "an id nobody added is not tracked")
+	end)
+
+	fw.it("ships Full Bloom under a label of its own", function()
+		ResetSpells()
+
+		assert(spells:IsCurated(FULL_BLOOM), "Full Bloom ships tracked")
+		assert(trackedBuffs.Names[FULL_BLOOM] == "Full Bloom",
+			"and the list names it, because the client calls it Lifebloom")
 	end)
 
 	fw.it("switches a curated spell off without forgetting it", function()

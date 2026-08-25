@@ -16,6 +16,7 @@ local groups = {
 			774, -- Rejuvenation
 			155777, -- Rejuvenation (Germination)
 			33763, -- Lifebloom
+			290754, -- Lifebloom (Full Bloom)
 			8936, -- Regrowth
 			48438, -- Wild Growth
 		},
@@ -81,6 +82,7 @@ local pandemic = {
 -- These are written out, so they stay English on a client that is not.
 local names = {
 	[155777] = "Germination",
+	[290754] = "Full Bloom",
 }
 
 -- Flat lookup off the same data, so nothing has to walk the groups to answer "does this ship
