@@ -974,6 +974,48 @@ fw.describe("Frame Auras - test mode", function()
 		options.Buffs.ShowDefensives = false
 	end)
 
+	fw.it("previews the heal-over-times and the plain debuffs its rows are for", function()
+		local hots = { 8936, 155777, 48438 }
+		local corruption = 146739
+
+		options.Buffs.Enabled = true
+
+		module:StartTesting()
+
+		local buffs = assert(fills[1], "the buff row previews something").Spells
+
+		for _, spellId in ipairs(hots) do
+			assert(Includes(buffs, spellId), "heal-over-time " .. spellId .. " reached the row")
+		end
+
+		module:StopTesting()
+		ResetFills()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = true
+		module:StartTesting()
+
+		local debuffs = assert(fills[1], "the debuff row previews something").Spells
+
+		assert(Includes(debuffs, corruption), "Corruption reached the row")
+
+		options.Debuffs.Enabled = false
+	end)
+
+	fw.it("draws Renew behind the other heal-over-times", function()
+		local renew = 139
+
+		options.Buffs.Enabled = true
+
+		module:StartTesting()
+
+		local row = assert(fills[1], "the buff row previews something").Spells
+
+		assert(Includes(row, renew), "Renew is in the buff preview")
+		assert(row[#row] == renew, "and it comes last")
+
+		options.Buffs.Enabled = false
+	end)
+
 	fw.it("previews nothing at all while both sides are off", function()
 		module:StartTesting()
 

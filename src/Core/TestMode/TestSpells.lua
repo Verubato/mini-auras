@@ -69,8 +69,16 @@ M.Nameplates = {
 M.FrameAuras = {
 	-- Heal-over-times, which is what the buff row is for, and debuffs the game flags as nothing
 	-- in particular.
-	Buffs = { 774, 33763, 139, 61295 }, -- Rejuvenation, Lifebloom, Renew, Riptide
-	Debuffs = { 589, 980, 34914 },      -- Shadow Word: Pain, Agony, Vampiric Touch
+	Buffs = {
+		774,    -- Rejuvenation
+		33763,  -- Lifebloom
+		61295,  -- Riptide
+		8936,   -- Regrowth
+		155777, -- Germination
+		48438,  -- Wild Growth
+		139,    -- Renew
+	},
+	Debuffs = { 589, 980, 34914, 146739 }, -- Shadow Word: Pain, Agony, Vampiric Touch, Corruption
 	-- One stand-in per flagged category, drawn only while the row is letting that category in.
 	CrowdControl = 408,  -- Kidney Shot
 	Important = 31884,   -- Avenging Wrath
