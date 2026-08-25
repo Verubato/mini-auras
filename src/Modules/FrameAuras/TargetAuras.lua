@@ -445,11 +445,16 @@ end
 ---One preview row. Nothing can put a fake aura in front of the engine, so the preview draws its
 ---own icons rather than feeding the live display.
 ---@param frame table
----@param perRow number
+---@param maxIcons number
 ---@param size number
 ---@return IconSlotContainer
-local function NewTestRow(frame, perRow, size)
-	return iconSlotContainer:New(frame, perRow, size, ICON_SPACING, MASQUE_GROUP, nil, MASQUE_GROUP)
+local function NewTestRow(frame, maxIcons, size)
+	local container = iconSlotContainer:New(frame, maxIcons, size, ICON_SPACING, MASQUE_GROUP, nil, MASQUE_GROUP)
+
+	-- Both rows hang below the frame's art, so a wrapped line carries on downwards.
+	container:SetGrowDown(true)
+
+	return container
 end
 
 ---@param container IconSlotContainer?
@@ -465,17 +470,21 @@ end
 ---@param container IconSlotContainer
 ---@param previewSpells number[]
 ---@param size number
+---@param maxIcons number
 ---@param perRow number
 ---@param leadSpells number[]? Drawn first and lit up, the way the purgeable group leads the live
 ---row. Nil draws the row plain.
 ---@param leadColor table? The colour those icons take.
-local function FillTestRow(container, previewSpells, size, perRow, leadSpells, leadColor)
+local function FillTestRow(container, previewSpells, size, maxIcons, perRow, leadSpells, leadColor)
 	local db = mini:GetSavedVars()
 	local fontScale = db and db.FontScale
 	local slot = 1
 
 	container:SetIconSize(size)
-	container:SetCount(perRow)
+	container:SetCount(maxIcons)
+	-- The grid sizes the row to its full column width, so a budget that never reaches one line
+	-- would sit centred away from where the live row draws.
+	container:SetColumns(math.min(perRow, maxIcons))
 
 	if leadSpells then
 		slot = testSpells:FillContainer(container, leadSpells, slot, {
@@ -484,7 +493,7 @@ local function FillTestRow(container, previewSpells, size, perRow, leadSpells, l
 			Color = leadColor,
 			FontScale = fontScale,
 			Stagger = true,
-			Count = perRow,
+			Count = maxIcons,
 		})
 	end
 
@@ -493,7 +502,8 @@ local function FillTestRow(container, previewSpells, size, perRow, leadSpells, l
 		Glow = false,
 		FontScale = fontScale,
 		Stagger = true,
-		Count = perRow,
+		Count = maxIcons,
+		Repeat = true,
 	})
 
 	for spare = nextSlot, container.Count do
@@ -529,16 +539,14 @@ local function ApplyTestRows(host, options)
 	end
 
 	local size = options.Size or DEFAULT_SIZE
-	-- One row's worth, capped by the budget. Reading both sliders is what makes each of them
-	-- visibly do something while the preview is up.
-	local count = math.max(1, math.min(
-		options.MaxIcons or DEFAULT_MAX_ICONS,
-		options.PerRow or DEFAULT_PER_ROW
-	))
+	-- The whole budget, since the live row wraps onto a second line rather than dropping what
+	-- will not fit on the first.
+	local maxIcons = math.max(1, options.MaxIcons or DEFAULT_MAX_ICONS)
+	local perRow = math.max(1, options.PerRow or DEFAULT_PER_ROW)
 
 	if not host.TestDebuffs then
-		host.TestDebuffs = NewTestRow(host.Frame, count, size)
-		host.TestBuffs = NewTestRow(host.Frame, count, size)
+		host.TestDebuffs = NewTestRow(host.Frame, maxIcons, size)
+		host.TestBuffs = NewTestRow(host.Frame, maxIcons, size)
 	end
 
 	local lead
@@ -548,8 +556,8 @@ local function ApplyTestRows(host, options)
 		lead = purgePreviewSpells
 	end
 
-	FillTestRow(host.TestDebuffs, testSpells.FrameAuras.Debuffs, size, count)
-	FillTestRow(host.TestBuffs, testSpells.FrameAuras.Buffs, size, count, lead, purgeColorScratch)
+	FillTestRow(host.TestDebuffs, testSpells.FrameAuras.Debuffs, size, maxIcons, perRow)
+	FillTestRow(host.TestBuffs, testSpells.FrameAuras.Buffs, size, maxIcons, perRow, lead, purgeColorScratch)
 
 	local frame = host.Frame
 	local debuffs = host.TestDebuffs.Frame

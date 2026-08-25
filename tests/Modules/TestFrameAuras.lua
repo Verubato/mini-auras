@@ -652,6 +652,30 @@ local function ResetFills()
 	end
 end
 
+---How many lines a preview row's icons ended up on, counted by the distinct heights they were
+---placed at. A row that never wrapped puts every icon at one height.
+---@param container IconSlotContainer
+---@return number
+local function LinesIn(container)
+	local heights = {}
+	local lines = 0
+
+	for index = 1, container.Count do
+		local slot = container.Slots[index]
+
+		if slot and slot.IsUsed then
+			local _, _, _, _, y = slot.Frame:GetPoint(1)
+
+			if not heights[y] then
+				heights[y] = true
+				lines = lines + 1
+			end
+		end
+	end
+
+	return lines
+end
+
 ---The preview row drawn on a given frame, or nil when nothing was drawn there.
 ---@param frame table
 ---@return IconSlotContainer?
@@ -1014,6 +1038,61 @@ fw.describe("Frame Auras - test mode", function()
 		assert(row[#row] == renew, "and it comes last")
 
 		options.Buffs.Enabled = false
+	end)
+
+	fw.it("draws the whole icon budget, wrapped at the icons per row", function()
+		options.Buffs.Enabled = true
+		options.Buffs.MaxIcons = 8
+		options.Buffs.PerRow = 3
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+
+		assert(row:GetUsedSlotCount() == 8,
+			"the budget above the line width still draws every icon, got " .. row:GetUsedSlotCount())
+		assert(LinesIn(row) == 3, "and wraps them three to a line, got " .. LinesIn(row))
+
+		options.Buffs.MaxIcons = 6
+		options.Buffs.PerRow = 3
+		options.Buffs.Enabled = false
+	end)
+
+	fw.it("keeps a budget narrower than the line width at its own width", function()
+		options.Buffs.Enabled = true
+		options.Buffs.MaxIcons = 2
+		options.Buffs.PerRow = 6
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local expected = 2 * row.Size + row.Spacing
+
+		assert(row:GetUsedSlotCount() == 2, "the budget is what draws, got " .. row:GetUsedSlotCount())
+		assert(row.Frame:GetWidth() == expected,
+			"and the row is no wider than the icons in it, got " .. row.Frame:GetWidth())
+
+		options.Buffs.MaxIcons = 6
+		options.Buffs.PerRow = 3
+		options.Buffs.Enabled = false
+	end)
+
+	fw.it("draws the spells round again rather than stopping short of the budget", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.MaxIcons = 9
+		options.Debuffs.PerRow = 3
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+
+		assert(#testSpells.FrameAuras.Debuffs < 9, "the debuff list is shorter than this budget")
+		assert(row:GetUsedSlotCount() == 9,
+			"so it repeats to fill the row, got " .. row:GetUsedSlotCount())
+
+		options.Debuffs.MaxIcons = 3
+		options.Debuffs.PerRow = 3
+		options.Debuffs.Enabled = false
 	end)
 
 	fw.it("previews nothing at all while both sides are off", function()
@@ -1531,6 +1610,69 @@ fw.describe("Frame Auras - how the target rows stack", function()
 		local _, relativeTo = targetFrame.spellbar:GetPoint(1)
 
 		assert(relativeTo == debuffs, "the bar follows the bottom row, so it cannot cover it")
+	end)
+end)
+
+fw.describe("Frame Auras - the target preview rows", function()
+	fw.before_each(function()
+		module:StopTesting()
+		targetAuras.Available = true
+		options.TargetFocus.Enabled = true
+		options.TargetFocus.PurgeGlow = false
+
+		module:Refresh()
+		acm.tickAll(400)
+		ResetFills()
+	end)
+
+	fw.it("draws the whole icon budget, wrapped at the icons per row", function()
+		options.TargetFocus.MaxIcons = 10
+		options.TargetFocus.PerRow = 4
+
+		module:StartTesting()
+
+		local row = assert(RowOn(targetFrame), "the target frame got a preview row")
+
+		assert(row:GetUsedSlotCount() == 10,
+			"the budget above the line width still draws every icon, got " .. row:GetUsedSlotCount())
+		assert(LinesIn(row) == 3, "and wraps them four to a line, got " .. LinesIn(row))
+
+		module:StopTesting()
+		options.TargetFocus.MaxIcons = 6
+		options.TargetFocus.PerRow = 6
+	end)
+
+	---The preview row on the target frame that was handed a given spell, so the buff row can be
+	---told from the debuff row beside it.
+	---@param spellId number
+	---@return IconSlotContainer?
+	local function TargetRowWith(spellId)
+		for _, fill in ipairs(fills) do
+			if fill.Frame:GetParent() == targetFrame and Includes(fill.Spells, spellId) then
+				return fill.Container
+			end
+		end
+
+		return nil
+	end
+
+	fw.it("counts the purgeable buff leading the row against the budget", function()
+		options.TargetFocus.MaxIcons = 9
+		options.TargetFocus.PerRow = 9
+		options.TargetFocus.PurgeGlow = true
+
+		module:StartTesting()
+
+		local buffs = assert(TargetRowWith(testSpells.FrameAuras.Purgeable),
+			"the buff row leads with a purgeable buff")
+
+		assert(buffs:GetUsedSlotCount() == 9,
+			"the row ends on the icon the slider promised, got " .. buffs:GetUsedSlotCount())
+
+		module:StopTesting()
+		options.TargetFocus.PurgeGlow = false
+		options.TargetFocus.MaxIcons = 6
+		options.TargetFocus.PerRow = 6
 	end)
 end)
 

@@ -441,12 +441,12 @@ local function TestSpellList(side)
 	return testListScratch
 end
 
----How many icons the preview draws: one row's worth, capped by the budget. Reading both sliders is
----what makes each of them visibly do something while test mode is up.
+---How many icons the preview draws: the whole budget, since the live row wraps onto a second line
+---rather than dropping what will not fit on the first.
 ---@param side "Buffs"|"Debuffs"
 ---@return number
 local function TestIconCount(side)
-	return math.max(1, math.min(MaxIcons(side), PerRow(side)))
+	return math.max(1, MaxIcons(side))
 end
 
 ---@param side "Buffs"|"Debuffs"
@@ -654,6 +654,9 @@ local function EnsureTestContainer(entry, side)
 			nil,
 			MASQUE_GROUP
 		)
+		-- Both rows are anchored in a bottom corner, so a wrapped line goes up rather than over
+		-- the frame below this one.
+		container:SetGrowUp(true)
 		entry[field] = container
 	end
 
@@ -682,6 +685,9 @@ local function ApplyTestSide(entry, side)
 
 	container:SetIconSize(IconSize(frame, side))
 	container:SetCount(count)
+	-- The grid sizes the row to its full column width, so a budget that never reaches one line
+	-- would sit centred away from where the live row draws.
+	container:SetColumns(math.min(PerRow(side), count))
 
 	local db = mini:GetSavedVars()
 	local nextSlot = testSpells:FillContainer(container, TestSpellList(side), 1, {
@@ -690,6 +696,7 @@ local function ApplyTestSide(entry, side)
 		FontScale = db and db.FontScale,
 		Stagger = true,
 		Count = count,
+		Repeat = true,
 	})
 
 	for slot = nextSlot, container.Count do

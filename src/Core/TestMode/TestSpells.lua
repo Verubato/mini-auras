@@ -135,6 +135,7 @@ M.KickSpecIds = {
 --- containers only, where the live displays can centre a stack count);
 --- ShowTooltips attaches each spell id;
 --- Count caps how many spells are drawn (default all);
+--- Repeat draws the list round again once it runs out, so Count is met rather than capped;
 --- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s);
 --- BarTexture and Border are passed to a BarSlotContainer's fill and outline (the icon
 --- containers ignore both, drawing their border off Color instead);
@@ -143,14 +144,21 @@ M.KickSpecIds = {
 function M:FillContainer(container, spells, startSlot, options)
 	local now = GetTime()
 	local slot = startSlot
-	local count = math.min(options.Count or #spells, #spells)
+	local available = #spells
+	local count = math.min(options.Count or available, available)
+
+	-- A preview whose icon count stops short of what the setting promised reads as a broken
+	-- setting.
+	if options.Repeat and options.Count and available > 0 then
+		count = options.Count
+	end
 
 	for i = 1, count do
 		if slot > container.Count then
 			break
 		end
 
-		local spell = spells[i]
+		local spell = spells[(i - 1) % available + 1]
 		local spellId = type(spell) == "table" and spell.SpellId or spell
 		local texture = C_Spell.GetSpellTexture(spellId)
 
