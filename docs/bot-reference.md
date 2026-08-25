@@ -672,9 +672,7 @@ icon. Custom IDs are added in the Custom section via the Spell ID box and remove
 button. Only differences from the curated list are saved, so an updated curated list still reaches
 existing profiles.
 
-A row is only built for a frame that is actually on screen, and once the module is on it warms up
-five frames' worth of spare rows in the background so a group forming does not have to wait for
-them. A frame that appears takes a waiting spare rather than paying to build one.
+A row is only built for a frame that is actually on screen.
 
 **Test mode.** The Test button previews all three parts at once. The preview follows the category
 switches: turning crowd control on puts a stun at the head of the debuff row and turning it off

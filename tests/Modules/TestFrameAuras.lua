@@ -5,7 +5,7 @@
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
--- The sweep only moves on a frame of its own, so the prewarm tests have to pump it by hand.
+-- The sweep only moves on a frame of its own, so a test that waits on it has to pump it by hand.
 local acm = require("AuraContainerMock")
 -- For marking a value secret, which is how the client answers about units mid-loading-screen.
 local wow = require("WowApi")
@@ -156,7 +156,6 @@ end
 local CURATED = CuratedId()
 -- An id the curated list will never hold, for the hand-added cases.
 local CUSTOM = 99000001
--- The two aura groups the debuff row draws through: crowd control leads it, larger than the rest.
 -- The aura groups the rows draw through. Crowd control leads the debuff row, larger than the rest.
 local PARTY_BUFF_GROUP = "FrameBuffs"
 local DEBUFF_GROUP = "FrameDebuffs"
@@ -200,21 +199,6 @@ local function Fire(event)
 			handler(frame, event)
 		end
 	end
-end
-
----The aura container carrying a given group on a frame, or nil where nothing built one.
----@param frame table
----@param groupKey string
----@return table?
-local function GroupRowOn(frame, groupKey)
-	for _, candidate in ipairs(acm.frames) do
-		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
-			and candidate._groups[groupKey] then
-			return candidate
-		end
-	end
-
-	return nil
 end
 
 fw.describe("Frame Auras - the tracked buff list", function()
@@ -611,8 +595,7 @@ local function DropRaidFrame(index)
 	_G["CompactRaidFrame" .. index] = nil
 end
 
----How many aura containers are parented to a frame. Asked of the frame rather than of the unit,
----because a spare warmed up ahead of a group sits on "none" until one takes it.
+---How many aura containers are parented to a frame.
 ---@param frame table
 ---@return number
 local function ContainersOn(frame)
@@ -625,6 +608,21 @@ local function ContainersOn(frame)
 	end
 
 	return count
+end
+
+---The aura container carrying a given group on a frame, or nil where nothing built one.
+---@param frame table
+---@param groupKey string
+---@return table?
+local function GroupRowOn(frame, groupKey)
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
+			and candidate._groups[groupKey] then
+			return candidate
+		end
+	end
+
+	return nil
 end
 
 ---Whether a captured preview list holds a spell id.
@@ -730,69 +728,14 @@ fw.describe("Frame Auras - what one frame costs", function()
 	end)
 end)
 
-fw.describe("Frame Auras - warming up ahead of a group", function()
-	fw.before_each(function()
-		options.Buffs.Enabled = false
-		options.Debuffs.Enabled = false
-		partyAuras:Refresh()
-	end)
-
-	fw.it("builds spare rows for the frames a group has yet to fill", function()
-		options.Buffs.Enabled = true
-		partyAuras:Refresh()
-		acm.tickAll(400)
-
-		local warmed = env.auraContainerCount()
-
-		-- Five frames' worth are wanted in total, and only one frame is on screen, so the walker
-		-- has more to build than the frames alone would ever ask for.
-		options.Buffs.Enabled = false
-		partyAuras:Refresh()
-
-		assert(warmed >= 5, "five frames' worth were made ready, got " .. warmed)
-	end)
-
-	fw.it("hands a waiting spare to the next frame rather than building another", function()
-		options.Buffs.Enabled = true
-		partyAuras:Refresh()
-		acm.tickAll(400)
-
-		local warmed = env.auraContainerCount()
-
-		-- A second frame turns up, as one does when somebody joins.
-		local joined = _G.CreateFrame("Frame", "CompactPartyFrameMember2", _G.UIParent)
-		joined.healthBar = _G.CreateFrame("Frame", nil, joined)
-		joined.unit = "party2"
-		joined.GetAttribute = function(_, key)
-			return key == "unit" and joined.unit or nil
-		end
-		_G.CompactPartyFrameMember2 = joined
-
-		partyAuras:Refresh()
-
-		assert(env.auraContainerCount() == warmed,
-			"the frame took a row that already existed instead of paying to build one")
-
-		_G.CompactPartyFrameMember2 = nil
-		options.Buffs.Enabled = false
-		partyAuras:Refresh()
-	end)
-
-	fw.it("builds no spares for a side nobody switched on", function()
-		local before = env.auraContainerCount()
-
-		partyAuras:Refresh()
-		acm.tickAll(400)
-
-		assert(env.auraContainerCount() == before, "an off module warms nothing up")
-	end)
-end)
-
 fw.describe("Frame Auras - test mode", function()
 	fw.before_each(function()
 		module:StopTesting()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
+		-- A test that raises the screen and then fails would otherwise leave it up for every test
+		-- after it.
+		env.loadingScreenUp = false
 		ResetFills()
 	end)
 
@@ -833,28 +776,26 @@ fw.describe("Frame Auras - test mode", function()
 		end
 	end)
 
-	fw.it("builds nothing while a loading screen is up", function()
+	fw.it("builds through the login layout pass", function()
 		options.Buffs.Enabled = true
 
 		local frame = NewRaidFrame(20)
 
 		-- Blizzard shows all forty raid frames and five party frames pointed at "player" while it
-		-- lays them out at login, so during that window every one of them looks like a frame worth
-		-- building for. Nothing about the frame can tell them apart. Only the timing can.
+		-- lays them out at login, so a row is ready on each before a group can turn up.
 		env.loadingScreenUp = true
 
 		partyAuras:Refresh()
 
-		assert(ContainersOn(frame) == 0, "the layout pass builds nothing")
+		local built = ContainersOn(frame)
 
 		env.loadingScreenUp = false
-		partyAuras:Refresh()
-
-		assert(ContainersOn(frame) > 0, "and the pass after the screen builds what is really there")
 
 		DropRaidFrame(20)
 		options.Buffs.Enabled = false
 		partyAuras:Refresh()
+
+		assert(built > 0, "the layout pass built nothing")
 	end)
 
 	fw.it("stops the client tracking a row the layout pass built on an empty frame", function()
@@ -893,6 +834,35 @@ fw.describe("Frame Auras - test mode", function()
 		partyAuras:Refresh()
 
 		assert(tracking == false, "the client is still weighing every aura against an empty row")
+	end)
+
+	fw.it("measures a row built behind the screen again once it lifts", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.MaxIcons = 3
+
+		local frame = NewRaidFrame(21)
+
+		env.loadingScreenUp = true
+
+		partyAuras:Refresh()
+
+		-- No refresh behind it, because the pass the screen lifting runs carries none either. An
+		-- entry stamped as settled behind the screen would keep the geometry it read mid-layout.
+		options.Debuffs.MaxIcons = 2
+		env.loadingScreenUp = false
+
+		Fire("LOADING_SCREEN_DISABLED")
+		acm.tickAll(400)
+
+		local row = GroupRowOn(frame, DEBUFF_GROUP)
+		local budget = row and row._groups[DEBUFF_GROUP].maxFrameCount
+
+		DropRaidFrame(21)
+		options.Debuffs.MaxIcons = 3
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(budget == 2, "the pass after the screen never measured the row again, got " .. tostring(budget))
 	end)
 
 	fw.it("waits for a definite answer before building a frame's rows", function()
@@ -1151,14 +1121,7 @@ end)
 ---@param frame table
 ---@return table?
 local function DebuffRow(frame)
-	for _, candidate in ipairs(acm.frames) do
-		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
-			and candidate._groups[DEBUFF_GROUP] then
-			return candidate
-		end
-	end
-
-	return nil
+	return GroupRowOn(frame, DEBUFF_GROUP)
 end
 
 fw.describe("Frame Auras - crowd control at the head of the debuff row", function()
@@ -1278,8 +1241,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		DropRaidFrame(34)
 	end)
 
-	-- The switch can move while a row is still being built, which is the state a spare handed to a
-	-- frame is in as well.
+	-- The switch can move while a row is still being built.
 	fw.it("hands the group to a row mid-build, and draws it first anyway", function()
 		options.Debuffs.Enabled = true
 

@@ -336,8 +336,9 @@ end
 
 ---Installs the unit-frame integration hooks shared by the raid-frame icon modules: the
 ---CompactUnitFrame set-unit and visibility hooks, the FrameSort and DandersFrames post-sort
----callbacks, and the Cell spotlight and NDui visibility hooks. The CompactUnitFrame hooks never
----fire for nameplates, and are skipped entirely when DandersFrames replaces those frames.
+---callbacks, and the Cell spotlight and NDui visibility hooks. The CompactUnitFrame hooks fire for
+---nameplates too, and the wrapper turns those away. They are skipped entirely when DandersFrames
+---replaces those frames.
 ---
 ---Install once per module at Init. None of these can be taken back off, so the callbacks must gate
 ---themselves on the module's enabled state.
