@@ -58,10 +58,10 @@ PACK_GAIN_DB = {
 VOICE_SETTINGS = {"stability": 0.5, "similarity_boost": 0.75}
 
 CATEGORIES = ("Important", "Defensive", "EnemyDebuff")
-# Spell name -> what the English voices say instead, for names players never say in full. Only
-# the audio changes, and the clip keeps the full name's file stem, so two spells sharing a short
-# name still get a clip each. Written as words, never initials, because the voices read a bare
-# "AMS" as a word and spacing the letters out does not sound much better.
+# Spell name -> what the English voices say instead, for a name players never say in full or a
+# voice reads wrong. Only the audio changes, and the clip keeps the full name's file stem, so two
+# spells sharing a short name still get a clip each. Written as words, never initials, because the
+# voices read a bare "AMS" as a word and spacing the letters out does not sound much better.
 SHORT_NAMES = {
     "Alter Time": "Alter",
     "Ancient of Lore": "Giga Tree",
@@ -85,6 +85,7 @@ SHORT_NAMES = {
     "Die by the Sword": "Parry",
     "Divine Protection": "Wall",
     "Divine Shield": "Bubble",
+    "Duel": "Dual",
     "Emerald Communion": "Communion",
     "Enraged Regeneration": "Wall",
     "Feint": "Faint",
@@ -108,6 +109,7 @@ SHORT_NAMES = {
     "Rallying Cry": "Rally",
     "Roar of Sacrifice": "Pet Sac",
     "Shadow Dance": "Dance",
+    "Sharpen Blade": "Sharpen",
     "Shield Wall": "Wall",
     "Spell Reflection": "Reflection",
     "Spirit Link": "Link",
