@@ -525,4 +525,5 @@ L:RegisterLocale("deDE", function() return {
 	["The colour a buff you can take off an enemy lights up in."] = "Die Farbe, in der ein bannbarer Stärkungszauber eines Gegners aufleuchtet.",
 	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "Für die Alarm-Ansagen gibt es jetzt ein koreanisches Sprachpaket: MiniAuras - Korean Voice Pack, auf CurseForge. Installiere es, um die Zaubernamen auf Koreanisch zu hören.",
 	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "Die Mandarin-Stimmen Amy, Anna Su und Jason Chen sind in ein eigenes Addon umgezogen: MiniAuras - Chinese Voice Pack, auf CurseForge. Installiere es, um sie weiter zu nutzen.",
+	["Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it."] = "Überlappen sich Blizzards Stärkungs- und Schwächungszauber auf den Schlachtzugsfenstern? Aktiviere das neue Modul Rahmenauren, um das zu beheben.",
 } end)

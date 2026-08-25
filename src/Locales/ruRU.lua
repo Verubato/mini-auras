@@ -525,4 +525,5 @@ L:RegisterLocale("ruRU", function() return {
 	["The colour a buff you can take off an enemy lights up in."] = "Цвет, которым подсвечивается усиление противника, которое вы можете рассеять.",
 	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "Теперь для голосовых оповещений есть корейский голосовой пакет: MiniAuras - Korean Voice Pack на CurseForge. Установите его, чтобы слышать названия заклинаний на корейском.",
 	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "Голоса на путунхуа Amy, Anna Su и Jason Chen переехали в отдельный аддон: MiniAuras - Chinese Voice Pack на CurseForge. Установите его, чтобы продолжать их использовать.",
+	["Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it."] = "Надоело, что усиления и ослабления Blizzard накладываются друг на друга на рамках рейда? Включите новый модуль Эффекты на рамках, чтобы это исправить.",
 } end)

@@ -523,4 +523,5 @@ L:RegisterLocale("ptBR", function() return {
 	["The colour a buff you can take off an enemy lights up in."] = "A cor com que acende um bônus que você pode dissipar de um inimigo.",
 	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "Agora há um pacote de vozes em coreano para os anúncios de alerta: MiniAuras - Korean Voice Pack, no CurseForge. Instale-o para ouvir os nomes das magias em coreano.",
 	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "As vozes em mandarim Amy, Anna Su e Jason Chen foram movidas para um addon próprio: MiniAuras - Chinese Voice Pack, no CurseForge. Instale-o para continuar usando-as.",
+	["Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it."] = "Cansado de ver os bônus e penalidades da Blizzard se sobreporem nos quadros de raide? Ative o novo módulo Auras nos quadros para resolver.",
 } end)

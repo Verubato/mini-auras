@@ -526,6 +526,7 @@ L:SetDefaultStrings({
 	["The colour a buff you can take off an enemy lights up in."] = "The colour a buff you can take off an enemy lights up in.",
 	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean.",
 	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them.",
+	["Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it."] = "Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it.",
 })
 
 -- English registers nothing, because the strings above are themselves the fallback every locale

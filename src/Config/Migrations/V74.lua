@@ -140,3 +140,14 @@ function M:UpgradeToVersion75(vars)
 	vars.Version = 75
 	return true
 end
+
+function M:UpgradeToVersion76(vars)
+	if vars.Version ~= 75 then return false end
+
+	vars.WhatsNew = vars.WhatsNew or {}
+	table.insert(vars.WhatsNew, L["Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it."])
+	vars.NotifiedChanges = false
+
+	vars.Version = 76
+	return true
+end

@@ -97,6 +97,7 @@ fw.describe("Migrator - fresh install", function()
 		end
 		assert(type(db.Modules.CrowdControl.Default.Icons.Size) == "number", "representative nested default")
 		assert(db.GlowType == "Slot Glow" and type(db.FontScale) == "number", "top-level defaults")
+		assert(next(db.WhatsNew) == nil, "a first login has no release notes to catch up on")
 	end)
 
 	fw.it("is idempotent", function()
@@ -1659,5 +1660,61 @@ fw.describe("Migrator - the v75 voice pack notes", function()
 		assert(migrator:UpgradeToVersion75(vars) == false, "wrong version must be rejected")
 		assert(vars.WhatsNew == nil, "and must queue nothing")
 		assert(vars.Version == 73)
+	end)
+end)
+
+fw.describe("Migrator - the v76 frame auras note", function()
+	fw.it("queues the note whatever client it runs on", function()
+		for _, locale in ipairs({ "enUS", "deDE", "koKR", "zhTW" }) do
+			wow.setLocale(locale)
+
+			local vars = { Version = 75, NotifiedChanges = true }
+
+			assert(migrator:UpgradeToVersion76(vars) == true)
+			assert(#vars.WhatsNew == 1, locale .. " queued one note")
+			assert(vars.NotifiedChanges == false, locale .. " has to open the dialog again")
+			assert(vars.Version == 76)
+		end
+	end)
+
+	fw.it("names the module the player has to turn on", function()
+		wow.setLocale("enUS")
+
+		local vars = { Version = 75, NotifiedChanges = true }
+
+		assert(migrator:UpgradeToVersion76(vars) == true)
+		assert(vars.WhatsNew[1]:find("Frame Auras", 1, true), vars.WhatsNew[1])
+	end)
+
+	fw.it("keeps the notes already waiting in the list", function()
+		wow.setLocale("enUS")
+
+		local vars = { Version = 75, NotifiedChanges = false, WhatsNew = { "an earlier note" } }
+
+		assert(migrator:UpgradeToVersion76(vars) == true)
+		assert(#vars.WhatsNew == 2, "appended rather than replaced")
+		assert(vars.WhatsNew[1] == "an earlier note")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		wow.setLocale("enUS")
+
+		local vars = { Version = 74, NotifiedChanges = true }
+
+		assert(migrator:UpgradeToVersion76(vars) == false, "wrong version must be rejected")
+		assert(vars.WhatsNew == nil, "and must queue nothing")
+		assert(vars.Version == 74)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		wow.setLocale("enUS")
+		_G.MiniAurasDB = { Version = 75, NotifiedChanges = true }
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 76, "the shipped version has to be past this step")
+		assert(#db.WhatsNew == 1, "the login path has to reach step 76")
+		assert(db.WhatsNew[1]:find("Frame Auras", 1, true), db.WhatsNew[1])
+		assert(db.NotifiedChanges == false, "the dialog has to open again")
 	end)
 end)
