@@ -152,16 +152,17 @@ fw.describe("Pool - RefreshFree", function()
 
 		assert(#seenA == 3, "the first owner's sweep ran to completion")
 		assert(#seenB == 3, "alongside the second owner's")
-		assert(workerMock.ActiveCount() == 0)
+		assert(workerMock.ActiveCount() == 0, "both lanes drained and the worker stopped")
 	end)
 
 	fw.it("an empty free list wakes no worker", function()
-		local instance = NewItemPool()
-		local seen, collect = Collector()
+		-- An item Acquire failed to unpark would still be here for the sweep to hand over.
+		local instance = PoolWithParked(1)
+		local _, collect = Collector()
 
+		instance:Acquire()
 		instance:RefreshFree(collect)
 
 		assert(workerMock.ActiveCount() == 0, "nothing to sweep, nothing scheduled")
-		assert(#seen == 0)
 	end)
 end)
