@@ -1069,6 +1069,40 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.ShowCrowdControl = false
 	end)
 
+	fw.it("rings the stun leading the debuff preview while the dispel colours are on", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.ColorByDispelType = true
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local border = row.Slots[1].Container.Border
+		local tint = _G.DEBUFF_TYPE_NONE_COLOR
+
+		assert(border._shown, "the stand-in is ringed the way the live icon is")
+
+		local color = border._lastArgs.SetVertexColor
+
+		assert(color[1] == tint.r and color[2] == tint.g and color[3] == tint.b,
+			"in the colour the game gives a stun, which carries no dispel type")
+		assert(row.Slots[2].Container.Border._shown == false,
+			"while the debuffs behind it are drawn plain")
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.ColorByDispelType = false
+		module:StartTesting()
+
+		local plain = assert(RowOn(memberFrame), "the frame still gets a preview row")
+
+		assert(plain.Slots[1].Container.Border._shown == false,
+			"and switching the colours off takes the ring off the preview too")
+
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.ColorByDispelType = true
+	end)
+
 	fw.it("draws the stun leading the debuff preview a quarter again the size of the rest", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
@@ -1609,6 +1643,70 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		options.Debuffs.ShowCrowdControl = false
 		options.Debuffs.ShortOnly = false
 		DropRaidFrame(35)
+	end)
+
+	fw.it("rings the head of the row in the dispel colours, and nothing behind it", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.ColorByDispelType = true
+
+		local fresh = NewRaidFrame(37)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the group")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert((cc.buttons[1]._calls.AddDispelTypeTexture or 0) > 0,
+			"the crowd control border is handed to the engine, which is the only thing that knows the type")
+		assert((plain.buttons[1]._calls.AddDispelTypeTexture or 0) == 0,
+			"while the debuffs behind it stand in for Blizzard's own row and stay plain")
+
+		local registered = cc.buttons[1]._lastArgs.AddDispelTypeTexture
+
+		assert(registered[2].showWithoutDispelType == true,
+			"and a physical stun still gets a ring, having no dispel type to be coloured by")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(37)
+	end)
+
+	fw.it("takes the ring off a row that is already drawing when the switch goes off", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.ColorByDispelType = false
+
+		local fresh = NewRaidFrame(38)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the group")
+
+		assert((cc.buttons[1]._calls.AddDispelTypeTexture or 0) == 0, "nothing is registered with it off")
+
+		options.Debuffs.ColorByDispelType = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert((cc.buttons[1]._calls.AddDispelTypeTexture or 0) > 0,
+			"the buttons the row already had take the ring, rather than waiting out a reload")
+
+		local cleared = cc.buttons[1]._calls.ClearDispelTypeTextures
+
+		options.Debuffs.ColorByDispelType = false
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(cc.buttons[1]._calls.ClearDispelTypeTextures > cleared,
+			"and switching it off again hands the border back")
+
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.ColorByDispelType = true
+		DropRaidFrame(38)
 	end)
 end)
 

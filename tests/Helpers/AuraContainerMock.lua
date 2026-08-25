@@ -483,6 +483,7 @@ local function NewAuraButton(container, groupKey)
 		if M.missingButtonMethods[methodName] ~= true then
 			button[methodName] = function(_, ...)
 				button._calls[methodName] = (button._calls[methodName] or 0) + 1
+				button._lastArgs[methodName] = { ... }
 			end
 		end
 	end

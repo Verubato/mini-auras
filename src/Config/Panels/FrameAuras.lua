@@ -612,6 +612,11 @@ local function BuildDebuffs(content, options)
 			Label = L["Crowd control"],
 			Tooltip = L["Lets crowd control into this row. Off by default, because Important Auras already draws it."],
 		},
+		{
+			Key = "ColorByDispelType",
+			Label = L["Dispel colours"],
+			Tooltip = L["Change the colour of the glow/border based on the type of debuff."],
+		},
 	}, blurb)
 
 	local layout = Divider(content, L["Layout"], top)

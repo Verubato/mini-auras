@@ -60,8 +60,8 @@ M.Nameplates = {
 	},
 }
 
----The party and raid frame rows, and the target and focus rows, which draw plain icons and take
----bare spell ids rather than the entries the tinted previews need.
+---The party and raid frame rows, and the target and focus rows, whose plain icons take bare spell
+---ids. Only the crowd control leading the debuff row is coloured, so only it is a tinted entry.
 -- The frame aura rows can each let a flagged category back in, and the preview has to show that:
 -- a row with crowd control switched on wants a stun in it, and the same row with it off wants
 -- something ordinary in that slot instead. So the plain spells and the category stand-ins are
@@ -80,7 +80,9 @@ M.FrameAuras = {
 	},
 	Debuffs = { 34914, 589, 980, 146739 }, -- Vampiric Touch, Shadow Word: Pain, Agony, Corruption
 	-- One stand-in per flagged category, drawn only while the row is letting that category in.
-	CrowdControl = 408,  -- Kidney Shot
+	-- The stun carries its tint because the live row colours that group by dispel type.
+	-- A physical stun shows its ring only while the switch is on.
+	CrowdControl = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }, -- Kidney Shot
 	Important = 31884,   -- Avenging Wrath
 	Defensive = 33206,   -- Pain Suppression
 	-- A magic buff worth taking off an enemy, for the purge glow. Leads the buff row in the

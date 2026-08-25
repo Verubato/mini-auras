@@ -51,6 +51,22 @@ function M:GlowWanted(instance, widgets)
 	return instance.Style.Glow == true
 end
 
+---Whether this button's border takes the engine's dispel palette. A group's own answer wins over
+---the display-wide switch, so a row can colour the crowd control leading it and leave the plain
+---debuffs behind it alone.
+---@param instance AuraContainerDisplay
+---@param widgets table
+---@return boolean
+function M:DispelColorWanted(instance, widgets)
+	local group = widgets.Group
+
+	if group and group.ColorByDispelType ~= nil then
+		return group.ColorByDispelType == true
+	end
+
+	return instance.Style.ColorByDispelType == true
+end
+
 ---The tint a button's border, glow and bar fill take. The group's own colour wins over the
 ---display-wide one, so alerts can colour by category.
 ---The button holds its group rather than a copy of the colour so SetGroupGlowColor can recolour a
@@ -89,7 +105,8 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	-- to say about a buff, so the categories the user picked a colour for keep that colour while CC
 	-- still takes the dispel type's.
 	local tinted = group ~= nil and group.GlowColor ~= nil
-	local wantBorder = style.ColorByDispelType == true and borders ~= nil and not tinted
+	local colored = M:DispelColorWanted(instance, widgets)
+	local wantBorder = colored and borders ~= nil and not tinted
 	-- Whether the border also shows on auras with no dispel type, tinted with the "None" palette
 	-- colour. It is opt-in per display because on a generic debuff display it would ring every
 	-- physical debuff.
@@ -97,7 +114,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	local wantGlowTint = wantBorder and M:GlowWanted(instance, widgets) and widgets.Glow ~= nil
 	-- A tinted group draws the border the dispel registration would have drawn, in its own colour,
 	-- so switching the colours on never costs those icons their ring.
-	local wantPlainBorder = style.Border == true or (tinted and style.ColorByDispelType == true)
+	local wantPlainBorder = style.Border == true or (tinted and colored)
 	local colorR, colorG, colorB = M:ButtonColor(instance, widgets)
 
 	-- This runs per button on every restyle, and the retry ticker restyles every stale display once

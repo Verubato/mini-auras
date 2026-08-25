@@ -520,6 +520,42 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 			"while the engine owns the cc border's colour")
 	end)
 
+	fw.it("a group's own dispel switch wins over the display's", function()
+		-- One row can carry crowd control worth ringing in the dispel colours and plain debuffs
+		-- that stand in for Blizzard's own, which ring nothing.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 3, ColorByDispelType = true },
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { Style = { Glow = false, ColorByDispelType = false } })
+
+		local ccButton = instance.Frame:GetAuraGroupFrame("cc", 1)
+		local plainButton = instance.Frame:GetAuraGroupFrame("plain", 1)
+
+		assert((ccButton._calls.AddDispelTypeTexture or 0) > 0, "the cc group is handed to the engine")
+		assert((plainButton._calls.AddDispelTypeTexture or 0) == 0, "the row behind it is not")
+
+		-- The ring has rounded inner corners, and the whole row follows one icon shape rather than
+		-- carrying two side by side.
+		assert(instance.ButtonWidgets[plainButton].CornersRounded == true,
+			"the row's icons are trimmed to the shape the ring leaves")
+
+		local registered = ccButton._calls.AddDispelTypeTexture
+
+		instance:SetGroupColorByDispelType("cc", false)
+
+		assert(instance.ButtonWidgets[ccButton].BorderTextures[1]._shown == false,
+			"switching it off takes the ring back off the icon")
+		assert(ccButton._calls.AddDispelTypeTexture == registered, "and registers nothing more")
+		assert(instance.ButtonWidgets[plainButton].CornersRounded == false,
+			"and the row has its square corners back")
+
+		-- A key the display has no group for is ordinary, since callers push the switch at every
+		-- row they might be drawing.
+		acm.notifications = {}
+		instance:SetGroupColorByDispelType("nosuchgroup", true)
+		assert(#acm.notifications == 0, "a key the display has no group for is not a misuse")
+	end)
+
 	fw.it("SetGroupGlowColors recolours a display that already exists", function()
 		-- Buttons can only be built once, and rebuilding one is impossible while auras are secret,
 		-- so a colour change has to reach the buttons that are already there.

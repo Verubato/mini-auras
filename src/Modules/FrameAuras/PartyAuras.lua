@@ -385,6 +385,15 @@ local function CrowdControlIcons()
 	return math.min(MaxIcons("Debuffs"), MAX_CROWD_CONTROL_ICONS)
 end
 
+---Whether the crowd control at the head of the debuff row is ringed in the game's dispel colours.
+---Only that group asks.
+---@return boolean
+local function CrowdControlDispelColors()
+	local options = SideOptions("Debuffs")
+
+	return options ~= nil and options.ColorByDispelType == true
+end
+
 ---The budget one group draws on. A group that leads a row carries its own, so what it draws is not
 ---taken out of the row behind it.
 ---@param side "Buffs"|"Debuffs"
@@ -481,8 +490,10 @@ local function BuildStyle(side)
 		style.PandemicColor = moduleUtil:GetColorRGB(options.PandemicColor)
 	end
 
-	-- No dispel-type colouring on either row. These stand in for Blizzard's own, which draws a
-	-- plain icon.
+	-- Most crowd control is physical, which the engine gives no dispel type, so without this the
+	-- stun leading the row would draw no ring.
+	style.BorderWithoutDispelType = side == "Debuffs"
+
 	return style
 end
 
@@ -726,6 +737,9 @@ local function ApplyTestSide(entry, side)
 	local nextSlot = testSpells:FillContainer(container, list, 1, {
 		ReverseCooldown = true,
 		Glow = false,
+		-- Only the crowd control stand-in carries a tint, so the plain spells behind it stay bare
+		-- however this is set.
+		ColorByDispelType = PreviewLeadsWithCrowdControl(side) and CrowdControlDispelColors(),
 		FontScale = db and db.FontScale,
 		Stagger = true,
 		Count = count,
@@ -819,6 +833,10 @@ local function ApplySettings(entry)
 		-- The policy first, since a group asking for a classification the display is not making
 		-- matches nothing at all.
 		entry.Debuffs:SetProcessingPolicy(ClassifiesDebuffs())
+
+		-- A display already built keeps the group it was created with, so the switch only reaches
+		-- the row it is on this way.
+		entry.Debuffs:SetGroupColorByDispelType(DEBUFF_CROWD_CONTROL_GROUP, CrowdControlDispelColors())
 
 		-- The filter strings are fixed, so only the candidate filters are re-published.
 		for _, key in ipairs(DEBUFF_GROUP_KEYS) do

@@ -236,20 +236,21 @@ local function StoreGroupColor(instance, groupKey, color)
 	return true
 end
 
----Whether any group carries its own glow, which is what the icon corners follow. Kept on the
----instance because it is read per button on every restyle, and it only moves when a group does.
+---Whether any group asks for artwork that rings its icons, which is what the icon corners follow.
+---Kept on the instance because it is read per button on every restyle, and it only moves when a
+---group does.
 ---@param instance AuraContainerDisplay
-local function StoreGroupGlow(instance)
+local function StoreGroupRinged(instance)
 	local any = false
 
 	for _, group in ipairs(instance.Groups) do
-		if group.Glow == true then
+		if group.Glow == true or group.ColorByDispelType == true then
 			any = true
 			break
 		end
 	end
 
-	instance.GroupGlow = any
+	instance.GroupRinged = any
 end
 
 local function NextFrameName(frameType)
@@ -1159,9 +1160,9 @@ local function StyleGlow(instance, button, widgets, size)
 	-- it on auras with no dispel type, so the ring is always there.
 	-- Displays that brought their own mask keep it, and a bar's leading icon is square against the
 	-- fill by design.
-	-- A group's own glow counts for the whole display rather than its own buttons, or a row would
-	-- carry two icon shapes side by side.
-	local ringed = style.Glow == true or instance.GroupGlow == true
+	-- A group's own glow or dispel ring counts for the whole display rather than its own buttons,
+	-- or a row would carry two icon shapes side by side.
+	local ringed = style.Glow == true or instance.GroupRinged == true
 		or style.Border == true or style.ColorByDispelType == true
 	local rounded = ringed and not widgets.Bar
 	if widgets.CornersRounded ~= rounded and widgets.Icon and not instance.IconMask then
@@ -1865,7 +1866,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 		or InitializeButton
 
 	instance.Initialize = initialize
-	StoreGroupGlow(instance)
+	StoreGroupRinged(instance)
 
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
@@ -1939,7 +1940,7 @@ function M:AddPendingGroup(group)
 
 	self.Groups[index] = group
 	self.GroupsByKey[group.Key] = group
-	StoreGroupGlow(self)
+	StoreGroupRinged(self)
 
 	-- A group drawn larger than the display widens where a line wraps, and nothing else on the
 	-- path that adds one re-applies that.
@@ -2252,7 +2253,24 @@ function M:SetGroupGlow(groupKey, enabled)
 	end
 
 	group.Glow = enabled
-	StoreGroupGlow(self)
+	StoreGroupRinged(self)
+	self:RestyleButtons()
+end
+
+---Turns one group's dispel-type colouring on or off after the display exists, so a row can colour
+---the crowd control leading it while the debuffs behind it stay plain. Nil hands the group back to
+---the display-wide switch.
+---@param groupKey string
+---@param enabled boolean?
+function M:SetGroupColorByDispelType(groupKey, enabled)
+	local group = self.GroupsByKey[groupKey]
+
+	if not group or group.ColorByDispelType == enabled then
+		return
+	end
+
+	group.ColorByDispelType = enabled
+	StoreGroupRinged(self)
 	self:RestyleButtons()
 end
 
@@ -2605,6 +2623,9 @@ end
 ---@field Pandemic boolean? Set false to build this group's buttons with no refresh-window region,
 ---so a display carrying the reveal can keep it off one group. Unset follows the display. Fixed at
 ---creation, since a region can only be added as a button is built.
+---@field ColorByDispelType boolean? Whether this group's borders take the engine's dispel palette,
+---overriding the display-wide Style.ColorByDispelType so one row can colour a single category.
+---Unset follows the display. Changed after creation with SetGroupColorByDispelType.
 ---@field GlowColor number[]? {r, g, b} tint for this group's glow and border, so one container can
 ---colour its categories differently. A tinted group opts out of dispel-type colouring, which has
 ---nothing to say about a buff. Changed after creation with SetGroupGlowColors.
