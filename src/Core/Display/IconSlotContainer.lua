@@ -1086,7 +1086,7 @@ function M:SetSlot(slotIndex, options)
 	local db = GetDb()
 	layer.Icon:SetTexture(options.Texture)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
-	layer.Cooldown:SetHideCountdownNumbers(options.HideNumbers == true)
+	layer.Cooldown:SetHideCountdownNumbers(options.HideNumbers == true or (db and db.DisableNumbers) == true)
 	if layer.Cooldown.SetCountdownMillisecondsThreshold then
 		layer.Cooldown:SetCountdownMillisecondsThreshold(options.ShowMilliseconds and (db and db.MillisecondsThreshold or 5) or 0)
 	end

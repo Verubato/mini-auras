@@ -20,10 +20,9 @@ function M:Build(panel)
 	-- A control filling a whole column overhangs the panel, because the second column starts a
 	-- gap in from the first. The gap comes off the width so the right column ends on the edge.
 	local controlWidth = columnWidth - horizontalSpacing
-	-- Four columns rather than the shared five-column checkbox grid, since the three icon toggles
+	-- Four columns rather than the shared five-column checkbox grid, since the four icon toggles
 	-- sit in consecutive columns and a fifth of the panel is too narrow for the longest translated
 	-- label.
-	-- The long labels on this page sit two columns apart so they never overlap.
 	local checkColumnWidth = mini:ColumnWidth(4, 0, 0)
 
 	local intro = mini:TextBlock({
@@ -140,6 +139,22 @@ function M:Build(panel)
 
 	disableSwipeChk:SetPoint("TOPLEFT", iconsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local disableNumbersChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Disable Numbers"],
+		Tooltip = L["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."],
+		GetValue = function()
+			return db.DisableNumbers or false
+		end,
+		SetValue = function(value)
+			db.DisableNumbers = value
+			addon:Refresh()
+		end,
+	})
+
+	disableNumbersChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
+	disableNumbersChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
+
 	local fadeWithParentChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Fade With Parent"],
@@ -156,7 +171,7 @@ function M:Build(panel)
 		end,
 	})
 
-	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
+	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	fadeWithParentChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
 	-- The crop is baked into an icon when its frame is built, and the frames are pooled, so
@@ -177,7 +192,7 @@ function M:Build(panel)
 		end,
 	})
 
-	iconZoomChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	iconZoomChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
 	iconZoomChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
 	-- Aura icons render as AuraButtons, which LibCustomGlow cannot attach to, so only the

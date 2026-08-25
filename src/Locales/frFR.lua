@@ -109,6 +109,8 @@ L:RegisterLocale("frFR", function() return {
 	["Zoom Icons"] = "Zoomer les icônes",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "Rogne la bordure argentée des icônes de sort. Désactivez pour afficher les icônes telles que Blizzard les dessine. Nécessite un rechargement.",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Désactive l'animation circulaire de recharge sur toutes les icônes. Le texte du décompte reste affiché.",
+	["Disable Numbers"] = "Désactiver le décompte",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "Désactive le texte du décompte sur toutes les icônes. L'animation circulaire de recharge reste affichée.",
 	["Fade With Parent"] = "Estomper avec le cadre",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Estompe les icônes en même temps que le cadre d'unité auquel elles sont rattachées, par ex. en s'atténuant lorsque l'unité est hors de portée.",
 	["Reverse swipe"] = "Inverser l'animation",

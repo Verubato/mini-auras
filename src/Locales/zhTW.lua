@@ -109,6 +109,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Zoom Icons"] = "放大圖示",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "裁掉法術圖示的銀色邊框。關閉後以暴雪的原始樣式顯示圖示。需要重載介面。",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "停用所有圖示上的冷卻時間滑動（圓餅圖）動畫。倒數計時文字仍將顯示。",
+	["Disable Numbers"] = "停用倒數數字",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "停用所有圖示上的倒數計時文字。冷卻時間滑動（圓餅圖）動畫仍將顯示。",
 	["Fade With Parent"] = "隨父框體淡出",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "圖示會隨其附著的單位框體一起淡出，例如當單位超出距離時變暗。",
 	["Reverse swipe"] = "反向滑動",

@@ -109,6 +109,8 @@ L:RegisterLocale("ptBR", function() return {
 	["Zoom Icons"] = "Ampliar ícones",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "Corta a borda prateada dos ícones de magia. Desative para mostrar os ícones exatamente como a Blizzard os desenha. Requer recarregar.",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Desativa a animação de deslize (gráfico de pizza) da recarga em todos os ícones. O texto do temporizador de contagem regressiva ainda será exibido.",
+	["Disable Numbers"] = "Desativar números",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "Desativa o texto do temporizador de contagem regressiva em todos os ícones. A animação de deslize (gráfico de pizza) da recarga ainda será exibida.",
 	["Fade With Parent"] = "Esmaecer com o quadro",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Esmaece os ícones junto com o quadro de unidade ao qual estão anexados, por exemplo, escurecendo quando a unidade está fora de alcance.",
 	["Reverse swipe"] = "Deslize reverso",

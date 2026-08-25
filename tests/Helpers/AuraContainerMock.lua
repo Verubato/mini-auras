@@ -779,7 +779,7 @@ M.notifications = {}
 -- table, and returns both. mockDb is live-editable, and the siblings sit on addon.Core.Pool,
 -- .GrowAnchors, .AuraFilters, and .KickSlot.
 function M.loadDisplay()
-	local mockDb = { DisableSwipe = false, MillisecondsThreshold = 3, GlowType = "Proc Glow" }
+	local mockDb = { DisableSwipe = false, DisableNumbers = false, MillisecondsThreshold = 3, GlowType = "Proc Glow" }
 	local addon = {
 		Utils = {
 			FontUtil = {

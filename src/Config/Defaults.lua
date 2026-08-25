@@ -21,6 +21,7 @@ local dbDefaults = {
 	Font = false,
 	ConfigureBlizzardNameplates = true,
 	DisableSwipe = false,
+	DisableNumbers = false,
 	-- Crops Blizzard's silver border off every icon. Off gives the stock art back.
 	IconZoom = true,
 	-- Off by default because enough people asked for it to be off.

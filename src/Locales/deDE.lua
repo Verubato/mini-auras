@@ -109,6 +109,8 @@ L:RegisterLocale("deDE", function() return {
 	["Zoom Icons"] = "Symbole zoomen",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "Schneidet den silbernen Rand von Zaubersymbolen ab. Aus zeigt die Symbole genau so, wie Blizzard sie zeichnet. Erfordert einen Neuladen.",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Deaktiviert die Wischanimation (Tortendiagramm) der Abklingzeit auf allen Symbolen. Der Countdown-Text wird weiterhin angezeigt.",
+	["Disable Numbers"] = "Zahlen aus",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "Deaktiviert den Countdown-Text auf allen Symbolen. Die Wischanimation (Tortendiagramm) der Abklingzeit wird weiterhin angezeigt.",
 	["Fade With Parent"] = "Mit Rahmen ausblenden",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Blendet die Symbole zusammen mit dem Einheitenfenster aus, an dem sie angebracht sind, z. B. abgedunkelt, wenn die Einheit außer Reichweite ist.",
 	["Reverse swipe"] = "Wischen umkehren",

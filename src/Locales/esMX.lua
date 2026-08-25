@@ -110,6 +110,8 @@ L:RegisterLocale("esMX", function() return {
 	["Zoom Icons"] = "Ampliar iconos",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "Recorta el borde plateado de los iconos de hechizo. Desactívalo para ver los iconos tal como los dibuja Blizzard. Requiere recargar.",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Desactiva la animación de barrido (gráfico circular) del tiempo de reutilización en todos los íconos. El texto del temporizador seguirá mostrándose.",
+	["Disable Numbers"] = "Desactivar números",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "Desactiva el texto del temporizador en todos los íconos. La animación de barrido (gráfico circular) del tiempo de reutilización seguirá mostrándose.",
 	["Fade With Parent"] = "Atenuar con el marco",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Atenúa los íconos junto con el marco de unidad al que están anclados, p. ej. atenuándose cuando la unidad está fuera de alcance.",
 	["Reverse swipe"] = "Barrido inverso",

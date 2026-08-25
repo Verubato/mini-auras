@@ -110,6 +110,8 @@ L:SetDefaultStrings({
 	["Zoom Icons"] = "Zoom Icons",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload.",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown.",
+	["Disable Numbers"] = "Disable Numbers",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown.",
 	["Fade With Parent"] = "Fade With Parent",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range.",
 	["Reverse swipe"] = "Reverse swipe",

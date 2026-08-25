@@ -15,6 +15,7 @@ M.PayloadKeys = {
 	"FontScale",
 	"ConfigureBlizzardNameplates",
 	"DisableSwipe",
+	"DisableNumbers",
 	"IconZoom",
 	"ColorCountdownByTime",
 	"CountdownColors",

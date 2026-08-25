@@ -72,3 +72,28 @@ fw.describe("IconSlotContainer - countdown colouring", function()
 		assert(text._lastArgs.SetTextColor == nil, "an opaque duration stays untinted")
 	end)
 end)
+
+fw.describe("IconSlotContainer - the global DisableNumbers toggle", function()
+	fw.before_each(function()
+		db.DisableNumbers = false
+	end)
+
+	fw.it("hides a slot's countdown numbers with no per-slot option, but keeps the swipe", function()
+		db.DisableNumbers = true
+
+		local container = NewSlotContainer()
+		container:SetSlot(1, { Texture = ICON, DurationObject = wowEx:CreateDuration(GetTime(), 30) })
+
+		local cd = container.Slots[1].Container.Cooldown
+		assert(cd._lastArgs.SetHideCountdownNumbers[1] == true, "the global hides the numbers")
+		assert(cd._lastArgs.SetDrawSwipe[1] == true, "the swipe is a separate switch")
+	end)
+
+	fw.it("leaves the numbers shown when the global is off", function()
+		local container = NewSlotContainer()
+		container:SetSlot(1, { Texture = ICON, DurationObject = wowEx:CreateDuration(GetTime(), 30) })
+
+		local cd = container.Slots[1].Container.Cooldown
+		assert(cd._lastArgs.SetHideCountdownNumbers[1] == false, "the default leaves the numbers on")
+	end)
+end)

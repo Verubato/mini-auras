@@ -109,6 +109,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Zoom Icons"] = "Приближать значки",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "Обрезает серебристую рамку значков заклинаний. Выключите, чтобы показывать значки такими, какими их рисует Blizzard. Требуется перезагрузка интерфейса.",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Отключает анимацию смахивания перезарядки (круговая диаграмма) на всех иконках. Текст обратного отсчёта по-прежнему будет отображаться.",
+	["Disable Numbers"] = "Отключить цифры",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "Отключает текст обратного отсчёта на всех иконках. Анимация смахивания перезарядки (круговая диаграмма) по-прежнему будет отображаться.",
 	["Fade With Parent"] = "Затухать с рамкой",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Затухание иконок вместе с рамкой юнита, к которой они прикреплены, например затемнение, когда юнит вне зоны досягаемости.",
 	["Reverse swipe"] = "Обратный свайп",

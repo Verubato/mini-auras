@@ -731,6 +731,7 @@ local function StyleDiffersFromStored(instance, style)
 
 	if not stored.Populated
 		or stored.DisableSwipe ~= ((db and db.DisableSwipe) or false)
+		or stored.DisableNumbers ~= ((db and db.DisableNumbers) or false)
 		or stored.MillisecondsThreshold ~= (db and db.MillisecondsThreshold)
 		or stored.ColorCountdownByTime ~= ((db and db.ColorCountdownByTime) or false)
 		or stored.CountdownColorGeneration ~= auraCountdownText:GetColorGeneration()
@@ -779,6 +780,7 @@ local function StoreStyle(instance, style)
 	end
 
 	stored.DisableSwipe = (db and db.DisableSwipe) or false
+	stored.DisableNumbers = (db and db.DisableNumbers) or false
 	stored.MillisecondsThreshold = db and db.MillisecondsThreshold
 	stored.ColorCountdownByTime = (db and db.ColorCountdownByTime) or false
 	stored.CountdownColorGeneration = auraCountdownText:GetColorGeneration()
@@ -885,6 +887,7 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	-- says nothing but "this is up" is the two switches together. A centred stack count takes the
 	-- countdown's place, so it drops the numbers the same way.
 	local hideNumbers = style.HideNumbers == true or style.CenterStacks == true
+		or style.DisableNumbers == true
 	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns. It no-ops for
 	-- 12.1 duration objects, where fractions render through the duration-text binding below, and
 	-- the cooldown's own SetCountdownFormatter does not work there either.
@@ -899,8 +902,8 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	local cdText
 
 	if cd then
-		-- DisableSwipe and MillisecondsThreshold are the global db values StoreStyle resolved when
-		-- the style was set, so this hot loop never re-reads the db per button.
+		-- DisableSwipe, DisableNumbers and MillisecondsThreshold are the global db values StoreStyle
+		-- resolved when the style was set, so this hot loop never re-reads the db per button.
 		--
 		-- Each of these is the same answer for every button on the display, and dragging a size
 		-- slider moves none of them, so what a widget already carries is remembered and the engine
@@ -2389,6 +2392,7 @@ function M:GetStyleGeneration(key, style, size, spacing)
 
 	styleStamps:AddColor(style.GlowColor)
 	styleStamps:Add(db and db.DisableSwipe)
+	styleStamps:Add(db and db.DisableNumbers)
 	styleStamps:Add(db and db.MillisecondsThreshold)
 	styleStamps:Add(GetGlowStyleName())
 	styleStamps:Add(db and db.ColorCountdownByTime)
@@ -2521,6 +2525,7 @@ end
 ---@field PandemicColor number[]? {r, g, b} tint for the pandemic ring. Unset keeps the built-in
 ---amber. Copied component-wise like GlowColor, so callers may pass a reused scratch.
 ---@field DisableSwipe boolean? Resolved from the global db by StoreStyle, never by a caller.
+---@field DisableNumbers boolean? Resolved from the global db by StoreStyle, never by a caller.
 ---@field MillisecondsThreshold number? Resolved from the global db by StoreStyle, never by a caller.
 ---@field ColorCountdownByTime boolean? Swap the cooldown countdown for the curve-coloured text.
 ---Resolved from the global db by StoreStyle, never by a caller.

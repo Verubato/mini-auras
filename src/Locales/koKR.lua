@@ -109,6 +109,8 @@ L:RegisterLocale("koKR", function() return {
 	["Zoom Icons"] = "아이콘 확대",
 	["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."] = "주문 아이콘의 은색 테두리를 잘라냅니다. 끄면 블리자드가 그린 그대로 표시됩니다. 다시 불러오기가 필요합니다.",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "모든 아이콘의 재사용 대기시간 스와이프(원형 차트) 애니메이션을 비활성화합니다. 카운트다운 타이머 텍스트는 계속 표시됩니다.",
+	["Disable Numbers"] = "숫자 비활성화",
+	["Disables the countdown timer text on all icons. The cooldown swipe animation will still be shown."] = "모든 아이콘의 카운트다운 타이머 텍스트를 비활성화합니다. 재사용 대기시간 스와이프(원형 차트) 애니메이션은 계속 표시됩니다.",
 	["Fade With Parent"] = "상위 프레임과 페이드",
 	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "아이콘이 부착된 유닛 프레임과 함께 페이드됩니다. 예를 들어 유닛이 사정거리를 벗어나면 흐려집니다.",
 	["Reverse swipe"] = "역방향 스와이프",

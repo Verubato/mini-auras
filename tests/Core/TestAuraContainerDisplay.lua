@@ -156,6 +156,7 @@ fw.describe("AuraContainerDisplay - SetStyle signature", function()
 	fw.before_each(function()
 		acm.reset()
 		mockDb.DisableSwipe = false
+		mockDb.DisableNumbers = false
 		mockDb.MillisecondsThreshold = 3
 	end)
 
@@ -206,6 +207,15 @@ fw.describe("AuraContainerDisplay - SetStyle signature", function()
 		instance:SetStyle({ Glow = false })
 		local afterFirst = totalSetSizeCalls(instance)
 		mockDb.DisableSwipe = true
+		instance:SetStyle({ Glow = false })
+		assert(totalSetSizeCalls(instance) > afterFirst, "db change must restyle despite identical style table")
+	end)
+
+	fw.it("restyles when a db-derived value changes (DisableNumbers)", function()
+		local instance = newInstance()
+		instance:SetStyle({ Glow = false })
+		local afterFirst = totalSetSizeCalls(instance)
+		mockDb.DisableNumbers = true
 		instance:SetStyle({ Glow = false })
 		assert(totalSetSizeCalls(instance) > afterFirst, "db change must restyle despite identical style table")
 	end)
@@ -1849,6 +1859,23 @@ fw.describe("AuraContainerDisplay - which countdown is on screen", function()
 
 		instance:SetStyle({})
 		assert(widgets.Cooldown._lastArgs.SetDrawSwipe[1] == true, "and it comes back when turned off")
+	end)
+
+	fw.it("the global DisableNumbers drops both countdowns but keeps the swipe", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		mockDb.ColorCountdownByTime = true
+		mockDb.DisableNumbers = true
+		instance:SetStyle({})
+
+		assert(widgets.Cooldown._lastArgs.SetHideCountdownNumbers[1] == true, "no native numbers")
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "and no coloured stand-in either")
+		assert(widgets.Cooldown._lastArgs.SetDrawSwipe[1] == true, "the swipe is a separate switch")
+
+		mockDb.ColorCountdownByTime = nil
+		mockDb.DisableNumbers = false
 	end)
 end)
 
