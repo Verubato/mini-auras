@@ -453,6 +453,16 @@ local function ConfigureDisplay(state, entry, unit)
 	local generation = state.StyleGeneration
 
 	if entry.StyleGeneration ~= generation then
+		local frame = display.Frame
+
+		-- A restyle cannot re-fit buttons whose size is secret, which it is anywhere inside a
+		-- nameplate, so the display takes its new look at UIParent. Left alone when it is already
+		-- there, since not every caller re-anchors afterwards.
+		if frame:GetParent() ~= UIParent then
+			frame:ClearAllPoints()
+			frame:SetParent(UIParent)
+		end
+
 		display:ApplyConfig(groups:GetSize(group), group.Icons.Spacing, BuildStyle(group))
 		entry.StyleGeneration = generation
 	end
@@ -1120,8 +1130,8 @@ local function RefreshPlateGroup(state, token)
 		EnsureTestContainer(state, entry, plate)
 	end
 
-	AnchorEntry(state, entry, plate)
 	ConfigureDisplay(state, entry, token)
+	AnchorEntry(state, entry, plate)
 	ApplyPreview(state, entry, plate)
 end
 
@@ -1162,8 +1172,8 @@ local function RefreshFrameGroup(state, anchor, unit)
 		EnsureTestContainer(state, entry, anchor)
 	end
 
-	AnchorEntry(state, entry, anchor)
 	ConfigureDisplay(state, entry, unit)
+	AnchorEntry(state, entry, anchor)
 
 	-- The copy follows the unit frame's own visibility, except while previewing. A stand-in on a
 	-- frame the addon has parked is still something to position the group with.
@@ -1228,8 +1238,8 @@ local function RefreshArenaGroup(state, index)
 
 	-- No visibility switch of its own, since the copy is parented to the arena frame and comes and
 	-- goes with it.
-	AnchorEntry(state, entry, frame)
 	ConfigureDisplay(state, entry, token)
+	AnchorEntry(state, entry, frame)
 	ApplyPreview(state, entry, frame)
 end
 

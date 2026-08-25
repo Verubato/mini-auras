@@ -1210,6 +1210,43 @@ fw.describe("PersonalAuras - nameplate anchored displays", function()
 			"a recycled plate reuses the parked display rather than building another")
 	end)
 
+	fw.it("restyles a plate copy away from the plate", function()
+		-- A button's size is secret anywhere inside a nameplate, so a restyle applied while the
+		-- display hangs off one is refused and the icons keep the old size for good.
+		ClearGroups()
+		local group = AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+		group.Icons.Size = 30
+
+		local plate = env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+		acm.tickAll(20)
+
+		local entry = display:GetStates()[group.Id].Plates.nameplate1
+		local parents = {}
+		local applyConfig = entry.Display.ApplyConfig
+
+		entry.Display.ApplyConfig = function(self, ...)
+			parents[#parents + 1] = self.Frame:GetParent()
+
+			return applyConfig(self, ...)
+		end
+
+		group.Icons.Size = 55
+		module:Refresh()
+		acm.tickAll(20)
+
+		entry.Display.ApplyConfig = applyConfig
+
+		assert(#parents > 0, "the size change restyled the copy")
+
+		for _, parent in ipairs(parents) do
+			assert(parent == UIParent, "the copy left the plate to take its new size")
+		end
+
+		assert(entry.Display.Size == 55, "and the new size landed")
+		assert(entry.Display.Frame:GetParent() == plate, "the copy is back on its plate after")
+	end)
 end)
 
 fw.describe("PersonalAuras - the layer a group draws in", function()
