@@ -410,11 +410,26 @@ local function PerRow(side)
 	return tonumber(options and options.PerRow) or DEFAULT_PER_ROW
 end
 
+---Whether the preview row leads with a crowd control stand-in. What draws that icon and what
+---sizes it both ask this, so the two cannot drift apart.
+---@param side "Buffs"|"Debuffs"
+---@return boolean
+local function PreviewLeadsWithCrowdControl(side)
+	if side ~= "Debuffs" then
+		return false
+	end
+
+	local options = SideOptions(side)
+
+	return options ~= nil and options.ShowCrowdControl == true
+end
+
 ---The spells one side's preview draws, leading with a stand-in for each flagged category the row
 ---is currently letting in. Switching a category on has to move the preview with it, or the preview
 ---says nothing about what the switch does.
 ---@param side "Buffs"|"Debuffs"
 ---@return number[] Refilled scratch; the caller reads it before the next call.
+---@return number How many entries at its head are those stand-ins.
 local function TestSpellList(side)
 	local options = SideOptions(side) or {}
 	local set = testSpells.FrameAuras
@@ -431,15 +446,17 @@ local function TestSpellList(side)
 		if options.ShowDefensives == true then
 			testListScratch[#testListScratch + 1] = set.Defensive
 		end
-	elseif options.ShowCrowdControl == true then
+	elseif PreviewLeadsWithCrowdControl(side) then
 		testListScratch[#testListScratch + 1] = set.CrowdControl
 	end
+
+	local leading = #testListScratch
 
 	for _, spellId in ipairs(set[side]) do
 		testListScratch[#testListScratch + 1] = spellId
 	end
 
-	return testListScratch
+	return testListScratch, leading
 end
 
 ---How many icons the preview draws: the whole budget, since the live row wraps onto a second line
@@ -689,15 +706,20 @@ local function ApplyTestSide(entry, side)
 	-- The grid sizes the row to its full column width, so a budget that never reaches one line
 	-- would leave the frame wider than the icons in it.
 	container:SetColumns(math.min(PerRow(side), count), growAnchors:FillsLeftward(place.Grow))
+	-- The live row hands crowd control its own group so it can be drawn larger, which a preview
+	-- row of one container has to reproduce a slot at a time.
+	container:SetLeadScale(PreviewLeadsWithCrowdControl(side) and CROWD_CONTROL_SIZE_SCALE or nil)
 
 	local db = mini:GetSavedVars()
-	local nextSlot = testSpells:FillContainer(container, TestSpellList(side), 1, {
+	local list, leading = TestSpellList(side)
+	local nextSlot = testSpells:FillContainer(container, list, 1, {
 		ReverseCooldown = true,
 		Glow = false,
 		FontScale = db and db.FontScale,
 		Stagger = true,
 		Count = count,
 		Repeat = true,
+		LeadCount = leading,
 	})
 
 	for slot = nextSlot, container.Count do

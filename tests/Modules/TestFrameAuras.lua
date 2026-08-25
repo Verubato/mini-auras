@@ -549,7 +549,12 @@ testSpells.FillContainer = function(self, container, previewSpells, startSlot, f
 		captured[index] = spellId
 	end
 
-	fills[#fills + 1] = { Container = container, Spells = captured, Frame = container.Frame }
+	fills[#fills + 1] = {
+		Container = container,
+		Spells = captured,
+		Frame = container.Frame,
+		Lead = fillOptions.LeadCount,
+	}
 
 	return originalFill(self, container, previewSpells, startSlot, fillOptions)
 end
@@ -810,6 +815,9 @@ fw.describe("Frame Auras - test mode", function()
 		module:StopTesting()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
+		-- The tests that throw these leave them thrown when they fail part way.
+		options.Debuffs.ShowCrowdControl = false
+		options.Buffs.ShowDefensives = false
 		-- A test that raises the screen and then fails would otherwise leave it up for every test
 		-- after it.
 		env.loadingScreenUp = false
@@ -1021,6 +1029,49 @@ fw.describe("Frame Auras - test mode", function()
 		assert(fills[1].Spells[1] == stun, "and it leads, the way a flagged category does in play")
 
 		options.Debuffs.ShowCrowdControl = false
+	end)
+
+	fw.it("draws the stun leading the debuff preview a quarter again the size of the rest", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local plain = row.Slots[2].Frame:GetWidth()
+
+		assert(plain > 0, "the row has a size to be measured against")
+		assert(math.abs(row.Slots[1].Frame:GetWidth() - plain * CROWD_CONTROL_SCALE) < 0.01,
+			"the stun leading the row is drawn larger, got " .. row.Slots[1].Frame:GetWidth())
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.ShowCrowdControl = false
+		module:StartTesting()
+
+		local uniform = assert(RowOn(memberFrame), "the frame still gets a preview row")
+
+		assert(uniform.Slots[1].Frame:GetWidth() == uniform.Slots[2].Frame:GetWidth(),
+			"and with crowd control kept out the row is drawn at one size, got "
+			.. uniform.Slots[1].Frame:GetWidth())
+	end)
+
+	fw.it("counts the stand-ins at the head of the list, so a repeat does not draw one again", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		module:StartTesting()
+
+		assert(fills[1].Lead == 1,
+			"the stun leading the list is marked as a stand-in, got " .. tostring(fills[1].Lead))
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.ShowCrowdControl = false
+		module:StartTesting()
+
+		assert(fills[1].Lead == 0,
+			"and a row leading with nothing marks nothing, got " .. tostring(fills[1].Lead))
 	end)
 
 	fw.it("puts a defensive in the buff preview only while defensives are let in", function()

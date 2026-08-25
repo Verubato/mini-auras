@@ -593,6 +593,75 @@ local function ApplyIconCorners(layer, options)
 	layer.CornerMask = glowStyles:SetIconCorners(layer.Frame, layer.Icon, layer.Cooldown, layer.CornerMask, rounded)
 end
 
+---How far a run of icons reaches, where the first of them may be drawn larger than the rest.
+---@param count number
+---@param firstSize number
+---@param size number
+---@param spacing number
+---@return number
+local function RunLength(count, firstSize, size, spacing)
+	return firstSize + (count - 1) * (size + spacing)
+end
+
+---Where one icon's centre sits in such a run, measured from the edge the run starts at.
+---@param index number 0-based place in the run
+---@param firstSize number
+---@param size number
+---@param spacing number
+---@return number
+local function RunOffset(index, firstSize, size, spacing)
+	if index == 0 then
+		return firstSize / 2
+	end
+
+	return firstSize + spacing + (index - 1) * (size + spacing) + size / 2
+end
+
+---@param layer table
+---@param size number
+local function ApplyLayerSize(layer, size)
+	if layer.Frame then
+		-- Inside nameplate hierarchies GetWidth() can return a secret number, so remember the
+		-- size we set ourselves for anything that needs to do math on it.
+		layer.Frame.DesiredSize = size
+		layer.Frame:SetSize(size, size)
+	end
+
+	if layer.Cooldown then
+		layer.Cooldown.DesiredIconSize = size
+		fontUtil:UpdateCooldownFontSize(layer.Cooldown, size, nil, layer.Cooldown.FontScale or 1.0)
+	end
+
+	if layer.ChargeText then
+		UpdateChargeTextFontSize(layer.ChargeText, size, layer.Cooldown and layer.Cooldown.FontScale)
+	end
+end
+
+---A slot drawn larger than the container's own icon size has to take its countdown text up with
+---it.
+---@param slot table
+---@param size number
+local function ApplySlotSize(slot, size)
+	if not slot.Frame or slot.DrawnSize == size then
+		return
+	end
+
+	slot.DrawnSize = size
+	slot.Frame:SetSize(size, size)
+
+	if slot.Container then
+		ApplyLayerSize(slot.Container, size)
+	end
+
+	if slot.ExtraLayers then
+		for _, extra in ipairs(slot.ExtraLayers) do
+			if extra then
+				ApplyLayerSize(extra, size)
+			end
+		end
+	end
+end
+
 ---@param parent table frame to attach to
 ---@param count number of slots to create (default: 3)
 ---@param size number of each icon slot (default: 20)
@@ -618,6 +687,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 	instance.RowAlignment = nil
 	instance.InvertLayout = false
 	instance.Columns = nil
+	instance.LeadScale = nil
 	instance.GrowDown = false
 	instance.GrowUp = false
 	instance.NoBorder = noBorder or false
@@ -645,6 +715,7 @@ function M:Layout()
 	local vertical = self.GrowDown or self.GrowUp
 	local numRows = (not vertical and self.NumRows and self.NumRows > 1) and self.NumRows or nil
 	local columnsPerRow = (vertical and self.Columns and self.Columns > 1) and self.Columns or nil
+	local leadScale = vertical and self.LeadScale or nil
 	local verticalTag = self.GrowUp and "U" or (self.GrowDown and "D" or "H")
 
 	layoutStamp:Begin(self)
@@ -655,6 +726,7 @@ function M:Layout()
 	layoutStamp:Add(self.InvertLayout == true)
 	layoutStamp:Add(verticalTag)
 	layoutStamp:Add(columnsPerRow or 1)
+	layoutStamp:Add(leadScale or 1)
 
 	for i = 1, n do
 		layoutStamp:Add(layoutScratch[i])
@@ -719,59 +791,44 @@ function M:Layout()
 
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, y)
-			slot.Frame:SetSize(self.Size, self.Size)
+			ApplySlotSize(slot, self.Size)
 			slot.Frame:Show()
 		end
-	elseif vertical and columnsPerRow then
-		-- Grid vertical: icons fill up to columnsPerRow per row, then wrap to the next row.
-		-- Grow-down wraps downward (row 0 at top); grow-up wraps upward (row 0 at bottom).
-		local cols = columnsPerRow
+	elseif vertical then
+		-- A single column is this same layout one column wide, so both come through here.
+		local cols = columnsPerRow or 1
 		local actualRows = math.ceil(usedCount / cols)
-		local rowWidth = cols * self.Size + (cols - 1) * self.Spacing
-		local totalHeight = actualRows * self.Size + (actualRows - 1) * self.Spacing
-		self.Frame:SetSize(rowWidth, totalHeight)
+		local leadSize = leadScale and self.Size * leadScale or self.Size
+		local rowWidth = RunLength(cols, self.Size, self.Size, self.Spacing)
+		-- The lead icon reaches past a plain row, and every row after it still hangs off the same
+		-- edge, so the frame takes the wider of the two.
+		local frameWidth = math.max(rowWidth, RunLength(cols, leadSize, self.Size, self.Spacing))
+		local totalHeight = RunLength(actualRows, leadSize, self.Size, self.Spacing)
+		self.Frame:SetSize(frameWidth, totalHeight)
 		self.Frame:SetAlpha(1)
 
 		for displayIndex = 1, usedCount do
 			local slot = self.Slots[layoutScratch[displayIndex]]
 			local rowIndex = math.floor((displayIndex - 1) / cols) -- 0-based
-			local rawCol = (displayIndex - 1) % cols               -- 0-based
-			-- Reversed against the full column count, so slot 1 lands on the far edge and a
-			-- part-full row hugs the edge above it.
-			local colIndex = self.InvertLayout and (cols - 1 - rawCol) or rawCol
-			local x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
-			local rowStep = rowIndex * (self.Size + self.Spacing)
+			local colIndex = (displayIndex - 1) % cols             -- 0-based
+			local rowLead = rowIndex == 0 and leadSize or self.Size
+			local size = (rowIndex == 0 and colIndex == 0) and leadSize or self.Size
+			-- Measured from the edge the row grows from, so a part-full row hugs that edge and a
+			-- lead icon wider than the rest pushes its own row along without moving the others.
+			local across = RunOffset(colIndex, rowLead, self.Size, self.Spacing)
+			local down = RunOffset(rowIndex, leadSize, self.Size, self.Spacing)
+			local x = self.InvertLayout and (frameWidth / 2 - across) or (across - frameWidth / 2)
 			local y
+
 			if self.GrowUp then
-				y = -(totalHeight / 2) + (self.Size / 2) + rowStep
+				y = -(totalHeight / 2) + down
 			else
-				y = (totalHeight / 2) - (self.Size / 2) - rowStep
+				y = (totalHeight / 2) - down
 			end
 
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, y)
-			slot.Frame:SetSize(self.Size, self.Size)
-			slot.Frame:Show()
-		end
-	elseif vertical then
-		-- Vertical single column.  Grow-down places slot 1 at the top; grow-up places slot 1 at
-		-- the bottom (nearest the anchor) so the column extends upward.
-		local totalHeight = usedCount * self.Size + (usedCount - 1) * self.Spacing
-		self.Frame:SetSize(self.Size, totalHeight)
-		self.Frame:SetAlpha(1)
-
-		for displayIndex = 1, usedCount do
-			local slot = self.Slots[layoutScratch[displayIndex]]
-			local step = (displayIndex - 1) * (self.Size + self.Spacing)
-			local y
-			if self.GrowUp then
-				y = -(totalHeight / 2) + (self.Size / 2) + step
-			else
-				y = (totalHeight / 2) - (self.Size / 2) - step
-			end
-			slot.Frame:ClearAllPoints()
-			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", 0, y)
-			slot.Frame:SetSize(self.Size, self.Size)
+			ApplySlotSize(slot, size)
 			slot.Frame:Show()
 		end
 	else
@@ -786,7 +843,7 @@ function M:Layout()
 			local x = (effIndex - 1) * (self.Size + self.Spacing) - (totalWidth / 2) + (self.Size / 2)
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, 0)
-			slot.Frame:SetSize(self.Size, self.Size)
+			ApplySlotSize(slot, self.Size)
 			slot.Frame:Show()
 		end
 	end
@@ -902,6 +959,24 @@ function M:SetColumns(n, invertLayout)
 	self:Layout()
 end
 
+---Draws the first icon at a multiple of the container's icon size, the way a live row leads with
+---a category worth more than what follows it. Vertical layouts only.
+---@param scale number? nil or 1 draws the whole row at one size
+function M:SetLeadScale(scale)
+	---@diagnostic disable-next-line: cast-local-type
+	scale = tonumber(scale)
+	-- Under 1 the lead icon's row would be shorter than the icons standing in it, and the rows
+	-- behind it would be laid over the top.
+	scale = (scale and scale > 1) and scale or nil
+	if self.LeadScale == scale then
+		return
+	end
+
+	self.LeadScale = scale
+	self.LayoutGeneration = nil
+	self:Layout()
+end
+
 ---@param newSize number
 function M:SetIconSize(newSize)
 	---@diagnostic disable-next-line: cast-local-type
@@ -917,40 +992,8 @@ function M:SetIconSize(newSize)
 
 	for i = 1, self.Count do
 		local slot = self.Slots[i]
-		if slot and slot.Frame then
-			slot.Frame:SetSize(self.Size, self.Size)
-
-			local layer = slot.Container
-			if layer and layer.Frame then
-				layer.Frame.DesiredSize = self.Size
-			end
-			if layer and layer.Cooldown then
-				layer.Cooldown.DesiredIconSize = self.Size
-				local fontScale = layer.Cooldown.FontScale or 1.0
-				fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
-			end
-			if layer and layer.ChargeText then
-				UpdateChargeTextFontSize(layer.ChargeText, self.Size, layer.Cooldown and layer.Cooldown.FontScale)
-			end
-
-			if slot.ExtraLayers then
-				for _, el in ipairs(slot.ExtraLayers) do
-					if el then
-						if el.Frame then
-							el.Frame.DesiredSize = self.Size
-							el.Frame:SetSize(self.Size, self.Size)
-						end
-						if el.Cooldown then
-							el.Cooldown.DesiredIconSize = self.Size
-							local fontScale = el.Cooldown.FontScale or 1.0
-							fontUtil:UpdateCooldownFontSize(el.Cooldown, self.Size, nil, fontScale)
-						end
-						if el.ChargeText then
-							UpdateChargeTextFontSize(el.ChargeText, self.Size, el.Cooldown and el.Cooldown.FontScale)
-						end
-					end
-				end
-			end
+		if slot then
+			ApplySlotSize(slot, self.Size)
 		end
 	end
 
@@ -1065,11 +1108,14 @@ function M:SetSlot(slotIndex, options)
 		slot.Frame:SetScript("OnLeave", nil)
 	end
 
+	-- The size this slot is drawn at, which is larger than the container's own for one leading
+	-- a row.
+	local iconSize = slot.DrawnSize or self.Size
 	local layerIndex = options.Layer or 1
 	local layer
 
 	if layerIndex <= 1 then
-		layer = EnsureContainer(slot, self.Size, self.MasqueGroup, self.NoBorder)
+		layer = EnsureContainer(slot, iconSize, self.MasqueGroup, self.NoBorder)
 		-- Setting the base layer means this slot is now a single icon. Clear any stacked extra
 		-- layers left from a prior stacked render (e.g. the important slot relocating to a new
 		-- index), otherwise those old layers linger visible underneath the new icon.
@@ -1081,7 +1127,7 @@ function M:SetSlot(slotIndex, options)
 			end
 		end
 	else
-		layer = EnsureExtraLayer(slot, layerIndex, self.Size)
+		layer = EnsureExtraLayer(slot, layerIndex, iconSize)
 	end
 
 	local db = GetDb()
@@ -1161,13 +1207,13 @@ function M:SetSlot(slotIndex, options)
 
 			if face then
 				fontUtil:Apply(layer.ChargeText,
-					math.max(1, math.floor(self.Size * 0.4 * (chargeScale or 1.0))), flags,
+					math.max(1, math.floor(iconSize * 0.4 * (chargeScale or 1.0))), flags,
 					fontUtil:BaseFace(cdText))
 			else
-				fontUtil:UpdateFontSize(layer.ChargeText, self.Size, nil, chargeScale)
+				fontUtil:UpdateFontSize(layer.ChargeText, iconSize, nil, chargeScale)
 			end
 		else
-			UpdateChargeTextFontSize(layer.ChargeText, self.Size, chargeScale)
+			UpdateChargeTextFontSize(layer.ChargeText, iconSize, chargeScale)
 		end
 
 		local textColor = options.TextColor
@@ -1206,7 +1252,7 @@ function M:SetSlot(slotIndex, options)
 	-- Every slot, not only the ones handed a scale: the countdown's face can change under a
 	-- scale that has not moved, and a caller that never passes one would keep the old face for
 	-- as long as the icon lives. Created with a scale of 1, so there is always one to size by.
-	fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, layer.Cooldown.FontScale)
+	fontUtil:UpdateCooldownFontSize(layer.Cooldown, iconSize, nil, layer.Cooldown.FontScale)
 
 	UpdateGlow(layer.Frame, options)
 	ApplyIconCorners(layer, options)
@@ -1296,6 +1342,7 @@ end
 ---@field Container IconLayer?
 ---@field ExtraLayers IconLayer[]
 ---@field IsUsed boolean
+---@field DrawnSize number?
 
 ---@class IconSlotContainer
 ---@field Frame table
@@ -1309,6 +1356,7 @@ end
 ---@field OverflowRowAlignment string?
 ---@field InvertLayout boolean
 ---@field Columns number?
+---@field LeadScale number?
 ---@field GrowDown boolean
 ---@field GrowUp boolean
 ---@field NoBorder boolean
@@ -1318,6 +1366,7 @@ end
 ---@field SetGrowDown fun(self: IconSlotContainer, enabled: boolean)
 ---@field SetGrowUp fun(self: IconSlotContainer, enabled: boolean)
 ---@field SetColumns fun(self: IconSlotContainer, n: number?, invertLayout: boolean?)
+---@field SetLeadScale fun(self: IconSlotContainer, scale: number?)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
 ---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)

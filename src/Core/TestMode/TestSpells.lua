@@ -136,6 +136,8 @@ M.KickSpecIds = {
 --- ShowTooltips attaches each spell id;
 --- Count caps how many spells are drawn (default all);
 --- Repeat draws the list round again once it runs out, so Count is met rather than capped;
+--- LeadCount marks how many entries at the head of the list stand in for a category leading the
+--- row, which Repeat then comes round past;
 --- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s);
 --- BarTexture and Border are passed to a BarSlotContainer's fill and outline (the icon
 --- containers ignore both, drawing their border off Color instead);
@@ -146,10 +148,12 @@ function M:FillContainer(container, spells, startSlot, options)
 	local slot = startSlot
 	local available = #spells
 	local count = math.min(options.Count or available, available)
+	local leading = math.min(options.LeadCount or 0, available)
+	local repeatable = available - leading
 
 	-- A preview whose icon count stops short of what the setting promised reads as a broken
-	-- setting.
-	if options.Repeat and options.Count and available > 0 then
+	-- setting. A list that is nothing but stand-ins has nothing to come round to.
+	if options.Repeat and options.Count and repeatable > 0 then
 		count = options.Count
 	end
 
@@ -158,7 +162,15 @@ function M:FillContainer(container, spells, startSlot, options)
 			break
 		end
 
-		local spell = spells[(i - 1) % available + 1]
+		local index = i
+
+		-- A stand-in drawn twice puts one spell in the row at two sizes, since the row draws the
+		-- one leading it larger.
+		if i > available then
+			index = leading + (i - available - 1) % repeatable + 1
+		end
+
+		local spell = spells[index]
 		local spellId = type(spell) == "table" and spell.SpellId or spell
 		local texture = C_Spell.GetSpellTexture(spellId)
 
