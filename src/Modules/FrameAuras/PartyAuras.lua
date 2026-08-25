@@ -68,7 +68,7 @@ local ICON_SPACING = 1
 local FALLBACK_ICON_SIZE = 14
 -- The shipped budgets a profile written before a key existed falls back to. Spelled out rather
 -- than read off the defaults table, which loads after the modules do.
-local DEFAULT_MAX_ICONS = { Buffs = 6, Debuffs = 3 }
+local DEFAULT_MAX_ICONS = { Buffs = 6, Debuffs = 2 }
 local DEFAULT_PER_ROW = 3
 local DEFAULT_SIZE_PERCENT = 35
 -- The Masque sub-group these rows are skinned under. One name for both sides, since a player
