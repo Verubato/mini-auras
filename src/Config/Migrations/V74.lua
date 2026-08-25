@@ -1,5 +1,6 @@
 ---@diagnostic disable: unused-function
 local _, addon = ...
+local L = addon.L
 local M = addon.Config.Migrator
 
 -- This step has to keep moving the same twelve tables whatever a later version renames.
@@ -114,5 +115,28 @@ function M:UpgradeToVersion74(vars)
 	end
 
 	vars.Version = 74
+	return true
+end
+
+function M:UpgradeToVersion75(vars)
+	if vars.Version ~= 74 then return false end
+
+	local locale = GetLocale()
+	local note
+
+	-- Only the locales a pack is offered to get a note; the silence elsewhere is deliberate.
+	if locale == "koKR" then
+		note = L["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."]
+	elseif locale == "zhCN" or locale == "zhTW" then
+		note = L["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."]
+	end
+
+	if note then
+		vars.WhatsNew = vars.WhatsNew or {}
+		table.insert(vars.WhatsNew, note)
+		vars.NotifiedChanges = false
+	end
+
+	vars.Version = 75
 	return true
 end

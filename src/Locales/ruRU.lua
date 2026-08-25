@@ -521,4 +521,6 @@ L:RegisterLocale("ruRU", function() return {
 	["Purge glow"] = "Рассеивание",
 	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Подсвечивает усиления противника, которые вы можете рассеять, и ставит их первыми в ряду.",
 	["The colour a buff you can take off an enemy lights up in."] = "Цвет, которым подсвечивается усиление противника, которое вы можете рассеять.",
+	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "Теперь для голосовых оповещений есть корейский голосовой пакет: MiniAuras - Korean Voice Pack на CurseForge. Установите его, чтобы слышать названия заклинаний на корейском.",
+	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "Голоса на путунхуа Amy, Anna Su и Jason Chen переехали в отдельный аддон: MiniAuras - Chinese Voice Pack на CurseForge. Установите его, чтобы продолжать их использовать.",
 } end)

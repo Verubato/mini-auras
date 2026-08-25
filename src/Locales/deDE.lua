@@ -521,4 +521,6 @@ L:RegisterLocale("deDE", function() return {
 	["Purge glow"] = "Bann-Leuchten",
 	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Lässt die Stärkungszauber eines Gegners aufleuchten, die du bannen kannst, und stellt sie an den Anfang der Reihe.",
 	["The colour a buff you can take off an enemy lights up in."] = "Die Farbe, in der ein bannbarer Stärkungszauber eines Gegners aufleuchtet.",
+	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "Für die Alarm-Ansagen gibt es jetzt ein koreanisches Sprachpaket: MiniAuras - Korean Voice Pack, auf CurseForge. Installiere es, um die Zaubernamen auf Koreanisch zu hören.",
+	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "Die Mandarin-Stimmen Amy, Anna Su und Jason Chen sind in ein eigenes Addon umgezogen: MiniAuras - Chinese Voice Pack, auf CurseForge. Installiere es, um sie weiter zu nutzen.",
 } end)

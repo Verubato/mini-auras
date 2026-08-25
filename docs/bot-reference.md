@@ -743,8 +743,9 @@ on the caster). Eight spells ship in that category: Deathmark, Kingsbane, Feral 
 Bloodshed, Dark Simulacrum, Duel, Sharpen Blade, and, since 5.18.0, Colossus Smash, which the
 English packs announce as just "Smash". Five packs ship: David, Elise, Emma, Grampa Werthers, Theo Silk. Default pack: David.
 Other addons can register packs via the API, and the localized voices are separate addons that
-do exactly that: MiniAurasVoicePackChinese (Amy, Anna Su, Jason Chen, on zhCN/zhTW) and
-MiniAurasVoicePackKorean (Hyuk, Rosa Oh, on koKR). The Mandarin three shipped inside MiniAuras
+do exactly that: "MiniAuras - Chinese Voice Pack" (folder MiniAurasVoicePackChinese; Amy,
+Anna Su, Jason Chen, on zhCN/zhTW) and "MiniAuras - Korean Voice Pack" (folder
+MiniAurasVoicePackKorean; Hyuk, Rosa Oh, on koKR). The Mandarin three shipped inside MiniAuras
 itself until they moved out; the clips are unchanged and a saved voice comes back once that
 addon is installed. The clips are baked
 OGG files registered engine-side per spell ID; after updating the addon a full client restart
@@ -1255,7 +1256,7 @@ After an addon update, new audio files need a full client restart, not just a re
 **"TTS voices missing / TTS not working."** All three announce toggles default off. After an
 addon update, new clips need a full client restart, not just a reload. The Mandarin and Korean
 voices are separate addons and only appear on the clients they are spoken for. A saved Mandarin
-voice falls back to David until MiniAurasVoicePackChinese is installed, which is what a player
+voice falls back to David until "MiniAuras - Chinese Voice Pack" is installed, which is what a player
 who updated from 5.22.0 or earlier will see.
 
 **"One particular spell is never announced."** Fourteen of the spells that land most often

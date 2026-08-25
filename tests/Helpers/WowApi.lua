@@ -18,6 +18,7 @@ local _roles         = {}   -- unit -> "TANK" | "HEALER" | "DAMAGER"
 local _inRaid        = false
 -- Whether the player is in a vehicle, which takes over the "player" unit.
 local _inVehicle     = false
+local _locale        = "enUS"
 
 function M.setup()
 	-- Blizzard's own deep copy, which addons rely on.
@@ -42,6 +43,8 @@ function M.setup()
 	end
 
 	_G.GetTime = function() return _time end
+
+	_G.GetLocale = function() return _locale end
 
 	_G.UnitExists = function(unit)
 		return _unitExists[unit] == true
@@ -226,6 +229,11 @@ function M.setInVehicle(inVehicle)
 	_inVehicle = inVehicle
 end
 
+---@param locale string
+function M.setLocale(locale)
+	_locale = locale
+end
+
 function M.clearRoles()
 	for unit in pairs(_roles) do
 		M.setUnitExists(unit, false)
@@ -258,6 +266,7 @@ function M.reset()
 	_secretValues  = {}
 	_unitExists    = {}
 	_unitGuids     = {}
+	_locale        = "enUS"
 	M.setup()
 end
 

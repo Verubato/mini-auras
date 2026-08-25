@@ -1601,3 +1601,63 @@ fw.describe("Migrator - defaults helpers", function()
 		assert(db.Modules.Alerts ~= nil, "missing keys restored")
 	end)
 end)
+
+-- Every case names the client it runs on, so one failing part way through cannot leave a locale
+-- behind for the next.
+fw.describe("Migrator - the v75 voice pack notes", function()
+	fw.it("points a Korean client at the new pack", function()
+		wow.setLocale("koKR")
+
+		local vars = { Version = 74, NotifiedChanges = true }
+
+		assert(migrator:UpgradeToVersion75(vars) == true)
+		assert(#vars.WhatsNew == 1, "one note queued")
+		assert(vars.WhatsNew[1]:find("MiniAuras - Korean Voice Pack", 1, true), vars.WhatsNew[1])
+		assert(vars.NotifiedChanges == false, "the dialog has to open again")
+		assert(vars.Version == 75)
+	end)
+
+	fw.it("tells both Chinese clients where the Mandarin voices went", function()
+		for _, locale in ipairs({ "zhCN", "zhTW" }) do
+			wow.setLocale(locale)
+
+			local vars = { Version = 74, NotifiedChanges = true }
+
+			assert(migrator:UpgradeToVersion75(vars) == true)
+			assert(#vars.WhatsNew == 1, locale .. " queued one note")
+			assert(vars.WhatsNew[1]:find("MiniAuras - Chinese Voice Pack", 1, true), locale .. ": " .. vars.WhatsNew[1])
+			assert(vars.NotifiedChanges == false, locale .. " has to open the dialog again")
+		end
+	end)
+
+	fw.it("says nothing to a client offered neither pack", function()
+		wow.setLocale("enUS")
+
+		local vars = { Version = 74, NotifiedChanges = true }
+
+		assert(migrator:UpgradeToVersion75(vars) == true)
+		assert(vars.WhatsNew == nil, "no note queued")
+		assert(vars.NotifiedChanges == true, "and no dialog waiting at the next login")
+		assert(vars.Version == 75)
+	end)
+
+	fw.it("keeps the notes already waiting in the list", function()
+		wow.setLocale("koKR")
+
+		local vars = { Version = 74, NotifiedChanges = false, WhatsNew = { "an earlier note" } }
+
+		assert(migrator:UpgradeToVersion75(vars) == true)
+		assert(#vars.WhatsNew == 2, "appended rather than replaced")
+		assert(vars.WhatsNew[1] == "an earlier note")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		wow.setLocale("koKR")
+
+		local vars = { Version = 73, NotifiedChanges = true }
+
+		assert(migrator:UpgradeToVersion75(vars) == false, "wrong version must be rejected")
+		assert(vars.WhatsNew == nil, "and must queue nothing")
+		assert(vars.Version == 73)
+	end)
+end)

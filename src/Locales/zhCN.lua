@@ -521,4 +521,6 @@ L:RegisterLocale("zhCN", function() return {
 	["Purge glow"] = "驱散发光",
 	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "让敌人身上你可以驱散的增益发光，并把它们排在最前面。",
 	["The colour a buff you can take off an enemy lights up in."] = "你可以从敌人身上驱散的增益发光时的颜色。",
+	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "中文语音 Amy、Anna Su 和 Jason Chen 已移到独立插件中：CurseForge 上的 MiniAuras - Chinese Voice Pack。安装后即可继续使用。",
+	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "现在有了用于警报播报的韩语语音包：CurseForge 上的 MiniAuras - Korean Voice Pack。安装后即可用韩语听到法术名称。",
 } end)

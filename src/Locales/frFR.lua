@@ -519,4 +519,6 @@ L:RegisterLocale("frFR", function() return {
 	["Purge glow"] = "Dissipation",
 	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Fait briller les améliorations d'un ennemi que vous pouvez dissiper et les place en tête de la rangée.",
 	["The colour a buff you can take off an enemy lights up in."] = "La couleur dans laquelle s'illumine une amélioration que vous pouvez dissiper sur un ennemi.",
+	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "Il existe désormais un pack de voix coréennes pour les annonces d'alerte : MiniAuras - Korean Voice Pack, sur CurseForge. Installez-le pour entendre les noms des sorts en coréen.",
+	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "Les voix mandarin Amy, Anna Su et Jason Chen sont passées dans leur propre addon : MiniAuras - Chinese Voice Pack, sur CurseForge. Installez-le pour continuer à les utiliser.",
 } end)

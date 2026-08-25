@@ -522,6 +522,8 @@ L:SetDefaultStrings({
 	["Purge glow"] = "Purge glow",
 	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Lights up the buffs on an enemy that you can take off, and puts them first in the row.",
 	["The colour a buff you can take off an enemy lights up in."] = "The colour a buff you can take off an enemy lights up in.",
+	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean.",
+	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them.",
 })
 
 -- English registers nothing, because the strings above are themselves the fallback every locale
