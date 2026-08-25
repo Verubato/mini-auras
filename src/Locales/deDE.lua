@@ -438,7 +438,7 @@ L:RegisterLocale("deDE", function() return {
 	["Other DPS"] = "Anderer DD",
 	["Self"] = "Selbst",
 	["Spell ID / name"] = "Zauber-ID / Name",
-	["Unit Frames"] = "Einheitenfenster",
+	["Raid Frames"] = "Schlachtzugsfenster",
 	["Texture"] = "Textur",
 	["Choose a Texture"] = "Textur wählen",
 	["Texture path"] = "Texturpfad",

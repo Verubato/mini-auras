@@ -436,7 +436,7 @@ L:RegisterLocale("frFR", function() return {
 	["Other DPS"] = "Autre DPS",
 	["Self"] = "Soi-même",
 	["Spell ID / name"] = "ID / nom du sort",
-	["Unit Frames"] = "Cadres d'unité",
+	["Raid Frames"] = "Cadres de raid",
 	["Texture"] = "Texture",
 	["Choose a Texture"] = "Choisir une texture",
 	["Texture path"] = "Chemin de la texture",

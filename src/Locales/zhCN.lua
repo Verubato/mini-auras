@@ -438,7 +438,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Other DPS"] = "其他输出",
 	["Self"] = "自己",
 	["Spell ID / name"] = "法术 ID / 名称",
-	["Unit Frames"] = "单位框体",
+	["Raid Frames"] = "团队框体",
 	["Texture"] = "材质",
 	["Choose a Texture"] = "选择材质",
 	["Texture path"] = "材质路径",

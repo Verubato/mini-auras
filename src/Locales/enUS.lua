@@ -439,7 +439,7 @@ L:SetDefaultStrings({
 	["Other DPS"] = "Other DPS",
 	["Self"] = "Self",
 	["Spell ID / name"] = "Spell ID / name",
-	["Unit Frames"] = "Unit Frames",
+	["Raid Frames"] = "Raid Frames",
 	["Texture"] = "Texture",
 	["Choose a Texture"] = "Choose a Texture",
 	["Texture path"] = "Texture path",

@@ -436,7 +436,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Other DPS"] = "Outro DPS",
 	["Self"] = "Você",
 	["Spell ID / name"] = "ID / nome da magia",
-	["Unit Frames"] = "Quadros de unidade",
+	["Raid Frames"] = "Quadros de raide",
 	["Texture"] = "Textura",
 	["Choose a Texture"] = "Escolher uma textura",
 	["Texture path"] = "Caminho da textura",

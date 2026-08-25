@@ -438,7 +438,7 @@ L:RegisterLocale("esES", function() return {
 	["Other DPS"] = "Otro DPS",
 	["Self"] = "Yo mismo",
 	["Spell ID / name"] = "ID / nombre del hechizo",
-	["Unit Frames"] = "Marcos de unidad",
+	["Raid Frames"] = "Marcos de banda",
 	["Texture"] = "Textura",
 	["Choose a Texture"] = "Elegir una textura",
 	["Texture path"] = "Ruta de textura",

@@ -86,7 +86,7 @@ local function UnitLabel(unit)
 	elseif unit == "otherdps" then
 		return L["Other DPS"]
 	elseif unit == "unitframes" then
-		return L["Unit Frames"]
+		return L["Raid Frames"]
 	elseif unit == "arenaframes" then
 		return L["Arena Frames"]
 	elseif unit == "targetfriendly" then

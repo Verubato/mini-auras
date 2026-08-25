@@ -438,7 +438,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Other DPS"] = "Другой ДД",
 	["Self"] = "Себя",
 	["Spell ID / name"] = "ID / название заклинания",
-	["Unit Frames"] = "Рамки юнитов",
+	["Raid Frames"] = "Рамки рейда",
 	["Texture"] = "Текстура",
 	["Choose a Texture"] = "Выбрать текстуру",
 	["Texture path"] = "Путь к текстуре",

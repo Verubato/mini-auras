@@ -436,7 +436,7 @@ L:RegisterLocale("itIT", function() return {
 	["Other DPS"] = "Altro DPS",
 	["Self"] = "Me stesso",
 	["Spell ID / name"] = "ID / nome incantesimo",
-	["Unit Frames"] = "Riquadri unità",
+	["Raid Frames"] = "Riquadri incursione",
 	["Texture"] = "Texture",
 	["Choose a Texture"] = "Scegli una texture",
 	["Texture path"] = "Percorso texture",

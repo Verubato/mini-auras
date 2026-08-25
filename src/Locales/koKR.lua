@@ -438,7 +438,7 @@ L:RegisterLocale("koKR", function() return {
 	["Other DPS"] = "다른 딜러",
 	["Self"] = "자신",
 	["Spell ID / name"] = "주문 ID / 이름",
-	["Unit Frames"] = "유닛 프레임",
+	["Raid Frames"] = "공격대 프레임",
 	["Texture"] = "텍스처",
 	["Choose a Texture"] = "텍스처 선택",
 	["Texture path"] = "텍스처 경로",

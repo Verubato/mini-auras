@@ -438,7 +438,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Other DPS"] = "其他輸出",
 	["Self"] = "自己",
 	["Spell ID / name"] = "法術 ID / 名稱",
-	["Unit Frames"] = "單位框架",
+	["Raid Frames"] = "團隊框架",
 	["Texture"] = "材質",
 	["Choose a Texture"] = "選擇材質",
 	["Texture path"] = "材質路徑",
