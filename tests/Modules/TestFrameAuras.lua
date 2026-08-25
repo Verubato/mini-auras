@@ -859,6 +859,116 @@ fw.describe("Frame Auras - what one frame costs", function()
 	end)
 end)
 
+fw.describe("Frame Auras - clearing the raid frame power bar", function()
+	fw.before_each(function()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+	end)
+
+	---How far off the bottom of its frame a side's row was pinned.
+	---@param frame table
+	---@param groupKey string
+	---@return number
+	local function RowHeightOn(frame, groupKey)
+		local row = GroupRowOn(frame, groupKey)
+
+		assert(row, "the row was built")
+
+		local _, _, _, _, y = row:GetPoint(1)
+
+		return y
+	end
+
+	fw.it("lifts both rows clear of the bar the client made room for", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local plain = NewRaidFrame(6)
+		local powered = NewRaidFrame(7)
+
+		-- What the client writes on a frame it has just laid a power bar out on. Every one of its
+		-- own bottom-anchored pieces adds the same number.
+		powered.powerBarUsedHeight = 8
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local plainBuffs = RowHeightOn(plain, PARTY_BUFF_GROUP)
+		local plainDebuffs = RowHeightOn(plain, DEBUFF_GROUP)
+
+		assert(RowHeightOn(powered, PARTY_BUFF_GROUP) == plainBuffs + 8,
+			"the buff row sits above the bar, got " .. RowHeightOn(powered, PARTY_BUFF_GROUP))
+		assert(RowHeightOn(powered, DEBUFF_GROUP) == plainDebuffs + 8,
+			"and so does the debuff row, got " .. RowHeightOn(powered, DEBUFF_GROUP))
+
+		DropRaidFrame(6)
+		DropRaidFrame(7)
+	end)
+
+	fw.it("moves the rows when the bar is switched on behind its back", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewRaidFrame(8)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local seated = RowHeightOn(frame, PARTY_BUFF_GROUP)
+
+		-- The player throws the client's own switch, so nothing this module owns has moved and the
+		-- roster pass is what carries the frame back through.
+		frame.powerBarUsedHeight = 8
+
+		local events = acm.lastFrameForEvent("GROUP_ROSTER_UPDATE")
+
+		assert(events, "the module registered for the roster")
+		events:TriggerEvent("GROUP_ROSTER_UPDATE")
+
+		assert(RowHeightOn(frame, PARTY_BUFF_GROUP) == seated + 8,
+			"the row followed the bar up, got " .. RowHeightOn(frame, PARTY_BUFF_GROUP))
+
+		DropRaidFrame(8)
+	end)
+
+	fw.it("puts the rows back down when the bar goes away", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewRaidFrame(9)
+		frame.powerBarUsedHeight = 8
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local lifted = RowHeightOn(frame, PARTY_BUFF_GROUP)
+
+		frame.powerBarUsedHeight = 0
+
+		local events = acm.lastFrameForEvent("GROUP_ROSTER_UPDATE")
+		events:TriggerEvent("GROUP_ROSTER_UPDATE")
+
+		assert(RowHeightOn(frame, PARTY_BUFF_GROUP) == lifted - 8,
+			"the row came back down, got " .. RowHeightOn(frame, PARTY_BUFF_GROUP))
+
+		DropRaidFrame(9)
+	end)
+
+	fw.it("leaves a frame alone where the client says nothing about a bar", function()
+		options.Buffs.Enabled = true
+
+		-- Frames from other addons carry no such field, and they place their own bars.
+		local frame = NewRaidFrame(10)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(RowHeightOn(frame, PARTY_BUFF_GROUP) == 2,
+			"the shipped inset and nothing else, got " .. RowHeightOn(frame, PARTY_BUFF_GROUP))
+
+		DropRaidFrame(10)
+	end)
+end)
+
 fw.describe("Frame Auras - test mode", function()
 	fw.before_each(function()
 		module:StopTesting()

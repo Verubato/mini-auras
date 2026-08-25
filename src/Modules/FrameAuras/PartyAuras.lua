@@ -647,6 +647,17 @@ local function AddCrowdControlGroup(display)
 	end
 end
 
+---How far the power bar lifts the bottom of a compact frame's contents. The client writes this on
+---each frame as it lays one out, and every bottom-anchored piece of its own adds it.
+---
+---The healer-only setting drops the bar per frame, so only the frame can say. Frames from other
+---addons carry no field and place their own bars.
+---@param frame table
+---@return number
+local function PowerBarInset(frame)
+	return pixels:Number(frame.powerBarUsedHeight) or 0
+end
+
 ---Pins one side's row into its corner of the frame, and puts it over the frame's own artwork.
 ---Parented to the frame, so the row fades and hides with the unit frame the way Blizzard's own row
 ---did.
@@ -674,7 +685,7 @@ local function AnchorSide(display, frame, side)
 	end
 
 	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY)
+	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY + PowerBarInset(frame))
 end
 
 ---@param container IconSlotContainer?
@@ -775,7 +786,7 @@ local function ApplyTestSide(entry, side)
 	end
 
 	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY)
+	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY + PowerBarInset(frame))
 	containerFrame:Show()
 end
 
@@ -813,11 +824,17 @@ local function ApplySettings(entry)
 	-- not what it settles at.
 	local stamp = addon:IsLoadingScreenUp() and LOADING_GENERATION or generation
 
-	if entry.Generation == stamp then
+	-- The player turns the power bar on without touching anything this module owns, and the rows
+	-- sit in the corner it takes. A frame already drawn for these settings still has to be looked
+	-- at again when the bar comes or goes.
+	local powerBarInset = PowerBarInset(entry.Frame)
+
+	if entry.Generation == stamp and entry.PowerBarInset == powerBarInset then
 		return
 	end
 
 	entry.Generation = stamp
+	entry.PowerBarInset = powerBarInset
 
 	local frame = entry.Frame
 
@@ -1208,3 +1225,4 @@ end
 ---@field TestDebuffs IconSlotContainer?
 ---@field Generation number|string? The refresh it was last drawn for, or a stand-in while a
 ---loading screen is up.
+---@field PowerBarInset number? The power bar height the rows were last placed above.
