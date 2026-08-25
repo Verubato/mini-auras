@@ -956,8 +956,9 @@ local function ApplyCVar(side, enabled)
 	-- Nothing to hand back on the first pass of a side that is switched off. The player may have
 	-- turned Blizzard's own row off themselves, and this has never touched it.
 	--
-	-- Unless something is still remembered, which only outlives a session when the write it was
-	-- waiting on never reached the client. The fight it was parked for ended in a reload.
+	-- Unless a value is still held. One is taken when the side goes on and let go only once the
+	-- hand-back reaches the client, so a session opening with the side off and a value still held
+	-- is a hand-back a reload cut short.
 	if not enabled and not wasSettled then
 		local saved = mini:GetSavedVars().FrameAuraCVars
 
