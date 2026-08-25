@@ -739,22 +739,25 @@ Master).
 pack** dropdown, a **Channel** dropdown (Master/SFX/Music/Ambience/Dialog), and three
 per-category announce toggles, **Important**, **Defensive** and **Enemy Debuffs** (all off by
 default; Enemy Debuffs covers big enemy cooldowns that land on you or your party rather than
-on the caster). Five spells ship in that category: Deathmark, Kingsbane, Feral Frenzy,
-Bloodshed, and, since 5.18.0, Colossus Smash, which the English packs announce as just
-"Smash". Eight packs ship: Amy, Anna Su, David, Elise, Emma, Grampa Werthers, Jason
-Chen, Theo Silk. Amy, Anna Su and Jason Chen are Mandarin voices offered only on zhCN/zhTW
-clients. Default pack: David. Other addons can register packs via the API. The clips are baked
+on the caster). Eight spells ship in that category: Deathmark, Kingsbane, Feral Frenzy,
+Bloodshed, Dark Simulacrum, Duel, Sharpen Blade, and, since 5.18.0, Colossus Smash, which the
+English packs announce as just "Smash". Five packs ship: David, Elise, Emma, Grampa Werthers, Theo Silk. Default pack: David.
+Other addons can register packs via the API, and the localized voices are separate addons that
+do exactly that: MiniAurasVoicePackChinese (Amy, Anna Su, Jason Chen, on zhCN/zhTW) and
+MiniAurasVoicePackKorean (Hyuk, Rosa Oh, on koKR). The Mandarin three shipped inside MiniAuras
+itself until they moved out; the clips are unchanged and a saved voice comes back once that
+addon is installed. The clips are baked
 OGG files registered engine-side per spell ID; after updating the addon a full client restart
 (not just a reload) is needed before new audio files can play.
 
-Since 5.14.0 the five English packs say a short name for around fifty spells players never
+Since 5.14.0 the five shipped packs say a short name for around fifty spells players never
 call by their full name, so Incarnation: Tree of Life is announced as "Incarn", Aspect of the
 Turtle as "Turtle" and Life Cocoon as "Cocoon". Nothing is configurable about it, and spells
 that share a nickname share the announcement: eight personal defensives (Shield Wall, Astral
 Shift, Fortifying Brew and the like) are all called "Wall", and the four druid Incarnations
 plus Celestial Alignment are all "Incarn". Each spell still has its own clip and its own row
-on the Spells sub-tab, so they can be muted separately. The Mandarin packs are unaffected and
-announce the full localized names.
+on the Spells sub-tab, so they can be muted separately. The Mandarin voice pack announces the
+full localized name instead; the Korean one shortens on a list of its own.
 
 **Spells sub-tab:** "Choose which spells text-to-speech announces. The sound alerts
 are not affected. A category still needs its switch on the TTS tab." It governs the spoken
@@ -1249,9 +1252,11 @@ mode; filter-mode groups cannot have sounds (sounds register per spell ID engine
 check the trigger's sound is not "(None)" and check the chosen output channel's volume.
 After an addon update, new audio files need a full client restart, not just a reload.
 
-**"TTS voices missing / TTS not working."** TTS uses the shipped voice packs; Amy, Anna Su and
-Jason Chen only appear on Chinese clients. All three announce toggles default off. After an
-addon update, new clips need a full client restart, not just a reload.
+**"TTS voices missing / TTS not working."** All three announce toggles default off. After an
+addon update, new clips need a full client restart, not just a reload. The Mandarin and Korean
+voices are separate addons and only appear on the clients they are spoken for. A saved Mandarin
+voice falls back to David until MiniAurasVoicePackChinese is installed, which is what a player
+who updated from 5.22.0 or earlier will see.
 
 **"One particular spell is never announced."** Fourteen of the spells that land most often
 (Ice Barrier, Innervate, Demon Spikes, Blazing Barrier and the like) ship unticked on the TTS
@@ -1262,8 +1267,8 @@ was unticked.
 packs announce around fifty long spells by their short name, and a few nicknames are shared:
 eight personal defensives are all called "Wall", and the four druid Incarnations plus
 Celestial Alignment are all "Incarn". The announcement is still the right spell, and the Spells sub-tab
-still lists and mutes each one separately. There is no setting to hear the full name; the
-Mandarin packs never shorten.
+still lists and mutes each one separately. There is no setting to hear the full name, though
+the Mandarin voice pack announces the full localized name.
 
 **"Group frames show CC but no buffs."** Show Important and Show Defensives choose which
 spells reach the display, so with both off nothing helpful is shown at all. Check both, and

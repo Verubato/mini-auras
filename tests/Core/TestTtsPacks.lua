@@ -31,8 +31,7 @@ assert(loadfile("src/Core/Audio/TtsPacks.lua"))("MiniAuras", localeAddon)
 local localePacks = localeAddon.Core.TtsPacks
 
 localeAddon.Core.AuraTtsSounds = {
-    Packs = { "Mandarin", "David", "Emma" },
-    PackLocales = { Mandarin = { "zhCN", "zhTW" }, Emma = { "enUS" } },
+    Packs = { "David", "Emma" },
 }
 
 local SHIPPED_PATH = "Interface\\AddOns\\MiniAuras\\Sounds\\TTS\\"
@@ -119,17 +118,11 @@ fw.describe("TtsPacks - resolving a saved name", function()
 end)
 
 fw.describe("TtsPacks - packs limited to some locales", function()
-    fw.it("hides a shipped pack this client cannot understand", function()
+    fw.it("offers every shipped pack, since none of them name a locale", function()
         local names = localePacks:Names()
 
-        assert(not Contains(names, "Mandarin"), "the gated pack is not offered")
-        assert(Contains(names, "David"), "an ungated pack still is")
-        assert(Contains(names, "Emma"), "so is one gated to this locale")
-    end)
-
-    fw.it("resolves past a hidden pack to the first one this client has", function()
-        assert(localePacks:Resolve("Mandarin") == "David", "a saved name that is hidden here")
-        assert(localePacks:Resolve("Uninstalled") == "David", "a name nothing owns")
+        assert(Contains(names, "David"), "David is offered")
+        assert(Contains(names, "Emma"), "so is Emma")
     end)
 
     fw.it("takes an external pack for other locales but keeps it out of the way", function()

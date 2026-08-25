@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Moved the Mandarin voices Amy, Anna Su, and Jason Chen out into their own addon, MiniAurasVoicePackChinese, so that everyone else stops downloading 6 MB of audio they cannot understand. The clips are unchanged and the setting still saves the voice by name, so installing that addon puts a saved Mandarin voice back. Without it, a saved Mandarin voice falls back to David. There is a Korean pack too, MiniAurasVoicePackKorean.
 - Added a "Show when" option to a personal aura's trigger, so a group can be limited to in combat or out of combat.
 - Added Duel and Sharpen Blade to the enemy debuff announcements. Sharpen Blade is spoken as just "Sharpen" and listed as "Mortal Strike", the name the game gives the debuff it applies.
 - Added a Frame Auras module, which draws the auras on Blizzard's own party and raid frames in place of the ones the game puts there. Three parts, each with its own switch: the group buff row (with a tracked spell list and a pandemic glow), the group debuff row (which can lead with crowd control, drawn a quarter larger than the rest of the row), and a mark for a member missing your class buff (kept to instances by default, since a missing buff in the open world costs nobody anything). All three ship switched off.

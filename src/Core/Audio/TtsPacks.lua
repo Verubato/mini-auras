@@ -33,16 +33,6 @@ local function ShippedPacks()
 	return data and data.Packs or EMPTY
 end
 
--- Read lazily too, and optional: the generated file only carries it once a shipped pack is gated.
----@param name string?
----@return string[]?
-local function ShippedLocales(name)
-	local data = addon.Core.AuraTtsSounds
-	local locales = data and data.PackLocales
-
-	return locales and locales[name]
-end
-
 ---@param name string?
 ---@return boolean
 local function IsShipped(name)
@@ -57,31 +47,18 @@ local function IsShipped(name)
 	return false
 end
 
----A pack that names locales is only worth offering where its clips can be understood.
+---A pack that names locales is only worth offering where its clips can be understood. Only an
+---external pack can name them; a voice that speaks another language ships as its own addon.
 ---@param name string?
 ---@return boolean
 local function IsAvailable(name)
 	local lookup = externalLocales[name]
 
-	if lookup then
-		return lookup[GetLocale()] == true
-	end
-
-	local shipped = ShippedLocales(name)
-
-	if not shipped then
+	if not lookup then
 		return true
 	end
 
-	local locale = GetLocale()
-
-	for i = 1, #shipped do
-		if shipped[i] == locale then
-			return true
-		end
-	end
-
-	return false
+	return lookup[GetLocale()] == true
 end
 
 ---Every pack name for the dropdown: shipped first, in the order they were generated, then the

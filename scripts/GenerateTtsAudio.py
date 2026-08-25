@@ -10,8 +10,8 @@ Run from the repo root with the ELEVENLABS_API_KEY environment variable set:
 
 Existing clips are skipped unless --force is given, so re-runs after a spell-list
 change or a new VOICES entry only render what is missing. Each pack also gets
-PreviewImportant/PreviewDefensive clips for the TTS checkboxes and a PreviewVoice
-clip speaking the pack name for the voice dropdown.
+PreviewImportant/PreviewDefensive/PreviewEnemyDebuff clips for the TTS checkboxes
+and a PreviewVoice clip speaking the pack name for the voice dropdown.
 """
 
 import json
@@ -24,24 +24,17 @@ import time
 import urllib.error
 import urllib.request
 
-# Pack name -> ElevenLabs voice id, or a dict {"id": ..., "locales": [...], "language": ...} for
-# a voice only offered on some clients, where the locales are GetLocale() codes such as "deDE". A
-# "language" picks the spoken-name table from LANGUAGES so the voice announces localized names,
-# and without one it speaks the English names. The pack name is the folder, the dropdown label,
-# and the saved VoicePack value, so treat renames as breaking.
+# Pack name -> ElevenLabs voice id. The pack name is the folder, the dropdown label, and the
+# saved VoicePack value, so treat renames as breaking. A voice that announces in another language
+# belongs in its own addon, so that players who cannot understand it do not download it.
 VOICES = {
     "David": "FF7KdobWPaiR0vkcALHF",
     "Grampa Werthers": "MKlLqCItoCkvdhrxgtLv",
     "Elise": "EST9Ui6982FZPSi7gCHi",
     "Emma": "56bWURjYFHyYyVf490Dp",
     "Theo Silk": "UmQN7jS1Ee8B1czsUtQh",
-    "Amy": {"id": "bhJUNIXWQQ94l8eI2VUf", "locales": ["zhCN", "zhTW"], "language": "zhCN"},
-    "Anna Su": {"id": "9lHjugDhwqoxA5MhX0az", "locales": ["zhCN", "zhTW"], "language": "zhCN"},
-    "Jason Chen": {"id": "DowyQ68vDpgFYdWVGjc3", "locales": ["zhCN", "zhTW"], "language": "zhCN"},
 }
-# A LANGUAGES entry can override this default per spoken language. English keeps multilingual v2,
-# whose delivery suits those voices better.
-DEFAULT_MODEL_ID = "eleven_multilingual_v2"
+MODEL_ID = "eleven_multilingual_v2"
 # ElevenLabs cannot emit Vorbis, so clips arrive as MP3 and ffmpeg converts them to the OGG files
 # the addon ships. The pack API asks external packs for OGG too.
 OUTPUT_FORMAT = "mp3_44100_128"
@@ -127,21 +120,6 @@ PREVIEWS = {
     "PreviewDefensive": "Defensive",
     "PreviewEnemyDebuff": "Enemy debuff",
 }
-# Spoken-name tables for voices that announce in another language. Each is a JSON file mapping
-# every unique English ability name to its localized one, plus the words the config previews
-# speak. File names stay the English slugs, since the generated Lua map is shared by every pack.
-LANGUAGES = {
-    "zhCN": {
-        "names": "SpellNamesZhCN.json",
-        # v3 for Mandarin, because multilingual v2's tone accuracy is not good enough there.
-        "model": "eleven_v3",
-        "previews": {
-            "PreviewImportant": "重要",
-            "PreviewDefensive": "防御",
-            "PreviewEnemyDebuff": "敌方减益",
-        },
-    },
-}
 # Spoken by PreviewVoice.mp3 when the pack is picked in the dropdown. Packs without an entry
 # speak their own name.
 PREVIEW_VOICE_TEXTS = {
@@ -150,10 +128,6 @@ PREVIEW_VOICE_TEXTS = {
     "Emma": "He was going off like a frog in a sock!",
     "Elise": "Does anyone else immediately re-open Instagram after closing it?",
     "Theo Silk": "If you wish to create an apple pie from scratch, you must first invent the universe.",
-    # The longest zhCN spell name, as a representative sample of the announcements themselves.
-    "Amy": "化身：乌索克的守护者",
-    "Anna Su": "化身：乌索克的守护者",
-    "Jason Chen": "化身：乌索克的守护者",
 }
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
@@ -195,40 +169,14 @@ def parse_categories():
     return result
 
 
-def pack_voice_id(entry):
-    """A VOICES value is either the voice id on its own or a dict carrying it."""
-    return entry["id"] if isinstance(entry, dict) else entry
-
-
-def pack_locales(entry):
-    """The locales a voice is limited to, or None when it suits every client."""
-    return entry.get("locales") if isinstance(entry, dict) else None
-
-
-def pack_language(entry):
-    """The LANGUAGES key a voice speaks its names in, or None for English."""
-    return entry.get("language") if isinstance(entry, dict) else None
-
-
-def build_texts(categories, language):
-    """File stem -> spoken text for one language (None = the English names)."""
-    names = None
-    previews = PREVIEWS
-    if language:
-        spec = LANGUAGES[language]
-        path = pathlib.Path(__file__).resolve().parent / spec["names"]
-        names = json.loads(path.read_text(encoding="utf-8"))
-        previews = spec["previews"]
-
+def build_texts(categories):
+    """File stem -> the text that stem's clip speaks."""
     texts = {}
     for ids in categories.values():
         for name in ids.values():
             text = spoken_text(name)
-            localized = names.get(text) if names else None
-            if names and not localized:
-                print(f"WARNING: no {language} name for '{text}', speaking English")
-            texts[slug(text)] = localized or SHORT_NAMES.get(text, text)
-    for file_stem, text in previews.items():
+            texts[slug(text)] = SHORT_NAMES.get(text, text)
+    for file_stem, text in PREVIEWS.items():
         texts[file_stem] = text
     return texts
 
@@ -310,18 +258,6 @@ def write_lua(categories):
         "addon.Core.AuraTtsSounds = {",
         "\tPacks = { " + ", ".join(f'"{name}"' for name in sorted(VOICES)) + " },",
     ]
-    limited = {
-        name: pack_locales(VOICES[name])
-        for name in sorted(VOICES)
-        if pack_locales(VOICES[name])
-    }
-    if limited:
-        lines.append("\t-- Packs only offered on these clients. The rest suit every client.")
-        lines.append("\tPackLocales = {")
-        for name, locales in limited.items():
-            codes = ", ".join(f'"{locale}"' for locale in locales)
-            lines.append(f'\t\t["{name}"] = {{ {codes} }},')
-        lines.append("\t},")
     for category in CATEGORIES:
         ids = categories[category]
         lines.append(f"\t{category} = {{")
@@ -341,19 +277,13 @@ def main():
     force = "--force" in sys.argv
 
     categories = parse_categories()
-
-    texts_by_language = {}
+    texts = build_texts(categories)
 
     rendered, reused = 0, 0
-    for pack, entry in VOICES.items():
-        language = pack_language(entry)
-        if language not in texts_by_language:
-            texts_by_language[language] = build_texts(categories, language)
-        model_id = (language and LANGUAGES[language].get("model")) or DEFAULT_MODEL_ID
-
+    for pack, voice_id in VOICES.items():
         pack_dir = OUT_DIR / pack
         pack_dir.mkdir(parents=True, exist_ok=True)
-        pack_texts = dict(texts_by_language[language], PreviewVoice=PREVIEW_VOICE_TEXTS.get(pack, pack))
+        pack_texts = dict(texts, PreviewVoice=PREVIEW_VOICE_TEXTS.get(pack, pack))
         for file_stem in sorted(pack_texts):
             path = pack_dir / f"{file_stem}.ogg"
             if path.exists() and not force:
@@ -361,11 +291,11 @@ def main():
                 continue
             render(
                 api_key,
-                pack_voice_id(entry),
+                voice_id,
                 pack_texts[file_stem],
                 path,
                 PACK_GAIN_DB.get(pack, 0.0),
-                model_id,
+                MODEL_ID,
             )
             rendered += 1
             print(f"rendered {pack}/{path.name}")
