@@ -23,15 +23,17 @@ local ttsPacks = addon.Core.TtsPacks
 -- Stands in for the generated clip data, which this module reads lazily.
 addon.Core.AuraTtsSounds = { Packs = { "David", "Emma" } }
 
--- A second copy of the module with its own state, so the locale tests can stub a different
--- shipped list without disturbing the registrations above.
+-- A second copy of the module with its own state, so the locale tests can register their own
+-- packs without disturbing the registrations above.
 local localeAddon = { Core = {} }
 assert(loadfile("src/Core/Audio/TtsPacks.lua"))("MiniAuras", localeAddon)
 
 local localePacks = localeAddon.Core.TtsPacks
 
+-- PackLocales is a key the generator no longer writes, left here to prove it is ignored.
 localeAddon.Core.AuraTtsSounds = {
     Packs = { "David", "Emma" },
+    PackLocales = { Emma = { "zhCN" } },
 }
 
 local SHIPPED_PATH = "Interface\\AddOns\\MiniAuras\\Sounds\\TTS\\"
@@ -118,11 +120,11 @@ fw.describe("TtsPacks - resolving a saved name", function()
 end)
 
 fw.describe("TtsPacks - packs limited to some locales", function()
-    fw.it("offers every shipped pack, since none of them name a locale", function()
+    fw.it("ignores a locale list left behind in the generated file", function()
         local names = localePacks:Names()
 
-        assert(Contains(names, "David"), "David is offered")
-        assert(Contains(names, "Emma"), "so is Emma")
+        assert(Contains(names, "Emma"), "the stale gate does not hide a shipped pack")
+        assert(Contains(names, "David"), "nor does it disturb an unlisted one")
     end)
 
     fw.it("takes an external pack for other locales but keeps it out of the way", function()

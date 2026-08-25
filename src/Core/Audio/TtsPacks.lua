@@ -47,8 +47,8 @@ local function IsShipped(name)
 	return false
 end
 
----A pack that names locales is only worth offering where its clips can be understood. Only an
----external pack can name them; a voice that speaks another language ships as its own addon.
+---A pack that names locales is only worth offering where its clips can be understood. A voice in
+---another language ships as its own addon, so only an external pack names locales.
 ---@param name string?
 ---@return boolean
 local function IsAvailable(name)
