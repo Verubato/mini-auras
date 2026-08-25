@@ -90,6 +90,9 @@ local HELPFUL_GROUP_KEYS = { DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }
 
 -- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
 local MASQUE_GROUP = "Important Auras"
+-- The two options profiles, which are also the keys an anchor keeps a display under.
+local DEFAULT_PROFILE = "Default"
+local RAID_PROFILE = "Raid"
 -- How many frames' worth of containers to have ready before a group turns up. A party is five,
 -- which is the size a solo player is most likely to become. Past that the walker keeps up, since
 -- a raid fills in over several seconds anyway.
@@ -247,12 +250,19 @@ local function BuildGroups(maxIcons, options, colors)
 	}
 end
 
+---Which options profile is in force. A key rather than the table itself, since a profile switch
+---replaces the tables and the displays an anchor keeps have to outlive that.
+---@return string
+local function GetProfileKey()
+	return instanceOptions:IsRaid() and RAID_PROFILE or DEFAULT_PROFILE
+end
+
 local function GetOptions()
 	local m = db.Modules.ImportantAuras
 	if not m then
 		return nil
 	end
-	return instanceOptions:IsRaid() and m.Raid or m.Default
+	return m[GetProfileKey()]
 end
 
 ---The look a display is built with and restyled to.
@@ -291,6 +301,32 @@ local function HelpfulColors(options)
 	helpfulColors[IMPORTANT_GROUP_KEY] = colored and importantColor or nil
 
 	return helpfulColors
+end
+
+---One anchor's aura display, built to the look the given options ask for.
+---
+---Seeded with its style rather than left to the restyle on the refresh behind it: a unit's display
+---is built the moment it turns up, and one built mid-arena can never be restyled.
+---
+---The groups are declared by the walker instead, a group per turn: a roster turning up builds one
+---of these per unit at once, and each group costs a batch of buttons the engine allocates on the
+---spot. Icons for a category appear when its group lands, within a second or two of the frames.
+---@param unit string
+---@param options ImportantAurasInstanceOptions
+---@param size number
+---@param spacing number
+---@param maxIcons number
+---@return AuraContainerDisplay
+local function BuildDisplay(unit, options, size, spacing, maxIcons)
+	return auraContainerDisplay:New(
+		UIParent,
+		unit,
+		BuildGroups(maxIcons, options, HelpfulColors(options)),
+		size,
+		spacing,
+		MASQUE_GROUP,
+		{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true }
+	)
 end
 
 ---Whether a kick icon currently occupies the entry's container. With kicks switched off the
@@ -401,6 +437,31 @@ local function DeclareNextGroup(entry)
 	end
 end
 
+---What a spare would be built to now. Sized off a real frame where there is one, so a spare taken
+---later needs no resize: a restyle is refused outright while auras are secret. Without any frames
+---it takes the pixel size, and the refresh that hands it over corrects that.
+---@param options ImportantAurasInstanceOptions
+---@return number size
+---@return number spacing
+local function SpareGeometry(options)
+	local sample = frames:GetAll(false, false, anchorScratch)[1]
+
+	return moduleUtil:GetIconSize(options.Icons, sample, 32, 75), options.IconSpacing or 2
+end
+
+---Whether a waiting spare could be handed to a frame asking for this look. The budget has to match
+---outright: the engine hands out a group's buttons from the count it was declared with, so a spare
+---built for a smaller row can never grow into a bigger one.
+---@param spare ImportantAurasSpare
+---@param maxIcons number
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@return boolean
+local function SpareFits(spare, maxIcons, size, spacing, style)
+	return spare.MaxIcons == maxIcons and anchoredIcons:DisplayFitsLook(spare.Display, size, spacing, style)
+end
+
 ---How many spares are still wanted: the target, less the frames already carrying a display and the
 ---spares already waiting. An entry counts because a frame holding a display is doing the job a
 ---spare was held for.
@@ -423,9 +484,9 @@ local function SparesWanted()
 	return PREWARM_FRAMES - built - #spares
 end
 
----Throws away the spares built for an icon count nobody is using any more. A group's buttons are
----fixed at the count it was declared with, so these can never be handed out, and while they sit on
----the list the target looks met and nothing replaces them.
+---Throws away the spares no frame could be handed any more. While they sit on the list the target
+---looks met and nothing replaces them, so inside a battleground, where the look moved and a restyle
+---is refused, the pool would hold nothing usable for the whole match.
 local function DropStaleSpares()
 	local options = GetOptions()
 
@@ -434,17 +495,19 @@ local function DropStaleSpares()
 	end
 
 	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
+	local size, spacing = SpareGeometry(options)
+	local style = BuildStyle(options)
 
-	-- The one the walker is part way through counts too: it was started at the old budget and
-	-- would be banked at it.
-	if prewarmBuilding and prewarmBuilding.MaxIcons ~= maxIcons then
+	-- The one the walker is part way through counts too: it was started at the old settings and
+	-- would be banked at them.
+	if prewarmBuilding and not SpareFits(prewarmBuilding, maxIcons, size, spacing, style) then
 		prewarmBuilding = nil
 	end
 
 	for index = #spares, 1, -1 do
 		local spare = spares[index]
 
-		if spare.MaxIcons ~= maxIcons then
+		if not SpareFits(spare, maxIcons, size, spacing, style) then
 			-- Nothing releases a display; it is simply never handed out. The engine cannot free a
 			-- container or the buttons under it either way.
 			spare.Display:Hide()
@@ -459,12 +522,7 @@ end
 ---@return ImportantAurasSpare
 local function BuildSpare(options)
 	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
-	-- Sized off a real frame where there is one, so a spare taken later needs no resize: a restyle
-	-- is refused outright while auras are secret. Without any frames it takes the pixel size, and
-	-- the refresh that hands it over corrects that.
-	local sample = frames:GetAll(false, false, anchorScratch)[1]
-	local size = moduleUtil:GetIconSize(options.Icons, sample, 32, 75)
-	local spacing = options.IconSpacing or 2
+	local size, spacing = SpareGeometry(options)
 	local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
 
 	-- Nothing is drawn on it until a frame takes it, and the kick icon is what shows it again.
@@ -472,15 +530,7 @@ local function BuildSpare(options)
 
 	return {
 		Container = container,
-		Display = auraContainerDisplay:New(
-			UIParent,
-			SPARE_UNIT,
-			BuildGroups(maxIcons, options, HelpfulColors(options)),
-			size,
-			spacing,
-			MASQUE_GROUP,
-			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true }
-		),
+		Display = BuildDisplay(SPARE_UNIT, options, size, spacing, maxIcons),
 		MaxIcons = maxIcons,
 		-- What BuildGroups resolved into the specs, so the frame that takes this knows whether the
 		-- tracked set has moved since.
@@ -505,12 +555,7 @@ local function TakeSpare(unit, size, spacing, style, maxIcons)
 	for index = #spares, 1, -1 do
 		local spare = spares[index]
 
-		-- The budget has to match outright: the engine hands out a group's buttons from the count
-		-- it was declared with, so a spare built for a smaller row can never grow into a bigger
-		-- one. The look only has to match while a restyle is refused, since outside that the same
-		-- refresh that takes this corrects it.
-		if spare.MaxIcons == maxIcons
-			and (not wowEx:IsAuraStylingRestricted() or spare.Display:CarriesConfig(size, spacing, style)) then
+		if SpareFits(spare, maxIcons, size, spacing, style) then
 			table.remove(spares, index)
 			spare.Display:SetUnit(unit)
 
@@ -600,27 +645,14 @@ local function EnsureWatcher(anchor, unit)
 			Anchor = anchor,
 			Unit = unit,
 			KickKey = 0,
+			-- Recorded so the flip a battleground brings can put the right display back.
+			DisplayProfile = GetProfileKey(),
 		}
 		watchers[anchor] = entry
 
 		-- The standard categories, partitioned by filter negation so an aura only ever lands in
 		-- one group.
-		entry.Display = spare and spare.Display or auraContainerDisplay:New(
-			UIParent,
-			unit,
-			BuildGroups(maxIcons, options, HelpfulColors(options)),
-			size,
-			spacing,
-			MASQUE_GROUP,
-			-- Seeded rather than left to the restyle below: a unit's display is built the
-			-- moment it turns up, and one built mid-arena can never be restyled.
-			--
-			-- The groups are declared by the walker instead, a group per turn: a roster turning up
-			-- builds one of these per unit at once, and each group costs a batch of buttons the
-			-- engine allocates on the spot. Icons for a category appear when its group lands,
-			-- within a second or two of the frames themselves.
-			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true }
-		)
+		entry.Display = spare and spare.Display or BuildDisplay(unit, options, size, spacing, maxIcons)
 
 		-- Whatever it still owes goes on the urgent lane, ahead of the spares: a frame is holding
 		-- it now. A spare may have been taken part way through its own build.
@@ -682,6 +714,44 @@ local function EnsureWatcher(anchor, unit)
 	return entry
 end
 
+---Puts the entry on the display it keeps for the profile now in force, and wires up what a swap
+---leaves owing.
+---@param entry ImportantAurasWatchEntry
+---@param options ImportantAurasInstanceOptions
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@param maxIcons number
+local function EnsureProfileDisplay(entry, options, size, spacing, style, maxIcons)
+	-- The preview moves the profile as well, and it draws through the container with the display
+	-- hidden, so a display built for it here is one nobody can ever see.
+	if testModeActive then
+		return
+	end
+
+	local profile = GetProfileKey()
+
+	-- Asked before the builder below is made, so an ordinary refresh allocates nothing.
+	if entry.DisplayProfile == profile then
+		return
+	end
+
+	local swapped = anchoredIcons:EnsureDisplayProfile(entry, profile, size, spacing, style, function()
+		return BuildDisplay(entry.Unit, options, size, spacing, maxIcons)
+	end)
+
+	if not swapped then
+		return
+	end
+
+	-- The display taken back carries whichever tracked set it was parked with.
+	entry.FilterGeneration = nil
+
+	if entry.Display:HasPendingGroups() then
+		buildSweep:Append(entry, DeclareNextGroup)
+	end
+end
+
 ---@param entry ImportantAurasWatchEntry
 ---@param anchor table
 ---@param options ImportantAurasInstanceOptions
@@ -692,6 +762,8 @@ local function ApplyEntryOptions(entry, anchor, options)
 
 	if entry.Display then
 		style = BuildStyle(options)
+
+		EnsureProfileDisplay(entry, options, iconSize, options.IconSpacing or 2, style, maxIcons)
 
 		-- ShowCrowdControl maps to a zero icon budget for its group. The helpful side cannot: a curated
 		-- spell can sit in either category, so the toggles select the tracked spell ids instead
@@ -997,11 +1069,14 @@ end
 ---@field KickKey number
 ---@field FilterGeneration number? The helpful filters the display already carries; matches
 ---helpfulFilterGeneration once the current tracked set has reached its groups.
+---@field DisplayProfile string? Which options profile Display was built to.
+---@field Displays table<string, AuraContainerDisplay>? The displays this anchor keeps for the
+---profiles it is not currently wearing.
 
 ---@class ImportantAurasSpare
 ---@field Container IconSlotContainer
 ---@field Display AuraContainerDisplay
----@field Shape number The icon budget its groups were born with, which nothing can change.
+---@field MaxIcons number The icon budget its groups were born with, which nothing can change.
 ---@field FilterGeneration number? The tracked set its groups were built from.
 
 ---@class ImportantAurasModuleOptions

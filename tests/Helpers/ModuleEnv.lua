@@ -86,6 +86,13 @@ function M.build()
 	_G.UnitAffectingCombat = function()
 		return env.inCombat == true
 	end
+	-- Driven off the container mock's restricted flag, since that is what the aura displays are
+	-- already switched with.
+	_G.C_Secrets = {
+		ShouldAurasBeSecret = function()
+			return acm.restricted == true
+		end,
+	}
 	-- The index a unit's raid marker carries, and the helper that paints one onto a texture.
 	_G.GetRaidTargetIndex = function(unit)
 		return env.raidTargets[unit]

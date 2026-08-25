@@ -4,6 +4,7 @@ local mini = addon.Framework
 local frames = addon.Core.Frames
 local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
+local wowEx = addon.Utils.WoWEx
 
 ---@class AnchoredIcons
 local M = {}
@@ -160,6 +161,79 @@ function M:HideEntry(entry)
 	end
 end
 
+---Whether a display already built can be put in front of a frame asking for this look. A restyle
+---cannot reach the buttons while auras are secret, so only one already carrying it will do. Outside
+---that the refresh handing it over corrects whatever it wears.
+---@param display AuraContainerDisplay
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@return boolean
+function M:DisplayFitsLook(display, size, spacing, style)
+	return not wowEx:IsAuraStylingRestricted() or display:CarriesConfig(size, spacing, style)
+end
+
+---Puts the display an entry keeps for one options profile back in front of its anchor, building it
+---the first time that profile is asked for.
+---
+---Entering a battleground swaps a module's whole options table, and every icon size with it, at the
+---moment the buttons stop being restyleable, so the display in hand would wear the other profile's
+---size for the match. An anchor keeps one display per profile instead, so what it can ever hold is
+---bounded by how many profiles the module has.
+---
+---A kept display the settings have moved under since is dropped and built again. The client cannot
+---free the frame, so an option change made while the buttons cannot be restyled strands one per
+---anchor, which is the price of not wearing the wrong size for as long as the restriction lasts.
+---@param entry table Entry carrying Display, DisplayProfile and Displays.
+---@param profile string Which options profile the entry is being styled to.
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@param build fun(): AuraContainerDisplay Builds a display for this profile, called only when one
+---has to be created.
+---@return boolean swapped Whether entry.Display is now a different display.
+function M:EnsureDisplayProfile(entry, profile, size, spacing, style, build)
+	local display = entry.Display
+	local current = entry.DisplayProfile
+
+	if not display or current == profile then
+		return false
+	end
+
+	local cache = entry.Displays or {}
+	entry.Displays = cache
+
+	local wanted = cache[profile]
+
+	-- A kept display is refused a restyle in a match just as the one in hand is, so one built
+	-- before the user changed this profile's settings is no better than what is already on screen.
+	if wanted and not self:DisplayFitsLook(wanted, size, spacing, style) then
+		cache[profile] = nil
+		wanted = nil
+	end
+
+	-- Nothing kept for this profile. Outside a match the restyle behind this reaches the buttons,
+	-- so the display in hand becomes this profile's rather than the anchor growing a second one.
+	if not wanted and not wowEx:IsAuraStylingRestricted() then
+		entry.DisplayProfile = profile
+
+		return false
+	end
+
+	cache[current] = display
+	cache[profile] = nil
+	entry.Display = wanted or build()
+	entry.DisplayProfile = profile
+
+	-- Parked, since this is the display the anchor needs the moment the profile flips back.
+	display:SetEnabled(false)
+	display:Hide()
+
+	entry.Display:SetUnit(entry.Unit)
+
+	return true
+end
+
 ---Blanks and hides every entry's container without touching its watcher or display, for the
 ---handover into and out of test mode.
 ---@param entries table<table, table>
@@ -190,11 +264,9 @@ function M:ApplyEntryOptions(entry, anchor, options, settings)
 	-- ends test mode applies it, and so does an anchor coming back through the visibility hook.
 	entry.StyleStale = testModeActive or nil
 
-	container:SetIconSize(settings.IconSize)
-	container:SetCount(settings.SlotCount)
-	container:SetSpacing(spacing)
+	local live = display and not testModeActive
 
-	if display and not testModeActive then
+	if live then
 		display:ApplyConfig(settings.IconSize, spacing, settings.Style)
 
 		if settings.Budgets then
@@ -205,6 +277,16 @@ function M:ApplyEntryOptions(entry, anchor, options, settings)
 
 		display:SetEnabled(true)
 	end
+
+	-- The kick icon leads the same row as the aura icons, and the restyle above is refused while
+	-- auras are secret, so sizing this on its own would leave a kick icon at the new size beside
+	-- aura icons still at the old one for the rest of a match.
+	if not live or display:CarriesConfig(settings.IconSize, spacing, settings.Style) then
+		container:SetIconSize(settings.IconSize)
+	end
+
+	container:SetCount(settings.SlotCount)
+	container:SetSpacing(spacing)
 
 	if not testModeActive and settings.Render then
 		settings.Render(entry)

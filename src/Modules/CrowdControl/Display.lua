@@ -13,7 +13,6 @@ local kickTracker = addon.Core.KickTracker
 local anchoredIcons = addon.Core.AnchoredIcons
 local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
-local wowEx = addon.Utils.WoWEx
 local moduleName = addon.Utils.ModuleName
 
 addon.Modules.CrowdControl = addon.Modules.CrowdControl or {}
@@ -51,6 +50,11 @@ local DEFAULT_CC_COLOR = { R = 0.64, G = 0.21, B = 0.93 }
 local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
 -- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
 local MASQUE_GROUP = "Crowd Control"
+-- The options profiles an entry can be styled to, which are also the keys an anchor keeps a
+-- display under. A pet has one of its own, since it draws from the Pet CC options.
+local DEFAULT_PROFILE = "Default"
+local RAID_PROFILE = "Raid"
+local PET_PROFILE = "Pet"
 -- How many frames' worth of containers to have ready before a group turns up. A party is five,
 -- which is the size a solo player is most likely to become. Past that the walker keeps up, since
 -- a raid fills in over several seconds anyway.
@@ -83,8 +87,20 @@ local function DeclareNextGroup(display)
 	end
 end
 
+---Which options profile an entry is styled to. A key rather than the table itself, since a profile
+---switch replaces the tables and the displays an anchor keeps have to outlive that.
+---@param isPet boolean
+---@return string
+local function GetProfileKey(isPet)
+	if isPet then
+		return PET_PROFILE
+	end
+
+	return instanceOptions:IsRaid() and RAID_PROFILE or DEFAULT_PROFILE
+end
+
 local function GetOptions()
-	return instanceOptions:IsRaid() and db.Modules.CrowdControl.Raid or db.Modules.CrowdControl.Default
+	return db.Modules.CrowdControl[GetProfileKey(false)]
 end
 
 ---The one tint every CC icon takes, or nil while the game's dispel palette is colouring them.
@@ -116,6 +132,27 @@ local function BuildStyle(entryOptions)
 	style.Border = flat ~= nil
 
 	return style
+end
+
+---One anchor's aura display, built to the look the given options ask for.
+---
+---Seeded with its style rather than left to the restyle on the refresh behind it: a unit's display
+---is built the moment it turns up, and one built mid-arena can never be restyled.
+---
+---The group is declared by the walker instead: a roster turning up builds one of these per unit at
+---once, and the engine allocates a batch of buttons the moment a group is declared. The icons of a
+---unit follow within a second or so.
+---@param unit string
+---@param options table
+---@param size number
+---@param spacing number
+---@param count number
+---@return AuraContainerDisplay
+local function BuildDisplay(unit, options, size, spacing, count)
+	return auraContainerDisplay:New(UIParent, unit, {
+		auraFilters:GroupSpec("CrowdControl", count),
+	}, size, spacing, MASQUE_GROUP,
+		{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true })
 end
 
 ---Resolves the options table for an entry: pets follow the Pet CC toggle, everyone else the CC
@@ -204,6 +241,31 @@ local function ApplyUnitGates(entry, options)
 	return crowdControl
 end
 
+---What a spare would be built to now. Sized off a real frame where there is one, so a spare taken
+---later needs no resize: a restyle is refused outright while auras are secret. Without any frames
+---it takes the pixel size, and the refresh that hands it over corrects that.
+---@param options table
+---@return number size
+---@return number spacing
+local function SpareGeometry(options)
+	local sample = frames:GetAll(false, false, anchorScratch)[1]
+
+	return moduleUtil:GetIconSize(options.Icons, sample, 32, 80), options.IconSpacing or 2
+end
+
+---Whether a waiting spare could be handed to a frame asking for this look. The budget has to match
+---outright: the engine hands out a group's buttons from the count it was declared with, so a spare
+---built for a smaller row can never grow into a bigger one.
+---@param spare CrowdControlSpare
+---@param count number
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@return boolean
+local function SpareFits(spare, count, size, spacing, style)
+	return spare.MaxIcons == count and anchoredIcons:DisplayFitsLook(spare.Display, size, spacing, style)
+end
+
 ---How many spares are still wanted: the target, less the frames already carrying a display and the
 ---spares already waiting. An entry counts because a frame holding a display is doing the job a
 ---spare was held for. Pet entries do not: they are never handed one.
@@ -226,9 +288,9 @@ local function SparesWanted()
 	return PREWARM_FRAMES - built - #spares
 end
 
----Throws away the spares built for an icon count nobody is using any more. A group's buttons are
----fixed at the count it was declared with, so these can never be handed out, and while they sit on
----the list the target looks met and nothing replaces them.
+---Throws away the spares no frame could be handed any more. While they sit on the list the target
+---looks met and nothing replaces them, so inside a battleground, where the look moved and a restyle
+---is refused, the pool would hold nothing usable for the whole match.
 local function DropStaleSpares()
 	local options = GetOptions()
 
@@ -237,17 +299,19 @@ local function DropStaleSpares()
 	end
 
 	local count = options.Icons.Count or 5
+	local size, spacing = SpareGeometry(options)
+	local style = BuildStyle(options)
 
-	-- The one the walker is part way through counts too: it was started at the old budget and
-	-- would be banked at it.
-	if prewarmBuilding and prewarmBuilding.MaxIcons ~= count then
+	-- The one the walker is part way through counts too: it was started at the old settings and
+	-- would be banked at them.
+	if prewarmBuilding and not SpareFits(prewarmBuilding, count, size, spacing, style) then
 		prewarmBuilding = nil
 	end
 
 	for index = #spares, 1, -1 do
 		local spare = spares[index]
 
-		if spare.MaxIcons ~= count then
+		if not SpareFits(spare, count, size, spacing, style) then
 			-- Nothing releases a display; it is simply never handed out. The engine cannot free a
 			-- container or the buttons under it either way.
 			spare.Display:Hide()
@@ -262,12 +326,7 @@ end
 ---@return CrowdControlSpare
 local function BuildSpare(options)
 	local count = options.Icons.Count or 5
-	-- Sized off a real frame where there is one, so a spare taken later needs no resize: a restyle
-	-- is refused outright while auras are secret. Without any frames it takes the pixel size, and
-	-- the refresh that hands it over corrects that.
-	local sample = frames:GetAll(false, false, anchorScratch)[1]
-	local size = moduleUtil:GetIconSize(options.Icons, sample, 32, 80)
-	local spacing = options.IconSpacing or 2
+	local size, spacing = SpareGeometry(options)
 	local container = iconSlotContainer:New(UIParent, count, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
 
 	-- Nothing is drawn on it until a frame takes it, and the kick icon is what shows it again.
@@ -275,10 +334,7 @@ local function BuildSpare(options)
 
 	return {
 		Container = container,
-		Display = auraContainerDisplay:New(UIParent, SPARE_UNIT, {
-			auraFilters:GroupSpec("CrowdControl", count),
-		}, size, spacing, MASQUE_GROUP,
-			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true }),
+		Display = BuildDisplay(SPARE_UNIT, options, size, spacing, count),
 		MaxIcons = count,
 	}
 end
@@ -298,12 +354,7 @@ local function TakeSpare(unit, size, spacing, style, maxIcons)
 	for index = #spares, 1, -1 do
 		local spare = spares[index]
 
-		-- The budget has to match outright: the engine hands out a group's buttons from the count
-		-- it was declared with, so a spare built for a smaller row can never grow into a bigger
-		-- one. The look only has to match while a restyle is refused, since outside that the same
-		-- refresh that takes this corrects it.
-		if spare.MaxIcons == maxIcons
-			and (not wowEx:IsAuraStylingRestricted() or spare.Display:CarriesConfig(size, spacing, style)) then
+		if SpareFits(spare, maxIcons, size, spacing, style) then
 			table.remove(spares, index)
 			spare.Display:SetUnit(unit)
 
@@ -405,19 +456,12 @@ local function EnsureWatcher(anchor, unit)
 			Anchor = anchor,
 			Unit = unit,
 			KickKey = 0,
+			-- Recorded so the flip a battleground brings can put the right display back.
+			DisplayProfile = GetProfileKey(isPet),
 		}
 		watchers[anchor] = entry
 
-		entry.Display = spare and spare.Display or auraContainerDisplay:New(UIParent, unit, {
-			auraFilters:GroupSpec("CrowdControl", count),
-		}, size, spacing, MASQUE_GROUP,
-			-- Seeded rather than left to the restyle below: a unit's display is built the
-			-- moment it turns up, and one built mid-arena can never be restyled.
-			--
-			-- The group is declared by the walker instead: a roster turning up builds one of
-			-- these per unit at once, and the engine allocates a batch of buttons the moment a
-			-- group is declared. The icons of a unit follow within a second or so.
-			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true })
+		entry.Display = spare and spare.Display or BuildDisplay(unit, options, size, spacing, count)
 
 		-- Whatever it still owes goes on the urgent lane, ahead of the spares: a frame is holding
 		-- it now. A spare may have been taken part way through its own build.
@@ -538,6 +582,37 @@ local function GetEntryState(entry, options, moduleEnabled, petEnabled)
 	return entryEnabled, petOptions, true
 end
 
+---Puts the entry on the display it keeps for the profile now in force, and queues the group a
+---swap leaves owing.
+---@param entry CrowdControlWatchEntry
+---@param options table
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@param count number
+local function EnsureProfileDisplay(entry, options, size, spacing, style, count)
+	-- The preview moves the profile as well, and it draws through the container with the display
+	-- hidden, so a display built for it here is one nobody can ever see.
+	if testModeActive then
+		return
+	end
+
+	local profile = GetProfileKey(units:IsPetOrMinion(entry.Unit))
+
+	-- Asked before the builder below is made, so an ordinary refresh allocates nothing.
+	if entry.DisplayProfile == profile then
+		return
+	end
+
+	local swapped = anchoredIcons:EnsureDisplayProfile(entry, profile, size, spacing, style, function()
+		return BuildDisplay(entry.Unit, options, size, spacing, count)
+	end)
+
+	if swapped and entry.Display:HasPendingGroups() then
+		buildSweep:Append(entry.Display, DeclareNextGroup)
+	end
+end
+
 ---@param entry CrowdControlWatchEntry
 ---@param anchor table
 ---@param entryOptions CrowdControlInstanceOptions|PetCrowdControlModuleOptions
@@ -545,12 +620,17 @@ end
 local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 	local iconSize = moduleUtil:GetIconSize(entryOptions.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
 	local iconCount = entryOptions.Icons.Count or 5
+	local style = entry.Display and BuildStyle(entryOptions) or nil
+
+	if style then
+		EnsureProfileDisplay(entry, entryOptions, iconSize, entryOptions.IconSpacing or 2, style, iconCount)
+	end
 
 	budgetScratch[auraFilters.GroupKey.CrowdControl] = ApplyUnitGates(entry, entryOptions)
 
 	settingsScratch.IconSize = iconSize
 	settingsScratch.SlotCount = iconCount
-	settingsScratch.Style = entry.Display and BuildStyle(entryOptions) or nil
+	settingsScratch.Style = style
 	settingsScratch.Budgets = budgetScratch
 	settingsScratch.TestModeActive = testModeActive
 	-- A pet frame never excludes the player: it is not the player's own frame.
@@ -852,7 +932,7 @@ end
 ---@class CrowdControlSpare
 ---@field Container IconSlotContainer
 ---@field Display AuraContainerDisplay
----@field Shape number The icon budget its group was born with, which nothing can change.
+---@field MaxIcons number The icon budget its group was born with, which nothing can change.
 
 ---@class CrowdControlWatchEntry
 ---@field Container IconSlotContainer Renders the kick icon and the test icons only.
@@ -864,3 +944,6 @@ end
 ---@field Unit string
 ---@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame,
 ---opt-in via IncludePetFrame.
+---@field DisplayProfile string? Which options profile Display was built to.
+---@field Displays table<string, AuraContainerDisplay>? The displays this anchor keeps for the
+---profiles it is not currently wearing.

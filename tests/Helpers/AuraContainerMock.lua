@@ -50,6 +50,9 @@ function M.lastFrameForEvent(event)
 end
 
 local frameCount = 0
+-- True while the mock is standing in for the client rather than for a call an addon made, which is
+-- our initializeFrame callback and a frame dragging its children's levels along with its own.
+local clientDriven = false
 
 local function IsUnderAuraButton(frame)
 	local current = frame
@@ -68,7 +71,7 @@ local function GuardRestricted(frame)
 	for key, value in pairs(frame) do
 		if type(value) == "function" then
 			frame[key] = function(...)
-				if M.restricted and IsUnderAuraButton(frame) then
+				if M.restricted and not clientDriven and IsUnderAuraButton(frame) then
 					error(FORBIDDEN_ERROR .. " - Usage: self:" .. key .. "()")
 				end
 				return value(...)
@@ -322,11 +325,16 @@ function M.NewFrame(frameType, name, parent, template)
 		local delta = level - (frame._level or 0)
 		frame._level = level
 		if delta ~= 0 then
+			local wasClientDriven = clientDriven
+			clientDriven = true
+
 			for _, other in ipairs(M.frames) do
 				if other._parent == frame then
 					other:SetFrameLevel((other._level or 0) + delta)
 				end
 			end
+
+			clientDriven = wasClientDriven
 		end
 	end
 	function frame:GetFrameLevel()
@@ -560,7 +568,11 @@ local function NewAuraContainer(name, parent, template)
 			group.buttons[#group.buttons + 1] = button
 			container._buttons[#container._buttons + 1] = button
 			if options.initializeFrame then
-				options.initializeFrame(button)
+				clientDriven = true
+				local ok, err = pcall(options.initializeFrame, button)
+				clientDriven = false
+
+				assert(ok, err)
 			end
 		end
 	end
