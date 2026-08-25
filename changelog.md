@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Important aura icons now start at 20 pixels in raids and battlegrounds rather than 25. Existing profiles keep the size they already have.
 - Pointed everyone at the new Frame Auras module once on the next login, since stopping Blizzard's own buffs and debuffs from overlapping on the raid frames is what most people want it for.
 - Told Korean players about the new "MiniAuras - Korean Voice Pack" addon, and Chinese players where the Mandarin voices went, once each on the next login. Neither note goes to a client that is offered no pack of its own.
 - Moved the Mandarin voices Amy, Anna Su, and Jason Chen out into their own addon, "MiniAuras - Chinese Voice Pack", so that everyone else stops downloading 6 MB of audio they cannot understand. The clips are unchanged and the setting still saves the voice by name, so installing that addon puts a saved Mandarin voice back. Without it, a saved Mandarin voice falls back to David. There is a Korean pack too, "MiniAuras - Korean Voice Pack".
