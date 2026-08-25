@@ -816,7 +816,9 @@ function M:Layout()
 			-- Measured from the edge the row grows from, so a part-full row hugs that edge and a
 			-- lead icon wider than the rest pushes its own row along without moving the others.
 			local across = RunOffset(colIndex, rowLead, self.Size, self.Spacing)
-			local down = RunOffset(rowIndex, leadSize, self.Size, self.Spacing)
+			-- The live row hangs every icon off the edge it grows from, so one standing beside a
+			-- larger lead drops to that edge instead of centring on it.
+			local down = RunOffset(rowIndex, leadSize, self.Size, self.Spacing) - (rowLead - size) / 2
 			local x = self.InvertLayout and (frameWidth / 2 - across) or (across - frameWidth / 2)
 			local y
 

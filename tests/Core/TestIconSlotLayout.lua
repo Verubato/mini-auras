@@ -18,11 +18,17 @@ local LEAD_SIZE = SIZE * LEAD_SCALE
 ---@param columns number
 ---@param invertLayout boolean
 ---@param leadScale number? What the first icon is drawn at, as a share of the rest.
+---@param growDown boolean? Whether lines stack downwards from the top instead of upwards.
 ---@return IconSlotContainer
-local function NewGrid(count, columns, invertLayout, leadScale)
+local function NewGrid(count, columns, invertLayout, leadScale, growDown)
 	local container = iconSlotContainer:New(_G.UIParent, count, SIZE, SPACING, "LayoutTest")
 
-	container:SetGrowUp(true)
+	if growDown then
+		container:SetGrowDown(true)
+	else
+		container:SetGrowUp(true)
+	end
+
 	container:SetColumns(columns, invertLayout)
 	container:SetLeadScale(leadScale)
 
@@ -58,6 +64,23 @@ local function EdgesIn(container)
 		local frame = container.Slots[index].Frame
 		local _, _, _, x = frame:GetPoint(1)
 		edges[index] = x - frame:GetWidth() / 2
+	end
+
+	return edges
+end
+
+---Where each of a container's icons stands along the line it grows from, measured off the frame's
+---own centre so a taller lead icon does not shift what it is compared against.
+---@param container IconSlotContainer
+---@param sign number -1 reads the bottom of each icon, 1 the top.
+---@return number[]
+local function LineEdgesIn(container, sign)
+	local edges = {}
+
+	for index = 1, container.Count do
+		local frame = container.Slots[index].Frame
+		local _, _, _, _, y = frame:GetPoint(1)
+		edges[index] = y + sign * frame:GetHeight() / 2
 	end
 
 	return edges
@@ -116,6 +139,33 @@ fw.describe("IconSlotContainer - the wrapping grid", function()
 		assert(edges[4] == edges[1],
 			"the wrapped line starts under the lead icon, got " .. edges[4] .. " against " .. edges[1])
 		assert(edges[5] == edges[4] + SIZE + SPACING, "and carries on from there, got " .. edges[5])
+	end)
+
+	fw.it("stands the line beside a larger lead icon on the bottom edge it sits on", function()
+		local container = NewGrid(5, 3, false, LEAD_SCALE)
+		local bottoms = LineEdgesIn(container, -1)
+
+		assert(bottoms[2] == bottoms[1],
+			"the icon after the lead one sits on its bottom edge, got " .. bottoms[2] .. " against " .. bottoms[1])
+		assert(bottoms[1] == -container.Frame:GetHeight() / 2,
+			"which is the row's own bottom, got " .. bottoms[1])
+		assert(bottoms[4] == bottoms[1] + LEAD_SIZE + SPACING,
+			"and the line above still clears the lead icon, got " .. bottoms[4])
+		assert(container.Frame:GetHeight() == LEAD_SIZE + SIZE + SPACING,
+			"with the row no taller for it, got " .. container.Frame:GetHeight())
+	end)
+
+	-- A grid growing down is anchored by its top, so its icons hang off that edge.
+	fw.it("hangs the line beside a larger lead icon off the top edge when the grid grows down", function()
+		local container = NewGrid(5, 3, false, LEAD_SCALE, true)
+		local tops = LineEdgesIn(container, 1)
+
+		assert(tops[2] == tops[1],
+			"the icon after the lead one hangs off its top edge, got " .. tops[2] .. " against " .. tops[1])
+		assert(tops[1] == container.Frame:GetHeight() / 2,
+			"which is the row's own top, got " .. tops[1])
+		assert(tops[4] == tops[1] - LEAD_SIZE - SPACING,
+			"and the line below still clears the lead icon, got " .. tops[4])
 	end)
 
 	-- A lead scale left out of what the layout is built from would resize the setting and not the
