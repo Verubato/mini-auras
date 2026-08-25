@@ -187,6 +187,19 @@ local function LastWrite(name)
 	return found
 end
 
+---Fires one event at the frames listening for it. A refresh would carry a settings change with it.
+---@param event string
+local function Fire(event)
+	for _, frame in ipairs(acm.frames) do
+		local listening = frame._events and frame._events[event]
+		local handler = frame._scripts and frame._scripts.OnEvent
+
+		if listening and handler then
+			handler(frame, event)
+		end
+	end
+end
+
 fw.describe("Frame Auras - the tracked buff list", function()
 	fw.it("tracks every curated spell out of the box", function()
 		ResetSpells()
@@ -286,6 +299,23 @@ fw.describe("Frame Auras - the tracked buff list", function()
 end)
 
 fw.describe("Frame Auras - Blizzard's own aura rows", function()
+	fw.it("hands the row back on a login after a reload stranded the write", function()
+		-- What a reload mid-fight leaves behind: the side off, and the player's value still
+		-- remembered because the write it was waiting on never reached the client.
+		ResetCVars()
+		db.FrameAuraCVars = { Buffs = "1" }
+		cvars.raidFramesDisplayBuffs = "0"
+
+		partyAuras:Refresh()
+
+		local handed = LastWrite("raidFramesDisplayBuffs")
+
+		db.FrameAuraCVars = nil
+		cvars.raidFramesDisplayBuffs = "1"
+
+		assert(handed == "1", "the row was left hidden with nothing drawing it, got " .. tostring(handed))
+	end)
+
 	fw.it("leaves the cvars alone for a side that was already off at login", function()
 		ResetCVars()
 		options.Buffs.Enabled = false
@@ -318,6 +348,29 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 		partyAuras:Refresh()
 
 		assert(#cvarWrites == 0, "a level-triggered refresh is not an edge")
+	end)
+
+	fw.it("writes nothing when the client already holds the value", function()
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		-- What the client carries into a session that follows one with this side switched on.
+		cvars.raidFramesDisplayBuffs = "0"
+		ResetCVars()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		local written = #cvarWrites
+
+		-- The tests after this one build on the state a session with this side on leaves behind.
+		cvars.raidFramesDisplayBuffs = "0"
+		db.FrameAuraCVars = nil
+
+		assert(written == 0, "writing what the client holds rebuilds every raid frame for nothing")
 	end)
 
 	fw.it("hands Blizzard's row back when a side is switched off", function()
@@ -363,6 +416,114 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 
 		options.Debuffs.Enabled = false
 		partyAuras:Refresh()
+	end)
+
+	fw.it("keeps the row hidden when a side goes off and back on inside one fight", function()
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		env.inCombat = true
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		env.inCombat = false
+		Fire("PLAYER_REGEN_ENABLED")
+
+		local held = cvars.raidFramesDisplayBuffs
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+		db.FrameAuraCVars = nil
+		cvars.raidFramesDisplayBuffs = "1"
+
+		assert(held == "0", "the hand-back queued behind the switch ran anyway, got " .. tostring(held))
+	end)
+
+	fw.it("hands the row back when a side ends a fight switched off", function()
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		env.inCombat = true
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		env.inCombat = false
+		Fire("PLAYER_REGEN_ENABLED")
+
+		local held = cvars.raidFramesDisplayBuffs
+
+		db.FrameAuraCVars = nil
+		cvars.raidFramesDisplayBuffs = "1"
+
+		assert(held == "1", "the row is left hidden with nothing drawing it, got " .. tostring(held))
+	end)
+
+	fw.it("remembers nothing from a side that has been on since login", function()
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		-- Nothing was remembered, which is where a side left on across a reload starts.
+		db.FrameAuraCVars = nil
+		env.inCombat = true
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		env.inCombat = false
+		Fire("PLAYER_REGEN_ENABLED")
+
+		ResetCVars()
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		local handed = LastWrite("raidFramesDisplayBuffs")
+
+		db.FrameAuraCVars = nil
+		cvars.raidFramesDisplayBuffs = "1"
+
+		assert(handed == "1", "the module kept its own hidden value as the player's, got " .. tostring(handed))
+	end)
+
+	fw.it("keeps what the player had through a side switched off and on in one fight", function()
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		env.inCombat = true
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		env.inCombat = false
+		Fire("PLAYER_REGEN_ENABLED")
+
+		-- Long after the fight, which is the switch the remembered value is held for.
+		ResetCVars()
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		local handed = LastWrite("raidFramesDisplayBuffs")
+
+		db.FrameAuraCVars = nil
+		cvars.raidFramesDisplayBuffs = "1"
+
+		assert(handed == "1", "the module handed back its own value as the player's, got " .. tostring(handed))
 	end)
 end)
 
