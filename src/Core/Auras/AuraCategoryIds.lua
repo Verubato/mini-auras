@@ -1150,6 +1150,8 @@ addon.Core.AuraCategoryIds = {
 		[274837] = true, -- Feral Frenzy
 		[321538] = true, -- Bloodshed
 		[77606] = true, -- Dark Simulacrum
+		[236273] = true, -- Duel
+		[198819] = true, -- Sharpen Blade
 	},
 
 	-- Announced only when the player asks for them. These land often enough that a spoken name

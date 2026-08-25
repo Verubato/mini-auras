@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added a "Show when" option to a personal aura's trigger, so a group can be limited to in combat or out of combat.
+- Added Duel and Sharpen Blade to the enemy debuff announcements. Sharpen Blade is listed as "Mortal Strike", the name the game gives the debuff it applies.
 - Added a Frame Auras module, which draws the auras on Blizzard's own party and raid frames in place of the ones the game puts there. Three parts, each with its own switch: the group buff row (with a tracked spell list and a pandemic glow), the group debuff row (which can lead with crowd control, drawn a quarter larger than the rest of the row), and a mark for a member missing your class buff (kept to instances by default, since a missing buff in the open world costs nobody anything). All three ship switched off.
 - Renamed "Group Auras" to "Important Auras", so the new module's name is not read as the same thing.
 - Fixed the options window erroring when it was opened for the first time in combat. It now says it cannot open during combat, and a window opened earlier still works in combat.

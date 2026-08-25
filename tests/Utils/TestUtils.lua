@@ -536,6 +536,8 @@ fw.describe("AuraCategoryIds", function()
 		assert(data.CC[118], "Polymorph in CC")
 		assert(data.Important[377362], "Precognition in Important")
 		assert(data.Defensive[45438], "Ice Block in Defensive")
+		assert(data.EnemyDebuff[236273], "Duel in EnemyDebuff")
+		assert(data.EnemyDebuff[198819], "Sharpen Blade in EnemyDebuff")
 	end)
 
 	fw.it("Important and Defensive are disjoint", function()
