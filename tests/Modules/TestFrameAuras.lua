@@ -808,6 +808,44 @@ fw.describe("Frame Auras - what one frame costs", function()
 		options.Buffs.PandemicGlow = true
 		DropPartyFrame(4)
 	end)
+
+	fw.it("hands the reveal to the glow group's buttons and no others", function()
+		options.Buffs.Enabled = true
+		options.Buffs.PandemicGlow = true
+
+		local fresh = NewPartyFrame(5)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs
+
+		for _, candidate in ipairs(acm.frames) do
+			if candidate._type == "AuraContainer" and candidate:GetParent() == fresh then
+				buffs = candidate
+			end
+		end
+
+		assert(buffs, "the buff row was built")
+
+		local glowing = buffs._groups["FrameBuffsPandemic"].buttons
+		local plainRow = buffs._groups["FrameBuffs"].buttons
+
+		-- Both loops below pass over an empty list, so the counts are what keeps them honest.
+		assert(#glowing > 0 and #plainRow > 0, "both groups built buttons")
+
+		for _, button in ipairs(glowing) do
+			assert(button._calls.AddPandemicRegion == 1, "the glow group's buttons carry a region")
+		end
+
+		-- The engine lights every region it is handed, so a region here would put the cue on any
+		-- heal over time in the row rather than the one spell that asked for it.
+		for _, button in ipairs(plainRow) do
+			assert((button._calls.AddPandemicRegion or 0) == 0, "the plain group's buttons carry none")
+		end
+
+		DropPartyFrame(5)
+	end)
 end)
 
 fw.describe("Frame Auras - test mode", function()

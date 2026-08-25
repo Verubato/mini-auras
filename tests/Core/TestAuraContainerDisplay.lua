@@ -14,6 +14,7 @@ local display, addon, mockDb = acm.loadDisplay()
 local objectPool = addon.Core.Pool
 local kickSlot = addon.Core.KickSlot
 local auraFilters = addon.Core.AuraFilters
+local glowStyles = addon.Core.GlowStyles
 
 local BATCH = acm.batchSize
 
@@ -1246,27 +1247,29 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		local widgets = instance.ButtonWidgets[button]
 
 		assert(button._calls.AddPandemicRegion == 1, "one region registered per button")
-		assert(widgets.Pandemic and widgets.Pandemic.Textures[1], "the holder carries the ring texture")
-		local ring = widgets.Pandemic.Textures[1]
-		-- Off by default, because the engine decides when the holder shows but the ring only draws
-		-- for a group that turned the reveal on. Hidden, not just transparent. Alpha alone left an
-		-- amber ring on every icon of every group that had the reveal switched off.
-		assert(ring._shown == false, "ring starts hidden")
-		assert(ring._lastArgs.SetAlpha[1] == 0, "and transparent with it")
+		assert(widgets.Pandemic and widgets.Pandemic.Texture, "the holder carries the halo")
+		local halo = widgets.Pandemic.Texture
+		-- Off by default, because the engine decides when the holder shows but the halo only draws
+		-- for a display that turned the reveal on. Hidden, not just transparent. Alpha alone left
+		-- the halo on every icon of every group that had the reveal switched off.
+		assert(halo._shown == false, "the halo starts hidden")
 
 		instance:SetStyle({ Pandemic = true })
-		assert(ring._shown, "the style toggle reveals the ring")
-		assert(ring._lastArgs.SetAlpha[1] == 1, "at full alpha")
+		assert(halo._shown, "the style toggle reveals it")
+		assert(halo._calls.SetTexture == 1, "skinned once out of the glow catalog")
+		-- Padded off the button the way a glowing aura's overlay is, so the two read as one cue.
+		local share = glowStyles.Specs[glowStyles.DefaultName].PaddingFactor
+		assert(halo._lastArgs.SetPoint[4] == 30 * share, "and padded off the button size")
 
 		instance:SetStyle({ Pandemic = false })
-		assert(ring._shown == false, "and puts it away again")
+		assert(halo._shown == false, "and puts it away again")
 
-		local tint = ring._lastArgs.SetVertexColor
+		local tint = halo._lastArgs.SetVertexColor
 		assert(tint[1] == 1 and tint[2] == 0.1 and tint[3] == 0.1, "unset colour keeps the built-in red")
 
 		instance:SetStyle({ Pandemic = true, PandemicColor = { 0.2, 0.4, 0.8 } })
-		tint = ring._lastArgs.SetVertexColor
-		assert(tint[1] == 0.2 and tint[2] == 0.4 and tint[3] == 0.8, "the style colour tints the ring")
+		tint = halo._lastArgs.SetVertexColor
+		assert(tint[1] == 0.2 and tint[2] == 0.4 and tint[3] == 0.8, "the style colour tints it")
 	end)
 
 	fw.it("a display without the Pandemic option registers no regions", function()
@@ -1276,6 +1279,31 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 
 		assert((button._calls.AddPandemicRegion or 0) == 0, "no region registered")
 		assert(widgets.Pandemic == nil, "no holder created")
+	end)
+
+	fw.it("a group that opts out carries no region while its neighbour does", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "glowing", FilterString = "HELPFUL", MaxIcons = 1, Pandemic = true },
+			{ Key = "plain", FilterString = "HELPFUL", MaxIcons = 1, Pandemic = false },
+		}, 30, 0, "Test", { Pandemic = true, Style = { Pandemic = true } })
+
+		local glowing, plain
+
+		for button, widgets in pairs(instance.ButtonWidgets) do
+			if widgets.Group.Key == "glowing" then
+				glowing = button
+			else
+				plain = button
+			end
+		end
+
+		assert(glowing and plain, "both groups built a button")
+		assert(instance.ButtonWidgets[glowing].Pandemic, "the opted-in group carries the halo")
+		assert(glowing._calls.AddPandemicRegion == 1, "and hands the holder to the engine")
+		-- The engine drives every region it is handed, so a button that keeps one lights up for
+		-- any aura with a refresh window whatever the group was filtered down to.
+		assert(instance.ButtonWidgets[plain].Pandemic == nil, "the opted-out group has no holder")
+		assert((plain._calls.AddPandemicRegion or 0) == 0, "and registers nothing")
 	end)
 end)
 

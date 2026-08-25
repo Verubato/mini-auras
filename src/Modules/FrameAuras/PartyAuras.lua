@@ -512,11 +512,22 @@ local function BuildBuffs(frame, unit)
 	-- Left out entirely when the reveal is off, or every frame in the raid pays for a batch of
 	-- buttons that can never match anything.
 	if PandemicIcons() > 0 then
-		groups[#groups + 1] =
-			{ Key = BUFF_PANDEMIC_GROUP, FilterString = filter, MaxIcons = PandemicIcons(), CandidateFilters = pandemic }
+		groups[#groups + 1] = {
+			Key = BUFF_PANDEMIC_GROUP,
+			FilterString = filter,
+			MaxIcons = PandemicIcons(),
+			CandidateFilters = pandemic,
+			Pandemic = true,
+		}
 	end
 
-	groups[#groups + 1] = { Key = BUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = plain }
+	groups[#groups + 1] = {
+		Key = BUFF_GROUP,
+		FilterString = filter,
+		MaxIcons = maxIcons,
+		CandidateFilters = plain,
+		Pandemic = false,
+	}
 
 	return auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Buffs"), ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle("Buffs"),

@@ -77,8 +77,7 @@ local BAR_TRACK_COLOR = { 0.09, 0.09, 0.09 }
 -- options table, so it always gets one.
 local EMPTY_BAR_OPTIONS = {}
 
--- Ring tint for the pandemic (refresh-window) reveal. Fixed, so the cue reads the same on every
--- display.
+-- Fallback tint for the pandemic (refresh-window) reveal, for a style that names no colour.
 local PANDEMIC_COLOR = { 1, 0.1, 0.1 }
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
@@ -1172,24 +1171,51 @@ local function StyleGlow(instance, button, widgets, size)
 	end
 end
 
----The refresh-window reveal. The engine owns the holder's visibility, so the per-group toggle
----rides the artwork instead. A list, because a bar's reveal is four flat edges where an icon's is
----one ring.
----Shown and alpha'd both. The artwork is created hidden, so a group with the reveal off can never
----flash it even if this pass never runs, and styling is refused outright while auras are secret.
+---The refresh-window reveal. The engine owns the holder's visibility, so the toggle rides the
+---artwork instead. An icon wears the same halo a glowing aura does, a bar four flat edges, since
+---stretching the halo across a bar distorts it.
+---The artwork is created hidden, so a display with the reveal off can never flash it even if
+---this pass never runs, and styling is refused while auras are secret.
 ---@param widgets table
 ---@param style AuraDisplayStyle
-local function StylePandemic(widgets, style)
+---@param size number Button size, which is what the halo's padding is a share of.
+local function StylePandemic(widgets, style, size)
 	local pandemic = widgets.Pandemic
 
 	if not pandemic then
 		return
 	end
 
-	outline:Apply(pandemic.Textures, style.Pandemic == true,
-		style.PandemicColorR or PANDEMIC_COLOR[1],
-		style.PandemicColorG or PANDEMIC_COLOR[2],
-		style.PandemicColorB or PANDEMIC_COLOR[3])
+	local shown = style.Pandemic == true
+	local red = style.PandemicColorR or PANDEMIC_COLOR[1]
+	local green = style.PandemicColorG or PANDEMIC_COLOR[2]
+	local blue = style.PandemicColorB or PANDEMIC_COLOR[3]
+
+	if pandemic.Textures then
+		outline:Apply(pandemic.Textures, shown, red, green, blue)
+
+		return
+	end
+
+	local styleName = style.GlowStyleName or DEFAULT_GLOW_STYLE
+
+	if pandemic.StyleName ~= styleName then
+		pandemic.StyleName = styleName
+		glowStyles:ApplySpec(pandemic, glowStyles.Specs[styleName])
+	end
+
+	-- Re-anchoring invalidates the button's layout, so a restyle that moved neither the size nor
+	-- the catalog style leaves the halo where it already sits.
+	local padding = size * (pandemic.PaddingFactor or 0)
+
+	if pandemic.Padding ~= padding then
+		pandemic.Padding = padding
+		pandemic.Texture:SetPoint("TOPLEFT", pandemic, "TOPLEFT", -padding, padding)
+		pandemic.Texture:SetPoint("BOTTOMRIGHT", pandemic, "BOTTOMRIGHT", padding, -padding)
+	end
+
+	pandemic.Texture:SetVertexColor(red, green, blue, 1)
+	pandemic.Texture:SetShown(shown)
 end
 
 -- Applies the stored per-button style (size, cooldown settings, border, glow, mouse) to one
@@ -1235,7 +1261,7 @@ local function StyleButton(instance, button)
 	end
 
 	StyleGlow(instance, button, widgets, size)
-	StylePandemic(widgets, style)
+	StylePandemic(widgets, style, size)
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
 	local mouse = style.ShowTooltips ~= false
@@ -1315,15 +1341,22 @@ end
 ---bounds are secret, so nothing here may read them.
 ---A holder frame is registered rather than the artwork, because registration hands the object's
 ---shown state to the engine and it must be something this addon never shows or hides. The artwork
----inside stays ours, and the per-group toggle rides its alpha.
+---inside stays ours, and the display's own toggle rides its alpha.
 ---No animation on purpose, since a looping one costs CPU every frame across every pre-created
 ---button.
 ---@param instance AuraContainerDisplay
 ---@param button table
+---@param group table? The button's aura group, which says whether it carries the reveal at all.
 ---@param inset number How far outside the button the reveal sits.
 ---@return table?
-local function CreatePandemicHolder(instance, button, inset)
+local function CreatePandemicHolder(instance, button, group, inset)
 	if not instance.PandemicRegions or not button.AddPandemicRegion then
+		return nil
+	end
+
+	-- Which spells can light up is settled by which group they land in, since the reveal is
+	-- registered on a button as it is built and the engine drives every one it is handed.
+	if group and group.Pandemic == false then
 		return nil
 	end
 
@@ -1393,20 +1426,15 @@ local function InitializeButton(instance, button, group)
 		glow = CreateGlow(button)
 	end
 
-	-- One pixel outside the dispel border's ring, so both read when they overlap.
-	local pandemic = CreatePandemicHolder(instance, button, 2)
+	-- Flush with the button, because the halo brings its own padding out of the glow catalog.
+	local pandemic = CreatePandemicHolder(instance, button, group, 0)
 
 	if pandemic then
-		local ring = pandemic:CreateTexture(nil, "OVERLAY")
-		ring:SetAllPoints(pandemic)
-		ring:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-		ring:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
-		ring:SetVertexColor(PANDEMIC_COLOR[1], PANDEMIC_COLOR[2], PANDEMIC_COLOR[3], 1)
-		-- Hidden until the group's toggle asks for it, like the dispel border. The engine drives
-		-- the holder's visibility, so leaving the ring itself shown put an amber ring on every
-		-- icon of every group that had the reveal switched off.
-		ring:Hide()
-		pandemic.Textures = { ring }
+		local halo = pandemic:CreateTexture(nil, "OVERLAY")
+		-- Hidden until the toggle asks for it, like the dispel border. The engine drives the
+		-- holder's visibility, so artwork left shown lights every icon the reveal is off for.
+		halo:Hide()
+		pandemic.Texture = halo
 	end
 
 	local stacks = CreateStacks(button, textOverlay)
@@ -1528,7 +1556,7 @@ local function InitializeBarButton(instance, button, group)
 		borders = outline:Create(textOverlay, 0, BAR_BORDER_THICKNESS)
 	end
 
-	local pandemic = CreatePandemicHolder(instance, button, BAR_PANDEMIC_THICKNESS)
+	local pandemic = CreatePandemicHolder(instance, button, group, BAR_PANDEMIC_THICKNESS)
 
 	-- The outline comes back hidden, which is the state a group with the reveal off wants.
 	if pandemic then
@@ -2574,6 +2602,9 @@ end
 ---@field Glow boolean? Whether this group's icons carry the glow, overriding the display-wide
 ---Style.Glow so one container can light up a single category. Unset follows the display. Changed
 ---after creation with SetGroupGlow.
+---@field Pandemic boolean? Set false to build this group's buttons with no refresh-window region,
+---so a display carrying the reveal can keep it off one group. Unset follows the display. Fixed at
+---creation, since a region can only be added as a button is built.
 ---@field GlowColor number[]? {r, g, b} tint for this group's glow and border, so one container can
 ---colour its categories differently. A tinted group opts out of dispel-type colouring, which has
 ---nothing to say about a buff. Changed after creation with SetGroupGlowColors.
@@ -2601,9 +2632,9 @@ end
 ---or chrome, taken from Style.Texture*. The engine shows the button while a matching aura is
 ---present, so the art works as presence-driven decoration with no aura reads. Decided at creation
 ---like Label and Bar, so a display can never switch shape.
----@field Pandemic boolean? Create and register a refresh-window region on every button. It has to
----be decided at creation, since regions can only be added in initializeFrame. The Style.Pandemic
----toggle then shows or hides the reveal per restyle.
+---@field Pandemic boolean? Create and register a refresh-window region on every button whose
+---group has not opted out. It has to be decided at creation, since regions can only be added in
+---initializeFrame. The Style.Pandemic toggle then shows or hides the reveal per restyle.
 ---@field Style AuraDisplayStyle? Style to build the buttons with. Pass it whenever the display may
 ---be created while auras are secret, since a later SetStyle cannot reach the buttons there.
 ---@field MasqueGroup string? Masque sub-group name (e.g. "Crowd Control", "Alerts"), matching the legacy
