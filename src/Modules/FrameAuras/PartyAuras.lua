@@ -5,6 +5,7 @@ local L = addon.L
 local moduleUtil = addon.Utils.ModuleUtil
 local wowEx = addon.Utils.WoWEx
 local frames = addon.Core.Frames
+local growAnchors = addon.Core.GrowAnchors
 local eventGate = addon.Core.EventGate
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -686,8 +687,8 @@ local function ApplyTestSide(entry, side)
 	container:SetIconSize(IconSize(frame, side))
 	container:SetCount(count)
 	-- The grid sizes the row to its full column width, so a budget that never reaches one line
-	-- would sit centred away from where the live row draws.
-	container:SetColumns(math.min(PerRow(side), count))
+	-- would leave the frame wider than the icons in it.
+	container:SetColumns(math.min(PerRow(side), count), growAnchors:FillsLeftward(place.Grow))
 
 	local db = mini:GetSavedVars()
 	local nextSlot = testSpells:FillContainer(container, TestSpellList(side), 1, {

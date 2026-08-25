@@ -20,6 +20,7 @@ io.write("======================================\n")
 local testFiles = {
     "tests/Core/TestAuraContainerDisplay.lua",
     "tests/Core/TestIconSlotColors.lua",
+    "tests/Core/TestIconSlotLayout.lua",
     "tests/Core/TestKickTracker.lua",
     "tests/Core/TestInspector.lua",
     "tests/Core/TestUnitStatePoller.lua",

@@ -723,8 +723,8 @@ function M:Layout()
 			slot.Frame:Show()
 		end
 	elseif vertical and columnsPerRow then
-		-- Grid vertical: icons fill left-to-right up to columnsPerRow per row, then wrap to the
-		-- next row.  Grow-down wraps downward (row 0 at top); grow-up wraps upward (row 0 at bottom).
+		-- Grid vertical: icons fill up to columnsPerRow per row, then wrap to the next row.
+		-- Grow-down wraps downward (row 0 at top); grow-up wraps upward (row 0 at bottom).
 		local cols = columnsPerRow
 		local actualRows = math.ceil(usedCount / cols)
 		local rowWidth = cols * self.Size + (cols - 1) * self.Spacing
@@ -735,13 +735,11 @@ function M:Layout()
 		for displayIndex = 1, usedCount do
 			local slot = self.Slots[layoutScratch[displayIndex]]
 			local rowIndex = math.floor((displayIndex - 1) / cols) -- 0-based
-			local colIndex = (displayIndex - 1) % cols             -- 0-based
-			-- Number of icons in this row (may be less than cols on the last row)
-			local rowIcons = math.min(cols, usedCount - rowIndex * cols)
-			-- Center this row within the full grid width
-			local thisRowWidth = rowIcons * self.Size + (rowIcons - 1) * self.Spacing
-			local rowOffsetX = (rowWidth - thisRowWidth) / 2
-			local x = rowOffsetX + colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
+			local rawCol = (displayIndex - 1) % cols               -- 0-based
+			-- Reversed against the full column count, so slot 1 lands on the far edge and a
+			-- part-full row hugs the edge above it.
+			local colIndex = self.InvertLayout and (cols - 1 - rawCol) or rawCol
+			local x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
 			local rowStep = rowIndex * (self.Size + self.Spacing)
 			local y
 			if self.GrowUp then
@@ -888,15 +886,18 @@ function M:SetGrowUp(enabled)
 	self:Layout()
 end
 
----Sets the maximum number of icons per row when growing downward.
----Only effective when GrowDown is true. A value of 1 or nil reverts to a single column.
+---Sets the maximum number of icons per row when growing up or down.
+---A value of 1 or nil reverts to a single column.
 ---@param n number? Maximum icons per row; nil or 1 means single column
-function M:SetColumns(n)
+---@param invertLayout boolean? When true, slot 1 is placed at the rightmost column and every row fills right-to-left.
+function M:SetColumns(n, invertLayout)
 	n = (n and n > 1) and math.floor(n) or nil
-	if self.Columns == n then
+	invertLayout = invertLayout and true or false
+	if self.Columns == n and self.InvertLayout == invertLayout then
 		return
 	end
 	self.Columns = n
+	self.InvertLayout = invertLayout
 	self.LayoutGeneration = nil
 	self:Layout()
 end
@@ -1316,7 +1317,7 @@ end
 ---@field SetRows fun(self: IconSlotContainer, iconsPerRow: number?, alignment: string?, invertLayout: boolean?)
 ---@field SetGrowDown fun(self: IconSlotContainer, enabled: boolean)
 ---@field SetGrowUp fun(self: IconSlotContainer, enabled: boolean)
----@field SetColumns fun(self: IconSlotContainer, n: number?)
+---@field SetColumns fun(self: IconSlotContainer, n: number?, invertLayout: boolean?)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
 ---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)

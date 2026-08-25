@@ -6,6 +6,7 @@ local eventGate = addon.Core.EventGate
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local iconSlotContainer = addon.Core.IconSlotContainer
 local frames = addon.Core.Frames
+local growAnchors = addon.Core.GrowAnchors
 local pixels = addon.Core.Pixels
 local testSpells = addon.Core.TestSpells
 local spells = addon.Modules.FrameAuras.Spells
@@ -28,6 +29,9 @@ local PLAIN_BUFF_FILTER = "HELPFUL|!RAID_PLAYER_DISPELLABLE"
 -- this it is a raid buff, a flask, or some other thing that is simply always there.
 local SHORT_BUFF_SECONDS = 2 * 60
 local ICON_SPACING = 2
+-- Both rows grow rightwards from their own top left, wrapping downwards. The preview reads it too,
+-- so a wrapped preview line starts on the edge the live one does.
+local ROW_GROW = "RIGHT"
 -- Where Blizzard's own rows sit. The frame's art runs wider and lower than the bars drawn on it,
 -- so a row is pulled back up over the texture's bottom edge rather than hung below it.
 local ROW_X = 5
@@ -483,8 +487,8 @@ local function FillTestRow(container, previewSpells, size, maxIcons, perRow, lea
 	container:SetIconSize(size)
 	container:SetCount(maxIcons)
 	-- The grid sizes the row to its full column width, so a budget that never reaches one line
-	-- would sit centred away from where the live row draws.
-	container:SetColumns(math.min(perRow, maxIcons))
+	-- would leave the frame wider than the icons in it.
+	container:SetColumns(math.min(perRow, maxIcons), growAnchors:FillsLeftward(ROW_GROW))
 
 	if leadSpells then
 		slot = testSpells:FillContainer(container, leadSpells, slot, {
@@ -622,10 +626,8 @@ local function Apply(host)
 	rowScratch[1].Display, rowScratch[1].Group = host.Debuffs, DEBUFF_GROUP
 	rowScratch[2].Display, rowScratch[2].Group = host.Buffs, BUFF_GROUP
 
-	-- Both rows grow rightwards from their own top left, wrapping downwards, which is what the
-	-- flow layout does with a RIGHT grow.
 	for _, entry in ipairs(rowScratch) do
-		entry.Display:SetGrow("RIGHT")
+		entry.Display:SetGrow(ROW_GROW)
 		entry.Display:SetPerLine(perRow)
 		entry.Display:SetMaxIcons(entry.Group, maxIcons)
 		entry.Display:ApplyConfig(size, ICON_SPACING, BuildStyle())

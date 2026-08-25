@@ -676,6 +676,52 @@ local function LinesIn(container)
 	return lines
 end
 
+---The leftmost and rightmost x offset on each of a preview row's lines, keyed by the height the
+---line sits at. A row that hugs the edge it grows from shares one of the two across every line.
+---@param container IconSlotContainer
+---@return table<number, { Min: number, Max: number }>
+local function LineSpansIn(container)
+	local spans = {}
+
+	for index = 1, container.Count do
+		local slot = container.Slots[index]
+
+		if slot and slot.IsUsed then
+			local _, _, _, x, y = slot.Frame:GetPoint(1)
+			local span = spans[y]
+
+			if span then
+				span.Min = math.min(span.Min, x)
+				span.Max = math.max(span.Max, x)
+			else
+				spans[y] = { Min = x, Max = x }
+			end
+		end
+	end
+
+	return spans
+end
+
+---The x offset each line of a preview row starts at, taken from the edge the row grows from.
+---@param container IconSlotContainer
+---@param leftward boolean Whether the row fills leftwards, so its icons pile up on the right.
+---@return number[]
+local function StartsIn(container, leftward)
+	local starts = {}
+
+	for _, span in pairs(LineSpansIn(container)) do
+		starts[#starts + 1] = leftward and span.Max or span.Min
+	end
+
+	return starts
+end
+
+---@param starts number[]
+---@return string
+local function Listed(starts)
+	return table.concat(starts, ", ")
+end
+
 ---The preview row drawn on a given frame, or nil when nothing was drawn there.
 ---@param frame table
 ---@return IconSlotContainer?
@@ -1025,19 +1071,42 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.Enabled = false
 	end)
 
-	fw.it("draws Renew behind the other heal-over-times", function()
-		local renew = 139
+	---Checks a previewed row against the order its spells are meant to draw in.
+	---@param row number[]
+	---@param expected number[]
+	local function AssertOrder(row, expected)
+		assert(#row == #expected, "the row draws every spell in the list, got " .. #row)
 
+		for index, spellId in ipairs(expected) do
+			assert(row[index] == spellId,
+				"slot " .. index .. " is " .. spellId .. ", got " .. tostring(row[index]))
+		end
+	end
+
+	fw.it("draws the heal-over-times in the order the buff row lists them", function()
 		options.Buffs.Enabled = true
 
 		module:StartTesting()
 
 		local row = assert(fills[1], "the buff row previews something").Spells
 
-		assert(Includes(row, renew), "Renew is in the buff preview")
-		assert(row[#row] == renew, "and it comes last")
+		-- Lifebloom, Rejuvenation, Germination, Regrowth, Wild Growth, Renew, Riptide.
+		AssertOrder(row, { 33763, 774, 155777, 8936, 48438, 139, 61295 })
 
 		options.Buffs.Enabled = false
+	end)
+
+	fw.it("draws the debuffs in the order the debuff row lists them", function()
+		options.Debuffs.Enabled = true
+
+		module:StartTesting()
+
+		local row = assert(fills[1], "the debuff row previews something").Spells
+
+		-- Vampiric Touch, Shadow Word: Pain, Agony, Corruption.
+		AssertOrder(row, { 34914, 589, 980, 146739 })
+
+		options.Debuffs.Enabled = false
 	end)
 
 	fw.it("draws the whole icon budget, wrapped at the icons per row", function()
@@ -1056,6 +1125,46 @@ fw.describe("Frame Auras - test mode", function()
 		options.Buffs.MaxIcons = 6
 		options.Buffs.PerRow = 3
 		options.Buffs.Enabled = false
+	end)
+
+	fw.it("hangs every buff line off the right, the corner the live row grows from", function()
+		options.Buffs.Enabled = true
+		options.Buffs.MaxIcons = 5
+		options.Buffs.PerRow = 3
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local starts = StartsIn(row, true)
+		local _, _, _, firstX = row.Slots[1].Frame:GetPoint(1)
+
+		assert(#starts == 2, "the budget wrapped onto a second line, got " .. #starts)
+		assert(starts[1] == starts[2], "both lines end on the same edge, got " .. Listed(starts))
+		assert(firstX == starts[1], "and slot 1 is the icon on it, got " .. firstX)
+
+		options.Buffs.MaxIcons = 6
+		options.Buffs.PerRow = 3
+		options.Buffs.Enabled = false
+	end)
+
+	fw.it("hangs every debuff line off the left, the corner that row grows from", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.MaxIcons = 5
+		options.Debuffs.PerRow = 3
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local starts = StartsIn(row, false)
+		local _, _, _, firstX = row.Slots[1].Frame:GetPoint(1)
+
+		assert(#starts == 2, "the budget wrapped onto a second line, got " .. #starts)
+		assert(starts[1] == starts[2], "both lines start on the same edge, got " .. Listed(starts))
+		assert(firstX == starts[1], "and slot 1 is the icon on it, got " .. firstX)
+
+		options.Debuffs.MaxIcons = 3
+		options.Debuffs.PerRow = 3
+		options.Debuffs.Enabled = false
 	end)
 
 	fw.it("keeps a budget narrower than the line width at its own width", function()
@@ -1636,6 +1745,26 @@ fw.describe("Frame Auras - the target preview rows", function()
 		assert(row:GetUsedSlotCount() == 10,
 			"the budget above the line width still draws every icon, got " .. row:GetUsedSlotCount())
 		assert(LinesIn(row) == 3, "and wraps them four to a line, got " .. LinesIn(row))
+
+		module:StopTesting()
+		options.TargetFocus.MaxIcons = 6
+		options.TargetFocus.PerRow = 6
+	end)
+
+	fw.it("hangs every line off the left, the edge both live rows grow from", function()
+		options.TargetFocus.MaxIcons = 10
+		options.TargetFocus.PerRow = 4
+
+		module:StartTesting()
+
+		local row = assert(RowOn(targetFrame), "the target frame got a preview row")
+		local starts = StartsIn(row, false)
+		local _, _, _, firstX = row.Slots[1].Frame:GetPoint(1)
+
+		assert(#starts == 3, "the budget wrapped onto three lines, got " .. #starts)
+		assert(starts[1] == starts[2] and starts[2] == starts[3],
+			"every line starts on the same edge, got " .. Listed(starts))
+		assert(firstX == starts[1], "and slot 1 is the icon on it, got " .. firstX)
 
 		module:StopTesting()
 		options.TargetFocus.MaxIcons = 6

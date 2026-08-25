@@ -130,3 +130,10 @@ end
 function M:GetFlow(grow)
 	return M.Flow[grow] or M.Flow[M.Default]
 end
+
+---Whether a row runs leftwards from its anchored edge, so the first icon is the rightmost one.
+---@param grow string?
+---@return boolean
+function M:FillsLeftward(grow)
+	return M:GetFlow(grow).Horizontal == "Left"
+end

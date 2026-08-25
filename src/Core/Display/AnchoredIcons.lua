@@ -48,6 +48,7 @@ function M:AnchorContainer(container, anchor, options)
 	local anchorPoint, relativeToPoint = growAnchors:GetAnchor(options.Grow)
 	container:SetGrowDown(options.Grow == "DOWN")
 	container:SetGrowUp(options.Grow == "UP")
+	-- One column, and the horizontal fill direction goes back to rightwards with it.
 	container:SetColumns(nil)
 	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
 end
