@@ -433,6 +433,16 @@ local function PreviewLeadsWithCrowdControl(side)
 	return options ~= nil and options.ShowCrowdControl == true
 end
 
+---Whether one row drops its countdown text. The display's own vocabulary is the negative one, so
+---the row's positive switch is turned round here.
+---@param side "Buffs"|"Debuffs"
+---@return boolean
+local function HidesNumbers(side)
+	local options = SideOptions(side)
+
+	return options ~= nil and options.EnableNumbers == false
+end
+
 ---The spells one side's preview draws, leading with a stand-in for each flagged category the row
 ---is currently letting in. Switching a category on has to move the preview with it, or the preview
 ---says nothing about what the switch does.
@@ -484,6 +494,8 @@ local function BuildStyle(side)
 
 	style.Stacks = true
 	style.ReverseCooldown = true
+	-- Only ever adds to the global Disable Numbers switch, which the display resolves for itself.
+	style.HideNumbers = HidesNumbers(side)
 
 	if side == "Buffs" then
 		style.Pandemic = options.PandemicGlow == true
@@ -736,6 +748,7 @@ local function ApplyTestSide(entry, side)
 	local list, leading = TestSpellList(side)
 	local nextSlot = testSpells:FillContainer(container, list, 1, {
 		ReverseCooldown = true,
+		HideNumbers = HidesNumbers(side),
 		Glow = false,
 		-- Only the crowd control stand-in carries a tint, so the plain spells behind it stay bare
 		-- however this is set.

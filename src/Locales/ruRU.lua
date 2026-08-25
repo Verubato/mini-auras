@@ -516,6 +516,8 @@ L:RegisterLocale("ruRU", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "Список, из которого берёт заклинания переключатель \"С фильтром\" ряда усилений. Если он выключен, в угол попадают все усиления цели.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Пропускает в этот ряд усиления, отмеченные игрой как важные. По умолчанию выключено, так как Важные ауры уже их показывают.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Пропускает в этот ряд защитные умения. По умолчанию выключено, так как Важные ауры уже их показывают.",
+	["Show numbers"] = "Показывать цифры",
+	["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."] = "Показывает текст обратного отсчёта в этом ряду. При отключении анимация смахивания перезарядки остаётся видимой.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Пропускает в этот ряд эффекты контроля. По умолчанию выключено, так как Важные ауры уже их показывают.",
 	["Purgeable buffs"] = "Рассеиваемые усиления",
 	["Purge glow"] = "Рассеивание",

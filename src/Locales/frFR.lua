@@ -514,6 +514,8 @@ L:RegisterLocale("frFR", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "La liste dans laquelle puise l'option Filtré de la rangée d'améliorations. Désactivée, toutes les améliorations de l'unité atteignent le coin.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Laisse entrer dans cette rangée les améliorations que le jeu marque comme importantes. Désactivé par défaut, car Auras importantes les affiche déjà.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Laisse entrer les défensives dans cette rangée. Désactivé par défaut, car Auras importantes les affiche déjà.",
+	["Show numbers"] = "Afficher le décompte",
+	["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."] = "Affiche le texte du décompte sur cette rangée. En le désactivant, l'animation circulaire de recharge reste affichée.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Laisse entrer le contrôle de foule dans cette rangée. Désactivé par défaut, car Auras importantes l'affiche déjà.",
 	["Purgeable buffs"] = "Améliorations dissipables",
 	["Purge glow"] = "Dissipation",

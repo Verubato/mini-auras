@@ -516,6 +516,8 @@ L:RegisterLocale("zhCN", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "增益栏的“已过滤”开关所依据的列表。关闭时，目标身上的所有增益都会显示在角落。",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "允许游戏标记为重要的增益进入此栏。默认关闭，因为重要光环已经显示它们。",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "允许防御技能进入此栏。默认关闭，因为重要光环已经显示它们。",
+	["Show numbers"] = "显示倒计时数字",
+	["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."] = "在此栏显示倒计时文字。关闭后冷却时间滑动动画仍将显示。",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "允许控制效果进入此栏。默认关闭，因为重要光环已经显示它们。",
 	["Purgeable buffs"] = "可驱散增益",
 	["Purge glow"] = "驱散发光",

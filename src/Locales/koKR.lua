@@ -516,6 +516,8 @@ L:RegisterLocale("koKR", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "버프 줄의 필터 적용 스위치가 참고하는 목록입니다. 꺼두면 대상의 모든 버프가 구석에 표시됩니다.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "게임이 중요로 표시한 버프를 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "방어 쿨다운을 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
+	["Show numbers"] = "숫자 표시",
+	["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."] = "이 줄에 카운트다운 타이머 텍스트를 표시합니다. 꺼도 재사용 대기시간 스와이프 애니메이션은 계속 표시됩니다.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "군중 제어를 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
 	["Purgeable buffs"] = "해제 가능한 버프",
 	["Purge glow"] = "해제 발광",

@@ -50,6 +50,30 @@ local function SwitchFor(addon, labelText)
 	return nil
 end
 
+---The switch carrying a label on one particular tab of the frame auras page. Both aura rows offer
+---the countdown switch under the same label, so the tab is named by a switch only it has. Every
+---switch on a tab is built as a direct child of that tab's own page.
+---@param addon table
+---@param labelText string
+---@param tabLabel string A label carried by one tab and no other.
+---@return table?
+local function SwitchOnTabWith(addon, labelText, tabLabel)
+	local page = addon.Config.TabController:GetContent("FrameAuras")
+	local sibling = SwitchFor(addon, tabLabel)
+
+	fw.not_nil(sibling, "the page offers " .. tabLabel .. ", which names the tab")
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.__options and frame.__options.LabelText == labelText and Inside(frame, page)
+			and frame:GetParent() == sibling:GetParent()
+		then
+			return frame
+		end
+	end
+
+	return nil
+end
+
 fw.describe("Frame Auras page - the debuff row's switches", function()
 	fw.it("offers the dispel colours, and writes them where the row reads them", function()
 		local addon = Load()
@@ -69,5 +93,36 @@ fw.describe("Frame Auras page - the debuff row's switches", function()
 		switch:GetScript("OnClick")(switch)
 
 		assert(options.ColorByDispelType == false, "and the switch turns them off")
+	end)
+end)
+
+fw.describe("Frame Auras page - the countdown numbers on each row", function()
+	fw.it("gives each tab a switch that writes its own row and not the other", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		-- Mine belongs to the buff tab and Dispellable to the debuff tab, so each names the tab
+		-- its switch has to be sitting on.
+		local buffs = SwitchOnTabWith(addon, addon.L["Show numbers"], addon.L["Mine"])
+		local debuffs = SwitchOnTabWith(addon, addon.L["Show numbers"], addon.L["Dispellable"])
+
+		fw.not_nil(buffs, "the buff tab offers the numbers switch")
+		fw.not_nil(debuffs, "and so does the debuff tab")
+		assert(buffs ~= debuffs, "each tab has one of its own")
+
+		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
+
+		assert(frameAuras.Buffs.EnableNumbers == true and frameAuras.Debuffs.EnableNumbers == true,
+			"both rows ship counting down")
+
+		buffs:GetScript("OnClick")(buffs)
+
+		assert(frameAuras.Buffs.EnableNumbers == false, "the buff tab's switch writes the buff row")
+		assert(frameAuras.Debuffs.EnableNumbers == true, "and leaves the debuff row counting")
+
+		debuffs:GetScript("OnClick")(debuffs)
+
+		assert(frameAuras.Debuffs.EnableNumbers == false, "the debuff tab's switch writes the debuff row")
 	end)
 end)

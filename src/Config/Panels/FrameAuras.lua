@@ -484,8 +484,7 @@ local function BuildBuffs(content, options)
 	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
 
-	-- Every switch after the first narrows what reaches the row, and they combine: an icon has to
-	-- get past all of them.
+	-- The filter switches combine, so an icon has to get past all of them to reach the row.
 	local top = CheckboxRow(content, options, {
 		{
 			Key = "Enabled",
@@ -516,6 +515,11 @@ local function BuildBuffs(content, options)
 			Key = "ShowDefensives",
 			Label = L["Defensive"],
 			Tooltip = L["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."],
+		},
+		{
+			Key = "EnableNumbers",
+			Label = L["Show numbers"],
+			Tooltip = L["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."],
 		},
 	}, blurb)
 
@@ -616,6 +620,11 @@ local function BuildDebuffs(content, options)
 			Key = "ColorByDispelType",
 			Label = L["Dispel colours"],
 			Tooltip = L["Change the colour of the glow/border based on the type of debuff."],
+		},
+		{
+			Key = "EnableNumbers",
+			Label = L["Show numbers"],
+			Tooltip = L["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."],
 		},
 	}, blurb)
 

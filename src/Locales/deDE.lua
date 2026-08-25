@@ -516,6 +516,8 @@ L:RegisterLocale("deDE", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "Die Liste, aus der sich der Schalter \"Gefiltert\" der Buff-Reihe bedient. Ist er aus, erreicht stattdessen jeder Buff der Einheit die Ecke.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lässt die vom Spiel als wichtig markierten Stärkungszauber in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lässt defensive Abklingzeiten in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
+	["Show numbers"] = "Zahlen zeigen",
+	["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."] = "Zeigt den Countdown-Text in dieser Reihe. Beim Ausschalten bleibt die Wischanimation der Abklingzeit sichtbar.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Lässt Kontrolleffekte in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
 	["Purgeable buffs"] = "Bannbare Buffs",
 	["Purge glow"] = "Bann-Leuchten",

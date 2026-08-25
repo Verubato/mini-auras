@@ -564,6 +564,7 @@ testSpells.FillContainer = function(self, container, previewSpells, startSlot, f
 		Spells = captured,
 		Frame = container.Frame,
 		Lead = fillOptions.LeadCount,
+		HideNumbers = fillOptions.HideNumbers,
 	}
 
 	return originalFill(self, container, previewSpells, startSlot, fillOptions)
@@ -1717,6 +1718,117 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		options.Debuffs.ShowCrowdControl = false
 		options.Debuffs.ColorByDispelType = true
 		DropRaidFrame(38)
+	end)
+end)
+
+---What the engine was last told about one row's countdown numbers, read off the first button the
+---row built. Every button on a row is styled from the one style, so the first speaks for the lot.
+---@param row table An aura container.
+---@param groupKey string
+---@return boolean
+local function NumbersHiddenOn(row, groupKey)
+	local button = assert(row._groups[groupKey].buttons[1], "the group built a button")
+	local cooldown = assert(button._lastArgs.SetDurationCooldown, "the button was given a cooldown")[1]
+
+	return cooldown._lastArgs.SetHideCountdownNumbers[1]
+end
+
+---How visible one row's stack count is, read off the same button. The engine owns the text, so
+---alpha is all the display gets to say about it.
+---@param row table An aura container.
+---@param groupKey string
+---@return number
+local function StackAlphaOn(row, groupKey)
+	local button = assert(row._groups[groupKey].buttons[1], "the group built a button")
+	local stacks = assert(button._lastArgs.SetApplicationCount, "the button was given a count")[1]
+
+	return stacks._lastArgs.SetAlpha[1]
+end
+
+fw.describe("Frame Auras - the countdown numbers on one row", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Buffs.EnableNumbers = true
+		options.Debuffs.EnableNumbers = true
+		db.DisableNumbers = false
+		ResetFills()
+		partyAuras:Refresh()
+	end)
+
+	fw.it("drops them on the row that asked and leaves the other one counting", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+		options.Buffs.EnableNumbers = false
+
+		local fresh = NewRaidFrame(26)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(GroupRowOn(fresh, PARTY_BUFF_GROUP), "the frame got a buff row")
+		local debuffs = assert(DebuffRow(fresh), "and a debuff row")
+
+		assert(NumbersHiddenOn(buffs, PARTY_BUFF_GROUP) == true, "the row that asked loses its numbers")
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == false,
+			"and the row beside it keeps them, which is the whole point of a per-row switch")
+		-- The switch is over the countdown alone. The count is a separate overlay, and a stack of
+		-- three with no number on it says nothing.
+		assert(StackAlphaOn(buffs, PARTY_BUFF_GROUP) == 1, "the stack count is still drawn")
+
+		options.Buffs.EnableNumbers = true
+		DropRaidFrame(26)
+	end)
+
+	fw.it("hides them whenever either switch says so", function()
+		options.Debuffs.Enabled = true
+		db.DisableNumbers = true
+
+		local fresh = NewRaidFrame(27)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local debuffs = assert(DebuffRow(fresh), "the frame got a debuff row")
+
+		assert(options.Debuffs.EnableNumbers == true, "the row asked for its numbers")
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == true, "and the global switch takes them anyway")
+
+		db.DisableNumbers = false
+		options.Debuffs.EnableNumbers = false
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == true,
+			"the row's own switch holds them off once the global one is gone")
+
+		options.Debuffs.EnableNumbers = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == false, "and with neither set they come back")
+
+		DropRaidFrame(27)
+	end)
+
+	fw.it("takes them out of the preview the switch is read against", function()
+		options.Debuffs.Enabled = true
+
+		module:StartTesting()
+
+		assert(#fills > 0, "the debuff row previews something")
+		assert(fills[1].HideNumbers == false, "the preview counts down like the live row")
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.EnableNumbers = false
+		module:StartTesting()
+
+		assert(fills[1].HideNumbers == true, "and drops the numbers when the row does")
+
+		options.Debuffs.EnableNumbers = true
+		module:StopTesting()
 	end)
 end)
 

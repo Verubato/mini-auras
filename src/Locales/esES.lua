@@ -516,6 +516,8 @@ L:RegisterLocale("esES", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "La lista de la que se sirve el interruptor Filtrado de la fila de beneficios. Con él apagado, todos los beneficios de la unidad llegan a la esquina.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Permite en esta fila los beneficios que el juego marca como importantes. Desactivado por defecto, porque Auras importantes ya los muestra.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Permite en esta fila las defensivas. Desactivado por defecto, porque Auras importantes ya las muestra.",
+	["Show numbers"] = "Mostrar números",
+	["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."] = "Muestra el texto del temporizador en esta fila. Al desactivarlo, la animación de barrido del tiempo de reutilización sigue mostrándose.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Permite el control de masas en esta fila. Desactivado por defecto, porque Auras importantes ya lo muestra.",
 	["Purgeable buffs"] = "Beneficios disipables",
 	["Purge glow"] = "Brillo de disipar",

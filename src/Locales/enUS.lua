@@ -517,6 +517,8 @@ L:SetDefaultStrings({
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them.",
+	["Show numbers"] = "Show numbers",
+	["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."] = "Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Lets crowd control into this row. Off by default, because Important Auras already draws it.",
 	["Purgeable buffs"] = "Purgeable buffs",
 	["Purge glow"] = "Purge glow",
