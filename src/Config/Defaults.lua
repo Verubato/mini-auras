@@ -656,7 +656,7 @@ local dbDefaults = {
 				ShowImportant = false,
 				ShowDefensives = false,
 				-- The countdown text on this row alone. The global Disable Numbers switch still
-				-- takes it off everywhere regardless of this.
+				-- takes it off everywhere.
 				EnableNumbers = true,
 				-- The refresh-window reveal: one switch for the lot, since which spells carry it is
 				-- fixed in the tracked data.
