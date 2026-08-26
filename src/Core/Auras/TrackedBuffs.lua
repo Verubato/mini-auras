@@ -45,6 +45,9 @@ local groups = {
 			53563, -- Beacon of Light
 			156910, -- Beacon of Faith
 			1244893, -- Beacon of the Savior
+			432496, -- Holy Bulwark
+			432607, -- Holy Bulwark
+			432502, -- Sacred Weapon
 		},
 	},
 	{
