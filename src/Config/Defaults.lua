@@ -671,7 +671,8 @@ local dbDefaults = {
 				Size = 35,
 				MaxIcons = 2,
 				PerRow = 3,
-				Dispellable = false,
+				-- On, because a debuff you can cleanse is the one worth acting on first.
+				Dispellable = true,
 				-- On, because the debuffs that sit on a member all fight crowd out the one worth
 				-- reacting to.
 				ShortOnly = true,

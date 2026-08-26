@@ -1617,6 +1617,27 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		options.Debuffs.ShortOnly = false
 		DropRaidFrame(25)
 	end)
+
+	fw.it("asks for the dispel classification out of the box, which is what the row ships doing", function()
+		options.Debuffs.Enabled = true
+		-- Back to the shipped answer, which the before_each clears for the tests around this one.
+		options.Debuffs.Dispellable = dbDefaults.Modules.FrameAuras.Debuffs.Dispellable
+
+		local fresh = NewRaidFrame(28)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
+		local filters = assert(group.candidateFilters,
+			"a fresh profile narrows the row without the player touching anything")
+
+		assert(filters.processedAuraType == DISPEL_TYPE,
+			"dispel classification out of the box, got " .. tostring(filters.processedAuraType))
+
+		options.Debuffs.Dispellable = false
+		DropRaidFrame(28)
+	end)
 end)
 
 fw.describe("Frame Auras - what the buff row lets through", function()
