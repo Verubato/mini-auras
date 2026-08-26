@@ -120,28 +120,6 @@ local function FirstUsableSize(anchors, skipBlizzard)
 	return nil
 end
 
----The size of the first arena frame a lookup turns up, skipping the hidden ones unless the caller
----says a hidden frame will do.
----@param lookup fun(self: table, index: number): table?
----@param mustBeVisible boolean
----@return number? width
----@return number? height
-local function FirstArenaSize(lookup, mustBeVisible)
-	for index = 1, MAX_TEST_FRAMES do
-		local frame = lookup(M, index)
-
-		if frame and (not mustBeVisible or frame:IsVisible()) then
-			local width, height = ScreenSize(frame)
-
-			if width then
-				return width, height
-			end
-		end
-	end
-
-	return nil
-end
-
 ---@param height number
 ---@return number
 local function PetHeight(height)
@@ -232,19 +210,19 @@ local function LayoutTestFrames()
 		height * MAX_TEST_FRAMES + petHeight + FRAME_PADDING * 3
 	)
 
-	local arenaWidth, arenaHeight = M:GetTestArenaFrameSize()
-
+	-- The enemy column takes the party size, so the two sides of the screen match while the user
+	-- is placing icons.
 	for i = 1, MAX_TEST_FRAMES do
 		local frame = testArenaFrames[i]
 
 		frame:ClearAllPoints()
-		frame:SetSize(arenaWidth, arenaHeight)
-		frame:SetPoint("TOP", testArenaContainer, "TOP", 0, (i - 1) * -arenaHeight - FRAME_PADDING)
+		frame:SetSize(width, height)
+		frame:SetPoint("TOP", testArenaContainer, "TOP", 0, (i - 1) * -height - FRAME_PADDING)
 	end
 
 	testArenaContainer:SetSize(
-		arenaWidth + FRAME_PADDING * 2,
-		arenaHeight * MAX_TEST_FRAMES + FRAME_PADDING * 2
+		width + FRAME_PADDING * 2,
+		height * MAX_TEST_FRAMES + FRAME_PADDING * 2
 	)
 end
 
@@ -262,25 +240,6 @@ function M:GetTestFrameSize()
 	end
 
 	return width or FRAME_WIDTH, height or FRAME_HEIGHT
-end
-
----The size an arena stand-in takes: an enemy frame on screen, then one an addon built and is
----holding hidden, then the party size. Blizzard's own sit at their template size until an arena
----loads, which is nothing like what the player will see.
----@return number width
----@return number height
-function M:GetTestArenaFrameSize()
-	local width, height = FirstArenaSize(M.GetArenaFrame, true)
-
-	if not width then
-		width, height = FirstArenaSize(M.GetAddonArenaFrame, false)
-	end
-
-	if not width then
-		return M:GetTestFrameSize()
-	end
-
-	return width, height
 end
 
 function M:CreateTestFrames()
