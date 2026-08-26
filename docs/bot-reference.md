@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.23.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.24.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -67,7 +67,11 @@ during test mode. Since 5.19.0 a draggable container also opens a small position
 is clicked or when a drag ends, holding X and Y boxes with plus and minus buttons that step one
 pixel at a time, for placements a drag cannot hit exactly. Clicking the same container again
 closes it, and it closes on its own when test mode stops. Stand-in party/raid and arena frames are only created when no real frames are
-visible, so testing in a group shows icons where they will actually be. Test mode stops
+visible, so testing in a group shows icons where they will actually be. Since 5.24.0 a stand-in is
+sized from a real party frame rather than a fixed size: the first one on screen, else a frame
+addon's own hidden ones, else Blizzard's, with Blizzard's standard (non-compact) party frames never
+counted because they draw no auras. The arena stand-ins take the party size too. Each stand-in is
+captioned with the module it previews unless **Show Test Labels** (Misc) is off. Test mode stops
 automatically when combat starts. The World/Arena/Dungeons and Raids/Battlegrounds sub-tabs on
 the CC and Important Auras pages also flip which of the two setting groups the test preview
 uses. Since 5.16.0 that choice drives the "Enable in" check as well: previewing the
@@ -719,6 +723,7 @@ visibly does something. On 12.1 an aura container is
 engine-driven and cannot be handed fake auras, so the preview is a separate row of stand-in icons
 drawn in the same corner at the same size, with the live row hidden behind it. Only a switched-on
 part previews anything. Outside a group it draws on the stand-in party frames test mode puts up.
+This row carries no caption of its own, since it draws inside a frame that already has one.
 
 Icons here go through the same rendering as every other module, so the global Miscellaneous
 settings (font, icon zoom, cooldown swipe, countdown colours) and Masque skins apply. The Masque
@@ -1093,8 +1098,8 @@ Position: centred, 200 px below screen centre; draggable in test mode.
 
 ## Miscellaneous (Misc tab, global settings)
 
-These apply addon-wide. All except Language override and Milliseconds Threshold are part of
-the profile.
+These apply addon-wide. All except Language override, Milliseconds Threshold and Show Test Labels
+are part of the profile.
 
 | Setting | Values / range | Default |
 |---|---|---|
@@ -1102,6 +1107,7 @@ the profile.
 | Configure Blizzard Nameplates | on/off | on (disables Blizzard's CC and BigDebuffs on nameplates when MiniAuras nameplates are used) |
 | Disable Swipe | on/off | off |
 | Disable Numbers | on/off (since 5.23.0) | off (drops the countdown text on every aura icon; the swipe stays) |
+| Show Test Labels | on/off (since 5.24.0) | on (names each module above its test icons; turn it off when the names crowd each other) |
 | Zoom Icons | on/off | on (crops the baked silver border off icon art; changing it prompts a UI reload) |
 | Fade With Parent | on/off | on (icons fade with the unit frame they are attached to, for example out-of-range dimming) |
 | Colour Countdown | on/off | off |
@@ -1133,7 +1139,7 @@ Sidebar: Other > Profiles.
 - A profile contains: all module settings plus the Misc options Glow Type, Font, Font Scale,
   Configure Blizzard Nameplates, Disable Swipe, Disable Numbers, Zoom Icons, Colour Countdown,
   Countdown Colours and Fade With Parent. Not in the profile: Language override, Milliseconds
-  Threshold and the Auto-Switch rules.
+  Threshold, Show Test Labels and the Auto-Switch rules.
 - **Import/Export**: export produces a string starting with `!MiniAuras:1!` (deflated CBOR,
   Base64). Import needs a profile name and creates a new profile, then switches to it. Old
   MiniCC strings (`!MiniCC:2!` and the older `!MiniCC!`) also import.

@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 5.24.0
 
-- Fixed the frame aura buff row dropping buffs once a fight started, Earth Shield among them. What the Buffs tab's own switches allow is now all that narrows the row.
+- Added a Show Test Labels option to the misc tab.
+- Fixed frame aura buffs hiding certain buffs such as earth shield in combat.
 
 ## 5.23.0
 
