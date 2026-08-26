@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Removed the workaround for stray auras appearing after a zone change or a vehicle ride, now that the game itself has been fixed.
 - Frame aura icons can now go down to 15% of the frame's height, where the smallest they went before was 25%.
 
 ## 5.25.0

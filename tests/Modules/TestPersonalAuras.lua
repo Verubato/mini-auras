@@ -2019,7 +2019,7 @@ fw.describe("PersonalAuras - candidate filters", function()
 
 	fw.it("never caps the duration, so a permanent tracked buff still shows", function()
 		-- Any maxDuration also drops auras with no duration at all, which cost people their
-		-- permanent buffs. Zone transfer leaks are handled by the display's recovery instead.
+		-- permanent buffs.
 		local bySpells = groups:Normalise({ Spells = { ICE_BLOCK } })
 		local byFilter = groups:Normalise({ TrackingMode = groups.TrackingMode.Filters })
 

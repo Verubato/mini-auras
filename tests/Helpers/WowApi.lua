@@ -16,8 +16,6 @@ local _unitExists    = {}   -- unit -> bool
 local _unitGuids     = {}   -- unit -> guid string override
 local _roles         = {}   -- unit -> "TANK" | "HEALER" | "DAMAGER"
 local _inRaid        = false
--- Whether the player is in a vehicle, which takes over the "player" unit.
-local _inVehicle     = false
 local _locale        = "enUS"
 
 function M.setup()
@@ -76,11 +74,6 @@ function M.setup()
 
 	_G.IsInRaid = function()
 		return _inRaid
-	end
-
-	-- Only the player can be in a vehicle here.
-	_G.UnitHasVehicleUI = function(unit)
-		return unit == "player" and _inVehicle
 	end
 
 	_G.UnitGroupRolesAssigned = function(unit)
@@ -224,11 +217,6 @@ function M.setInRaid(inRaid)
 	_inRaid = inRaid
 end
 
----@param inVehicle boolean
-function M.setInVehicle(inVehicle)
-	_inVehicle = inVehicle
-end
-
 ---@param locale string
 function M.setLocale(locale)
 	_locale = locale
@@ -241,7 +229,6 @@ function M.clearRoles()
 
 	_roles = {}
 	_inRaid = false
-	_inVehicle = false
 end
 
 function M.setUnitPvp(unit, state)

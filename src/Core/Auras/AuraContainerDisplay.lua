@@ -84,20 +84,6 @@ local LABEL_COLOR = { 1, 0.1, 0.1 }
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
--- The unit a vehicle takes over, and the token the vehicle itself answers to.
-local PLAYER_UNIT = "player"
-local VEHICLE_UNIT = "vehicle"
--- How long to wait after a vehicle event before asking the client where the player is. It still
--- answers "vehicle" as the exit event fires.
-local VEHICLE_SETTLE_DELAY = 0.1
--- A zone change gets a short blackout and then a run of retries. The client has no event meaning
--- "the transfer is done", and the ones that look like it are not dispatched on every teleport, so
--- the only way to catch the moment the unit can be asked about again is to keep asking.
--- The window covers the blackout plus every pass. A pass is cheap, since it only touches what is
--- on screen and only displays that carry a spell-id map.
-local ZONE_BLACKOUT = 0.3
-local ZONE_RETRY_INTERVAL = 0.4
-local ZONE_RETRY_PASSES = 6
 -- The container's own default unit, and what RequestRefresh points one at to make the engine see
 -- a unit change for a token whose occupant moved.
 local NO_UNIT = "none"
@@ -118,8 +104,6 @@ local cachedDb = nil
 local frameIdCounter = 0
 local liveDisplays = {}
 local editModePreviewActive = false
--- True while a vehicle has the player. Displays on that unit are suppressed for the duration.
-local vehicleActive = false
 local displayEventsFrame = nil
 local pendingRestyleCount = 0
 local restyleTicker = nil
@@ -130,12 +114,6 @@ local pendingBounceCount = 0
 local pendingBounces = {}
 local spareBounces = {}
 local bounceFlushScheduled = false
--- True for the blackout after a zone event. Displays carrying a spell-id map are suppressed for
--- the duration, and nothing else can be degraded by a transfer.
-local zoneTransferActive = false
-local zoneBlackoutTimer = nil
-local zoneRetryTimer = nil
-local zoneRetriesLeft = 0
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with one or more aura groups and styles the container-created AuraButtons to match the legacy
@@ -431,204 +409,8 @@ end
 -- This is also why every container has to be created through this wrapper. One built directly with
 -- CreateFrame("AuraContainer") isn't in liveDisplays and will happily show the placeholder auras.
 
----Calls a client function that may not exist on this build, as a plain boolean.
----@param fn function?
----@param unit string
----@return boolean
-local function Asked(fn, unit)
-	return fn ~= nil and fn(unit) == true
-end
-
----True while a display is tracking the unit a vehicle takes over.
----@param instance AuraContainerDisplay
----@return boolean
-local function IsPlayerDisplay(instance)
-	return instance.Frame:GetUnit() == PLAYER_UNIT
-end
-
----Whether any of a display's groups filter on spell ids, which is the only thing a zone transfer
----can spoil. Kept on the display, since a zone pass asks every display and the answer only moves
----when a setter hands a map over, which clears it.
----@param instance AuraContainerDisplay
----@return boolean
-local function HasIdentityFilters(instance)
-	local carries = instance.CarriesIdentityFilters
-
-	if carries == nil then
-		carries = false
-
-		for _, group in pairs(instance.GroupsByKey) do
-			if group.CandidateFilters then
-				carries = true
-				break
-			end
-		end
-
-		instance.CarriesIdentityFilters = carries
-	end
-
-	return carries
-end
-
----@return boolean
-local function AnyDisplayHasIdentityFilters()
-	for _, instance in ipairs(liveDisplays) do
-		if HasIdentityFilters(instance) then
-			return true
-		end
-	end
-
-	return false
-end
-
 local function ApplyShownState(instance)
-	-- Three reasons a display is kept off screen whatever its module asked for: Edit Mode's
-	-- placeholder auras, a vehicle, and a zone transfer.
-	-- The zone test comes last so the group walk only runs while a transfer is in flight.
-	local suppressed = editModePreviewActive
-		or (vehicleActive and IsPlayerDisplay(instance))
-		or (zoneTransferActive and HasIdentityFilters(instance))
-
-	instance.Frame:SetShown(instance.DesiredShown and not suppressed)
-end
-
----Whether the player is in a vehicle, asked every way the client offers. They do not agree, since
----a seat with no vehicle UI answers false to UnitHasVehicleUI while still being a vehicle.
----Each is called only if the client has it, which keeps this working on builds that drop one.
----@return boolean
-local function PlayerInVehicle()
-	return Asked(UnitInVehicle, PLAYER_UNIT)
-		or Asked(UnitUsingVehicle, PLAYER_UNIT)
-		or Asked(UnitHasVehicleUI, PLAYER_UNIT)
-		or Asked(UnitControllingVehicle, PLAYER_UNIT)
-		-- The vehicle's own token exists for the duration, whatever the questions above say.
-		or Asked(UnitExists, VEHICLE_UNIT)
-end
-
----Takes every display on the player off screen while a vehicle has it, and puts them back
----afterwards. While the vehicle lasts the engine stops honouring the spell-id filters on that unit
----and the groups fill with auras nobody asked for, and re-reading the container only pulls in more.
----A hidden container parses nothing at all, and the show on the way back out is a full refresh from
----live data.
----@param entering boolean? True from a seat event, which is taken at its word. The kind of vehicle
----that answers false to every question above is exactly the kind this is for. Only the seat events
----pass it.
-local function ApplyVehicleState(entering)
-	local active = entering == true or PlayerInVehicle()
-
-	if vehicleActive == active then
-		return
-	end
-
-	vehicleActive = active
-
-	for _, instance in ipairs(liveDisplays) do
-		ApplyShownState(instance)
-	end
-end
-
----Throws away what one display parsed while the engine could not say who its unit was, and reads
----the unit again from scratch.
----
----A teleport inside one map loads nothing, so PLAYER_ENTERING_WORLD never fires and no refresh
----follows it. While the transfer is in flight the engine cannot say who the unit is, and an
----identity-gated spell-id map it cannot evaluate is skipped rather than failed, so every aura on
----the unit passes the bare filter token and lands in the group. A mounted teleport puts the mount
----buff in a personal aura group, which no filter string could ever have excluded.
----
----That outlives the transfer because of the engine's own bookkeeping. Which group an aura belongs
----to is worked out once per aura instance, and an ordinary aura event only re-parses what changed,
----so auras that were already up keep the answer reached while nothing could be evaluated. A full
----re-parse is what drops it, which is what RequestRefresh forces.
----
----Only ever called for a display whose groups carry a spell-id map. The rest have nothing to
----recover, since their filter strings are evaluated the same either way.
----@param instance AuraContainerDisplay
-local function RefreshFromLiveData(instance)
-	instance:RequestRefresh()
-end
-
----One retry pass, and the next one after it while any are left. Nothing here can tell whether the
----transfer has finished, so every pass does the same thing and the last one to land after the
----engine can answer again is the one that sticks.
-local function OnZoneRetry()
-	for _, instance in ipairs(liveDisplays) do
-		-- A hidden container parses nothing, and the OnShow on its way back issues a full refresh
-		-- from live data, so it corrects itself without being touched here.
-		if instance.Frame:IsShown() and HasIdentityFilters(instance) then
-			RefreshFromLiveData(instance)
-		end
-	end
-
-	zoneRetriesLeft = zoneRetriesLeft - 1
-
-	if zoneRetriesLeft > 0 then
-		zoneRetryTimer = C_Timer.NewTimer(ZONE_RETRY_INTERVAL, OnZoneRetry)
-	else
-		zoneRetryTimer = nil
-	end
-end
-
----Ends the blackout, the re-read first while nothing is on screen, then the show. The retries
----carry on afterwards, since the transfer may well still be in flight.
-local function EndZoneBlackout()
-	zoneBlackoutTimer = nil
-
-	if not zoneTransferActive then
-		return
-	end
-
-	zoneTransferActive = false
-
-	-- Only a display carrying a map holds a parse the transfer could have spoiled, but the show
-	-- goes to all of them. One whose map was taken away mid-blackout was hidden by a predicate that
-	-- no longer answers for it, and nothing else would put it back.
-	for _, instance in ipairs(liveDisplays) do
-		if HasIdentityFilters(instance) then
-			RefreshFromLiveData(instance)
-		end
-
-		ApplyShownState(instance)
-	end
-end
-
----Takes the displays at risk off screen for a moment after a zone event, then keeps re-reading
----them for the next couple of seconds.
----
----A hidden container parses nothing, so the auras the engine cannot filter properly mid-transfer
----never reach a group in the first place. It is the only escape hatch that works while the engine
----is answering wrongly rather than late.
----The blackout is kept short because it cannot be timed against anything. The displays come back
----and the retries take over, each one a fresh chance to catch the engine once it can answer who
----the unit is.
----
----Nothing happens at all while no live display filters on spell ids. The subzone events this
----listens for fire on ordinary movement as well, and a window opened for one of those hides and
----re-reads a poolful of displays that nothing had spoiled.
-local function BeginZoneTransfer()
-	if not AnyDisplayHasIdentityFilters() then
-		return
-	end
-
-	zoneTransferActive = true
-
-	if zoneBlackoutTimer then
-		zoneBlackoutTimer:Cancel()
-	end
-
-	if zoneRetryTimer then
-		zoneRetryTimer:Cancel()
-	end
-
-	zoneRetriesLeft = ZONE_RETRY_PASSES
-	zoneBlackoutTimer = C_Timer.NewTimer(ZONE_BLACKOUT, EndZoneBlackout)
-	zoneRetryTimer = C_Timer.NewTimer(ZONE_RETRY_INTERVAL, OnZoneRetry)
-
-	for _, instance in ipairs(liveDisplays) do
-		if HasIdentityFilters(instance) then
-			ApplyShownState(instance)
-		end
-	end
+	instance.Frame:SetShown(instance.DesiredShown and not editModePreviewActive)
 end
 
 local function OnAuraDataProviderSwitch(useRealDataProvider)
@@ -655,58 +437,14 @@ local function EnsureDisplayEvents()
 	displayEventsFrame = CreateFrame("Frame")
 	displayEventsFrame:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
 	displayEventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-	displayEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	-- The two a teleport within one map fires. See BeginZoneTransfer.
-	-- ZONE_CHANGED is left out because it fires on every district boundary crossed on foot, and no
-	-- transfer it caught ever degraded a filter.
-	displayEventsFrame:RegisterEvent("ZONE_CHANGED_INDOORS")
-	displayEventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-	displayEventsFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", PLAYER_UNIT)
-	displayEventsFrame:RegisterUnitEvent("UNIT_EXITED_VEHICLE", PLAYER_UNIT)
-	-- The -ING pair fires for seats the -ED pair does not, and the vehicle-data pair fires for
-	-- the ones that never raise a seat event at all.
-	displayEventsFrame:RegisterUnitEvent("UNIT_ENTERING_VEHICLE", PLAYER_UNIT)
-	displayEventsFrame:RegisterUnitEvent("UNIT_EXITING_VEHICLE", PLAYER_UNIT)
-	displayEventsFrame:RegisterEvent("PLAYER_GAINS_VEHICLE_DATA")
-	displayEventsFrame:RegisterEvent("PLAYER_LOSES_VEHICLE_DATA")
 	displayEventsFrame:SetScript("OnEvent", function(_, event, useRealDataProvider)
 		if event == "AURA_DATA_PROVIDER_SWITCH" then
 			OnAuraDataProviderSwitch(useRealDataProvider)
-		elseif event == "PLAYER_ENTERING_WORLD" then
-			-- Logging in already inside one counts, and no vehicle event fires for that.
-			ApplyVehicleState()
-			-- A teleport that does load a map goes through the same unsettled window, and the
-			-- refresh this event drives only re-parses the displays whose settings moved.
-			BeginZoneTransfer()
-		elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED_NEW_AREA" then
-			BeginZoneTransfer()
-		elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_ENTERING_VEHICLE" then
-			ApplyVehicleState(true)
-		elseif event == "PLAYER_GAINS_VEHICLE_DATA" then
-			-- Not taken at its word like the seat events. Mounting raises this one too, and the
-			-- client answers no to every vehicle question then and after, so trusting it hid the
-			-- player's displays for the quarter second it took the data to go away again.
-			-- Asked twice because this is the only event some seats raise. Once now for a vehicle
-			-- the client can already answer for, and once more after the settle delay for one it
-			-- cannot yet.
-			ApplyVehicleState()
-			C_Timer.After(VEHICLE_SETTLE_DELAY, ApplyVehicleState)
-		elseif event == "UNIT_EXITED_VEHICLE" or event == "UNIT_EXITING_VEHICLE"
-			or event == "PLAYER_LOSES_VEHICLE_DATA" then
-			-- Deferred and re-asked, because the client still reports the vehicle as the event
-			-- fires and one of these can arrive while another seat holds.
-			C_Timer.After(VEHICLE_SETTLE_DELAY, ApplyVehicleState)
 		else
 			FlushPendingRestyles()
 			FlushPendingBounces()
 		end
 	end)
-
-	-- Asked once here as well as on the event. The first display is built from inside the addon's
-	-- own PLAYER_ENTERING_WORLD handler, and a frame that registers an event while that event is
-	-- being dispatched does not receive it. Without this, reloading inside a vehicle leaves the
-	-- suppression off for the whole session.
-	ApplyVehicleState()
 end
 
 ---Resolves the configured glow type to one this display can actually render.
@@ -1957,9 +1695,6 @@ function M:AddPendingGroup(group)
 	group.Pending = true
 	group.BornMaxIcons = group.MaxIcons or 3
 
-	-- The answer is worked out once from the groups, so adding one has to make it ask again.
-	self.CarriesIdentityFilters = nil
-
 	local index = #self.Groups + 1
 
 	self.Groups[index] = group
@@ -2013,9 +1748,6 @@ function M:SetUnit(unit)
 	end
 
 	self.Frame:SetUnit(unit)
-	-- Whether a display may be on screen depends on which unit it is on. Pointing one at the
-	-- player while a vehicle has it, or off the player while one does, changes the answer.
-	ApplyShownState(self)
 	MarkBouncePending(self)
 end
 
@@ -2179,14 +1911,12 @@ function M:SetCandidateFilters(groupKey, filters)
 		return
 	end
 
-	-- Kept on the group as well as handed over, since it is what tells the zone-transfer recovery
-	-- which displays a teleport can spoil. See HasIdentityFilters.
+	-- Kept on the group as well as handed over. A group still pending reaches the engine only when
+	-- AddGroup declares it, which reads this.
 	local group = self.GroupsByKey[groupKey]
 
 	if group then
 		group.CandidateFilters = filters
-		-- Re-asked on the next zone pass, since most swaps never meet one.
-		self.CarriesIdentityFilters = nil
 	end
 
 	if group and group.Pending then
@@ -2707,8 +2437,6 @@ end
 ---does not cost a full re-parse.
 ---@field NextPendingGroup number? Index into Groups of the next group a deferred build owes.
 ---@field Initialize fun(instance: AuraContainerDisplay, button: table, group: AuraDisplayGroupSpec)
----@field CarriesIdentityFilters boolean? Whether any of its groups filter on spell ids, worked
----out on first ask and cleared by SetCandidateFilters. See HasIdentityFilters.
 ---@field Size number
 ---@field Spacing number
 ---@field Groups AuraDisplayGroupSpec[]

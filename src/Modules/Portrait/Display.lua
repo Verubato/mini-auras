@@ -33,8 +33,7 @@ local buildSweep = sweep:New(true)
 
 -- The user's own spell list. The engine honours a helpful spell-id map only on a unit you can
 -- assist, and a harmful one only where you cannot, so a debuff list would be dropped and the
--- layer would match every debuff on you. Only the player token is always assistable, which is
--- also what keeps this clear of the zone-transfer gate leak.
+-- layer would match every debuff on you. Only the player token is always assistable.
 local CUSTOM_UNIT = "player"
 local CUSTOM_GROUP_KEY = "portraitcustom"
 local CUSTOM_FILTER = "HELPFUL"
