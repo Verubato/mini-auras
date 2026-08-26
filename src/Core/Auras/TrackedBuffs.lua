@@ -53,6 +53,7 @@ local groups = {
 			139, -- Renew
 			41635, -- Prayer of Mending
 			194384, -- Atonement
+			17, -- Power Word: Shield
 		},
 	},
 	{
