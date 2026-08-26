@@ -96,8 +96,8 @@ local function ReleaseHandles(entry)
 
 	liveHandles = liveHandles - #handles
 
-	-- Both engine calls are wrapped, because they have been reported throwing as a blocked call
-	-- and nobody has pinned down why.
+	-- Wrapped like the add is. A throw part way would strand the rest of the list registered with
+	-- the count already saying they are gone.
 	for index = #handles, 1, -1 do
 		pcall(C_UnitAuras.RemoveAuraSound, handles[index])
 		handles[index] = nil
@@ -190,6 +190,8 @@ local function DrainPending(pending)
 				info.outputChannel = entry.Channel
 				info.spellID = wanted[read]
 
+				-- Reported throwing now and again, with no cause found. Combat lockdown is not it,
+				-- since this call is allowed there.
 				local ok, handle = pcall(C_UnitAuras.AddAuraSound, entry.Trigger, info)
 
 				if ok and handle then
