@@ -53,6 +53,10 @@ local pendingCursor = {}
 -- every key out twice.
 ---@type (string|false)[]
 local requestKeys = {}
+-- The path each sound name resolved to, wiped every pass so a media addon landing between two of
+-- them can still change the answer.
+---@type table<string|boolean, string|false>
+local resolvedFiles = {}
 -- Retired key records, each with its handle list already emptied, reused by the next new key.
 ---@type PersonalAuraSoundKey[]
 local keyPool = {}
@@ -68,6 +72,24 @@ addon.Modules.PersonalAuras.Sound = M
 ---@return string
 local function KeyFor(request)
 	return request.GroupId .. "|" .. request.Unit .. "|" .. request.Trigger
+end
+
+---The path a sound name maps to, worked out once per pass. Every request a group makes carries
+---the same name, and resolving one runs a media lookup.
+---@param name string?
+---@return string?
+local function ResolveOnce(name)
+	-- False, because nil cannot be a table key.
+	local key = name or false
+	local resolved = resolvedFiles[key]
+
+	if resolved == nil then
+		-- False rather than nil, so a name nothing has registered memoises as a miss.
+		resolved = sounds:ResolveStrict(name) or false
+		resolvedFiles[key] = resolved
+	end
+
+	return resolved or nil
 end
 
 ---Hands back everything one key holds, leaving it empty and ready to register again.
@@ -202,6 +224,7 @@ end
 function M:Apply(requests)
 	wipe(wantedKeys)
 	wipe(requestKeys)
+	wipe(resolvedFiles)
 
 	for index, request in ipairs(requests) do
 		local key = KeyFor(request)
@@ -236,9 +259,8 @@ function M:Apply(requests)
 
 		if key then
 			-- Nothing has registered this name yet, so the key stays silent rather than taking
-			-- the fallback sound. The stamp carries the path, so it registers once the media
-			-- addon lands.
-			local file = sounds:ResolveStrict(request.File)
+			-- the fallback sound.
+			local file = ResolveOnce(request.File)
 			local stamp = StampFor(key, file, request)
 			local entry = registered[key]
 

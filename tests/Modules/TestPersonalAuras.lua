@@ -2209,6 +2209,20 @@ fw.describe("PersonalAuras - sounds", function()
 	end)
 end)
 
+---A run of distinct spell ids, for the cap tests that need more of them than the cap allows.
+---@param count number
+---@param base number
+---@return number[]
+local function SpellList(count, base)
+	local ids = {}
+
+	for index = 1, count do
+		ids[index] = base + index
+	end
+
+	return ids
+end
+
 ---The engine's live registrations matching a test, as a handle set and how many there are.
 ---@param match fun(entry: table): boolean
 ---@return table<number, boolean> held
@@ -2448,11 +2462,7 @@ fw.describe("PersonalAuras - reconciling the sound registrations", function()
 
 		-- Past the module's cap on its own, so draining it before moving on would leave the
 		-- group behind it with nothing.
-		local many = {}
-
-		for index = 1, 1600 do
-			many[index] = 900100 + index
-		end
+		local many = SpellList(1600, 900100)
 
 		sound:Apply({
 			{
@@ -2506,11 +2516,7 @@ fw.describe("PersonalAuras - reconciling the sound registrations", function()
 		ClearGroups()
 		sound:Clear()
 
-		local many = {}
-
-		for index = 1, 1600 do
-			many[index] = 900100 + index
-		end
+		local many = SpellList(1600, 900100)
 
 		local long = {
 			GroupId = "gLong",
@@ -2558,17 +2564,8 @@ fw.describe("PersonalAuras - reconciling the sound registrations", function()
 
 		-- Short enough to finish inside the cap once the sibling goes, so the key really does
 		-- reach the end of its list rather than staying cut off for good.
-		local many = {}
-
-		for index = 1, 1400 do
-			many[index] = 900100 + index
-		end
-
-		local sibling = {}
-
-		for index = 1, 200 do
-			sibling[index] = 905100 + index
-		end
+		local many = SpellList(1400, 900100)
+		local sibling = SpellList(200, 905100)
 
 		local long = {
 			GroupId = "gLong",
