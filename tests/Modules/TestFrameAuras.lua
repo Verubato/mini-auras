@@ -161,12 +161,18 @@ local CURATED = CuratedId()
 local CUSTOM = 99000001
 -- The second Lifebloom, which the client names after the spell it copies.
 local FULL_BLOOM = 290754
--- The aura groups the rows draw through. Crowd control leads the debuff row, larger than the rest.
+-- The aura groups the rows draw through. Crowd control leads the debuff row and the priority
+-- debuffs follow it, both larger than the rest.
 local PARTY_BUFF_GROUP = "FrameBuffs"
 local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
--- What the head of the row is drawn at, as a share of the rest of it.
-local CROWD_CONTROL_SCALE = 1.25
+local DEBUFF_PRIORITY_GROUP = "FrameDebuffsPriority"
+-- What the front of the row is drawn at, as a share of the rest of it.
+local LEAD_SCALE = 1.25
+-- The cap the two groups at the front of the row carry, whatever the row's own budget is.
+local LEAD_MAX_ICONS = 2
+-- The gap the rows leave between one icon and the next.
+local ICON_SPACING = 1
 
 local function ResetSpells()
 	options.Spells.Disabled = {}
@@ -790,12 +796,13 @@ fw.describe("Frame Auras - what one frame costs", function()
 		acm.tickAll(400)
 
 		local groups, buttons = CostOf(fresh)
-		local expected = options.Buffs.MaxIcons + options.Debuffs.MaxIcons + 1
+		local expected = options.Buffs.MaxIcons + options.Debuffs.MaxIcons
+			+ math.min(options.Debuffs.MaxIcons, LEAD_MAX_ICONS) + 1
 
 		-- Buffs are two groups only while the refresh-window reveal is on: the plain row plus one
-		-- button for the single spell that carries it. Debuffs are one group, ranked by the game's
-		-- own debuff sort rather than partitioned into two.
-		assert(groups == 3, "three groups on a frame, not four, got " .. groups)
+		-- button for the single spell that carries it. Debuffs are two, because the priority ones
+		-- are drawn larger and an icon's size is fixed per group.
+		assert(groups == 4, "four groups on a frame, not five, got " .. groups)
 		assert(buttons == expected,
 			"the row budgets are what a frame costs, expected " .. expected .. " got " .. buttons)
 
@@ -1250,7 +1257,7 @@ fw.describe("Frame Auras - test mode", function()
 		local plain = row.Slots[2].Frame:GetWidth()
 
 		assert(plain > 0, "the row has a size to be measured against")
-		assert(math.abs(row.Slots[1].Frame:GetWidth() - plain * CROWD_CONTROL_SCALE) < 0.01,
+		assert(math.abs(row.Slots[1].Frame:GetWidth() - plain * LEAD_SCALE) < 0.01,
 			"the stun leading the row is drawn larger, got " .. row.Slots[1].Frame:GetWidth())
 
 		module:StopTesting()
@@ -1536,13 +1543,13 @@ local function DebuffGroup(frame)
 	return nil
 end
 
----The game's own debuff sort ranks the row and the budget trims it, so partitioning it by the boss
----and priority flags would only ever take icons away. Checked wherever a filter set exists at all,
----since a switch is what gives the partition somewhere to come back.
+---The priority debuffs are drawn by a group of their own, so the plain half of the row has to leave
+---them out or they would be drawn twice. The boss flag stays out of it, since the game's own debuff
+---sort ranks the row by that already and a partition there would only take icons away.
 ---@param filters table
-local function AssertUnpartitioned(filters)
+local function AssertPlainHalf(filters)
 	assert(filters.isBossOrRoleAura == nil, "no boss partition reaches the engine")
-	assert(filters.isPriorityAura == nil, "and no priority one either")
+	assert(filters.isPriorityAura == false, "and the plain half is the one without the priority debuffs")
 end
 
 fw.describe("Frame Auras - what the debuff row lets through", function()
@@ -1555,7 +1562,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		partyAuras:Refresh()
 	end)
 
-	fw.it("narrows the row by nothing at all with neither switch on", function()
+	fw.it("narrows the row by the priority partition alone with neither switch on", function()
 		options.Debuffs.Enabled = true
 
 		-- Its own frame, like the cost tests: a display is built once per frame and kept, so one that
@@ -1566,8 +1573,12 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		acm.tickAll(400)
 
 		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
+		local filters = assert(group.candidateFilters,
+			"the partition is on the group whatever the switches say, since the row always has both halves")
 
-		assert(group.candidateFilters == nil, "with neither switch on there is nothing left to narrow by")
+		AssertPlainHalf(filters)
+		assert(filters.maxDuration == nil and filters.processedAuraType == nil,
+			"and with neither switch on there is nothing else to narrow by")
 
 		DropRaidFrame(21)
 	end)
@@ -1586,7 +1597,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		assert(filters.maxDuration == 60,
 			"under a minute is a bound on the whole duration, got " .. tostring(filters.maxDuration))
-		AssertUnpartitioned(filters)
+		AssertPlainHalf(filters)
 
 		options.Debuffs.ShortOnly = false
 		DropRaidFrame(22)
@@ -1606,7 +1617,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		assert(filters.processedAuraType == DISPEL_TYPE,
 			"the engine's own dispel classification is what it filters on")
-		AssertUnpartitioned(filters)
+		AssertPlainHalf(filters)
 
 		options.Debuffs.Dispellable = false
 		DropRaidFrame(23)
@@ -1763,9 +1774,9 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		local size = plain.layout.elementHeight
 
 		assert(size > 0, "the row has a size to be measured against")
-		assert(math.abs(cc.layout.elementHeight - size * CROWD_CONTROL_SCALE) < 0.01,
+		assert(math.abs(cc.layout.elementHeight - size * LEAD_SCALE) < 0.01,
 			"the engine spaces the head of the row at the larger size, got " .. tostring(cc.layout.elementHeight))
-		assert(math.abs(cc.buttons[1]:GetHeight() - size * CROWD_CONTROL_SCALE) < 0.01,
+		assert(math.abs(cc.buttons[1]:GetHeight() - size * LEAD_SCALE) < 0.01,
 			"and the button is drawn at it, got " .. tostring(cc.buttons[1]:GetHeight()))
 		assert(math.abs(plain.buttons[1]:GetHeight() - size) < 0.01,
 			"while the rest of the row keeps the row's own size")
@@ -1936,6 +1947,127 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		options.Debuffs.ShowCrowdControl = false
 		options.Debuffs.ColorByDispelType = true
 		DropRaidFrame(38)
+	end)
+end)
+
+fw.describe("Frame Auras - the priority debuffs in the row", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.Dispellable = false
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+	end)
+
+	fw.it("draws them in a group of their own, sized like the crowd control ahead of it", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(17)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the crowd control group")
+		local priority = assert(row._groups[DEBUFF_PRIORITY_GROUP], "and the priority debuffs have one of their own")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(cc.layout.layoutIndex < priority.layout.layoutIndex,
+			"they follow the crowd control")
+		assert(priority.layout.layoutIndex < plain.layout.layoutIndex,
+			"and lead the rest of the row")
+
+		local size = plain.layout.elementHeight
+
+		assert(size > 0, "the row has a size to be measured against")
+		assert(math.abs(priority.layout.elementHeight - size * LEAD_SCALE) < 0.01,
+			"drawn at the crowd control size, got " .. tostring(priority.layout.elementHeight))
+		assert(priority.layout.elementHeight == cc.layout.elementHeight,
+			"which is the same size, not merely a larger one")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(17)
+	end)
+
+	fw.it("carries its own budget, so the line the row wraps at still holds what the player asked for", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		-- A row wide enough and deep enough for the two scaled groups to buy a whole extra icon
+		-- between them, which is what a budget as big as the row's did.
+		options.Debuffs.PerRow = 4
+		options.Debuffs.MaxIcons = 4
+
+		local fresh = NewRaidFrame(20)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local priority = assert(row._groups[DEBUFF_PRIORITY_GROUP], "the row carries the priority group")
+
+		assert(priority.maxFrameCount == LEAD_MAX_ICONS,
+			"the group takes its own cap, not the row's, got " .. tostring(priority.maxFrameCount))
+
+		-- What a row of plain icons alone would wrap at. The scaled groups add to it, and the whole
+		-- point of the cap is how much.
+		local size = row._groups[DEBUFF_GROUP].layout.elementHeight
+		local plain = options.Debuffs.PerRow * (size + ICON_SPACING)
+
+		assert(row._flowMaxLineSize > plain, "the larger icons widen the line they wrap at")
+		assert(row._flowMaxLineSize < plain + size + ICON_SPACING,
+			"but never by a whole icon and its gap, or a full line takes one more than the player asked for, got "
+				.. tostring(row._flowMaxLineSize - plain))
+
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.PerRow = dbDefaults.Modules.FrameAuras.Debuffs.PerRow
+		options.Debuffs.MaxIcons = dbDefaults.Modules.FrameAuras.Debuffs.MaxIcons
+		DropRaidFrame(20)
+	end)
+
+	fw.it("asks the engine for the priority flag, and leaves the rest of the row without it", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(18)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local priority = assert(row._groups[DEBUFF_PRIORITY_GROUP], "the row carries the priority group")
+		local filters = assert(priority.candidateFilters, "which the engine is handed a filter set for")
+
+		-- The flag has no filter-string token behind it, so the partition can only be made here.
+		assert(filters.isPriorityAura == true, "the group takes the priority debuffs and nothing else")
+		assert(priority.filterString:find("!CROWD_CONTROL", 1, true),
+			"a priority stun stays with the crowd control, got " .. tostring(priority.filterString))
+		AssertPlainHalf(assert(row._groups[DEBUFF_GROUP].candidateFilters,
+			"and the rest of the row carries the other half of the partition"))
+
+		DropRaidFrame(18)
+	end)
+
+	fw.it("narrows them by whatever the rest of the row is narrowed by", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShortOnly = true
+
+		local fresh = NewRaidFrame(19)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local priority = assert(row._groups[DEBUFF_PRIORITY_GROUP], "the row carries the priority group")
+		local filters = assert(priority.candidateFilters, "with a filter set on it")
+
+		assert(filters.maxDuration == 60,
+			"the two switches on the page are about the row, not about one category of it")
+		assert(filters.isPriorityAura == true, "without losing the partition")
+
+		options.Debuffs.ShortOnly = false
+		DropRaidFrame(19)
 	end)
 end)
 
