@@ -54,6 +54,7 @@ local groups = {
 			41635, -- Prayer of Mending
 			194384, -- Atonement
 			17, -- Power Word: Shield
+			1253593, -- Void Shield
 		},
 	},
 	{
