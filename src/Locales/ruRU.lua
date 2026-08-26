@@ -518,7 +518,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Frame Auras"] = "Эффекты на рамках",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Заменяет ряд усилений Blizzard в правом нижнем углу каждой рамки группы и рейда.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Заменяет ряд ослаблений Blizzard в левом нижнем углу каждой рамки группы и рейда.",
-	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner, though in combat the game keeps that to what is worth seeing on a raid frame."] = "Список, из которого берёт заклинания переключатель \"С фильтром\" ряда усилений. Если он выключен, в угол попадают все усиления, но в бою игра ограничивает это теми, что считает достойными показа в рамке рейда.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "Список, из которого берёт заклинания переключатель \"С фильтром\" ряда усилений. Если он выключен, в угол попадают все усиления.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Пропускает в этот ряд усиления, отмеченные игрой как важные. По умолчанию выключено, так как Важные ауры уже их показывают.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Пропускает в этот ряд защитные умения. По умолчанию выключено, так как Важные ауры уже их показывают.",
 	["Show numbers"] = "Показывать цифры",

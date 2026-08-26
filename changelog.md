@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the frame aura buff row dropping buffs once a fight started, Earth Shield among them. What the Buffs tab's own switches allow is now all that narrows the row.
+
 ## 5.23.0
 
 - Added new Frame Auras module to replace Blizzard's and fix the overlap issue.

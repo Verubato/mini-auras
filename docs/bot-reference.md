@@ -653,9 +653,6 @@ switching it off puts the remembered value back. The cvar is only written when t
 turned Blizzard's buffs off themselves never gets them handed back. The write waits for combat to
 end, because flipping it makes the client rebuild the raid frames.
 
-Once a fight starts the game narrows this row to the buffs it rates as worth seeing on a raid
-frame, whatever the switches below say. Out of combat nothing is held back on those grounds.
-
 - Icon size 25-50 (percent of the frame's own height, default 35), max icons 1-9 (default 6),
   icons per row 1-6 (default 3).
 - **Filtered** (on) - show only the spells ticked on the Spells tab. Off shows every buff that gets
@@ -707,10 +704,9 @@ anything. A class that brings no group buff sees a line saying so and nothing to
   the buff and debuff rows take.
 
 **Spells sub-tab.** The buff whitelist the Buffs tab's **Filtered** switch draws from; with that
-switch off, every buff reaches the corner, though in combat the game still keeps that to what is
-worth seeing on a raid frame. A sidebar of sections, one per class
-that has tracked heal-over-time or shield spells, then Custom. Each spell is a checkbox with its
-icon. Custom IDs are added in the Custom section via the Spell ID box and removed with the cross
+switch off, every buff reaches the corner. A sidebar of sections, one per class that has tracked
+heal-over-time or shield spells, then Custom. Each spell is a checkbox with its icon. Custom IDs are
+added in the Custom section via the Spell ID box and removed with the cross
 button. Only differences from the curated list are saved, so an updated curated list still reaches
 existing profiles.
 
@@ -1366,11 +1362,9 @@ puts back the value it found. The write waits for combat to end, because flippin
 client rebuild the raid frames, so a switch thrown mid-fight lands when the fight does. A player who
 had already turned Blizzard's row off themselves never gets it handed back.
 
-**"The frame aura buff row is empty in a fight."** Both **Filtered** and **Mine** ship on, so the
-row starts as your own tracked heal-over-times and shields. On top of that the game narrows the row
-in combat to what it rates as worth seeing on a raid frame, whatever those switches say. Turn
-Filtered off for every buff the other switches allow, and add the spell in Frame Auras > Spells >
-Custom to keep the whitelist.
+**"The frame aura buff row is empty."** Both **Filtered** and **Mine** ship on, so the row starts as
+your own tracked heal-over-times and shields. Turn Filtered off for every buff the other switches
+allow, and add the spell in Frame Auras > Spells > Custom to keep the whitelist.
 
 **"The missing buff mark never shows."** **Instances only** ships on, so the mark waits for an
 instance and treats a house as the open world. A class that brings no group buff (anything but

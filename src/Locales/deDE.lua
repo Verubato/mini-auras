@@ -518,7 +518,7 @@ L:RegisterLocale("deDE", function() return {
 	["Frame Auras"] = "Rahmenauren",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Ersetzt Blizzards Stärkungszauber-Reihe, in der unteren rechten Ecke jedes Gruppen- und Schlachtzugsfensters.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Ersetzt Blizzards Schwächungszauber-Reihe, in der unteren linken Ecke jedes Gruppen- und Schlachtzugsfensters.",
-	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner, though in combat the game keeps that to what is worth seeing on a raid frame."] = "Die Liste, aus der sich der Schalter \"Gefiltert\" der Buff-Reihe bedient. Ist er aus, erreicht jeder Buff die Ecke, im Kampf beschränkt sich das jedoch auf das, was das Spiel auf einem Schlachtzugsfenster für sehenswert hält.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "Die Liste, aus der sich der Schalter \"Gefiltert\" der Buff-Reihe bedient. Ist er aus, erreicht jeder Buff die Ecke.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lässt die vom Spiel als wichtig markierten Stärkungszauber in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lässt defensive Abklingzeiten in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
 	["Show numbers"] = "Zahlen zeigen",

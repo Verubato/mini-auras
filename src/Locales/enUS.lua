@@ -519,7 +519,7 @@ L:SetDefaultStrings({
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame.",
 	["Frame Auras"] = "Frame Auras",
-	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner, though in combat the game keeps that to what is worth seeing on a raid frame."] = "The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner, though in combat the game keeps that to what is worth seeing on a raid frame.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner.",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them.",
 	["Show numbers"] = "Show numbers",

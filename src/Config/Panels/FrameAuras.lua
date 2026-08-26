@@ -570,7 +570,7 @@ local function BuildSpells(content)
 	local blurb = mini:TextBlock({
 		Parent = content,
 		Lines = {
-			L["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner, though in combat the game keeps that to what is worth seeing on a raid frame."],
+			L["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."],
 		},
 	})
 

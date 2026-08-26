@@ -1662,7 +1662,7 @@ fw.describe("Frame Auras - what the buff row lets through", function()
 		partyAuras:Refresh()
 	end)
 
-	fw.it("asks the engine what a fight is worth showing, whoever cast the buff", function()
+	fw.it("narrows the row by its own switches alone, whoever cast the buff", function()
 		options.Buffs.Enabled = true
 
 		local fresh = NewRaidFrame(26)
@@ -1673,21 +1673,24 @@ fw.describe("Frame Auras - what the buff row lets through", function()
 		local row = assert(GroupRowOn(fresh, PARTY_BUFF_GROUP), "the frame got a buff row")
 		local group = row._groups[PARTY_BUFF_GROUP]
 
-		assert(group.filterString:find("RAID_IN_COMBAT", 1, true),
-			"the row hands the question over, got " .. group.filterString)
+		assert(group.filterString:find("PLAYER", 1, true),
+			"the mine switch reaches the group, got " .. group.filterString)
+
+		-- The engine's own combat narrowing drops buffs the switches above it allow.
+		assert(not group.filterString:find("RAID_IN_COMBAT", 1, true),
+			"and a fight takes nothing out of the row, got " .. group.filterString)
 
 		-- The "mine" half is a spelling of its own, so a token on one and not the other goes
 		-- missing for everyone who turns that switch off.
 		options.Buffs.Mine = false
 		partyAuras:Refresh()
 
-		assert(group.filterString:find("RAID_IN_COMBAT", 1, true),
-			"on the everyone-else spelling too, got " .. group.filterString)
-
-		-- The mine-only string carries the token as well, so the check above passes on a stale one.
 		-- Losing PLAYER is what proves the refresh published the other spelling.
 		assert(not group.filterString:find("PLAYER", 1, true),
 			"the switch reached the group, got " .. group.filterString)
+
+		assert(not group.filterString:find("RAID_IN_COMBAT", 1, true),
+			"on the everyone-else spelling too, got " .. group.filterString)
 
 		-- Alongside the negation the defensive switch adds, or a defensive would be drawn both here
 		-- and on the Important Auras row.
