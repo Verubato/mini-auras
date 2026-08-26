@@ -58,6 +58,20 @@ function M:BlizzardFrames(visibleOnly, frames)
 	end
 end
 
+---Whether a frame is one of Blizzard's standard party frames, the ones outside the raid-style
+---layout. They draw no auras at all, so nothing that sizes an aura display should copy one.
+---@param frame table
+---@return boolean
+function M:IsStandardPartyFrame(frame)
+	if not M:IsBlizzardPartyFrame(frame) then
+		return false
+	end
+
+	local name = frame:GetName()
+
+	return name == nil or string.find(name, "CompactPartyFrame") == nil
+end
+
 ---Appends the Blizzard standard (non-compact) party frames.
 ---@param visibleOnly boolean
 ---@param frames table Frames are appended here.

@@ -265,6 +265,7 @@ end)
 -- The measurement reads UIParent's scale and the shared stub has no UIParent. Handed back at the
 -- bottom of the file, since the later files in the run share these globals.
 local realUIParent = _G.UIParent
+local realPartyFrame = _G.PartyFrame
 local uiScale = 1
 
 _G.UIParent = {
@@ -272,6 +273,9 @@ _G.UIParent = {
 		return uiScale
 	end,
 }
+
+-- Blizzard's standard party frames carry no name, so their parent is what marks them out.
+_G.PartyFrame = {}
 
 ---An anchor carrying what the measurement reads off a real frame: its size, and the scale its
 ---addon draws it at. The shared frame stub has neither.
@@ -290,6 +294,9 @@ local function NewSizedAnchor(name, width, height, scale)
 		GetName = function()
 			return name
 		end,
+		GetParent = function()
+			return nil
+		end,
 		GetWidth = function()
 			return width
 		end,
@@ -300,6 +307,18 @@ local function NewSizedAnchor(name, width, height, scale)
 			return scale
 		end,
 	}
+end
+
+---One of Blizzard's standard party frames, which are told apart by their parent rather than by
+---name.
+---@param name string
+---@param width number
+---@param height number
+local function NewPartyFrameAnchor(name, width, height)
+	NewSizedAnchor(name, width, height, 1)
+	_G[name].GetParent = function()
+		return _G.PartyFrame
+	end
 end
 
 fw.describe("Frames:GetTestFrameSize", function()
@@ -349,11 +368,57 @@ fw.describe("Frames:GetTestFrameSize", function()
 		assert(height == 72, "and the built-in height, got " .. height)
 	end)
 
-	-- Copying Blizzard's leftovers would reproduce the very mismatch the stand-ins are meant to
-	-- avoid.
-	fw.it("passes over a hidden Blizzard frame for the frame addon's", function()
+	fw.it("takes what is on screen over what is hidden", function()
+		NewSizedAnchor("TestHiddenAnchor", 200, 90, 1)
+		_G.TestHiddenAnchor.IsVisible = function()
+			return false
+		end
+
+		NewSizedAnchor("TestShownAnchor", 96, 40, 1)
+		db.Anchor1 = "TestHiddenAnchor"
+		db.Anchor2 = "TestShownAnchor"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 96, "the frame the player can see wins, got " .. width)
+		assert(height == 40, "and its height, got " .. height)
+	end)
+
+	-- The standard ones draw no auras, so their size says nothing about where an icon will land.
+	-- 150x75 rather than the 144x72 fallback, so a run that rejected every anchor cannot pass.
+	fw.it("never copies Blizzard's standard party frames", function()
+		NewPartyFrameAnchor("StandardPartyStub", 120, 53)
+		NewSizedAnchor("CompactPartyFrameStub", 150, 75, 1)
+		db.Anchor1 = "StandardPartyStub"
+		db.Anchor2 = "CompactPartyFrameStub"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 150, "the raid-style frames are the ones that count, got " .. width)
+		assert(height == 75, "at their own height, got " .. height)
+	end)
+
+	fw.it("falls back to its own size when only standard party frames exist", function()
+		NewPartyFrameAnchor("StandardPartyStub", 120, 53)
+		db.Anchor1 = "StandardPartyStub"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 144, "the built-in width stands in, got " .. width)
+		assert(height == 72, "and the built-in height, got " .. height)
+	end)
+
+	-- A frame addon's own frames are what its user sees in a group, so Blizzard's leftovers lose
+	-- to them while both are hidden.
+	fw.it("prefers a frame addon's hidden frames to Blizzard's", function()
 		NewSizedAnchor("CompactRaidFrameTestStub", 72, 36, 1)
 		NewSizedAnchor("TestAddonFrameStub", 120, 50, 1)
+		_G.CompactRaidFrameTestStub.IsVisible = function()
+			return false
+		end
+		_G.TestAddonFrameStub.IsVisible = function()
+			return false
+		end
 		db.Anchor1 = "CompactRaidFrameTestStub"
 		db.Anchor2 = "TestAddonFrameStub"
 
@@ -362,16 +427,7 @@ fw.describe("Frames:GetTestFrameSize", function()
 		assert(width == 120, "the frame addon's width wins, got " .. width)
 		assert(height == 50, "and its height, got " .. height)
 	end)
-
-	fw.it("copies a Blizzard frame when that is all there is", function()
-		NewSizedAnchor("CompactRaidFrameTestStub", 72, 36, 1)
-		db.Anchor1 = "CompactRaidFrameTestStub"
-
-		local width, height = frames:GetTestFrameSize()
-
-		assert(width == 72, "the second pass takes it, got " .. width)
-		assert(height == 36, "at its own height, got " .. height)
-	end)
 end)
 
 _G.UIParent = realUIParent
+_G.PartyFrame = realPartyFrame

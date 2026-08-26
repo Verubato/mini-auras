@@ -26,6 +26,9 @@ local testFramesContainer = nil
 local testArenaContainer = nil
 -- The measuring walk's own list, so it never shares a table with a walk that is still running.
 local measureScratch = {}
+-- What the player can see beats a frame addon's own, which beats Blizzard's leftovers. Filled
+-- below, once the predicates exist.
+local MEASURE_TIERS
 
 ---The stand-in's caption in the configured face, keeping the template's size and flags. Applied
 ---again every time the column is shown, because the frames outlive a font change.
@@ -98,17 +101,36 @@ local function ScreenSize(frame)
 	return width * ratio, height * ratio
 end
 
----The first frame in the list worth copying. Blizzard's own are held back for a second pass,
----since they are still there, hidden, under a frame addon that replaced them.
+---@param anchor table
+---@return boolean
+local function Shown(anchor)
+	return (anchor.IsVisible and anchor:IsVisible()) == true
+end
+
+---@param anchor table
+---@return boolean
+local function NotBlizzards(anchor)
+	return not M:IsFriendlyCuf(anchor)
+end
+
+---@return boolean
+local function Anything()
+	return true
+end
+
+MEASURE_TIERS = { Shown, NotBlizzards, Anything }
+
+---The size of the first frame a tier accepts. Blizzard's standard party frames are never one,
+---whichever tier asks.
 ---@param anchors table
----@param skipBlizzard boolean
+---@param wanted fun(anchor: table): boolean
 ---@return number? width
 ---@return number? height
-local function FirstUsableSize(anchors, skipBlizzard)
+local function FirstUsableSize(anchors, wanted)
 	for i = 1, #anchors do
 		local anchor = anchors[i]
 
-		if not (skipBlizzard and M:IsFriendlyCuf(anchor)) then
+		if wanted(anchor) and not M:IsStandardPartyFrame(anchor) then
 			local width, height = ScreenSize(anchor)
 
 			if width then
@@ -227,19 +249,22 @@ local function LayoutTestFrames()
 end
 
 ---The size a party stand-in takes, copied from a real party frame so an icon placed on one lands
----where it will in a group. Hidden frames count, since the stand-ins only come out when nothing
----real is on screen.
+---where it will in a group. A hidden frame will do, since the stand-ins only come out when
+---nothing real is on screen.
 ---@return number width
 ---@return number height
 function M:GetTestFrameSize()
 	local anchors = M:GetAll(false, false, measureScratch)
-	local width, height = FirstUsableSize(anchors, true)
 
-	if not width then
-		width, height = FirstUsableSize(anchors, false)
+	for i = 1, #MEASURE_TIERS do
+		local width, height = FirstUsableSize(anchors, MEASURE_TIERS[i])
+
+		if width then
+			return width, height
+		end
 	end
 
-	return width or FRAME_WIDTH, height or FRAME_HEIGHT
+	return FRAME_WIDTH, FRAME_HEIGHT
 end
 
 function M:CreateTestFrames()
