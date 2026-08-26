@@ -527,6 +527,8 @@ L:RegisterLocale("koKR", function() return {
 	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "적에게서 해제할 수 있는 버프를 발광시키고, 줄의 맨 앞에 배치합니다.",
 	["The colour a buff you can take off an enemy lights up in."] = "적에게서 해제할 수 있는 버프가 발광하는 색상입니다.",
 	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "경보 알림을 위한 한국어 음성 팩이 나왔습니다: CurseForge의 MiniAuras - Korean Voice Pack. 설치하면 주문 이름을 한국어로 들을 수 있습니다.",
+	["There is now a French voice pack for the alert announcements: MiniAuras - French Voice Pack, on CurseForge. Install it to hear the spell names spoken in French."] = "경보 알림을 위한 프랑스어 음성 팩이 나왔습니다: CurseForge의 MiniAuras - French Voice Pack. 설치하면 주문 이름을 프랑스어로 들을 수 있습니다.",
+	["There is now a Spanish voice pack for the alert announcements: MiniAuras - Spanish Voice Pack, on CurseForge. Install it to hear the spell names spoken in Spanish."] = "경보 알림을 위한 스페인어 음성 팩이 나왔습니다: CurseForge의 MiniAuras - Spanish Voice Pack. 설치하면 주문 이름을 스페인어로 들을 수 있습니다.",
 	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "중국어 음성 Amy, Anna Su, Jason Chen이 별도의 애드온으로 옮겨졌습니다: CurseForge의 MiniAuras - Chinese Voice Pack. 계속 사용하려면 설치하세요.",
 	["Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it."] = "공격대 프레임에서 블리자드의 버프와 디버프가 겹쳐서 불편하셨나요? 새로운 프레임 오라 모듈을 켜면 해결됩니다.",
 } end)

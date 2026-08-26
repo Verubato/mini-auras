@@ -1618,6 +1618,31 @@ fw.describe("Migrator - the v75 voice pack notes", function()
 		assert(vars.Version == 75)
 	end)
 
+	fw.it("points a French client at the new pack", function()
+		wow.setLocale("frFR")
+
+		local vars = { Version = 74, NotifiedChanges = true }
+
+		assert(migrator:UpgradeToVersion75(vars) == true)
+		assert(#vars.WhatsNew == 1, "one note queued")
+		assert(vars.WhatsNew[1]:find("MiniAuras - French Voice Pack", 1, true), vars.WhatsNew[1])
+		assert(vars.NotifiedChanges == false, "the dialog has to open again")
+		assert(vars.Version == 75)
+	end)
+
+	fw.it("points both Spanish clients at the new pack", function()
+		for _, locale in ipairs({ "esES", "esMX" }) do
+			wow.setLocale(locale)
+
+			local vars = { Version = 74, NotifiedChanges = true }
+
+			assert(migrator:UpgradeToVersion75(vars) == true)
+			assert(#vars.WhatsNew == 1, locale .. " queued one note")
+			assert(vars.WhatsNew[1]:find("MiniAuras - Spanish Voice Pack", 1, true), locale .. ": " .. vars.WhatsNew[1])
+			assert(vars.NotifiedChanges == false, locale .. " has to open the dialog again")
+		end
+	end)
+
 	fw.it("tells both Chinese clients where the Mandarin voices went", function()
 		for _, locale in ipairs({ "zhCN", "zhTW" }) do
 			wow.setLocale(locale)
@@ -1631,8 +1656,8 @@ fw.describe("Migrator - the v75 voice pack notes", function()
 		end
 	end)
 
-	fw.it("says nothing to a client offered neither pack", function()
-		wow.setLocale("enUS")
+	fw.it("says nothing to a client offered no pack of its own", function()
+		wow.setLocale("deDE")
 
 		local vars = { Version = 74, NotifiedChanges = true }
 

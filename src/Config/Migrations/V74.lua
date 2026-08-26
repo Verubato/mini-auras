@@ -127,6 +127,10 @@ function M:UpgradeToVersion75(vars)
 	-- Only the locales a pack is offered to get a note; the silence elsewhere is deliberate.
 	if locale == "koKR" then
 		note = L["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."]
+	elseif locale == "frFR" then
+		note = L["There is now a French voice pack for the alert announcements: MiniAuras - French Voice Pack, on CurseForge. Install it to hear the spell names spoken in French."]
+	elseif locale == "esES" or locale == "esMX" then
+		note = L["There is now a Spanish voice pack for the alert announcements: MiniAuras - Spanish Voice Pack, on CurseForge. Install it to hear the spell names spoken in Spanish."]
 	elseif locale == "zhCN" or locale == "zhTW" then
 		note = L["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."]
 	end

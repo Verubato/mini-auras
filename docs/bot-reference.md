@@ -744,10 +744,12 @@ Bloodshed, Dark Simulacrum, Duel, Sharpen Blade, and, since 5.18.0, Colossus Sma
 English packs announce as just "Smash". Five packs ship: David, Elise, Emma, Grampa Werthers, Theo Silk. Default pack: David.
 Other addons can register packs via the API, and the localized voices are separate addons that
 do exactly that: "MiniAuras - Chinese Voice Pack" (folder MiniAurasVoicePackChinese; Amy,
-Anna Su, Jason Chen, on zhCN/zhTW) and "MiniAuras - Korean Voice Pack" (folder
-MiniAurasVoicePackKorean; Hyuk, Rosa Oh, on koKR). The Mandarin three shipped inside MiniAuras
-itself until they moved out; the clips are unchanged and a saved voice comes back once that
-addon is installed. The clips are baked
+Anna Su, Jason Chen, on zhCN/zhTW), "MiniAuras - Korean Voice Pack" (folder
+MiniAurasVoicePackKorean; Hyuk, Rosa Oh, on koKR), "MiniAuras - French Voice Pack" (folder
+MiniAurasVoicePackFrench; Nicolas, Adina, on frFR), and "MiniAuras - Spanish Voice Pack"
+(folder MiniAurasVoicePackSpanish; Miguel, Kate, on esES/esMX). The Mandarin three shipped
+inside MiniAuras itself until they moved out; the clips are unchanged and a saved voice comes
+back once that addon is installed. The clips are baked
 OGG files registered engine-side per spell ID; after updating the addon a full client restart
 (not just a reload) is needed before new audio files can play.
 

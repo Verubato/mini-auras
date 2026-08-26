@@ -528,5 +528,7 @@ L:RegisterLocale("zhTW", function() return {
 	["The colour a buff you can take off an enemy lights up in."] = "你可以從敵人身上驅散的增益發光時的顏色。",
 	["The Mandarin voices Amy, Anna Su, and Jason Chen have moved into their own addon: MiniAuras - Chinese Voice Pack, on CurseForge. Install it to keep using them."] = "中文語音 Amy、Anna Su 和 Jason Chen 已移到獨立插件中：CurseForge 上的 MiniAuras - Chinese Voice Pack。安裝後即可繼續使用。",
 	["There is now a Korean voice pack for the alert announcements: MiniAuras - Korean Voice Pack, on CurseForge. Install it to hear the spell names spoken in Korean."] = "現在有了用於警報播報的韓語語音包：CurseForge 上的 MiniAuras - Korean Voice Pack。安裝後即可用韓語聽到法術名稱。",
+	["There is now a French voice pack for the alert announcements: MiniAuras - French Voice Pack, on CurseForge. Install it to hear the spell names spoken in French."] = "現在有了用於警報播報的法語語音包：CurseForge 上的 MiniAuras - French Voice Pack。安裝後即可用法語聽到法術名稱。",
+	["There is now a Spanish voice pack for the alert announcements: MiniAuras - Spanish Voice Pack, on CurseForge. Install it to hear the spell names spoken in Spanish."] = "現在有了用於警報播報的西班牙語語音包：CurseForge 上的 MiniAuras - Spanish Voice Pack。安裝後即可用西班牙語聽到法術名稱。",
 	["Tired of Blizzard buffs and debuffs overlapping on raid frames? Enable the new Frame Auras module to fix it."] = "厭倦了暴雪的增益與減益在團隊框架上互相重疊？啟用新的框架光環模組即可解決。",
 } end)
