@@ -19,6 +19,7 @@ local groups = {
 			290754, -- Lifebloom (Full Bloom)
 			8936, -- Regrowth
 			48438, -- Wild Growth
+			439530, -- Symbiotic Blooms
 		},
 	},
 	{
