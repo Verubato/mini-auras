@@ -315,6 +315,8 @@ L:RegisterLocale("koKR", function() return {
 	["Miscellaneous_Short"] = "기타 설정",
 	["Configure Blizzard Nameplates"] = "블리자드 네임플레이트 설정",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "MiniAuras 이름표 사용 시 블리자드 이름표의 CC와 BigDebuffs를 비활성화합니다.",
+	["Show Test Labels"] = "테스트 라벨 표시",
+	["Names each module above its test icons. Turn it off when the names overlap each other."] = "테스트 아이콘 위에 각 모듈의 이름을 표시합니다. 이름이 겹치면 끄십시오.",
 
 	-- General home screen
 

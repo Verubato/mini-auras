@@ -9,6 +9,7 @@ local dbDefaults = addon.Config.Defaults
 local fonts = addon.Core.Fonts
 local config = addon.Config
 local moduleName = addon.Utils.ModuleName
+local moduleUtil = addon.Utils.ModuleUtil
 ---@class MiscellaneousConfig
 local M = {}
 addon.Config.Miscellaneous = M
@@ -115,6 +116,29 @@ function M:Build(panel)
 	})
 
 	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local showTestLabelsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show Test Labels"],
+		Tooltip = L["Names each module above its test icons. Turn it off when the names overlap each other."],
+		GetValue = function()
+			return db.ShowTestLabels ~= false
+		end,
+		SetValue = function(value)
+			db.ShowTestLabels = value
+
+			-- Swept rather than left to the refresh, so a caption whose module is not redrawn
+			-- still goes away.
+			if not value then
+				moduleUtil:HideAllTestLabels()
+			end
+
+			addon:Refresh()
+		end,
+	})
+
+	showTestLabelsChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	showTestLabelsChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
 
 	local iconsDivider = mini:Divider({
 		Parent = panel,

@@ -315,6 +315,8 @@ L:RegisterLocale("zhCN", function() return {
 	["Miscellaneous_Short"] = "杂项",
 	["Configure Blizzard Nameplates"] = "配置暴雪姓名板",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "使用MiniAuras姓名板时，在暴雪姓名板上禁用CC和BigDebuffs。",
+	["Show Test Labels"] = "显示测试标签",
+	["Names each module above its test icons. Turn it off when the names overlap each other."] = "在每个模块的测试图标上方标注模块名称。名称重叠时可以关闭。",
 
 	-- General home screen
 

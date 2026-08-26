@@ -36,6 +36,9 @@ local dbDefaults = {
 		Over60s = { R = 1, G = 1, B = 1 },
 	},
 	LocaleOverride = false,
+	-- Not a profile payload key. Whether the test captions are wanted is about the screen they
+	-- would crowd, not about the group the profile is for.
+	ShowTestLabels = true,
 	-- What Blizzard's own party and raid frame aura rows were set to before Frame Auras took one
 	-- over, so switching that side back off puts the client where it found it. False until a side is
 	-- switched on, and false again once it has been handed back. Written by the module.

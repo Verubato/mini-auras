@@ -315,6 +315,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Miscellaneous_Short"] = "Разное",
 	["Configure Blizzard Nameplates"] = "Настройка табличек",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Отключает CC и BigDebuffs на табличках Blizzard при использовании табличек MiniAuras.",
+	["Show Test Labels"] = "Показывать метки теста",
+	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Подписывает каждый модуль над его тестовыми значками. Отключите, когда названия перекрываются.",
 
 	-- General home screen
 

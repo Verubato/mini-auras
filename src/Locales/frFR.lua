@@ -315,6 +315,8 @@ L:RegisterLocale("frFR", function() return {
 	["Miscellaneous_Short"] = "Divers",
 	["Configure Blizzard Nameplates"] = "Configurer les nameplates Blizzard",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Désactive les CC et BigDebuffs sur les nameplates Blizzard si vous utilisez celles de MiniAuras.",
+	["Show Test Labels"] = "Afficher les libellés de test",
+	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nomme chaque module au-dessus de ses icônes de test. Désactivez-le quand les noms se chevauchent.",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Ajout des icônes de CC sur les cadres de familiers (désactivé par défaut).",

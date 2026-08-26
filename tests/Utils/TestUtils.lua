@@ -265,6 +265,127 @@ fw.describe("ModuleUtil", function()
 	end)
 end)
 
+fw.describe("ModuleUtil:SetTestLabel", function()
+	local moduleUtil, db
+
+	---Stands in for a module's test container, which is the only thing a caption is ever built on.
+	local function newFrame()
+		local function createFontString()
+			local label = { Shown = false }
+
+			label.SetPoint = function() end
+
+			label.SetText = function(_, text)
+				label.Text = text
+			end
+
+			label.SetShown = function(_, shown)
+				label.Shown = shown
+			end
+
+			label.Hide = function()
+				label.Shown = false
+			end
+
+			return label
+		end
+
+		return { CreateFontString = createFontString }
+	end
+
+	---@param showTestLabels boolean? What the profile holds, nil for one that predates the setting.
+	local function setup(showTestLabels)
+		db = { Modules = {}, ShowTestLabels = showTestLabels }
+
+		local addon = newAddon(db)
+		addon.Core.InstanceOptions = {
+			GetTestIsRaid = function()
+				return nil
+			end,
+		}
+		addon.Utils.FontUtil = { Apply = function() end }
+
+		loadModule("src/Utils/ModuleUtil.lua", addon)
+		moduleUtil = addon.Utils.ModuleUtil
+		moduleUtil:Init()
+	end
+
+	fw.it("captions a frame while the setting is on", function()
+		setup(true)
+
+		local frame = newFrame()
+		moduleUtil:SetTestLabel(frame, "Alerts")
+
+		fw.not_nil(frame.MiniAurasTestLabel, "the caption was built")
+		assert(frame.MiniAurasTestLabel.Shown, "and it is on screen")
+		assert(frame.MiniAurasTestLabel.Text == "Alerts", "carrying the name it was given")
+	end)
+
+	fw.it("draws no caption while the setting is off", function()
+		setup(false)
+
+		local frame = newFrame()
+		moduleUtil:SetTestLabel(frame, "Alerts")
+
+		assert(not frame.MiniAurasTestLabel.Shown, "the caption stayed off the screen")
+	end)
+
+	-- The position editor titles itself from the caption, so the name has to outlive the setting
+	-- that stops it being drawn.
+	fw.it("names the frame even while the setting is off", function()
+		setup(false)
+
+		local frame = newFrame()
+		moduleUtil:SetTestLabel(frame, "Alerts")
+
+		assert(frame.MiniAurasTestLabel.MiniAurasNamed, "the frame still knows its name")
+		assert(frame.MiniAurasTestLabel.Text == "Alerts", "and what the name is")
+	end)
+
+	fw.it("forgets the name once the caption is taken down", function()
+		setup(true)
+
+		local frame = newFrame()
+		moduleUtil:SetTestLabel(frame, "Alerts")
+		moduleUtil:SetTestLabel(frame, nil)
+
+		assert(not frame.MiniAurasTestLabel.MiniAurasNamed, "nothing is named on this frame now")
+	end)
+
+	fw.it("forgets every name on the sweep test mode stops with", function()
+		setup(true)
+
+		local frame = newFrame()
+		moduleUtil:SetTestLabel(frame, "Alerts")
+		moduleUtil:HideAllTestLabels()
+
+		assert(not frame.MiniAurasTestLabel.Shown, "the caption came down")
+		assert(not frame.MiniAurasTestLabel.MiniAurasNamed, "and took the name with it")
+	end)
+
+	fw.it("takes down a caption already up once the setting goes off", function()
+		setup(true)
+
+		local frame = newFrame()
+		moduleUtil:SetTestLabel(frame, "Alerts")
+
+		db.ShowTestLabels = false
+		moduleUtil:SetTestLabel(frame, "Alerts")
+
+		assert(not frame.MiniAurasTestLabel.Shown, "the caption came down")
+	end)
+
+	fw.it("captions a profile that predates the setting", function()
+		setup(nil)
+
+		local frame = newFrame()
+		moduleUtil:SetTestLabel(frame, "Alerts")
+
+		fw.not_nil(frame.MiniAurasTestLabel, "the caption was built")
+		assert(frame.MiniAurasTestLabel.Shown, "and it is on screen")
+	end)
+end)
+
 fw.describe("ModuleUtil:GetIconSize", function()
 	local moduleUtil = loadModule("src/Utils/ModuleUtil.lua", newAddon({ Modules = {} })).Utils.ModuleUtil
 

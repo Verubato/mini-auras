@@ -98,7 +98,9 @@ end
 local function TestLabelText(frame)
 	local label = frame.MiniAurasTestLabel
 
-	if not label or not label:IsShown() then
+	-- Not IsShown: the setting that keeps a caption off the screen must not take the name off
+	-- the editor as well.
+	if not label or not label.MiniAurasNamed then
 		return nil
 	end
 
@@ -513,8 +515,11 @@ function M:SetTestLabel(frame, text)
 		addon.Utils.FontUtil:Apply(label)
 
 		label:SetText(text)
-		label:Show()
+		label.MiniAurasNamed = true
+		-- The one gate for the setting, since every module's caption comes through here.
+		label:SetShown(not db or db.ShowTestLabels ~= false)
 	elseif label then
+		label.MiniAurasNamed = false
 		label:Hide()
 	end
 end
@@ -522,6 +527,7 @@ end
 ---Hides every test caption ever shown, the one teardown TestModeManager runs on stop.
 function M:HideAllTestLabels()
 	for _, label in ipairs(testLabels) do
+		label.MiniAurasNamed = false
 		label:Hide()
 	end
 end

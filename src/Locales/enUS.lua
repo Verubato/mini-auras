@@ -316,6 +316,8 @@ L:SetDefaultStrings({
 	["Miscellaneous_Short"] = "Misc",
 	["Configure Blizzard Nameplates"] = "Configure Blizzard Nameplates",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates.",
+	["Show Test Labels"] = "Show Test Labels",
+	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Names each module above its test icons. Turn it off when the names overlap each other.",
 
 	-- General home screen
 

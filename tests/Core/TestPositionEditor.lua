@@ -51,6 +51,45 @@ local function Click(frame)
 	frame._scripts.OnMouseUp(frame, "LeftButton")
 end
 
+fw.describe("MakeMovable - the heading the editor opens under", function()
+	fw.before_each(function()
+		for i = #opened, 1, -1 do
+			opened[i] = nil
+		end
+
+		env.db.ShowTestLabels = true
+	end)
+
+	fw.it("titles the editor with the caption the module put up", function()
+		local frame = NewMovable()
+
+		moduleUtil:SetTestLabel(frame, "Alerts")
+		Click(frame)
+
+		assert(opened[1] and opened[1].Title == "Alerts", "the editor names the frame it is placing")
+	end)
+
+	fw.it("keeps the heading once the captions are switched off", function()
+		local frame = NewMovable()
+
+		env.db.ShowTestLabels = false
+		moduleUtil:SetTestLabel(frame, "Alerts")
+		Click(frame)
+
+		assert(opened[1] and opened[1].Title == "Alerts", "a setting about the screen left the editor alone")
+	end)
+
+	fw.it("drops the heading for a frame nothing has captioned", function()
+		local frame = NewMovable()
+
+		moduleUtil:SetTestLabel(frame, "Alerts")
+		moduleUtil:HideAllTestLabels()
+		Click(frame)
+
+		assert(opened[1] and opened[1].Title == nil, "no stale name follows the caption down")
+	end)
+end)
+
 fw.describe("MakeMovable - the position editor click", function()
 	fw.before_each(function()
 		for i = #opened, 1, -1 do

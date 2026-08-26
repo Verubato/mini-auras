@@ -315,6 +315,8 @@ L:RegisterLocale("deDE", function() return {
 	["Miscellaneous_Short"] = "Sonstiges",
 	["Configure Blizzard Nameplates"] = "Namenschilder anpassen",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Deaktiviert CC und BigDebuffs auf Blizzard-Namenschildern bei Verwendung von MiniAuras-Namenschildern.",
+	["Show Test Labels"] = "Testbeschriftungen anzeigen",
+	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nennt jedes Modul über seinen Testsymbolen. Schalte es aus, wenn sich die Namen überlappen.",
 
 	-- General home screen
 
