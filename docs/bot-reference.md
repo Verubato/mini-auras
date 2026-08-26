@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.24.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.25.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -631,9 +631,10 @@ takes the Important colour.
 **Spells sub-tab.** "Specify which spells are shown on raid frames." A sidebar of
 sections: one per class, then General (classless spells such as PvP gem effects), then
 Custom. Each spell is a checkbox with its icon and ID. Some curated spells ship switched off
-and are an explicit opt-in. Custom IDs are added in the Custom section via the "Add spell ID"
-box and removed with the cross button. Only differences from the curated list are saved, so
-an updated curated list still reaches existing profiles.
+and are an explicit opt-in. Custom spells are added in the Custom section via the "Add a spell"
+picker, which suggests up to eight matches as you type a name and still takes a whole id nothing
+matched. They are removed with the cross button. Only differences from the curated list are saved,
+so an updated curated list still reaches existing profiles.
 
 ---
 
@@ -678,8 +679,11 @@ end, because flipping it makes the client rebuild the raid frames.
 **Debuffs sub-tab.** Replaces the debuff row, in the bottom left corner growing right and wrapping
 upward.
 Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is ranked
-by the game's own raid frame debuff order, which already leads with encounter mechanics and the
-debuffs it flags as priority.
+by the game's own raid frame debuff order, which already leads with encounter mechanics. The
+debuffs that order flags as priority are pulled into a group of their own since 5.25.0, drawn a
+quarter larger than the rest of the row and capped at two icons on their own budget. There is no
+switch for it: a healer has to see those before anything else on the frame. Crowd control, when it
+is switched on, still leads them.
 
 - Icon size 25-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3).
@@ -697,10 +701,11 @@ The two narrowing switches are about the row rather than a category of it, so a 
 cannot dispel is dropped exactly as a debuff would be. With both off nothing narrows the row at all.
 
 **Missing Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
-class brings (Mark of the Wild, Blessing of the Bronze, Power Word: Fortitude, Skyfury). The mark is
-the buff's own icon, drained of colour, in the frame's top right corner. Unlike the two rows above
-it, this also reaches the standard party frames, since it adds a mark rather than replacing
-anything. A class that brings no group buff sees a line saying so and nothing to configure.
+class brings (Mark of the Wild, Blessing of the Bronze, Arcane Intellect, Power Word: Fortitude,
+Skyfury, and Battle Shout). The mark is the buff's own icon, drained of colour, in the frame's top
+right corner. Unlike the two rows above it, this also reaches the standard party frames, since it
+adds a mark rather than replacing anything. A class that brings no group buff sees a line saying so
+and nothing to configure.
 
 - **Instances only** (on) - only marks a frame inside an instance, where a missing group buff costs
   something. A house counts as the open world.
@@ -709,10 +714,10 @@ anything. A class that brings no group buff sees a line saying so and nothing to
 
 **Spells sub-tab.** The buff whitelist the Buffs tab's **Filtered** switch draws from; with that
 switch off, every buff reaches the corner. A sidebar of sections, one per class that has tracked
-heal-over-time or shield spells, then Custom. Each spell is a checkbox with its icon. Custom IDs are
-added in the Custom section via the Spell ID box and removed with the cross
-button. Only differences from the curated list are saved, so an updated curated list still reaches
-existing profiles.
+heal-over-time or shield spells, then Custom. Each spell is a checkbox with its icon. Custom spells
+are added in the Custom section via the same "Add a spell" picker Important Auras uses, and removed
+with the cross button. Only differences from the curated list are saved, so an updated curated list
+still reaches existing profiles.
 
 A row is only built for a frame that is actually on screen.
 
@@ -1374,7 +1379,9 @@ allow, and add the spell in Frame Auras > Spells > Custom to keep the whitelist.
 
 **"The missing buff mark never shows."** **Instances only** ships on, so the mark waits for an
 instance and treats a house as the open world. A class that brings no group buff (anything but
-druid, evoker, priest and shaman) has nothing to mark, and its Missing Buff tab says so.
+druid, evoker, mage, priest, shaman, and warrior) has nothing to mark, and its Missing Buff tab
+says so. Mage and warrior were missing from that list before 5.25.0, and the mark did not show
+inside an arena at all.
 
 **"The Important/Defensive colour does nothing."** The pair only applies while the module's
 colour setting asks for it: **Colours** for Important Auras, and on Nameplates an **Icon colours**

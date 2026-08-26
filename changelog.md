@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.25.0
+
+- Upgraded spell picker for Frame Auras and Important Auras panels so you can search by name.
+- Priority debuffs now show as bigger icons.
+- Added the missing buff mark for mages and warriors, covering Arcane Intellect and Battle Shout.
+- Fixed the missing buff mark never showing inside an arena.
+
 ## 5.24.0
 
 - Added a Show Test Labels option to the misc tab.
