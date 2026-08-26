@@ -672,7 +672,9 @@ local dbDefaults = {
 				MaxIcons = 2,
 				PerRow = 3,
 				Dispellable = false,
-				ShortOnly = false,
+				-- On, because the debuffs that sit on a member all fight crowd out the one worth
+				-- reacting to.
+				ShortOnly = true,
 				-- Same again: crowd control has its own row on the Important Auras page.
 				ShowCrowdControl = false,
 				-- Only the crowd control at the head of the row takes it. The debuffs behind it

@@ -137,6 +137,7 @@ local module = env.addon.Modules.FrameAurasModule
 local testSpells = env.addon.Core.TestSpells
 local trackedBuffs = env.addon.Core.TrackedBuffs
 local options = db.Modules.FrameAuras
+local dbDefaults = env.addon.Config.Defaults
 local moduleUtil = env.addon.Utils.ModuleUtil
 
 ---The lowest curated buff id, picked by value so the assertions survive a change to the list.
@@ -1539,7 +1540,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		partyAuras:Refresh()
 	end)
 
-	fw.it("narrows the row by nothing at all under stock settings", function()
+	fw.it("narrows the row by nothing at all with neither switch on", function()
 		options.Debuffs.Enabled = true
 
 		-- Its own frame, like the cost tests: a display is built once per frame and kept, so one that
@@ -1594,6 +1595,74 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		options.Debuffs.Dispellable = false
 		DropRaidFrame(23)
+	end)
+
+	fw.it("asks for that bound out of the box, which is what the row ships doing", function()
+		options.Debuffs.Enabled = true
+		-- Back to the shipped answer, which the before_each clears for the tests around this one.
+		options.Debuffs.ShortOnly = dbDefaults.Modules.FrameAuras.Debuffs.ShortOnly
+
+		local fresh = NewRaidFrame(25)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
+		local filters = assert(group.candidateFilters,
+			"a fresh profile narrows the row without the player touching anything")
+
+		assert(filters.maxDuration == 60,
+			"under a minute out of the box, got " .. tostring(filters.maxDuration))
+
+		options.Debuffs.ShortOnly = false
+		DropRaidFrame(25)
+	end)
+end)
+
+fw.describe("Frame Auras - what the buff row lets through", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Buffs.Mine = true
+		partyAuras:Refresh()
+	end)
+
+	fw.it("asks the engine what a fight is worth showing, whoever cast the buff", function()
+		options.Buffs.Enabled = true
+
+		local fresh = NewRaidFrame(26)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(fresh, PARTY_BUFF_GROUP), "the frame got a buff row")
+		local group = row._groups[PARTY_BUFF_GROUP]
+
+		assert(group.filterString:find("RAID_IN_COMBAT", 1, true),
+			"the row hands the question over, got " .. group.filterString)
+
+		-- The "mine" half is a spelling of its own, so a token on one and not the other goes
+		-- missing for everyone who turns that switch off.
+		options.Buffs.Mine = false
+		partyAuras:Refresh()
+
+		assert(group.filterString:find("RAID_IN_COMBAT", 1, true),
+			"on the everyone-else spelling too, got " .. group.filterString)
+
+		-- The mine-only string carries the token as well, so the check above passes on a stale one.
+		-- Losing PLAYER is what proves the refresh published the other spelling.
+		assert(not group.filterString:find("PLAYER", 1, true),
+			"the switch reached the group, got " .. group.filterString)
+
+		-- Alongside the negation the defensive switch adds, or a defensive would be drawn both here
+		-- and on the Important Auras row.
+		assert(group.filterString:find("!BIG_DEFENSIVE", 1, true)
+			and group.filterString:find("!EXTERNAL_DEFENSIVE", 1, true),
+			"without letting the defensives back in, got " .. group.filterString)
+
+		options.Buffs.Mine = true
+		DropRaidFrame(26)
 	end)
 end)
 

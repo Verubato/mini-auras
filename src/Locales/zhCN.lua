@@ -516,7 +516,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Frame Auras"] = "框架光环",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "替换暴雪的增益栏，位于每个小队和团队框架的右下角。",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "替换暴雪的减益栏，位于每个小队和团队框架的左下角。",
-	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "增益栏的“已过滤”开关所依据的列表。关闭时，目标身上的所有增益都会显示在角落。",
+	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner, though in combat the game keeps that to what is worth seeing on a raid frame."] = "增益栏的“已过滤”开关所依据的列表。关闭时，所有增益都会显示在角落，但在战斗中，游戏只会保留它认为值得在团队框架上显示的增益。",
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "允许游戏标记为重要的增益进入此栏。默认关闭，因为重要光环已经显示它们。",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "允许防御技能进入此栏。默认关闭，因为重要光环已经显示它们。",
 	["Show numbers"] = "显示倒计时数字",

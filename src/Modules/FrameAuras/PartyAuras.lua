@@ -26,10 +26,10 @@ local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
 local BUFF_GROUP_KEYS = { BUFF_PANDEMIC_GROUP, BUFF_GROUP }
 local DEBUFF_GROUP_KEYS = { DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }
--- The categories the game flags never come into the buff row. What reaches the corner is decided
--- by the switches on its own page.
-local BUFF_FILTER = "HELPFUL"
-local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
+-- Narrowed to what the game rates as worth showing on a raid frame once a fight starts. Combat
+-- state is weighed inside the engine, so nothing here listens for the pull.
+local BUFF_FILTER = "HELPFUL|RAID_IN_COMBAT"
+local BUFF_FILTER_MINE = "HELPFUL|PLAYER|RAID_IN_COMBAT"
 local DEBUFF_FILTER = "HARMFUL"
 -- The flagged categories Important Auras draws its own row of. Kept out by negating the game's own
 -- token, which is the only filter weighed on every unit. A spell-id map would be skipped for a
