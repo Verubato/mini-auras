@@ -44,21 +44,21 @@ local MAX_SPELL_NAME_LENGTH = 24
 local ADD_BOX_HEIGHT = 26
 
 -- The ranges each setting is held inside. Icon sizes on the party and raid frames are a share of
--- the frame's own height: below a quarter of it nothing is legible, and past half the row covers
--- the frame it sits on. The target frame is a fixed size, so its icons are given one in pixels.
+-- the frame's own height, and past half of it the row covers the frame it sits on. The target
+-- frame is a fixed size, so its icons are given one in pixels.
 local BOUNDS = {
 	Buffs = {
-		Size = { Min = 25, Max = 50 },
+		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
 	},
 	Debuffs = {
-		Size = { Min = 25, Max = 50 },
+		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
 	},
 	ClassBuff = {
-		Size = { Min = 25, Max = 50 },
+		Size = { Min = 15, Max = 50 },
 	},
 	TargetFocus = {
 		Size = { Min = 12, Max = 40 },

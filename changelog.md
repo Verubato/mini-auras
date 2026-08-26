@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Frame aura icons can now go down to 15% of the frame's height, where the smallest they went before was 25%.
+
 ## 5.25.0
 
 - Upgraded spell picker for Frame Auras and Important Auras panels so you can search by name.

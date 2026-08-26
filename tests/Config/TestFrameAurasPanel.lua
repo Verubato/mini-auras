@@ -79,6 +79,29 @@ local function SwitchOnTabWith(addon, labelText, tabLabel)
 	return nil
 end
 
+---The icon size slider on one tab of the frame auras page. It is the only slider there reaching
+---50, so the range names it without the label it shares with the other tabs.
+---@param addon table
+---@param tabLabel string A label carried by one tab and no other.
+---@return table?
+local function SizeSliderOnTabWith(addon, tabLabel)
+	local sibling = SwitchFor(addon, tabLabel)
+
+	fw.not_nil(sibling, "the page offers " .. tabLabel .. ", which names the tab")
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.GetMinMaxValues and frame:GetParent() == sibling:GetParent() then
+			local _, high = frame:GetMinMaxValues()
+
+			if high == 50 then
+				return frame
+			end
+		end
+	end
+
+	return nil
+end
+
 fw.describe("Frame Auras page - the debuff row's switches", function()
 	fw.it("offers the dispel colours, and writes them where the row reads them", function()
 		local addon = Load()
@@ -314,6 +337,37 @@ fw.describe("Frame Auras page - the spell picker", function()
 			fw.truthy(parent:GetObjectType() ~= "ScrollFrame",
 				"nothing between the popup and the screen clips it")
 			parent = parent:GetParent()
+		end
+	end)
+end)
+
+fw.describe("Frame Auras page - the icon size sliders", function()
+	fw.it("lets every row sized against the frame go down to 15 percent of it", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		-- Each row's tab is named by a switch only it carries, since all three sliders share a label.
+		local rows = {
+			{ Tab = addon.L["Mine"], Part = "Buffs" },
+			{ Tab = addon.L["Dispellable"], Part = "Debuffs" },
+			{ Tab = addon.L["Instances only"], Part = "ClassBuff" },
+		}
+		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
+
+		for _, row in ipairs(rows) do
+			local slider = SizeSliderOnTabWith(addon, row.Tab)
+
+			fw.not_nil(slider, row.Part .. " offers a size slider")
+
+			local low = slider:GetMinMaxValues()
+
+			fw.eq(low, 15, row.Part .. " reaches down to 15 percent of the frame")
+
+			slider:GetScript("OnValueChanged")(slider, 15, true)
+
+			fw.eq(frameAuras[row.Part].Size, 15,
+				row.Part .. " takes the smallest size it offers unclamped")
 		end
 	end)
 end)
