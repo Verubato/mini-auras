@@ -2596,6 +2596,8 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 		module:Refresh()
 
 		assert(not Marked(markFrame), "silence the client never broke must not mark the whole group")
+
+		classBuffs[MARK_CLASS].Auras[HIDDEN_SPELL] = nil
 	end)
 
 	fw.it("marks a member the client will not say is alive", function()
@@ -2636,6 +2638,19 @@ fw.describe("Frame Auras - the class buffs the mark reads", function()
 				assert(readableAuraIds[spellId], "the " .. class .. " buff can land as " .. spellId
 					.. ", which the client hides while auras are secret")
 			end
+		end
+	end)
+
+	fw.it("brings a buff from exactly the classes that have one", function()
+		local expected = { DRUID = true, EVOKER = true, MAGE = true, PRIEST = true, SHAMAN = true,
+			WARRIOR = true }
+
+		for class in pairs(classBuffs) do
+			assert(expected[class], "an unexpected class buff snuck in for " .. class)
+		end
+
+		for class in pairs(expected) do
+			assert(classBuffs[class], "the " .. class .. " class buff went missing")
 		end
 	end)
 end)

@@ -16,8 +16,7 @@ local FALLBACK_ICON_SIZE = 14
 -- Trims the silver frame baked into the spell art, so the icon reaches the mark's own edge.
 local ICON_CROP = 0.08
 local DEFAULT_SIZE_PERCENT = 35
--- Which corner the mark sits in, and how far in from it. Top right is the one Blizzard leaves free
--- on a compact frame.
+-- Top right is the one Blizzard leaves free on a compact frame.
 local ANCHOR = "TOPRIGHT"
 local OFFSET_X = -2
 local OFFSET_Y = -2
@@ -130,7 +129,7 @@ local function InWantedPlace(options)
 	return moduleUtil:InstanceType() ~= "none" and not moduleUtil:IsInHousing()
 end
 
----The player's own class buff, worked out once.
+---The player's own class buff.
 ---@return ClassBuff?
 local function PlayerBuff()
 	local _, class = UnitClass("player")
@@ -144,10 +143,6 @@ end
 ---@return boolean
 local function IsMarkable(unit)
 	if not unit then
-		return false
-	end
-
-	if unit:find("pet", 1, true) then
 		return false
 	end
 
@@ -189,9 +184,6 @@ end
 
 ---Whether the unit already has the buff. Three answers, not two. A "no" the client never actually
 ---gave would put a mark on every frame in the group, so unknown reads the same as having it.
----
----A match or a key hides aura data for its whole length. The client keeps a short list of ids
----readable through it, and an id off that list answers nil whether the buff is there or not.
 ---@param unit string
 ---@return boolean? nil when the client will not say
 local function HasBuff(unit)
@@ -265,7 +257,7 @@ local function ApplyToFrame(frame)
 
 	local mark = marks[frame]
 
-	if not active or not playerBuff then
+	if not active then
 		if mark then
 			mark:Hide()
 		end
@@ -398,12 +390,16 @@ function M:Refresh()
 
 	-- A player opening the preview in the open world asked to see the mark, so where they are
 	-- standing is not the question.
-	active = options.Enabled == true and (testModeActive or InWantedPlace(options))
+	local wanted = options.Enabled == true and (testModeActive or InWantedPlace(options))
 
-	if active then
+	if wanted then
 		playerBuff = PlayerBuff()
 		playerBuffReadable = playerBuff ~= nil and BuffIsReadable(playerBuff)
 	end
+
+	-- A class with no buff of its own has nothing the mark could ever draw, so it never arms the
+	-- watcher or the frame hooks.
+	active = wanted and playerBuff ~= nil
 
 	-- The watcher owns the event frame the hooks are installed against, so it comes first.
 	Watcher():SetActive(active)
