@@ -2595,9 +2595,11 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 		MoveTo("arena")
 		module:Refresh()
 
-		assert(not Marked(markFrame), "silence the client never broke must not mark the whole group")
+		local marked = Marked(markFrame)
 
 		classBuffs[MARK_CLASS].Auras[HIDDEN_SPELL] = nil
+
+		assert(not marked, "silence the client never broke must not mark the whole group")
 	end)
 
 	fw.it("marks a member the client will not say is alive", function()
