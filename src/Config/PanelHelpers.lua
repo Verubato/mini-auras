@@ -342,6 +342,15 @@ function M:TrimName(name, maxLength)
 	return name:sub(1, cut) .. "..."
 end
 
+---A name the client has not loaded yet reads as a question mark, so the id still names the row.
+---@param name string? Whatever the caller wants the row to read as, nil when nothing is known.
+---@param spellId number
+---@param maxLength number Characters of name the column fits beside the id.
+---@return string
+function M:SpellLabel(name, spellId, maxLength)
+	return ("%s |cff888888(%d)|r"):format(self:TrimName(name or "?", maxLength), spellId)
+end
+
 ---The icon-plus-tooltip button every spell row shares. The caller assigns button.SpellId, sets
 ---the texture on button.Icon, and positions it.
 ---@param parent table

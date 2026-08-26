@@ -8,6 +8,7 @@ local moduleName = addon.Utils.ModuleName
 local dbDefaults = addon.Config.Defaults
 local trackedBuffs = addon.Core.TrackedBuffs
 local classBuffs = addon.Core.ClassBuffs
+local spellPicker = addon.Config.SpellPicker
 local spells = addon.Modules.FrameAuras.Spells
 local targetAuras = addon.Modules.FrameAuras.TargetAuras
 
@@ -31,13 +32,14 @@ local SIDEBAR_WIDTH = 120
 local SIDEBAR_ROW_HEIGHT = 24
 local SIDEBAR_ROW_GAP = 25
 local SPELL_COLUMNS = 2
-local SPELL_COLUMN_WIDTH = 210
+-- Wide enough for the longest trimmed name, the id after it, and the remove cross past that.
+local SPELL_COLUMN_WIDTH = 300
 -- Where a custom row's remove cross sits, measured back from the column's right edge.
 local REMOVE_COLUMN_INSET = 26
 local SPELL_ROW_HEIGHT = 24
 local SPELL_ICON_SIZE = 18
-local MAX_SPELL_NAME_LENGTH = 20
-local ADD_BOX_WIDTH = 140
+-- Characters of spell name a column fits beside the id.
+local MAX_SPELL_NAME_LENGTH = 24
 -- What the add box costs above the first spell row of the custom section.
 local ADD_BOX_HEIGHT = 26
 
@@ -196,14 +198,7 @@ local function SpellLabel(spellId)
 	-- The addon's own name for it first, for the spells whose client name reads badly in a row.
 	local name = trackedBuffs.Names[spellId] or C_Spell.GetSpellName(spellId)
 
-	-- The id stands in rather than trailing every row: the client learns names as it goes, and a
-	-- spell it has not loaded yet would otherwise leave a row saying nothing at all. Hovering the
-	-- icon gives the full spell either way.
-	if not name then
-		return tostring(spellId)
-	end
-
-	return helpers:TrimName(name, MAX_SPELL_NAME_LENGTH)
+	return helpers:SpellLabel(name, spellId, MAX_SPELL_NAME_LENGTH)
 end
 
 ---@param key string
@@ -261,29 +256,21 @@ local function BuildSpellList(parent, anchor)
 
 	local sections, buttons = {}, {}
 	-- What each row was labelled with when it was built. The client learns spell names as it goes,
-	-- so a list built before it knew them reads as bare ids. This is what says whether re-opening
-	-- the page would actually show anything different.
+	-- so a list built before it knew them reads as question marks. This is what says whether
+	-- re-opening the page would actually show anything different.
 	local rows = {}
 	local selectedKey
 	local Populate
 
-	local addBox = mini:EditBox({
+	local addLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	addLabel:SetText(L["Add a spell"])
+
+	local addBox = spellPicker:Create({
 		Parent = parent,
-		LabelText = L["Spell ID"],
-		Tooltip = L["Type a spell id and press Enter. The spell's own id, not the name."],
-		Width = ADD_BOX_WIDTH,
-		Numeric = true,
-		GetValue = function()
-			return ""
-		end,
-		SetValue = function(value)
-			local spellId = tonumber(value)
-
-			if not spellId or spellId <= 0 then
-				return
-			end
-
-			spells:SetTracked(math.floor(spellId), true)
+		-- An id the shipped index has never heard of is still a spell worth tracking.
+		AcceptsTypedIds = true,
+		OnAccept = function(spellId)
+			spells:SetTracked(spellId, true)
 			config:Apply(moduleName.FrameAuras)
 			-- The sections are built from the lists, so a new id only turns up once they have been
 			-- rebuilt; re-reading the existing controls would never show it.
@@ -319,14 +306,14 @@ local function BuildSpellList(parent, anchor)
 
 		if group.Custom then
 			-- Reparented rather than rebuilt, so the one box follows the section it belongs to.
-			addBox.Label:SetParent(section)
-			addBox.EditBox:SetParent(section)
-			addBox.Label:ClearAllPoints()
-			addBox.EditBox:ClearAllPoints()
+			addLabel:SetParent(section)
+			addBox:SetParent(section)
+			addLabel:ClearAllPoints()
+			addBox:ClearAllPoints()
 			-- The box carries an extra inset because its field border draws that far outside its
 			-- own left edge, which puts the border in line with the icons rather than the box.
-			addBox.Label:SetPoint("TOPLEFT", section, "TOPLEFT", 6, 0)
-			addBox.EditBox:SetPoint("TOPLEFT", addBox.Label, "BOTTOMLEFT", 6, -4)
+			addLabel:SetPoint("TOPLEFT", section, "TOPLEFT", 6, 0)
+			addBox:SetPoint("TOPLEFT", addLabel, "BOTTOMLEFT", 6, -4)
 			rowY = -(SPELL_ROW_HEIGHT + ADD_BOX_HEIGHT)
 		end
 

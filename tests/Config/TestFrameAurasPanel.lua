@@ -5,6 +5,11 @@ local fw = require("Framework")
 local harness = require("AddonHarness")
 local WowMock = require("WowMock")
 
+-- Two curated ids from the shipped list: one the row reads under the client's name, one the
+-- addon renames because the client calls it the same thing as the spell it copies.
+local REJUVENATION = 774
+local GERMINATION = 155777
+
 ---@return table addon
 local function Load()
 	_G.MiniAurasDB = nil
@@ -144,5 +149,171 @@ fw.describe("Frame Auras page - the buff row's switches", function()
 		switch:GetScript("OnClick")(switch)
 
 		assert(options.ShowDefensives == true, "and the switch turns them on")
+	end)
+end)
+
+fw.describe("Frame Auras page - the spell list's rows", function()
+	fw.it("puts each spell's id in brackets behind its name", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local named = _G.C_Spell.GetSpellName(REJUVENATION) .. " |cff888888(" .. REJUVENATION .. ")|r"
+
+		fw.not_nil(SwitchFor(addon, named), "a row named by the client carries its id")
+		fw.not_nil(SwitchFor(addon, "Germination |cff888888(" .. GERMINATION .. ")|r"),
+			"and so does one the addon names itself")
+	end)
+
+	fw.it("still carries the id for a name the client has not loaded yet", function()
+		local addon = Load()
+		local realGetSpellName = _G.C_Spell.GetSpellName
+
+		_G.C_Spell.GetSpellName = function()
+			return nil
+		end
+
+		addon.Config:EnsureWindow()
+
+		_G.C_Spell.GetSpellName = realGetSpellName
+
+		fw.not_nil(SwitchFor(addon, "? |cff888888(" .. REJUVENATION .. ")|r"),
+			"the row stands in a question mark and keeps the id")
+	end)
+end)
+
+fw.describe("Frame Auras page - the spell picker", function()
+	---The picker's edit box on the spells tab, which is the only box on the page that hands a
+	---spell to a callback.
+	---@param addon table
+	---@return table?
+	local function Picker(addon)
+		local page = addon.Config.TabController:GetContent("FrameAuras")
+
+		for _, frame in ipairs(WowMock.Frames) do
+			if frame.OnAccept and frame:GetScript("OnArrowPressed") and Inside(frame, page) then
+				return frame
+			end
+		end
+
+		return nil
+	end
+
+	---@param box table
+	---@param query string
+	local function Type(box, query)
+		box:SetText(query)
+		box:GetScript("OnTextChanged")(box, true)
+	end
+
+	fw.it("puts a spell back on the list from its name alone", function()
+		_G.MiniAurasDB = nil
+
+		-- harness.Run's two halves, so a real name can be installed in between: the suggestions
+		-- are named by the client, and login is already enough to build the search index.
+		local context = harness.Load("MiniAuras", {})
+		local realGetSpellName = _G.C_Spell.GetSpellName
+
+		_G.C_Spell.GetSpellName = function(spellId)
+			return spellId == REJUVENATION and "Rejuvenation" or realGetSpellName(spellId)
+		end
+
+		harness.Login(context)
+
+		local addon = context.Addon
+		local spells = addon.Modules.FrameAuras.Spells
+
+		assert(spells:IsTracked(REJUVENATION), "the curated spell ships tracked")
+		spells:SetTracked(REJUVENATION, false)
+
+		addon.Config:EnsureWindow()
+
+		local box = Picker(addon)
+
+		fw.not_nil(box, "the spells tab offers the picker")
+
+		Type(box, "rejuven")
+		box:GetScript("OnEnterPressed")(box)
+
+		fw.truthy(spells:IsTracked(REJUVENATION), "half its name was enough to track it")
+	end)
+
+	fw.it("tracks a typed id the client cannot even name", function()
+		local addon = Load()
+		local realGetSpellName = _G.C_Spell.GetSpellName
+		-- Past anything the shipped index carries, and nameless on top of that, so no suggestion
+		-- can be offered for it at all.
+		local unknown = 9999999
+
+		_G.C_Spell.GetSpellName = function(spellId)
+			if spellId == unknown then
+				return nil
+			end
+
+			return realGetSpellName(spellId)
+		end
+
+		addon.Config:EnsureWindow()
+
+		local box = Picker(addon)
+
+		Type(box, tostring(unknown))
+		box:GetScript("OnEnterPressed")(box)
+
+		_G.C_Spell.GetSpellName = realGetSpellName
+
+		fw.truthy(addon.Modules.FrameAuras.Spells:IsTracked(unknown),
+			"the id was taken as typed")
+	end)
+
+	fw.it("reads a typed id as digits, not as the number Lua would make of it", function()
+		local addon = Load()
+		local spells = addon.Modules.FrameAuras.Spells
+		-- What tonumber makes of "0x10" and "1e3", neither of which anyone typing an id means.
+		local hex, exponent = 16, 1000
+
+		assert(not spells:IsTracked(hex) and not spells:IsTracked(exponent),
+			"neither ships tracked, so tracking one can only have come from the box")
+
+		addon.Config:EnsureWindow()
+
+		local box = Picker(addon)
+
+		for _, typed in ipairs({ "0x10", "1e3" }) do
+			Type(box, typed)
+			box:GetScript("OnEnterPressed")(box)
+		end
+
+		fw.falsy(spells:IsTracked(hex), "the hex form tracked nothing")
+		fw.falsy(spells:IsTracked(exponent), "and neither did the exponent form")
+	end)
+
+	fw.it("hangs its suggestions outside the scroll frames that would cut them off", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local box = Picker(addon)
+		local popup
+
+		for _, frame in ipairs(WowMock.Frames) do
+			if frame:GetNumPoints() > 0 then
+				local _, relativeTo = frame:GetPoint(1)
+
+				if relativeTo == box then
+					popup = frame
+				end
+			end
+		end
+
+		fw.not_nil(popup, "the picker has a popup anchored under its box")
+
+		local parent = popup:GetParent()
+
+		while parent do
+			fw.truthy(parent:GetObjectType() ~= "ScrollFrame",
+				"nothing between the popup and the screen clips it")
+			parent = parent:GetParent()
+		end
 	end)
 end)

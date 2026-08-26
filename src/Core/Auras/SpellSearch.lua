@@ -549,6 +549,21 @@ local function UnknownEntry(spellId)
 	return { Id = spellId, Name = name, Lower = name:lower() }
 end
 
+---The spell id a query spells out, nil when it is a name or a fragment of one.
+---Digits only, because tonumber reads "0x10" as 16 and "1e3" as 1000, and nobody typing a spell
+---id means either.
+---@param query string
+---@return number?
+function M:QueryId(query)
+	if not query:match("^%s*%d+%s*$") then
+		return nil
+	end
+
+	local spellId = tonumber(query)
+
+	return spellId ~= 0 and spellId or nil
+end
+
 ---The suggestions for a partially typed spell name or id, best match first.
 ---Returns a shared table that the next call refills, so copy anything you need to keep.
 ---@param query string
@@ -567,10 +582,10 @@ function M:Search(query, limit)
 
 	limit = limit or MAX_RESULTS
 
-	local numeric = tonumber(query)
+	local numeric = self:QueryId(query)
 
 	-- A fully typed id is an answer, not a search, so it leads even if the index lacks it.
-	if numeric and numeric == math.floor(numeric) and numeric > 0 then
+	if numeric then
 		local entry = self:GetEntry(numeric)
 
 		if entry then

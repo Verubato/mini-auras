@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local helpers = addon.Config.PanelHelpers
+local spellPicker = addon.Config.SpellPicker
 local groups = addon.Modules.PersonalAuras.Groups
 local recorder = addon.Modules.PersonalAuras.Recorder
 local ui = addon.Config.PersonalAurasUI
@@ -113,10 +114,10 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	local triggerPanel = ctx.TriggerPanel
 	local spellColumn = mini:ColumnWidth(SPELL_COLUMNS, 0, 0)
 	-- The Record button, sitting just past the spell picker it belongs with.
-	local recordButtonX = ui.PickerWidth + 22
+	local recordButtonX = spellPicker.Width + 22
 	-- The label, its 4px gap, then the box. Not DropdownRowHeight: the picker is shorter than a
 	-- dropdown, and the slack would sit between the box and the spell list below it.
-	local pickerRowHeight = ui.LabelHeight + 4 + ui.PickerHeight
+	local pickerRowHeight = ui.LabelHeight + 4 + spellPicker.Height
 
 	local trackingControlsRow = ctx.NewRow(triggerPanel, ui.DropdownRowHeight)
 	-- On its own row rather than a fifth column: four dropdowns already reach the panel edge.
@@ -297,7 +298,12 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	pickerLabel:SetText(L["Add a spell"])
 	pickerLabel:SetPoint("TOPLEFT", pickerRow, "TOPLEFT", 0, 0)
 
-	local picker = ui.CreateSpellPicker(triggerPanel)
+	local picker = spellPicker:Create({
+		Parent = triggerPanel,
+		OnAccept = ui.AddSpellToCurrent,
+		-- Reddens a spell the selected group's aura type can never match.
+		LabelColor = ui.SpellLabelColor,
+	})
 	picker:SetPoint("TOPLEFT", pickerLabel, "BOTTOMLEFT", 6, -4)
 
 	-- Labels for the engine's own filter components. Kept as plain lookups so a component

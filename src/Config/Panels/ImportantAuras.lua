@@ -18,6 +18,7 @@ local columnWidth
 local enabledColumnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
+local spellPicker = addon.Config.SpellPicker
 local auraCategoryIds = addon.Core.AuraCategoryIds
 local moduleName = addon.Utils.ModuleName
 -- Sidebar sections. Derived from AuraCategoryIds and the user's own additions and nothing else,
@@ -303,15 +304,11 @@ local function BuildColours(parent, options)
 	defensiveSwatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 end
 
----Trims a spell name that would run past its column. The budget is what fits beside the id and the
----remove icon at the column width above, and the longest ability names are half again too long for
----it. The icon's tooltip still gives the full name.
+---The longest ability names are half again too long for the column.
 ---@param spellId number
 ---@return string
 local function SpellLabel(spellId)
-	local name = helpers:TrimName(C_Spell.GetSpellName(spellId) or "?", MAX_SPELL_NAME_LENGTH)
-
-	return ("%s |cff888888(%d)|r"):format(name, spellId)
+	return helpers:SpellLabel(C_Spell.GetSpellName(spellId), spellId, MAX_SPELL_NAME_LENGTH)
 end
 
 ---The sidebar sections: one per class that owns a tracked spell, then the classless bucket, then
@@ -393,20 +390,14 @@ local function BuildSpells(parent)
 
 	local Populate
 
-	local addBox = mini:EditBox({
-		Parent = parent,
-		LabelText = L["Add spell ID"],
-		Numeric = true,
-		Width = 140,
-		GetValue = function()
-			return ""
-		end,
-		SetValue = function(value)
-			local spellId = tonumber(value)
-			if not spellId or spellId <= 0 then
-				return
-			end
+	local addLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	addLabel:SetText(L["Add a spell"])
 
+	local addBox = spellPicker:Create({
+		Parent = parent,
+		-- An id the shipped index has never heard of is still a spell worth tracking.
+		AcceptsTypedIds = true,
+		OnAccept = function(spellId)
 			-- Re-tracking a curated spell is a removal from Disabled rather than an addition to
 			-- Custom, so a regenerated curated list still governs it.
 			overrides.Disabled[spellId] = nil
@@ -491,15 +482,15 @@ local function BuildSpells(parent)
 
 			if group.Key == CUSTOM_GROUP_KEY then
 				-- Reparented rather than rebuilt, so the one box follows the section it belongs to.
-				addBox.Label:SetParent(panel)
-				addBox.EditBox:SetParent(panel)
-				addBox.Label:ClearAllPoints()
-				addBox.EditBox:ClearAllPoints()
+				addLabel:SetParent(panel)
+				addBox:SetParent(panel)
+				addLabel:ClearAllPoints()
+				addBox:ClearAllPoints()
 				-- Lined up with the spell icons that start each row below. The box carries the
 				-- extra 6 because its field border is drawn that far outside its own left edge,
 				-- so this puts the border on the same line as the icons rather than the box.
-				addBox.Label:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, 0)
-				addBox.EditBox:SetPoint("TOPLEFT", addBox.Label, "BOTTOMLEFT", 6, -4)
+				addLabel:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, 0)
+				addBox:SetPoint("TOPLEFT", addLabel, "BOTTOMLEFT", 6, -4)
 				rowY = -(rowHeight + 26)
 			end
 

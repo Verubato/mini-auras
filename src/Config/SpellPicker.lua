@@ -4,31 +4,67 @@ local mini = addon.Framework
 local L = addon.L
 local helpers = addon.Config.PanelHelpers
 local spellSearch = addon.Core.SpellSearch
-local ui = addon.Config.PersonalAurasUI
 local SUGGESTION_ROWS = 8
 local SUGGESTION_ROW_HEIGHT = 24
-local PICKER_WIDTH = 220
-local PICKER_HEIGHT = 22
+local POPUP_WIDTH = 280
+-- The padding the rows sit inside, clear of the popup's border.
+local POPUP_INSET = 6
+-- Characters of spell name a suggestion row fits beside the id.
+local MAX_SUGGESTION_NAME_LENGTH = 28
 
--- Exposed so the trigger tab can line the Record button up beside the picker and size its row.
-ui.PickerWidth = PICKER_WIDTH
-ui.PickerHeight = PICKER_HEIGHT
+---@class SpellPicker
+local M = {
+	---The box's own size, so a caller can line another control up beside it and size its row.
+	Width = 220,
+	Height = 22,
+}
 
----An edit box that suggests spells as you type; picking one hands its id to box.OnAccept.
----@param parent table
+addon.Config.SpellPicker = M
+
+---@param spellId number
+---@return string
+local function SuggestionLabel(spellId)
+	return helpers:SpellLabel(C_Spell.GetSpellName(spellId), spellId, MAX_SUGGESTION_NAME_LENGTH)
+end
+
+---@return number r
+---@return number g
+---@return number b
+local function DefaultColor()
+	return 1, 1, 1
+end
+
+---What the popup hangs off. The page a picker sits on is inside the options window's scroll
+---frame, which cuts off anything drawn past its edge.
+---@param frame table
+---@return table
+local function PopupHost(frame)
+	local host = frame
+	local above = host:GetParent()
+
+	while above and above ~= UIParent do
+		host = above
+		above = host:GetParent()
+	end
+
+	return host
+end
+
+---An edit box that suggests spells as you type; picking one hands its id to opts.OnAccept.
+---@param opts SpellPickerOptions
 ---@return table box
-function ui.CreateSpellPicker(parent)
+function M:Create(opts)
+	local parent = opts.Parent
+	local SuggestionColor = opts.LabelColor or DefaultColor
 	local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
 	mini:FlattenEditBox(box)
-	box:SetSize(PICKER_WIDTH, PICKER_HEIGHT)
+	box:SetSize(M.Width, M.Height)
 	box:SetAutoFocus(false)
 	-- Per picker rather than shared: the rows are children of this picker's own popup, so a second
 	-- picker reusing them would show its suggestions inside the first one's popup.
 	local suggestionRows = {}
 
-	-- Which of the group's lists this picker feeds. The tracked list is the common case, so it
-	-- is the default and only the exclude picker replaces it.
-	box.OnAccept = ui.AddSpellToCurrent
+	box.OnAccept = opts.OnAccept
 
 	-- Edit boxes have no placeholder of their own, so it is a font string behind the caret that
 	-- goes away as soon as there is anything to read.
@@ -40,9 +76,9 @@ function ui.CreateSpellPicker(parent)
 		placeholder:SetShown(box:GetText() == "" and not box:HasFocus())
 	end
 
-	local popup = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-	popup:SetPoint("TOPLEFT", box, "BOTTOMLEFT", -6, -2)
-	popup:SetWidth(280)
+	local popup = CreateFrame("Frame", nil, PopupHost(parent), "BackdropTemplate")
+	popup:SetPoint("TOPLEFT", box, "BOTTOMLEFT", -POPUP_INSET, -2)
+	popup:SetWidth(POPUP_WIDTH)
 	popup:SetFrameStrata("DIALOG")
 	-- Above every row it drops over, not just its immediate parent.
 	popup:SetFrameLevel(parent:GetFrameLevel() + 20)
@@ -94,16 +130,16 @@ function ui.CreateSpellPicker(parent)
 
 	local function ShowSuggestions()
 		local results = spellSearch:Search(box:GetText(), SUGGESTION_ROWS)
-		local y = -6
+		local y = -POPUP_INSET
 
 		for index, entry in ipairs(results) do
 			local row = suggestionRows[index]
 
 			if not row then
 				row = CreateFrame("Button", nil, popup)
-				row:SetSize(268, SUGGESTION_ROW_HEIGHT)
+				row:SetSize(POPUP_WIDTH - POPUP_INSET * 2, SUGGESTION_ROW_HEIGHT)
 				row.Icon = helpers:CreateSpellIcon(row)
-				row.Icon:SetPoint("LEFT", row, "LEFT", 6, 0)
+				row.Icon:SetPoint("LEFT", row, "LEFT", POPUP_INSET, 0)
 				row.Text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 				row.Text:SetPoint("LEFT", row.Icon, "RIGHT", 6, 0)
 
@@ -123,8 +159,8 @@ function ui.CreateSpellPicker(parent)
 			row.SpellId = entry.Id
 			row.Icon.SpellId = entry.Id
 			row.Icon.Icon:SetTexture(C_Spell.GetSpellTexture(entry.Id))
-			row.Text:SetText(ui.SpellLabel(entry.Id))
-			row.Text:SetTextColor(ui.SpellLabelColor(entry.Id))
+			row.Text:SetText(SuggestionLabel(entry.Id))
+			row.Text:SetTextColor(SuggestionColor(entry.Id))
 			row:SetPoint("TOPLEFT", popup, "TOPLEFT", 0, y)
 			row:SetScript("OnClick", function()
 				box:SetText("")
@@ -152,7 +188,7 @@ function ui.CreateSpellPicker(parent)
 		highlighted = 0
 		ApplyHighlight()
 
-		popup:SetHeight(-y + 6)
+		popup:SetHeight(-y + POPUP_INSET)
 		popup:Show()
 	end
 
@@ -176,20 +212,26 @@ function ui.CreateSpellPicker(parent)
 		end
 	end)
 
-	box:SetScript("OnEnterPressed", function(self)
+	box:SetScript("OnEnterPressed", function(boxSelf)
 		-- Whatever the arrows landed on, else the best suggestion, which for a fully typed id
 		-- is that id.
 		local row = highlighted > 0 and suggestionRows[highlighted]
 		local spellId = row and row.SpellId
 
+		if not spellId and opts.AcceptsTypedIds then
+			-- A whole id is an answer rather than a search, and the shipped index is only part
+			-- of the game.
+			spellId = spellSearch:QueryId(boxSelf:GetText())
+		end
+
 		if not spellId then
-			local results = spellSearch:Search(self:GetText(), 1)
+			local results = spellSearch:Search(boxSelf:GetText(), 1)
 
 			spellId = results[1] and results[1].Id
 		end
 
-		self:SetText("")
-		self:ClearFocus()
+		boxSelf:SetText("")
+		boxSelf:ClearFocus()
 		HidePopup()
 
 		if spellId then
@@ -197,9 +239,9 @@ function ui.CreateSpellPicker(parent)
 		end
 	end)
 
-	box:SetScript("OnEscapePressed", function(self)
-		self:SetText("")
-		self:ClearFocus()
+	box:SetScript("OnEscapePressed", function(boxSelf)
+		boxSelf:SetText("")
+		boxSelf:ClearFocus()
 		HidePopup()
 	end)
 
@@ -215,7 +257,16 @@ function ui.CreateSpellPicker(parent)
 		HidePopup()
 	end)
 
+	-- The popup hangs off the window rather than the page, so a tab change has to take it away.
+	parent:HookScript("OnHide", HidePopup)
+
 	UpdatePlaceholder()
 
 	return box
 end
+
+---@class SpellPickerOptions
+---@field Parent table The page the box belongs to; the popup is hung off the window above it.
+---@field OnAccept fun(spellId: number) Takes the picked spell.
+---@field LabelColor (fun(spellId: number): number, number, number)? Suggestion text colour, white by default.
+---@field AcceptsTypedIds boolean? Whether Enter takes a whole id nothing matched.
