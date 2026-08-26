@@ -261,3 +261,190 @@ fw.describe("Frames:RegisterProvider - the refresh callback", function()
 		addon.Refresh = nil
 	end)
 end)
+
+-- The measurement reads UIParent's scale and the shared stub has no UIParent. Handed back at the
+-- bottom of the file, since the later files in the run share these globals.
+local realUIParent = _G.UIParent
+local uiScale = 1
+
+_G.UIParent = {
+	GetEffectiveScale = function()
+		return uiScale
+	end,
+}
+
+---An anchor carrying what the measurement reads off a real frame: its size, and the scale its
+---addon draws it at. The shared frame stub has neither.
+---@param name string
+---@param width number
+---@param height number
+---@param scale number
+local function NewSizedAnchor(name, width, height, scale)
+	_G[name] = {
+		IsVisible = function()
+			return true
+		end,
+		IsForbidden = function()
+			return false
+		end,
+		GetName = function()
+			return name
+		end,
+		GetWidth = function()
+			return width
+		end,
+		GetHeight = function()
+			return height
+		end,
+		GetEffectiveScale = function()
+			return scale
+		end,
+	}
+end
+
+fw.describe("Frames:GetTestFrameSize", function()
+	fw.before_each(function()
+		for key in pairs(db) do
+			db[key] = nil
+		end
+
+		uiScale = 1
+	end)
+
+	fw.it("copies a real party frame's size", function()
+		NewSizedAnchor("TestSizedAnchor", 96, 40, 1)
+		db.Anchor1 = "TestSizedAnchor"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 96, "the stand-in must be as wide as the frame, got " .. width)
+		assert(height == 40, "and as tall, got " .. height)
+	end)
+
+	fw.it("converts a frame drawn at another scale into what it covers on screen", function()
+		NewSizedAnchor("TestSizedAnchor", 96, 40, 0.5)
+		db.Anchor1 = "TestSizedAnchor"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 48, "a half-scale frame covers half the width, got " .. width)
+		assert(height == 20, "and half the height, got " .. height)
+	end)
+
+	fw.it("measures against UIParent rather than the raw scale", function()
+		uiScale = 0.64
+		NewSizedAnchor("TestSizedAnchor", 96, 40, 0.64)
+		db.Anchor1 = "TestSizedAnchor"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 96, "a frame at UIParent's own scale is unchanged, got " .. width)
+		assert(height == 40, "in both directions, got " .. height)
+	end)
+
+	fw.it("falls back to its own size when nothing real has been built", function()
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 144, "the built-in width stands in, got " .. width)
+		assert(height == 72, "and the built-in height, got " .. height)
+	end)
+
+	-- Copying Blizzard's leftovers would reproduce the very mismatch the stand-ins are meant to
+	-- avoid.
+	fw.it("passes over a hidden Blizzard frame for the frame addon's", function()
+		NewSizedAnchor("CompactRaidFrameTestStub", 72, 36, 1)
+		NewSizedAnchor("TestAddonFrameStub", 120, 50, 1)
+		db.Anchor1 = "CompactRaidFrameTestStub"
+		db.Anchor2 = "TestAddonFrameStub"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 120, "the frame addon's width wins, got " .. width)
+		assert(height == 50, "and its height, got " .. height)
+	end)
+
+	fw.it("copies a Blizzard frame when that is all there is", function()
+		NewSizedAnchor("CompactRaidFrameTestStub", 72, 36, 1)
+		db.Anchor1 = "CompactRaidFrameTestStub"
+
+		local width, height = frames:GetTestFrameSize()
+
+		assert(width == 72, "the second pass takes it, got " .. width)
+		assert(height == 36, "at its own height, got " .. height)
+	end)
+end)
+
+-- Nothing builds an arena frame outside an arena, which is exactly when the stand-ins are wanted,
+-- so the party size has to carry that column too.
+fw.describe("Frames:GetTestArenaFrameSize", function()
+	fw.before_each(function()
+		for key in pairs(db) do
+			db[key] = nil
+		end
+
+		uiScale = 1
+		_G.sArenaEnemyFrame1 = nil
+	end)
+
+	fw.it("copies an arena enemy frame that has been built", function()
+		_G.sArenaEnemyFrame1 = {
+			IsVisible = function()
+				return true
+			end,
+			GetWidth = function()
+				return 200
+			end,
+			GetHeight = function()
+				return 60
+			end,
+			GetEffectiveScale = function()
+				return 0.5
+			end,
+		}
+
+		local width, height = frames:GetTestArenaFrameSize()
+
+		assert(width == 100, "at what it covers on screen, got " .. width)
+		assert(height == 30, "in both directions, got " .. height)
+	end)
+
+	fw.it("falls back to the party size outside an arena", function()
+		NewSizedAnchor("TestArenaFallbackAnchor", 96, 40, 1)
+		db.Anchor1 = "TestArenaFallbackAnchor"
+
+		local width, height = frames:GetTestArenaFrameSize()
+
+		assert(width == 96, "the party stand-in's width, got " .. width)
+		assert(height == 40, "and its height, got " .. height)
+	end)
+
+	-- Blizzard's arena frames are built at login and sit hidden at their template size, which is
+	-- nothing like what the player sees in an arena.
+	fw.it("ignores an arena frame that is not on screen", function()
+		_G.sArenaEnemyFrame1 = {
+			IsVisible = function()
+				return false
+			end,
+			GetWidth = function()
+				return 200
+			end,
+			GetHeight = function()
+				return 60
+			end,
+			GetEffectiveScale = function()
+				return 1
+			end,
+		}
+		NewSizedAnchor("TestArenaFallbackAnchor", 96, 40, 1)
+		db.Anchor1 = "TestArenaFallbackAnchor"
+
+		local width, height = frames:GetTestArenaFrameSize()
+
+		assert(width == 96, "the party size stands in instead, got " .. width)
+		assert(height == 40, "in both directions, got " .. height)
+	end)
+end)
+
+_G.UIParent = realUIParent
+-- The last arena test leaves its stub behind, and a later file loading ArenaFrames would find it.
+_G.sArenaEnemyFrame1 = nil

@@ -2,8 +2,10 @@ local addonName, addon = ...
 local M = addon.Core.Frames
 local fontUtil = addon.Utils.FontUtil
 local MAX_TEST_FRAMES = 3
-local PET_FRAME_WIDTH, PET_FRAME_HEIGHT = 144, 40
+-- What a stand-in falls back to when no real frame has been built for it to copy.
 local FRAME_WIDTH, FRAME_HEIGHT = 144, 72
+-- A real pet frame is the shorter one in its column.
+local PET_HEIGHT_RATIO = 40 / 72
 local FRAME_PADDING = 10
 -- The two columns sit either side of the middle, party on the left and arena mirrored opposite.
 local CONTAINER_OFFSET_X = 450
@@ -22,6 +24,8 @@ local testArenaFrames = {}
 local testPetFrame = nil
 local testFramesContainer = nil
 local testArenaContainer = nil
+-- The measuring walk's own list, so it never shares a table with a walk that is still running.
+local measureScratch = {}
 
 ---The stand-in's caption in the configured face, keeping the template's size and flags. Applied
 ---again every time the column is shown, because the frames outlive a font change.
@@ -59,6 +63,67 @@ local function PlayerColour()
 	local _, class = UnitClass("player")
 
 	return RAID_CLASS_COLORS[class] or NORMAL_FONT_COLOR
+end
+
+---A frame's size in UIParent's coordinates, so a frame its addon draws at another scale comes back
+---as the patch of screen it covers. Nil when the client has not laid the frame out yet.
+---@param frame table
+---@return number? width
+---@return number? height
+local function ScreenSize(frame)
+	if not frame.GetWidth or not frame.GetEffectiveScale then
+		return nil
+	end
+
+	local width, height = frame:GetWidth(), frame:GetHeight()
+	local scale = frame:GetEffectiveScale()
+
+	-- Comparing a secret number would abort the whole handler.
+	if issecretvalue(width) or issecretvalue(height) or issecretvalue(scale) then
+		return nil
+	end
+
+	if not width or not height or width <= 0 or height <= 0 then
+		return nil
+	end
+
+	local uiScale = UIParent:GetEffectiveScale()
+
+	if not scale or scale <= 0 or not uiScale or uiScale <= 0 then
+		return width, height
+	end
+
+	local ratio = scale / uiScale
+
+	return width * ratio, height * ratio
+end
+
+---The first frame in the list worth copying. Blizzard's own are held back for a second pass,
+---since they are still there, hidden, under a frame addon that replaced them.
+---@param anchors table
+---@param skipBlizzard boolean
+---@return number? width
+---@return number? height
+local function FirstUsableSize(anchors, skipBlizzard)
+	for i = 1, #anchors do
+		local anchor = anchors[i]
+
+		if not (skipBlizzard and M:IsFriendlyCuf(anchor)) then
+			local width, height = ScreenSize(anchor)
+
+			if width then
+				return width, height
+			end
+		end
+	end
+
+	return nil
+end
+
+---@param height number
+---@return number
+local function PetHeight(height)
+	return math.floor(height * PET_HEIGHT_RATIO + 0.5)
 end
 
 ---A draggable, screen-clamped holder for one column of stand-in frames.
@@ -112,7 +177,7 @@ end
 ---to when no real pet frames exist (solo testing).
 local function CreateTestPetFrame()
 	local frame = CreateFrame("Frame", addonName .. "TestPetFrame", UIParent, "BackdropTemplate")
-	frame:SetSize(PET_FRAME_WIDTH, PET_FRAME_HEIGHT)
+	frame:SetSize(FRAME_WIDTH, PetHeight(FRAME_HEIGHT))
 
 	StyleTestFrame(frame, PlayerColour(), "partypet1", "GameFontNormal")
 
@@ -121,52 +186,100 @@ local function CreateTestPetFrame()
 	return frame
 end
 
-function M:CreateTestFrames()
-	testFramesContainer = CreateContainer(addonName .. "TestContainer", -CONTAINER_OFFSET_X)
+---Sizes and stacks both columns, run afresh every time a column goes up. Measuring any earlier
+---would walk the anchors before the frame addons have built theirs.
+local function LayoutTestFrames()
+	local width, height = M:GetTestFrameSize()
+	local petHeight = PetHeight(height)
 
 	for i = 1, MAX_TEST_FRAMES do
 		local frame = testPartyFrames[i]
-		if not frame then
-			frame = CreateTestFrame(i)
-			testPartyFrames[i] = frame
-		end
 
 		frame:ClearAllPoints()
-		frame:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
-		frame:SetPoint("TOP", testFramesContainer, "TOP", 0, (i - 1) * -FRAME_HEIGHT - FRAME_PADDING)
+		frame:SetSize(width, height)
+		frame:SetPoint("TOP", testFramesContainer, "TOP", 0, (i - 1) * -height - FRAME_PADDING)
+	end
+
+	testPetFrame:ClearAllPoints()
+	testPetFrame:SetSize(width, petHeight)
+	testPetFrame:SetPoint("TOP", testFramesContainer, "TOP", 0,
+		MAX_TEST_FRAMES * -height - FRAME_PADDING * 2)
+
+	testFramesContainer:SetSize(
+		width + FRAME_PADDING * 2,
+		height * MAX_TEST_FRAMES + petHeight + FRAME_PADDING * 3
+	)
+
+	local arenaWidth, arenaHeight = M:GetTestArenaFrameSize()
+
+	for i = 1, MAX_TEST_FRAMES do
+		local frame = testArenaFrames[i]
+
+		frame:ClearAllPoints()
+		frame:SetSize(arenaWidth, arenaHeight)
+		frame:SetPoint("TOP", testArenaContainer, "TOP", 0, (i - 1) * -arenaHeight - FRAME_PADDING)
+	end
+
+	testArenaContainer:SetSize(
+		arenaWidth + FRAME_PADDING * 2,
+		arenaHeight * MAX_TEST_FRAMES + FRAME_PADDING * 2
+	)
+end
+
+---The size a party stand-in takes, copied from a real party frame so an icon placed on one lands
+---where it will in a group. Hidden frames count, since the stand-ins only come out when nothing
+---real is on screen.
+---@return number width
+---@return number height
+function M:GetTestFrameSize()
+	local anchors = M:GetAll(false, false, measureScratch)
+	local width, height = FirstUsableSize(anchors, true)
+
+	if not width then
+		width, height = FirstUsableSize(anchors, false)
+	end
+
+	return width or FRAME_WIDTH, height or FRAME_HEIGHT
+end
+
+---The size an arena stand-in takes, which is the party size until an enemy frame is on screen to
+---copy. Blizzard's arena frames exist from login and sit hidden at their template size, so a
+---frame nobody can see is worth nothing to measure.
+---@return number width
+---@return number height
+function M:GetTestArenaFrameSize()
+	for index = 1, MAX_TEST_FRAMES do
+		local frame = M:GetArenaFrame(index)
+
+		if frame and frame:IsVisible() then
+			local width, height = ScreenSize(frame)
+
+			if width then
+				return width, height
+			end
+		end
+	end
+
+	return M:GetTestFrameSize()
+end
+
+function M:CreateTestFrames()
+	testFramesContainer = CreateContainer(addonName .. "TestContainer", -CONTAINER_OFFSET_X)
+	testArenaContainer = CreateContainer(addonName .. "TestArenaContainer", CONTAINER_OFFSET_X)
+
+	for i = 1, MAX_TEST_FRAMES do
+		if not testPartyFrames[i] then
+			testPartyFrames[i] = CreateTestFrame(i)
+		end
+
+		if not testArenaFrames[i] then
+			testArenaFrames[i] = CreateTestArenaFrame(i)
+		end
 	end
 
 	if not testPetFrame then
 		testPetFrame = CreateTestPetFrame()
 	end
-
-	testPetFrame:ClearAllPoints()
-	testPetFrame:SetPoint("TOP", testFramesContainer, "TOP", 0,
-		MAX_TEST_FRAMES * -FRAME_HEIGHT - FRAME_PADDING * 2)
-
-	testFramesContainer:SetSize(
-		FRAME_WIDTH + FRAME_PADDING * 2,
-		FRAME_HEIGHT * MAX_TEST_FRAMES + PET_FRAME_HEIGHT + FRAME_PADDING * 3
-	)
-
-	testArenaContainer = CreateContainer(addonName .. "TestArenaContainer", CONTAINER_OFFSET_X)
-
-	for i = 1, MAX_TEST_FRAMES do
-		local frame = testArenaFrames[i]
-		if not frame then
-			frame = CreateTestArenaFrame(i)
-			testArenaFrames[i] = frame
-		end
-
-		frame:ClearAllPoints()
-		frame:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
-		frame:SetPoint("TOP", testArenaContainer, "TOP", 0, (i - 1) * -FRAME_HEIGHT - FRAME_PADDING)
-	end
-
-	testArenaContainer:SetSize(
-		FRAME_WIDTH + FRAME_PADDING * 2,
-		FRAME_HEIGHT * MAX_TEST_FRAMES + FRAME_PADDING * 2
-	)
 end
 
 ---Re-applies the configured face to every stand-in caption on screen. Driven by the addon-wide
@@ -229,6 +342,10 @@ end
 ---test mode and the aura editor's preview drive this, so neither has to know the pieces.
 ---@param shown boolean
 function M:SetTestFramesShown(shown)
+	if shown then
+		LayoutTestFrames()
+	end
+
 	for _, frame in ipairs(testPartyFrames) do
 		frame:SetShown(shown)
 		ApplyLabelFont(frame)
@@ -246,6 +363,10 @@ end
 
 ---@param shown boolean
 function M:SetTestArenaFramesShown(shown)
+	if shown then
+		LayoutTestFrames()
+	end
+
 	for _, frame in ipairs(testArenaFrames) do
 		frame:SetShown(shown)
 		ApplyLabelFont(frame)
