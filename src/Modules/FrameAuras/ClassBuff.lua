@@ -6,6 +6,7 @@ local eventGate = addon.Core.EventGate
 local frames = addon.Core.Frames
 local pixels = addon.Core.Pixels
 local classBuffs = addon.Core.ClassBuffs
+local readableAuraIds = addon.Core.ReadableAuraIds
 local moduleUtil = addon.Utils.ModuleUtil
 
 -- Marks a party or raid frame whose member is missing the group buff the player's class brings.
@@ -30,9 +31,11 @@ addon.Modules.FrameAuras.ClassBuff = M
 
 local active = false
 local testModeActive = false
--- The buff the player brings, or nil for a class that brings none. Fixed for the session, since a
--- character's class does not change.
+-- The buff the player brings, or nil for a class that brings none.
 local playerBuff
+-- Whether every id playerBuff can land as stays readable while auras are secret. Worked out with
+-- the buff, since HasBuff reads it on the UNIT_AURA path.
+local playerBuffReadable
 -- Compact frame -> its mark. Frames are created once and reused, so there is nothing to clear.
 local marks = {}
 -- Unit token -> the frames showing it, so UNIT_AURA does not walk forty frames to find one. The
@@ -158,17 +161,37 @@ local function IsMarkable(unit)
 		return false
 	end
 
+	local dead = UnitIsDeadOrGhost and UnitIsDeadOrGhost(unit)
+
+	-- A match keeps this read secret for its whole length. Counting that as up costs nothing, since
+	-- a member is only ever down for a moment.
+	if mini:IsSecret(dead) then
+		return true
+	end
+
 	-- Nothing to remind anyone about until they are back up.
-	return not (UnitIsDeadOrGhost and UnitIsDeadOrGhost(unit))
+	return dead ~= true
 end
 
----Whether the unit already has the buff. Three answers, not two. The client hides aura data
----outright while a match or a key is running, and a "no" it never actually gave would put a mark
----on every frame in the group. Unknown reads the same as having it.
+---Whether every id a buff can land as is one the client still answers about while auras are
+---secret.
+---@param buff ClassBuff
+---@return boolean
+local function BuffIsReadable(buff)
+	for spellId in pairs(buff.Auras) do
+		if not readableAuraIds[spellId] then
+			return false
+		end
+	end
+
+	return true
+end
+
+---Whether the unit already has the buff. Three answers, not two. A "no" the client never actually
+---gave would put a mark on every frame in the group, so unknown reads the same as having it.
 ---
----Asked once for the whole client, since branching on an aura the client answered secretly aborts
----a handler outright. A group buff is cast before the pull, which is exactly where the answer is
----readable.
+---A match or a key hides aura data for its whole length. The client keeps a short list of ids
+---readable through it, and an id off that list answers nil whether the buff is there or not.
 ---@param unit string
 ---@return boolean? nil when the client will not say
 local function HasBuff(unit)
@@ -176,7 +199,9 @@ local function HasBuff(unit)
 		return nil
 	end
 
-	if C_Secrets and C_Secrets.ShouldAurasBeSecret and C_Secrets.ShouldAurasBeSecret() then
+	local secret = C_Secrets and C_Secrets.ShouldAurasBeSecret and C_Secrets.ShouldAurasBeSecret()
+
+	if secret and not playerBuffReadable then
 		return nil
 	end
 
@@ -375,8 +400,9 @@ function M:Refresh()
 	-- standing is not the question.
 	active = options.Enabled == true and (testModeActive or InWantedPlace(options))
 
-	if active and not playerBuff then
+	if active then
 		playerBuff = PlayerBuff()
+		playerBuffReadable = playerBuff ~= nil and BuffIsReadable(playerBuff)
 	end
 
 	-- The watcher owns the event frame the hooks are installed against, so it comes first.

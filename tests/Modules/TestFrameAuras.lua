@@ -136,6 +136,8 @@ local TARGET_ROWS_SHIPPED = targetAuras.Available
 local module = env.addon.Modules.FrameAurasModule
 local testSpells = env.addon.Core.TestSpells
 local trackedBuffs = env.addon.Core.TrackedBuffs
+local classBuffs = env.addon.Core.ClassBuffs
+local readableAuraIds = env.addon.Core.ReadableAuraIds
 local options = db.Modules.FrameAuras
 local dbDefaults = env.addon.Config.Defaults
 local moduleUtil = env.addon.Utils.ModuleUtil
@@ -2429,6 +2431,9 @@ targetAuras.Available = TARGET_ROWS_SHIPPED
 -- be mistaken for it. Priest, because Power Word: Fortitude lands as one aura rather than thirteen.
 local MARK_CLASS = "PRIEST"
 local MARK_SPELL = 21562
+-- A second id the same buff could land as, standing for one the client keeps to itself while auras
+-- are secret.
+local HIDDEN_SPELL = 99000002
 local MARK_UNIT = "raid40"
 local markFrame = NewRaidFrame(40)
 -- Units the client says already carry the buff.
@@ -2483,6 +2488,10 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 
 		wow.setUnitClass("player", MARK_CLASS)
 		buffed[MARK_UNIT] = nil
+		-- Reset here so one failing case cannot poison the next.
+		acm.restricted = false
+		_G.UnitIsDeadOrGhost = nil
+		classBuffs[MARK_CLASS].Auras[HIDDEN_SPELL] = nil
 		_G.C_Housing = nil
 		MoveTo("none")
 
@@ -2553,6 +2562,72 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 
 		assert(not Marked(markFrame), "and the preview leaves nothing behind on the way out")
 	end)
+
+	fw.it("marks a member missing the buff inside an arena", function()
+		acm.restricted = true
+		MoveTo("arena")
+		module:Refresh()
+
+		assert(Marked(markFrame), "this buff stays readable all match, so the mark is drawn")
+	end)
+
+	fw.it("leaves a buffed member alone inside an arena", function()
+		acm.restricted = true
+		buffed[MARK_UNIT] = true
+		MoveTo("arena")
+		module:Refresh()
+
+		assert(not Marked(markFrame), "the answer is read rather than assumed missing")
+	end)
+
+	fw.it("marks nobody in an arena when one of the buff's ids is hidden", function()
+		classBuffs[MARK_CLASS].Auras[HIDDEN_SPELL] = true
+
+		acm.restricted = true
+		MoveTo("arena")
+		module:Refresh()
+
+		assert(not Marked(markFrame), "silence the client never broke must not mark the whole group")
+	end)
+
+	fw.it("marks a member the client will not say is alive", function()
+		-- Unit identity stays secret for the whole match, which is what this read comes back as.
+		local secret = wow.markSecret({})
+
+		_G.UnitIsDeadOrGhost = function()
+			return secret
+		end
+
+		acm.restricted = true
+		MoveTo("arena")
+		module:Refresh()
+
+		assert(Marked(markFrame), "one unreadable read must not cost the mark a whole match")
+	end)
+
+	fw.it("leaves a dead member unmarked", function()
+		_G.UnitIsDeadOrGhost = function()
+			return true
+		end
+
+		MoveTo("party")
+		module:Refresh()
+
+		assert(not Marked(markFrame), "a group buff is not what a corpse is short of")
+	end)
 end)
 
 DropRaidFrame(40)
+
+-- The mark gives up on a buff carrying an id off the readable list, so a class entry that forgets
+-- one costs that class its mark for a whole match with nothing to show for it.
+fw.describe("Frame Auras - the class buffs the mark reads", function()
+	fw.it("keeps every id a class buff can land as on the readable list", function()
+		for class, buff in pairs(classBuffs) do
+			for spellId in pairs(buff.Auras) do
+				assert(readableAuraIds[spellId], "the " .. class .. " buff can land as " .. spellId
+					.. ", which the client hides while auras are secret")
+			end
+		end
+	end)
+end)
