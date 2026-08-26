@@ -120,6 +120,28 @@ local function FirstUsableSize(anchors, skipBlizzard)
 	return nil
 end
 
+---The size of the first arena frame a lookup turns up, skipping the hidden ones unless the caller
+---says a hidden frame will do.
+---@param lookup fun(self: table, index: number): table?
+---@param mustBeVisible boolean
+---@return number? width
+---@return number? height
+local function FirstArenaSize(lookup, mustBeVisible)
+	for index = 1, MAX_TEST_FRAMES do
+		local frame = lookup(M, index)
+
+		if frame and (not mustBeVisible or frame:IsVisible()) then
+			local width, height = ScreenSize(frame)
+
+			if width then
+				return width, height
+			end
+		end
+	end
+
+	return nil
+end
+
 ---@param height number
 ---@return number
 local function PetHeight(height)
@@ -242,25 +264,23 @@ function M:GetTestFrameSize()
 	return width or FRAME_WIDTH, height or FRAME_HEIGHT
 end
 
----The size an arena stand-in takes, which is the party size until an enemy frame is on screen to
----copy. Blizzard's arena frames exist from login and sit hidden at their template size, so a
----frame nobody can see is worth nothing to measure.
+---The size an arena stand-in takes: an enemy frame on screen, then one an addon built and is
+---holding hidden, then the party size. Blizzard's own sit at their template size until an arena
+---loads, which is nothing like what the player will see.
 ---@return number width
 ---@return number height
 function M:GetTestArenaFrameSize()
-	for index = 1, MAX_TEST_FRAMES do
-		local frame = M:GetArenaFrame(index)
+	local width, height = FirstArenaSize(M.GetArenaFrame, true)
 
-		if frame and frame:IsVisible() then
-			local width, height = ScreenSize(frame)
-
-			if width then
-				return width, height
-			end
-		end
+	if not width then
+		width, height = FirstArenaSize(M.GetAddonArenaFrame, false)
 	end
 
-	return M:GetTestFrameSize()
+	if not width then
+		return M:GetTestFrameSize()
+	end
+
+	return width, height
 end
 
 function M:CreateTestFrames()

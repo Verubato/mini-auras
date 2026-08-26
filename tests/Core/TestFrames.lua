@@ -374,8 +374,32 @@ fw.describe("Frames:GetTestFrameSize", function()
 	end)
 end)
 
--- Nothing builds an arena frame outside an arena, which is exactly when the stand-ins are wanted,
--- so the party size has to carry that column too.
+---An arena enemy frame, which the measurement reaches by global name rather than through the
+---anchor providers.
+---@param visible boolean
+---@param width number
+---@param height number
+---@param scale number
+---@return table
+local function NewArenaFrame(visible, width, height, scale)
+	return {
+		IsVisible = function()
+			return visible
+		end,
+		GetWidth = function()
+			return width
+		end,
+		GetHeight = function()
+			return height
+		end,
+		GetEffectiveScale = function()
+			return scale
+		end,
+	}
+end
+
+-- Outside an arena only addon-built frames carry a real size, and that is exactly when the
+-- stand-ins are wanted.
 fw.describe("Frames:GetTestArenaFrameSize", function()
 	fw.before_each(function()
 		for key in pairs(db) do
@@ -384,23 +408,11 @@ fw.describe("Frames:GetTestArenaFrameSize", function()
 
 		uiScale = 1
 		_G.sArenaEnemyFrame1 = nil
+		_G.CompactArenaFrame = nil
 	end)
 
-	fw.it("copies an arena enemy frame that has been built", function()
-		_G.sArenaEnemyFrame1 = {
-			IsVisible = function()
-				return true
-			end,
-			GetWidth = function()
-				return 200
-			end,
-			GetHeight = function()
-				return 60
-			end,
-			GetEffectiveScale = function()
-				return 0.5
-			end,
-		}
+	fw.it("copies an arena enemy frame that is on screen", function()
+		_G.sArenaEnemyFrame1 = NewArenaFrame(true, 200, 60, 0.5)
 
 		local width, height = frames:GetTestArenaFrameSize()
 
@@ -418,23 +430,35 @@ fw.describe("Frames:GetTestArenaFrameSize", function()
 		assert(height == 40, "and its height, got " .. height)
 	end)
 
-	-- Blizzard's arena frames are built at login and sit hidden at their template size, which is
-	-- nothing like what the player sees in an arena.
-	fw.it("ignores an arena frame that is not on screen", function()
-		_G.sArenaEnemyFrame1 = {
-			IsVisible = function()
-				return false
-			end,
-			GetWidth = function()
-				return 200
-			end,
-			GetHeight = function()
-				return 60
-			end,
-			GetEffectiveScale = function()
-				return 1
-			end,
-		}
+	-- The stand-ins are only ever up while no arena frame is on screen, so a hidden one an addon
+	-- holds at its real size is the only thing left worth copying.
+	fw.it("copies a hidden arena frame an addon built", function()
+		_G.sArenaEnemyFrame1 = NewArenaFrame(false, 200, 60, 0.5)
+		NewSizedAnchor("TestArenaFallbackAnchor", 96, 40, 1)
+		db.Anchor1 = "TestArenaFallbackAnchor"
+
+		local width, height = frames:GetTestArenaFrameSize()
+
+		assert(width == 100, "the addon's frame beats the party size, got " .. width)
+		assert(height == 30, "converted for its scale, got " .. height)
+	end)
+
+	-- On the default UI in an arena, Blizzard's frames are the real ones and the party column
+	-- going up can still ask for this size.
+	fw.it("copies a Blizzard arena frame that is on screen", function()
+		_G.CompactArenaFrame = { memberUnitFrames = { NewArenaFrame(true, 200, 60, 0.5) } }
+		NewSizedAnchor("TestArenaFallbackAnchor", 96, 40, 1)
+		db.Anchor1 = "TestArenaFallbackAnchor"
+
+		local width, height = frames:GetTestArenaFrameSize()
+
+		assert(width == 100, "the visible frame beats the party size, got " .. width)
+		assert(height == 30, "converted for its scale, got " .. height)
+	end)
+
+	-- Blizzard's are built at login too, but sit at their template size until an arena loads.
+	fw.it("ignores a hidden Blizzard arena frame", function()
+		_G.CompactArenaFrame = { memberUnitFrames = { NewArenaFrame(false, 200, 60, 1) } }
 		NewSizedAnchor("TestArenaFallbackAnchor", 96, 40, 1)
 		db.Anchor1 = "TestArenaFallbackAnchor"
 
@@ -448,3 +472,4 @@ end)
 _G.UIParent = realUIParent
 -- The last arena test leaves its stub behind, and a later file loading ArenaFrames would find it.
 _G.sArenaEnemyFrame1 = nil
+_G.CompactArenaFrame = nil

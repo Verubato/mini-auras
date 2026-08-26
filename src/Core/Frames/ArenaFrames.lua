@@ -3,24 +3,25 @@ local M = addon.Core.Frames
 -- Arena never goes past three opponents, so the frames are walked by index.
 local MAX_ARENA_FRAMES = 3
 
----Returns the arena enemy frame for the given index, checking known frame addons in order:
----sArena Reloaded (sArenaEnemyFrame1/2/3), ElvUI (ElvUF_Arena1/2/3),
----then Blizzard (CompactArenaFrame.memberUnitFrames[index]).
----sArena is checked first: when it is loaded it replaces the Blizzard frames.
+---The arena enemy frame an addon built: sArena Reloaded (sArenaEnemyFrame1/2/3) or ElvUI
+---(ElvUF_Arena1/2/3). Both build theirs at login and hold its size and scale while hidden, so one
+---can be measured before an arena starts.
+---@param index number
+---@return table?
+function M:GetAddonArenaFrame(index)
+	return _G["sArenaEnemyFrame" .. index] or _G["ElvUF_Arena" .. index]
+end
+
+---Returns the arena enemy frame for the given index, an addon's first and Blizzard's
+---(CompactArenaFrame.memberUnitFrames[index]) after, since a loaded addon replaces those.
 ---Nil until something has actually built the frame, which is usually not before the arena loads.
 ---@param index number
 ---@return table?
 function M:GetArenaFrame(index)
-	local sArena = _G["sArenaEnemyFrame" .. index]
+	local addonFrame = M:GetAddonArenaFrame(index)
 
-	if sArena then
-		return sArena
-	end
-
-	local elvui = _G["ElvUF_Arena" .. index]
-
-	if elvui then
-		return elvui
+	if addonFrame then
+		return addonFrame
 	end
 
 	local blizzard = CompactArenaFrame and CompactArenaFrame.memberUnitFrames
