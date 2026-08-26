@@ -49,6 +49,7 @@ L:RegisterLocale("deDE", function() return {
 	["Display"] = "Anzeige",
 	["Bars"] = "Leisten",
 	["Sound only"] = "Nur Ton",
+	["Text only"] = "Nur Text",
 	["Layout"] = "Anordnung",
 	["Spell name"] = "Zaubername",
 	["Show the aura's name inside the bar."] = "Zeigt den Namen der Aura in der Leiste an.",

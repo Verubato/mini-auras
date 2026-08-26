@@ -49,6 +49,7 @@ L:RegisterLocale("koKR", function() return {
 	["Display"] = "표시 방식",
 	["Bars"] = "바",
 	["Sound only"] = "소리만",
+	["Text only"] = "텍스트만",
 	["Layout"] = "배치",
 	["Spell name"] = "주문 이름",
 	["Show the aura's name inside the bar."] = "바 안에 오라 이름을 표시합니다.",

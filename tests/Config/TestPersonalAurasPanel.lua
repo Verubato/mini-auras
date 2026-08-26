@@ -749,6 +749,7 @@ fw.describe("Personal auras page - with a group configured", function()
 			groups.DisplayStyle.Bars,
 			groups.DisplayStyle.Icons,
 			groups.DisplayStyle.Texture,
+			groups.DisplayStyle.TextOnly,
 			groups.DisplayStyle.SoundOnly,
 		}
 
@@ -768,5 +769,79 @@ fw.describe("Personal auras page - with a group configured", function()
 			groups:Normalise(group)
 			ShowPage(addon)
 		end
+	end)
+end)
+
+---The checkbox carrying this label, found by the caption the framework writes onto it. The stock
+---art pads the caption with a leading space, so the match is on a fragment.
+---@param label string
+---@return table?
+local function CheckboxLabelled(label)
+	for _, frame in ipairs(WowMock.Frames) do
+		for index = 1, frame:GetNumRegions() do
+			local region = select(index, frame:GetRegions())
+			local text = region and region.GetText and region:GetText()
+
+			if text and text:find(label, 1, true) then
+				return frame
+			end
+		end
+	end
+
+	return nil
+end
+
+---The dropdown sitting under this caption. The editor builds each caption itself and hangs it off
+---the control, which is the only thing telling the row's dropdowns apart.
+---@param label string
+---@return table?
+local function DropdownLabelled(label)
+	for _, frame in ipairs(WowMock.Frames) do
+		local caption = frame.MiniLabel
+
+		if caption and caption.GetText and caption:GetText() == label then
+			return frame
+		end
+	end
+
+	return nil
+end
+
+fw.describe("Personal auras page - a group drawing text only", function()
+	fw.it("names the shape in the display dropdown", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.PersonalAuras.Groups
+
+		group.Icons.Display = groups.DisplayStyle.TextOnly
+		groups:Normalise(group)
+
+		ShowPage(addon, group)
+
+		local dropdown = DropdownLabelled("Display")
+
+		fw.not_nil(dropdown, "the display dropdown is on the page")
+		fw.eq(dropdown:GetText(), "Text only", "and it reads back the shape the group is on")
+	end)
+
+	fw.it("puts away the switches this shape cannot use", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.PersonalAuras.Groups
+
+		group.Icons.Display = groups.DisplayStyle.TextOnly
+		groups:Normalise(group)
+
+		ShowPage(addon, group)
+
+		local gone = { "Reverse swipe", "Hide swipe", "Hide numbers", "Centre stacks" }
+
+		for _, label in ipairs(gone) do
+			local check = CheckboxLabelled(label)
+
+			fw.not_nil(check, label .. " is built")
+			fw.falsy(check:IsShown(), label .. " is put away for a text-only group")
+		end
+
+		fw.truthy(CheckboxLabelled("Show border"):IsShown(), "the border switch stays")
+		fw.truthy(CheckboxLabelled("Show tooltips"):IsShown(), "and so does the tooltip one")
 	end)
 end)

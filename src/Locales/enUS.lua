@@ -50,6 +50,7 @@ L:SetDefaultStrings({
 	["Display"] = "Display",
 	["Bars"] = "Bars",
 	["Sound only"] = "Sound only",
+	["Text only"] = "Text only",
 	["Layout"] = "Layout",
 	["Spell name"] = "Spell name",
 	["Show the aura's name inside the bar."] = "Show the aura's name inside the bar.",

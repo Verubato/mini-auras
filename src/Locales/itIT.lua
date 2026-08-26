@@ -49,6 +49,7 @@ L:RegisterLocale("itIT", function() return {
 	["Display"] = "Visualizzazione",
 	["Bars"] = "Barre",
 	["Sound only"] = "Solo suono",
+	["Text only"] = "Solo testo",
 	["Layout"] = "Disposizione",
 	["Spell name"] = "Nome incantesimo",
 	["Show the aura's name inside the bar."] = "Mostra il nome dell'aura all'interno della barra.",

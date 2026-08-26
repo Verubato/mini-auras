@@ -114,9 +114,10 @@ function ui.BuildAppearanceTab(ctx)
 	end)
 
 	-- Bars is set on the ones that only make sense for one shape: a bar has no cooldown swipe to
-	-- reverse and no glow worth drawing, while an icon has no room for a name. Columns are handed
-	-- out per shape in this order rather than fixed, so whichever set is up fills the row from the
-	-- left with no gap where a hidden one would have been.
+	-- reverse and no glow worth drawing, while an icon has no room for a name. Text is set on the
+	-- switches the text shape has no use for. Columns are handed out per shape in this order
+	-- rather than fixed, so whichever set is up fills the row from the left with no gap where a
+	-- hidden one would have been.
 	local checkboxes = {
 		{
 			Bars = false,
@@ -130,27 +131,31 @@ function ui.BuildAppearanceTab(ctx)
 			Set = function(group, value) group.Icons.Border = value end,
 		},
 		{
-			Bars = false,
+			Bars = false, Text = false,
 			Label = L["Reverse swipe"], Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 			Get = function(group) return group.Icons.ReverseCooldown end,
 			Set = function(group, value) group.Icons.ReverseCooldown = value end,
 		},
 		{
-			Bars = false,
+			Bars = false, Text = false,
 			Label = L["Hide swipe"],
 			Tooltip = L["Hide the cooldown swipe animation on this group's icons."],
 			Get = function(group) return group.Icons.HideSwipe end,
 			Set = function(group, value) group.Icons.HideSwipe = value end,
 		},
 		{
-			Bars = false,
+			-- Off the text shape because the countdown is all it draws, so hiding it would leave
+			-- a group that can never show anything.
+			Bars = false, Text = false,
 			Label = L["Hide numbers"],
 			Tooltip = L["Hide the countdown text on this group's icons."],
 			Get = function(group) return group.Icons.HideNumbers end,
 			Set = function(group, value) group.Icons.HideNumbers = value end,
 		},
 		{
-			Bars = false,
+			-- Off the text shape too, because the count stands in for a countdown that is
+			-- forced on there.
+			Bars = false, Text = false,
 			Label = L["Centre stacks"],
 			Tooltip = L["Show the stack count in the middle of the icon instead of the countdown text."],
 			Get = function(group) return group.Icons.CenterStacks end,
@@ -307,6 +312,7 @@ function ui.BuildAppearanceTab(ctx)
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
 		local texture = groups:DrawsTexture(group)
+		local text = groups:DrawsTextOnly(group)
 		local column = 0
 
 		for _, spec in ipairs(checkboxes) do
@@ -318,6 +324,7 @@ function ui.BuildAppearanceTab(ctx)
 				shown = spec.Texture == true
 			else
 				shown = spec.Texture ~= true and (spec.Bars == nil or spec.Bars == bars)
+					and not (text and spec.Text == false)
 			end
 
 			spec.Control:SetShown(shown)

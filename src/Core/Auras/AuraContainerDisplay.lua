@@ -900,8 +900,10 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	-- Numbers off means neither the cooldown's own text nor the bound fontstring, so an icon that
 	-- says nothing but "this is up" is the two switches together. A centred stack count takes the
 	-- countdown's place, so it drops the numbers the same way.
-	local hideNumbers = style.HideNumbers == true or style.CenterStacks == true
-		or style.DisableNumbers == true
+	-- None of them reach a text-only button, where the countdown is the whole display and
+	-- dropping it would leave an aura that is up with nothing on screen.
+	local hideNumbers = not instance.TextOnly and (style.HideNumbers == true
+		or style.CenterStacks == true or style.DisableNumbers == true)
 	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns. It no-ops for
 	-- 12.1 duration objects, where fractions render through the duration-text binding below, and
 	-- the cooldown's own SetCountdownFormatter does not work there either.
@@ -923,7 +925,8 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 		-- slider moves none of them, so what a widget already carries is remembered and the engine
 		-- is only told when it changes.
 		local reverse = style.ReverseCooldown or false
-		local drawSwipe = not (style.DisableSwipe or style.HideSwipe)
+		-- A text-only button keeps its numbers, so only the swipe goes.
+		local drawSwipe = not (style.DisableSwipe or style.HideSwipe or instance.TextOnly)
 		local hideCountdown = hideNumbers or useDurationText
 
 		if widgets.CooldownReverse ~= reverse then
@@ -1078,7 +1081,8 @@ local function StyleStacks(instance, button, widgets, size, fontScale)
 
 	stacks:SetAlpha(style.Stacks and 1 or 0)
 
-	local centered = style.CenterStacks == true and not widgets.Bar
+	-- A centred count would sit on top of the countdown, which is forced on for a text-only button.
+	local centered = style.CenterStacks == true and not widgets.Bar and not instance.TextOnly
 
 	if centered then
 		CenterStacks(instance, button, widgets)
@@ -1393,16 +1397,22 @@ local function InitializeButton(instance, button, group)
 	button:SetFlattensRenderLayers(true)
 
 	-- Icon on the lowest layer, swipe + border above, matching CreateLayer in IconSlotContainer.
-	local icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
-	icon:SetAllPoints(button)
-	local texCoord = instance.IconTexCoord
-	if texCoord then
-		icon:SetTexCoord(texCoord[1], texCoord[2], texCoord[3], texCoord[4])
+	-- A text-only display registers none, because every touch of a button's regions is refused
+	-- once auras are secret and there would be no way back from hiding one.
+	local icon
+
+	if not instance.TextOnly then
+		icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
+		icon:SetAllPoints(button)
+		local texCoord = instance.IconTexCoord
+		if texCoord then
+			icon:SetTexCoord(texCoord[1], texCoord[2], texCoord[3], texCoord[4])
+		end
+		if instance.IconMask then
+			icon:AddMaskTexture(instance.IconMask)
+		end
+		button:SetIcon(icon)
 	end
-	if instance.IconMask then
-		icon:AddMaskTexture(instance.IconMask)
-	end
-	button:SetIcon(icon)
 
 	local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
 	cd:SetAllPoints(button)
@@ -1838,6 +1848,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- registered in initializeFrame, so a display can never change shape.
 	instance.Bar = options.Bar == true
 	instance.Texture = options.Texture == true
+	instance.TextOnly = options.TextOnly == true
 	-- Resolved at creation, because regions can only be added to a button in initializeFrame, so a
 	-- display that skipped them can never grow them later. Opt a pooled display in whenever any
 	-- consumer of the pool might want the reveal.
@@ -2670,6 +2681,9 @@ end
 ---or chrome, taken from Style.Texture*. The engine shows the button while a matching aura is
 ---present, so the art works as presence-driven decoration with no aura reads. Decided at creation
 ---like Label and Bar, so a display can never switch shape.
+---@field TextOnly boolean? Build every icon button without art and without a swipe, leaving the
+---countdown as the whole display. Decided at creation like Label and Bar, because an icon is
+---registered as a button is built and can never be taken back while auras are secret.
 ---@field Pandemic boolean? Create and register a refresh-window region on every button whose
 ---group has not opted out. It has to be decided at creation, since regions can only be added in
 ---initializeFrame. The Style.Pandemic toggle then shows or hides the reveal per restyle.
@@ -2711,5 +2725,6 @@ end
 ---@field Label string?
 ---@field Bar boolean
 ---@field Texture boolean
+---@field TextOnly boolean
 ---@field MasqueGroup table?
 ---@field MasqueGroupName string?

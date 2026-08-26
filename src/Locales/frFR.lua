@@ -49,6 +49,7 @@ L:RegisterLocale("frFR", function() return {
 	["Display"] = "Affichage",
 	["Bars"] = "Barres",
 	["Sound only"] = "Son uniquement",
+	["Text only"] = "Texte uniquement",
 	["Layout"] = "Disposition",
 	["Spell name"] = "Nom du sort",
 	["Show the aura's name inside the bar."] = "Affiche le nom de l'aura à l'intérieur de la barre.",

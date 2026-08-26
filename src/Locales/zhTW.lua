@@ -49,6 +49,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Display"] = "顯示方式",
 	["Bars"] = "條狀",
 	["Sound only"] = "僅聲音",
+	["Text only"] = "僅文字",
 	["Layout"] = "版面",
 	["Spell name"] = "法術名稱",
 	["Show the aura's name inside the bar."] = "在條內顯示光環名稱。",

@@ -129,7 +129,8 @@ M.KickSpecIds = {
 ---@param spells table[]|number[] TestSpell entries, or bare spell ids.
 ---@param startSlot number First slot to write (after a kick icon, for the modules that show one).
 ---@param options table Styling and limits:
---- ReverseCooldown/HideSwipe/HideNumbers/Glow/FontScale passed through to SetSlot;
+--- ReverseCooldown/HideIcon/HideSwipe/HideNumbers/ShowNumbers/Glow/FontScale passed through
+--- to SetSlot;
 --- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead;
 --- TextColor tints the countdown and any stand-in count, replacing the global colour-by-time
 --- while it is set;
@@ -195,8 +196,10 @@ function M:FillContainer(container, spells, startSlot, options)
 				DurationObject = wowEx:CreateDuration(startTime, duration),
 				Alpha = true,
 				ReverseCooldown = options.ReverseCooldown,
+				HideIcon = options.HideIcon,
 				HideSwipe = options.HideSwipe,
 				HideNumbers = options.HideNumbers,
+				ShowNumbers = options.ShowNumbers,
 				Glow = options.Glow,
 				Color = color,
 				TextColor = options.TextColor,

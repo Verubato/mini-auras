@@ -45,10 +45,15 @@ local ARENA = "ARENA"
 --
 -- Art is one picture drawn while any tracked aura is up. Which aura is up is secret, so a picture
 -- that changed per aura could not be picked anyway.
+--
+-- Text only is the icon shape with the art and the swipe left out, so all that is drawn is the
+-- countdown. What a button registers is settled as it is built, so this is a shape of its own
+-- rather than a switch on the icon one.
 local AS_ICONS = "ICON"
 local AS_BARS = "BAR"
 local AS_SOUND = "SOUND"
 local AS_TEXTURE = "TEXTURE"
+local AS_TEXT = "TEXT"
 
 local DEFAULT_ICON_SIZE = 40
 local DEFAULT_SPACING = 2
@@ -234,7 +239,10 @@ M.MinIconSize = MIN_ICON_SIZE
 M.MaxIconSize = MAX_ICON_SIZE
 M.MinTextScale = MIN_TEXT_SCALE
 M.MaxTextScale = MAX_TEXT_SCALE
-M.DisplayStyle = { Icons = AS_ICONS, Bars = AS_BARS, SoundOnly = AS_SOUND, Texture = AS_TEXTURE }
+M.DisplayStyle = {
+	Icons = AS_ICONS, Bars = AS_BARS, SoundOnly = AS_SOUND, Texture = AS_TEXTURE,
+	TextOnly = AS_TEXT,
+}
 M.MinBarWidth = MIN_BAR_WIDTH
 M.MaxBarWidth = MAX_BAR_WIDTH
 M.MinBarHeight = MIN_BAR_HEIGHT
@@ -417,7 +425,7 @@ function M:Normalise(group)
 	-- Icons unless the group asked for something else. A group saved before bars existed has no
 	-- field, and changing what those groups look like is not something a version bump gets to do.
 	icons.Display = (icons.Display == AS_BARS or icons.Display == AS_SOUND
-		or icons.Display == AS_TEXTURE) and icons.Display or AS_ICONS
+		or icons.Display == AS_TEXTURE or icons.Display == AS_TEXT) and icons.Display or AS_ICONS
 	icons.BarWidth = Clamped(icons.BarWidth, DEFAULT_BAR_WIDTH, MIN_BAR_WIDTH, MAX_BAR_WIDTH)
 	icons.BarHeight = Clamped(icons.BarHeight, DEFAULT_BAR_HEIGHT, MIN_BAR_HEIGHT, MAX_BAR_HEIGHT)
 	-- A name from a media addon that is no longer installed resolves back to the default at draw
@@ -629,6 +637,13 @@ function M:DrawsTexture(group)
 	return group.Icons.Display == AS_TEXTURE
 end
 
+---True while a group draws its countdown and nothing else.
+---@param group PersonalAuraGroup
+---@return boolean
+function M:DrawsTextOnly(group)
+	return group.Icons.Display == AS_TEXT
+end
+
 ---Which shape a group draws, as one of the DisplayStyle values. A button's shape is baked in when
 ---it is created, so this is also the key the display pools its frames under.
 ---@param group PersonalAuraGroup
@@ -636,7 +651,8 @@ end
 function M:GetShape(group)
 	local display = group.Icons and group.Icons.Display
 
-	return (display == AS_BARS or display == AS_TEXTURE) and display or AS_ICONS
+	return (display == AS_BARS or display == AS_TEXTURE or display == AS_TEXT)
+		and display or AS_ICONS
 end
 
 ---How many auras a group can show at once. Art is one picture however many auras are up, so a

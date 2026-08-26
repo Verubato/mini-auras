@@ -49,6 +49,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Display"] = "Отображение",
 	["Bars"] = "Полосы",
 	["Sound only"] = "Только звук",
+	["Text only"] = "Только текст",
 	["Layout"] = "Расположение",
 	["Spell name"] = "Название заклинания",
 	["Show the aura's name inside the bar."] = "Показывает название эффекта внутри полосы.",

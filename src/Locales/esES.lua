@@ -49,6 +49,7 @@ L:RegisterLocale("esES", function() return {
 	["Display"] = "Visualización",
 	["Bars"] = "Barras",
 	["Sound only"] = "Solo sonido",
+	["Text only"] = "Solo texto",
 	["Layout"] = "Disposición",
 	["Spell name"] = "Nombre del hechizo",
 	["Show the aura's name inside the bar."] = "Muestra el nombre del aura dentro de la barra.",

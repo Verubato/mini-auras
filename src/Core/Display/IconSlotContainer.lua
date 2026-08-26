@@ -1054,8 +1054,10 @@ end
 ---@field Alpha number|boolean? Control alpha: number sets it directly, boolean uses SetAlphaFromBoolean
 ---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
 ---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
+---@field HideIcon boolean? Drop the icon art, leaving the slot as its countdown alone
 ---@field HideSwipe boolean? Drop the cooldown swipe, whatever the global setting says
 ---@field HideNumbers boolean? Drop the countdown text
+---@field ShowNumbers boolean? Keep the countdown text, whatever the global setting says
 ---@field Color table? RGBA color table {r, g, b, a} for glow and border color
 ---@field Border boolean? Show the coloured border even while a glow is active
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
@@ -1072,7 +1074,7 @@ function M:SetSlot(slotIndex, options)
 		return
 	end
 
-	if not options.Texture then
+	if not options.Texture and not options.HideIcon then
 		return
 	end
 
@@ -1133,9 +1135,10 @@ function M:SetSlot(slotIndex, options)
 	end
 
 	local db = GetDb()
-	layer.Icon:SetTexture(options.Texture)
+	layer.Icon:SetTexture(not options.HideIcon and options.Texture or nil)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
-	layer.Cooldown:SetHideCountdownNumbers(options.HideNumbers == true or (db and db.DisableNumbers) == true)
+	layer.Cooldown:SetHideCountdownNumbers(not options.ShowNumbers
+		and (options.HideNumbers == true or (db and db.DisableNumbers) == true))
 	if layer.Cooldown.SetCountdownMillisecondsThreshold then
 		layer.Cooldown:SetCountdownMillisecondsThreshold(options.ShowMilliseconds and (db and db.MillisecondsThreshold or 5) or 0)
 	end

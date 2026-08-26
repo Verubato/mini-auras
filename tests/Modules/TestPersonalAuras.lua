@@ -2707,6 +2707,202 @@ fw.describe("PersonalAuras - textures", function()
 	end)
 end)
 
+fw.describe("PersonalAuras - text only", function()
+	local TEXT_ONLY = groups.DisplayStyle.TextOnly
+
+	---@return PersonalAuraGroup
+	local function AddTextGroup()
+		return AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = TEXT_ONLY },
+		})
+	end
+
+	fw.it("registers a clock and no icon", function()
+		ClearGroups()
+		AddTextGroup()
+		module:Refresh()
+
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+
+		assert(button._calls.SetIcon == nil, "no icon is registered with the engine")
+		assert(button._calls.SetDurationCooldown == 1, "the clock still is, for its numbers")
+	end)
+
+	fw.it("draws the countdown with the swipe off", function()
+		-- The group's own Hide swipe switch is off here, so the swipe going is the shape's doing.
+		ClearGroups()
+
+		local group = AddTextGroup()
+
+		module:Refresh()
+
+		assert(group.Icons.HideSwipe == false, "the group never asked for the swipe to go")
+
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+		local cooldown = button._lastArgs.SetDurationCooldown[1]
+
+		assert(cooldown._lastArgs.SetDrawSwipe[1] == false, "the swipe is off all the same")
+		assert(cooldown._lastArgs.SetHideCountdownNumbers[1] == false, "and the numbers are on")
+	end)
+
+	fw.it("keeps its countdown whatever is set to hide it", function()
+		-- The countdown is the whole display here, so every switch that would drop it on an icon
+		-- has to be ignored or the group shows nothing at all. The global one is the sharp case:
+		-- there is nothing in the personal auras editor to explain a group blanked by it.
+		ClearGroups()
+		db.DisableNumbers = true
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = TEXT_ONLY, HideNumbers = true, CenterStacks = true },
+		})
+		module:Refresh()
+
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+		local cooldown = button._lastArgs.SetDurationCooldown[1]
+		local hidden = cooldown._lastArgs.SetHideCountdownNumbers[1]
+
+		-- Put back before the assert, so a failure here cannot leave the global set for the
+		-- tests that follow.
+		db.DisableNumbers = false
+
+		assert(hidden == false, "the numbers are on despite all three")
+	end)
+
+	fw.it("leaves the stack count in its corner", function()
+		-- Centring it is how an icon group trades the countdown for the count. With the countdown
+		-- forced back on, a centred count would sit on top of it.
+		ClearGroups()
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = TEXT_ONLY, CenterStacks = true },
+		})
+		module:Refresh()
+
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+		local stacks = button._lastArgs.SetApplicationCount[1]
+
+		assert(stacks._lastArgs.SetPoint[1] == "BOTTOMRIGHT", "the count stays out of the way")
+	end)
+
+	fw.it("keeps text-only displays in their own pool", function()
+		-- What a button registers is baked in when it is created, so an icon display handed to a
+		-- text-only group would draw art for the rest of the session.
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local iconContainer = ContainerFor("player")
+
+		ClearGroups()
+		AddTextGroup()
+		module:Refresh()
+
+		local textContainer = ContainerFor("player")
+
+		assert(textContainer ~= iconContainer, "the parked icon display is not reused")
+		assert(textContainer._groups.helpful.buttons[1]._calls.SetIcon == nil, "it draws no art")
+	end)
+
+	fw.it("takes the shape from a saved group and leaves the others alone", function()
+		local group = groups:Normalise({ Icons = { Display = TEXT_ONLY } })
+
+		assert(group.Icons.Display == TEXT_ONLY, "an import asking for it keeps it")
+		assert(groups:DrawsTextOnly(group), "and the shape question agrees")
+		assert(groups:GetShape(group) == TEXT_ONLY, "so the pool key is its own")
+		assert(groups:GetSize(group) == group.Icons.Size, "sized like the icons it replaces")
+		assert(groups:GetBudget(group) == groups.MaxIcons, "and it shows as many of them")
+
+		local saved = groups:Normalise({ Icons = { Size = 30 } })
+
+		assert(saved.Icons.Display == groups.DisplayStyle.Icons, "a group saved before it is icons")
+		assert(groups:Normalise({ Icons = { Display = "NONSENSE" } }).Icons.Display
+			== groups.DisplayStyle.Icons, "and so is anything the engine never named")
+	end)
+
+	fw.it("draws its stand-ins without a swipe", function()
+		ClearGroups()
+
+		local group = AddTextGroup()
+
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local cooldown = display:GetStates()[group.Id].Screen.Test.Slots[1].Container.Cooldown
+
+		assert(cooldown._lastArgs.SetDrawSwipe[1] == false,
+			"the stand-in matches the shape it is standing in for")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("keeps the countdown on its stand-ins too", function()
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = TEXT_ONLY, HideNumbers = true, CenterStacks = true },
+		})
+
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local cooldown = display:GetStates()[group.Id].Screen.Test.Slots[1].Container.Cooldown
+
+		assert(cooldown._lastArgs.SetHideCountdownNumbers[1] == false,
+			"the stand-in shows what the live one will")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("keeps the countdown on its stand-ins with numbers off globally", function()
+		-- The preview reads the global setting itself, so the live fix does not reach it. Without
+		-- this the user most likely to want the shape sees an empty box while deciding on it.
+		ClearGroups()
+		db.DisableNumbers = true
+
+		local group = AddTextGroup()
+
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local cooldown = display:GetStates()[group.Id].Screen.Test.Slots[1].Container.Cooldown
+		local hidden = cooldown._lastArgs.SetHideCountdownNumbers[1]
+
+		display:SetPreviewGroup(nil)
+		-- Put back before the assert, so a failure here cannot leave the global set for the
+		-- tests that follow.
+		db.DisableNumbers = false
+
+		assert(hidden == false, "the stand-in shows the countdown the live one will")
+	end)
+
+	fw.it("draws its stand-ins with no art, at the size the group asks for", function()
+		-- The slot is sized by the container, not by what is in it, so dropping the art leaves a
+		-- full square to drag around rather than a collapsed one.
+		ClearGroups()
+
+		local group = AddTextGroup()
+
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local slot = display:GetStates()[group.Id].Screen.Test.Slots[1]
+		local icon = slot.Container.Icon
+
+		assert(icon._calls.SetTexture > 0, "the stand-in's art was written")
+		assert(icon._lastArgs.SetTexture[1] == nil, "and what went in was nothing")
+		assert(slot.Frame:GetWidth() == group.Icons.Size, "the slot still takes its whole square")
+		assert(slot.Frame:GetHeight() == group.Icons.Size, "on both sides")
+
+		display:SetPreviewGroup(nil)
+	end)
+end)
+
 fw.describe("PersonalAuras - module gating", function()
 	fw.it("tears everything down once the last group is gone", function()
 		ClearGroups()

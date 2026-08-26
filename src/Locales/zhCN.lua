@@ -49,6 +49,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Display"] = "显示方式",
 	["Bars"] = "条形",
 	["Sound only"] = "仅声音",
+	["Text only"] = "仅文字",
 	["Layout"] = "布局",
 	["Spell name"] = "法术名称",
 	["Show the aura's name inside the bar."] = "在条内显示光环名称。",

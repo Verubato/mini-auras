@@ -196,6 +196,7 @@ end
 local function CreateEntry(shape, style, size, spacing)
 	local bars = shape == groups.DisplayStyle.Bars
 	local texture = shape == groups.DisplayStyle.Texture
+	local text = shape == groups.DisplayStyle.TextOnly
 	-- The most a group of this shape can ever ask for. Art is one picture however many auras are
 	-- up, and an entry only ever goes to a group of the shape it was built for, so the texture
 	-- pool builds one button's worth rather than a whole icon budget nothing will claim.
@@ -222,7 +223,10 @@ local function CreateEntry(shape, style, size, spacing)
 		Pandemic = not texture,
 		Bar = bars,
 		Texture = texture,
-		MasqueGroup = not texture and MODULE_TAG or nil,
+		TextOnly = text,
+		-- A skin is icon art plus the border that frames it, so a shape with no icon has nothing
+		-- for one to fit.
+		MasqueGroup = not texture and not text and MODULE_TAG or nil,
 		-- The engine allocates a batch of buttons the moment a group is declared, and a login
 		-- builds one of these per screen group in the same frame. The walker declares them a
 		-- group per turn instead.
@@ -281,6 +285,9 @@ displayPools = {
 	end, ParkDisplay, 0),
 	[groups.DisplayStyle.Texture] = pool:New(function(style, size, spacing)
 		return CreateEntry(groups.DisplayStyle.Texture, style, size, spacing)
+	end, ParkDisplay, 0),
+	[groups.DisplayStyle.TextOnly] = pool:New(function(style, size, spacing)
+		return CreateEntry(groups.DisplayStyle.TextOnly, style, size, spacing)
 	end, ParkDisplay, 0),
 }
 
@@ -578,12 +585,14 @@ local function EnsureTestContainer(state, entry, parent)
 	end
 
 	if not entry.Test then
+		-- Skinned only where the live display is. An entry never leaves the pool of its own
+		-- shape, so the container it grows here is skinned to match for as long as it lives.
 		entry.Test = iconSlotContainer:New(
 			parent,
 			groups.PreviewIcons,
 			height,
 			group.Icons.Spacing,
-			MODULE_TAG,
+			not groups:DrawsTextOnly(group) and MODULE_TAG or nil,
 			nil,
 			MODULE_TAG
 		)
@@ -654,9 +663,14 @@ local function RenderTestIcons(state, entry)
 	-- what draws the border in the first place.
 	local color = drawsBars and BarColor(group) or moduleUtil:GetIconColor(group.Icons)
 	local barTexture = group.Icons.BarTexture
-	-- The same calls BuildStyle makes, so the stand-ins show exactly what the live icons will.
-	local centerStacks = not drawsBars and group.Icons.CenterStacks == true
-	local hideNumbers = group.Icons.HideNumbers or centerStacks
+	-- The live shape draws neither art nor a swipe, and keeps its countdown whatever the switches
+	-- say, so a stand-in that differed would be positioned against a look the group cannot have.
+	local textOnly = groups:DrawsTextOnly(group)
+	-- The same calls BuildStyle and StyleCountdown make, so the stand-ins show exactly what the
+	-- live icons will.
+	local centerStacks = not drawsBars and not textOnly and group.Icons.CenterStacks == true
+	local hideNumbers = not textOnly and (group.Icons.HideNumbers or centerStacks)
+	local hideSwipe = group.Icons.HideSwipe or textOnly
 	local textColor = group.Icons.ColorText
 		and moduleUtil:FillColor(textColorScratch, group.Icons.TextColor, DEFAULT_TEXT_COLOR)
 		or nil
@@ -666,8 +680,11 @@ local function RenderTestIcons(state, entry)
 	if groups:TracksSpells(group) then
 		nextSlot = testSpellData:FillContainer(container, group.Spells, 1, {
 			ReverseCooldown = group.Icons.ReverseCooldown,
-			HideSwipe = group.Icons.HideSwipe,
+			HideIcon = textOnly,
+			HideSwipe = hideSwipe,
 			HideNumbers = hideNumbers,
+			-- The group's own switches are already off above, so this is the global one.
+			ShowNumbers = textOnly,
 			Glow = group.Icons.Glow,
 			Color = color,
 			TextColor = textColor,
@@ -688,8 +705,10 @@ local function RenderTestIcons(state, entry)
 				DurationObject = wowEx:CreateDuration(now, 15),
 				Alpha = true,
 				ReverseCooldown = group.Icons.ReverseCooldown,
-				HideSwipe = group.Icons.HideSwipe,
+				HideIcon = textOnly,
+				HideSwipe = hideSwipe,
 				HideNumbers = hideNumbers,
+				ShowNumbers = textOnly,
 				Glow = group.Icons.Glow,
 				Color = color,
 				TextColor = textColor,

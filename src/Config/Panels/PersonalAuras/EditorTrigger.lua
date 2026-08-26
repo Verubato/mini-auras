@@ -18,6 +18,7 @@ local DISPLAY_OPTIONS = {
 	groups.DisplayStyle.Icons,
 	groups.DisplayStyle.Bars,
 	groups.DisplayStyle.Texture,
+	groups.DisplayStyle.TextOnly,
 	groups.DisplayStyle.SoundOnly,
 }
 local SHOW_WHEN_OPTIONS = {
@@ -235,6 +236,8 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 				return L["Bars"]
 			elseif value == groups.DisplayStyle.Texture then
 				return L["Texture"]
+			elseif value == groups.DisplayStyle.TextOnly then
+				return L["Text only"]
 			elseif value == groups.DisplayStyle.SoundOnly then
 				return L["Sound only"]
 			end
