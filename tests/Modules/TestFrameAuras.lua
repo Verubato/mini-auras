@@ -1021,6 +1021,19 @@ fw.describe("Frame Auras - test mode", function()
 		end
 	end)
 
+	fw.it("captions no preview row", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		module:StartTesting()
+
+		assert(#fills > 0, "the preview drew something")
+
+		for _, fill in ipairs(fills) do
+			assert(not fill.Frame.MiniAurasTestLabel, "a preview row got a caption")
+		end
+	end)
+
 	fw.it("builds through the login layout pass", function()
 		options.Buffs.Enabled = true
 

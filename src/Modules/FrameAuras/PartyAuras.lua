@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local L = addon.L
 local moduleUtil = addon.Utils.ModuleUtil
 local wowEx = addon.Utils.WoWEx
 local frames = addon.Core.Frames
@@ -898,14 +897,6 @@ local function ApplyEntry(entry)
 
 		for _, side in ipairs(SIDES) do
 			ApplyTestSide(entry, side)
-		end
-
-		-- On whichever row is actually up. Captioning the buff row regardless leaves a debuffs-only
-		-- preview with no caption, and puts one over a container that was just cleared.
-		local captioned = (active.Buffs and entry.TestBuffs) or (active.Debuffs and entry.TestDebuffs)
-
-		if captioned then
-			moduleUtil:SetTestLabel(captioned.Frame, L["Frame Auras"])
 		end
 
 		return
