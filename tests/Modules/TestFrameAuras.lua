@@ -2509,6 +2509,14 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 		assert(Marked(markFrame), "the mark is up where the group is about to pull")
 	end)
 
+	fw.it("marks a member missing the buff a warrior brings", function()
+		wow.setUnitClass("player", "WARRIOR")
+		MoveTo("party")
+		module:Refresh()
+
+		assert(Marked(markFrame), "Battle Shout is a group buff like the rest, so a warrior is read")
+	end)
+
 	fw.it("counts a house as the open world", function()
 		-- A house loads as an instanced map, so the instance type on its own would put the mark up
 		-- in one.

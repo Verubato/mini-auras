@@ -28,6 +28,11 @@ local buffs = {
 			[381757] = true,
 		},
 	},
+	MAGE = {
+		-- Arcane Intellect
+		Icon = 1459,
+		Auras = { [1459] = true },
+	},
 	PRIEST = {
 		-- Power Word: Fortitude
 		Icon = 21562,
@@ -37,6 +42,11 @@ local buffs = {
 		-- Skyfury
 		Icon = 462854,
 		Auras = { [462854] = true },
+	},
+	WARRIOR = {
+		-- Battle Shout
+		Icon = 6673,
+		Auras = { [6673] = true },
 	},
 }
 
