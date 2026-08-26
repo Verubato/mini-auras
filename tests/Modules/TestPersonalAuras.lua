@@ -21,6 +21,7 @@ local groups = addon.Modules.PersonalAuras.Groups
 local artTextures = addon.Core.ArtTextures
 local display = addon.Modules.PersonalAuras.Display
 local recorder = addon.Modules.PersonalAuras.Recorder
+local sound = addon.Modules.PersonalAuras.Sound
 local module = addon.Modules.PersonalAurasModule
 local db = env.db
 local options = db.Modules.PersonalAuras
@@ -2205,6 +2206,498 @@ fw.describe("PersonalAuras - sounds", function()
 		module:Refresh()
 
 		assert(env.auraSoundAdds == after, "and stays quiet afterwards")
+	end)
+end)
+
+---The engine's live registrations matching a test, as a handle set and how many there are.
+---@param match fun(entry: table): boolean
+---@return table<number, boolean> held
+---@return number count
+local function SoundHandles(match)
+	local held, count = {}, 0
+
+	for handle, entry in pairs(env.auraSounds) do
+		if match(entry) then
+			held[handle] = true
+			count = count + 1
+		end
+	end
+
+	return held, count
+end
+
+---True while every handle in the set is still registered, so a false says one was handed back.
+---@param held table<number, boolean>
+---@return boolean
+local function StillHeld(held)
+	for handle in pairs(held) do
+		if not env.auraSounds[handle] then
+			return false
+		end
+	end
+
+	return true
+end
+
+---@param entry table
+---@param name string
+---@return boolean
+local function PlaysFile(entry, name)
+	return entry.File ~= nil and entry.File:find(name, 1, true) ~= nil
+end
+
+---Drops every plate the mock is holding. Called on the way in as well as on the way out, since a
+---test that ends early leaves its plates behind and the next one would then add nothing.
+local function ClearPlates()
+	for token in pairs(env.plates) do
+		display:OnNamePlateRemoved(token)
+		env.plates[token] = nil
+		env.enemies[token] = nil
+	end
+
+	module:Refresh()
+end
+
+fw.describe("PersonalAuras - reconciling the sound registrations", function()
+	fw.it("leaves a player group's handles alone while plates come and go", function()
+		ClearGroups()
+		ClearPlates()
+		sound:Clear()
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		AddGroup({
+			Unit = "nameplate",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+			Sound = { Applied = "AirHorn", Channel = "Master" },
+		})
+
+		env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+
+		local function OnPlayer(entry)
+			return entry.Unit == "player"
+		end
+
+		local held, count = SoundHandles(OnPlayer)
+
+		assert(count > 0, "the player group registered something to protect")
+
+		env.addPlate("nameplate2")
+		env.enemies.nameplate2 = true
+		module:Refresh()
+
+		local _, arrived = SoundHandles(OnPlayer)
+
+		assert(StillHeld(held), "a plate arriving hands back none of the player's handles")
+		assert(arrived == count, "and takes out no new ones for the player either")
+
+		display:OnNamePlateRemoved("nameplate2")
+		env.plates.nameplate2 = nil
+		env.enemies.nameplate2 = nil
+		module:Refresh()
+
+		local _, gone = SoundHandles(OnPlayer)
+
+		assert(StillHeld(held), "and neither does one leaving")
+		assert(gone == count, "still the same registrations on the player")
+
+		ClearPlates()
+		ClearGroups()
+	end)
+
+	fw.it("registers the plate that arrived without touching the ones already there", function()
+		ClearGroups()
+		ClearPlates()
+		sound:Clear()
+
+		AddGroup({
+			Unit = "nameplate",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+
+		local held, count = SoundHandles(function(entry)
+			return entry.Unit == "nameplate1"
+		end)
+
+		assert(count > 0, "the first plate is registered")
+
+		env.addPlate("nameplate2")
+		env.enemies.nameplate2 = true
+		module:Refresh()
+
+		local _, second = SoundHandles(function(entry)
+			return entry.Unit == "nameplate2"
+		end)
+
+		assert(StillHeld(held), "the plate that was already there keeps every handle")
+		assert(second == count, "and the one that arrived got its own")
+
+		ClearPlates()
+		ClearGroups()
+	end)
+
+	fw.it("keeps two groups on one unit apart, and moves only the one that changed", function()
+		ClearGroups()
+		sound:Clear()
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		-- Same unit, same trigger, same file. Only the group they belong to tells the two
+		-- registration sets apart, and the channel is what lets the test see which is which.
+		local changing = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "SFX" },
+		})
+
+		module:Refresh()
+
+		local function OnMaster(entry)
+			return entry.Channel == "Master"
+		end
+
+		local kept, keptCount = SoundHandles(OnMaster)
+		local moved, movedCount = SoundHandles(function(entry)
+			return entry.Channel == "SFX"
+		end)
+
+		assert(keptCount > 0 and movedCount > 0, "both groups are registered at once")
+
+		changing.Sound.Applied = "AirHorn"
+		module:Refresh()
+
+		assert(StillHeld(kept), "the group that did not move keeps its handles")
+		assert(not StillHeld(moved), "the one that did handed its own back")
+
+		local _, replaced = SoundHandles(function(entry)
+			return entry.Channel == "SFX" and PlaysFile(entry, "AirHorn")
+		end)
+		local _, master = SoundHandles(OnMaster)
+
+		assert(replaced == movedCount, "and took out the same number on the new file")
+		assert(master == keptCount, "with nothing re-registered for the other group")
+
+		ClearGroups()
+	end)
+
+	fw.it("hands back the handles of a group that was deleted", function()
+		ClearGroups()
+		sound:Clear()
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		local doomed = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "AirHorn", Channel = "Master" },
+		})
+
+		module:Refresh()
+
+		local kept = SoundHandles(function(entry)
+			return PlaysFile(entry, "Sonar")
+		end)
+		local _, doomedCount = SoundHandles(function(entry)
+			return PlaysFile(entry, "AirHorn")
+		end)
+
+		assert(doomedCount > 0, "the doomed group registered something")
+
+		for index, group in ipairs(options.Groups) do
+			if group.Id == doomed.Id then
+				table.remove(options.Groups, index)
+				break
+			end
+		end
+
+		module:Refresh()
+
+		local _, left = SoundHandles(function(entry)
+			return PlaysFile(entry, "AirHorn")
+		end)
+
+		assert(left == 0, "the deleted group's handles are all back")
+		assert(StillHeld(kept), "and the group that stayed keeps its own")
+
+		ClearGroups()
+	end)
+
+	fw.it("registers a spell at a time, so a long list cannot starve the group behind it", function()
+		ClearGroups()
+		sound:Clear()
+
+		-- Past the module's cap on its own, so draining it before moving on would leave the
+		-- group behind it with nothing.
+		local many = {}
+
+		for index = 1, 1600 do
+			many[index] = 900100 + index
+		end
+
+		sound:Apply({
+			{
+				GroupId = "gLong",
+				Unit = "player",
+				Trigger = "Applied",
+				File = "Sonar",
+				Channel = "Master",
+				SpellIds = many,
+			},
+			{
+				GroupId = "gShort",
+				Unit = "focus",
+				Trigger = "Applied",
+				File = "AirHorn",
+				Channel = "Master",
+				SpellIds = { ICE_BLOCK },
+			},
+		})
+
+		local _, short = SoundHandles(function(entry)
+			return entry.Unit == "focus"
+		end)
+
+		assert(short == 1, "the group behind the long one registered too")
+		assert(sound:WasTruncated(), "and the cap really did bite")
+
+		sound:Clear()
+		sound:Apply({
+			{
+				GroupId = "gAfter",
+				Unit = "focus",
+				Trigger = "Applied",
+				File = "Sonar",
+				Channel = "Master",
+				SpellIds = { ICE_BLOCK },
+			},
+		})
+
+		local _, freed = SoundHandles(function(entry)
+			return entry.Unit == "focus"
+		end)
+
+		assert(not sound:WasTruncated(), "clearing puts the cap report back")
+		assert(freed == 1, "and gives the budget the cleared pass was holding back too")
+
+		sound:Clear()
+	end)
+
+	fw.it("tops a capped key up from where it stopped once room opens", function()
+		ClearGroups()
+		sound:Clear()
+
+		local many = {}
+
+		for index = 1, 1600 do
+			many[index] = 900100 + index
+		end
+
+		local long = {
+			GroupId = "gLong",
+			Unit = "player",
+			Trigger = "Applied",
+			File = "Sonar",
+			Channel = "Master",
+			SpellIds = many,
+		}
+
+		sound:Apply({
+			long,
+			{
+				GroupId = "gShort",
+				Unit = "focus",
+				Trigger = "Applied",
+				File = "AirHorn",
+				Channel = "Master",
+				SpellIds = { ICE_BLOCK },
+			},
+		})
+
+		local function OnLong(entry)
+			return entry.Unit == "player"
+		end
+
+		local held, before = SoundHandles(OnLong)
+
+		assert(sound:WasTruncated(), "the long key was cut off by the cap")
+
+		-- The short key goes, which is the only room the long one is ever going to get.
+		sound:Apply({ long })
+
+		local _, after = SoundHandles(OnLong)
+
+		assert(after > before, "the freed room went to the key the cap cut off")
+		assert(StillHeld(held), "and it kept every handle it already had")
+
+		sound:Clear()
+	end)
+
+	fw.it("stops counting a capped key once it has caught up", function()
+		ClearGroups()
+		sound:Clear()
+
+		-- Short enough to finish inside the cap once the sibling goes, so the key really does
+		-- reach the end of its list rather than staying cut off for good.
+		local many = {}
+
+		for index = 1, 1400 do
+			many[index] = 900100 + index
+		end
+
+		local sibling = {}
+
+		for index = 1, 200 do
+			sibling[index] = 905100 + index
+		end
+
+		local long = {
+			GroupId = "gLong",
+			Unit = "player",
+			Trigger = "Applied",
+			File = "Sonar",
+			Channel = "Master",
+			SpellIds = many,
+		}
+
+		sound:Apply({
+			long,
+			{
+				GroupId = "gSibling",
+				Unit = "focus",
+				Trigger = "Applied",
+				File = "AirHorn",
+				Channel = "Master",
+				SpellIds = sibling,
+			},
+		})
+
+		assert(sound:WasTruncated(), "the long key was cut off by the cap")
+
+		-- The sibling goes, leaving exactly enough room for the long key to finish its list.
+		sound:Apply({ long })
+
+		local caughtUp = sound:WasTruncated()
+		local before = env.auraSoundAdds
+
+		sound:Apply({ long })
+
+		local seen, twice = {}, 0
+
+		for _, entry in pairs(env.auraSounds) do
+			if entry.Unit == "player" then
+				twice = twice + (seen[entry.SpellId] and 1 or 0)
+				seen[entry.SpellId] = true
+			end
+		end
+
+		assert(twice == 0, "no spell id was registered twice")
+		assert(not caughtUp, "a key that caught up stops counting against the cap")
+		assert(env.auraSoundAdds == before, "and the pass after it is free")
+
+		sound:Clear()
+	end)
+
+	fw.it("registers a key a list names twice only once", function()
+		ClearGroups()
+		sound:Clear()
+
+		local request = {
+			GroupId = "gTwice",
+			Unit = "focus",
+			Trigger = "Applied",
+			File = "Sonar",
+			Channel = "Master",
+			SpellIds = { ICE_BLOCK, POLYMORPH },
+		}
+
+		sound:Apply({ request, request })
+
+		local _, count = SoundHandles(function(entry)
+			return entry.Unit == "focus"
+		end)
+
+		local before = env.auraSoundAdds
+
+		sound:Apply({ request, request })
+
+		assert(count == 2, "one registration per spell id, not one per mention")
+		assert(env.auraSoundAdds == before, "and the key settled, so the pass after it is free")
+
+		sound:Clear()
+	end)
+
+	fw.it("tries a short pass again, and gives up after three", function()
+		ClearGroups()
+		sound:Clear()
+
+		local requests = {
+			{
+				GroupId = "gRetry",
+				Unit = "player",
+				Trigger = "Applied",
+				File = "Sonar",
+				Channel = "Master",
+				SpellIds = { ICE_BLOCK, POLYMORPH },
+			},
+		}
+
+		local realAdd = _G.C_UnitAuras.AddAuraSound
+		local offered = 0
+
+		-- A refusal, which the engine gives no reason for.
+		_G.C_UnitAuras.AddAuraSound = function(trigger, info)
+			offered = offered + 1
+
+			if info.spellID == POLYMORPH then
+				return nil
+			end
+
+			return realAdd(trigger, info)
+		end
+
+		-- Counted first and asserted afterwards, so a failure still puts the engine back. Left
+		-- refusing, every test after this one would see nothing register.
+		local afterEach = {}
+
+		for pass = 1, 4 do
+			sound:Apply(requests)
+			afterEach[pass] = offered
+		end
+
+		requests[1].File = "AirHorn"
+		sound:Apply(requests)
+
+		local afterChange = offered
+
+		_G.C_UnitAuras.AddAuraSound = realAdd
+
+		sound:Clear()
+
+		assert(afterEach[1] == 2, "both spell ids were offered")
+		assert(afterEach[2] == 4, "the short key is offered again")
+		assert(afterEach[3] == 6, "three attempts in all")
+		assert(afterEach[4] == 6, "then it is left alone")
+		assert(afterChange == 8, "until what it asks for changes")
 	end)
 end)
 

@@ -1337,6 +1337,7 @@ local function CollectSoundRequests(state)
 	local function Add(unit)
 		for _, trigger in ipairs(configured) do
 			soundRequests[#soundRequests + 1] = {
+				GroupId = group.Id,
 				Unit = unit,
 				SpellIds = spellIds,
 				Trigger = trigger,
@@ -1346,8 +1347,8 @@ local function CollectSoundRequests(state)
 		end
 	end
 
-	-- Sorted because the sound module stamps this list, and pairs order varies.
-	-- Deduplicated too, because two unit frames can hold the same member.
+	-- Deduplicated because two unit frames can hold the same member, and one token twice would
+	-- ask for the group's sounds on it twice.
 	wipe(soundTokens)
 	wipe(soundSeen)
 
@@ -1386,6 +1387,8 @@ local function CollectSoundRequests(state)
 		end
 	end
 
+	-- Registrations go out round robin under a cap, so a stable order keeps the cap cutting the
+	-- same tokens off pass to pass rather than a different one falling short on every refresh.
 	table.sort(soundTokens)
 
 	for _, token in ipairs(soundTokens) do
