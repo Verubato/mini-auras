@@ -113,17 +113,17 @@ fw.describe("Frame Auras page - the countdown numbers on each row", function()
 
 		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
 
-		assert(frameAuras.Buffs.EnableNumbers == true and frameAuras.Debuffs.EnableNumbers == true,
-			"both rows ship counting down")
+		assert(frameAuras.Buffs.EnableNumbers == false and frameAuras.Debuffs.EnableNumbers == false,
+			"both rows ship without their numbers")
 
 		buffs:GetScript("OnClick")(buffs)
 
-		assert(frameAuras.Buffs.EnableNumbers == false, "the buff tab's switch writes the buff row")
-		assert(frameAuras.Debuffs.EnableNumbers == true, "and leaves the debuff row counting")
+		assert(frameAuras.Buffs.EnableNumbers == true, "the buff tab's switch writes the buff row")
+		assert(frameAuras.Debuffs.EnableNumbers == false, "and leaves the debuff row bare")
 
 		debuffs:GetScript("OnClick")(debuffs)
 
-		assert(frameAuras.Debuffs.EnableNumbers == false, "the debuff tab's switch writes the debuff row")
+		assert(frameAuras.Debuffs.EnableNumbers == true, "the debuff tab's switch writes the debuff row")
 	end)
 end)
 
