@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.21.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.23.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -50,6 +50,11 @@ own main-assist command can claim it first, so on some clients it may not reach 
 
 - `/miniauras test` toggles test mode (same as the **Test** button in the window title bar).
 - `/rl` reloads the UI, registered only if no other addon already defines it.
+
+The window is built the first time it is asked for, and building it asks the client for keyboard
+control, which combat refuses. So the first open of a session has to wait for the fight to end, and
+a slash command in combat prints "The options window can't open during combat." instead. Once the
+window exists it opens and closes in combat as normal.
 
 The Interface > AddOns > MiniAuras entry is only a splash screen with the version and an
 "Open Settings" button; all real configuration is in the standalone window. Since 5.15.0 the
@@ -99,14 +104,17 @@ Dungeons, Raid**. Which one applies:
 - Any other instance -> Raid if you are in a raid group, otherwise Dungeons.
 - Open world -> Raid if you are in a raid group, otherwise World.
 
-Player housing is the exception to all of it: every module is off inside a house, plot or
-neighbourhood whatever the checkboxes say (housing counted as a dungeon before 5.10.3). Test
-mode still previews there.
+Player housing is the exception to all of it: a module carrying an "Enable in" row is off inside a
+house, plot or neighbourhood whatever the checkboxes say (housing counted as a dungeon before
+5.10.3). Test mode still previews there. Frame Auras has no such row and keeps drawing there. Its
+missing buff mark reads a house as the open world, so the mark's "Instances only" switch holds it
+back.
 
 A module that "does not work" somewhere is usually just switched off for that content type.
 Exceptions: Portraits and Party Trinkets have a single **Enabled** switch; Enemy Kicks is
 enabled by role (see its section); Personal Auras has no module switch at all (each group has its
-own Enabled toggle). Since 5.19.2 a module switched off is never set up at all, so it registers
+own Enabled toggle); Frame Auras has no content-type row either, and each of its parts carries its
+own switch. Since 5.19.2 a module switched off is never set up at all, so it registers
 no events and costs nothing, and switching it back on takes effect without a reload.
 
 ### Two setting groups per module
@@ -249,6 +257,13 @@ channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, defau
 - **Disable Swipe** (Misc, off by default) removes the cooldown pie animation everywhere;
   timer text stays. The swipe is drawn at 70% black since 5.21.0, a little lighter than before,
   so the icon art stays readable underneath it.
+- **Disable Numbers** (Misc, off by default, since 5.23.0) is the other half of that pair: it
+  drops the countdown text on every aura icon and leaves the swipe drawn. It also overrides a
+  module's own numbers switch, such as the one on each Frame Auras row. Two things keep their
+  text: a personal aura group whose Display is **Text only**, where the countdown is all there is
+  to draw, and the Ally Kicks bars, which run their own clock rather than an icon's. It changes
+  how an icon is built, so in combat it lands within a second of the fight ending; see "Changing
+  a look in combat".
 - **Zoom Icons** (Misc, on by default) crops the silver border Blizzard bakes into spell icon
   art, so the icon sits flush inside the addon's own border. Turning it off shows the stock
   art with its border. The crop is applied as an icon's frame is built and the frames are
@@ -318,7 +333,7 @@ the old Precognition module's settings is frozen at what that release shipped.
   - **Tank** / **Healer** - the first group member in roster order holding that role
     (includes you). Screen-anchored.
   - **Other DPS** - the first DAMAGER in roster order that is not you. Screen-anchored.
-  - **Unit Frames** - one copy of the group on every party/raid frame (including frames from
+  - **Raid Frames** - one copy of the group on every party/raid frame (including frames from
     external frame providers).
   - **Arena Frames** - one copy per enemy arena frame. Debuffs only.
   - **Friendly Target** / **Enemy Target** - your target; only shows while the target is on
@@ -326,9 +341,9 @@ the old Precognition module's settings is frozen at what that release shipped.
   - **Friendly Nameplates** / **Enemy Nameplates** - one copy on every matching nameplate.
   - (Groups saved with the older units target/focus/targettarget/nameplate are migrated to the
     matching target or nameplate choice; focus no longer exists as a choice.)
-- **Display**: **Icons**, **Bars**, **Texture** or **Sound only**. First on the row, because it
-  decides what the rest of the row may offer (see Sound only below). Icons, bars and texture are
-  the three drawn shapes; see the Appearance and Layout tabs.
+- **Display**: **Icons**, **Bars**, **Texture**, **Text only** or **Sound only**. First on the row,
+  because it decides what the rest of the row may offer (see Sound only below). The first four are
+  the drawn shapes; see the Appearance and Layout tabs.
 - **Aura Type**: **Buff** or **Debuff**. The dropdown is hidden when the unit allows only one
   type, and for a Sound only group, which does not care. Target and nameplate units allow only
   the type matching their side (buffs on friendly, debuffs on enemy); Arena Frames allows only
@@ -343,7 +358,7 @@ the old Precognition module's settings is frozen at what that release shipped.
 **The spell-ID rule (why some combinations are refused).** The game only honours a spell-ID
 filter for helpful auras on units you can assist, and for harmful auras on units you cannot;
 anywhere else the ID list is silently ignored and the group would match everything. So in
-Spell IDs mode, debuffs cannot be tracked on Self, My Pet or Unit Frames (all always
+Spell IDs mode, debuffs cannot be tracked on Self, My Pet or Raid Frames (all always
 assistable), and the editor says so in red: "Debuffs cannot be tracked on yourself or your
 pet." / "Debuffs cannot be tracked on group members." Switching to Aura filters mode makes
 debuffs on those units legal, because filter strings apply regardless of side. Yellow
@@ -421,7 +436,9 @@ Empty for a **Sound only** group, which draws nothing: the tab shows "Sound only
 have an appearance." and no controls. **Display** itself lives on the Trigger tab. A **Texture**
 group shows its own short set of controls instead of the ones below: **Select Texture** with a
 preview beside it, **Additive**, **Mirror**, **Desaturate**, and the **Colour** swatch, which
-tints the art. Everything else here belongs to icons and bars.
+tints the art. A **Text only** group drops the four switches that are about an icon's art and
+swipe (Reverse swipe, Hide swipe, Hide numbers, Centre stacks) and keeps the rest. Everything else
+here belongs to icons and bars.
 
 | Setting | Values / range | Default |
 |---|---|---|
@@ -447,6 +464,14 @@ icons and bars; the glow does not (the styles are drawn for a square, so the opt
 bars). The shape is baked into a display when it is built, so switching it swaps the group onto
 a different set of frames, and a switch made while the game is hiding aura data (inside an
 arena) may not show until the match ends.
+
+**Text only** (since 5.23.0) is the icon shape with the art and the swipe left out, so the
+countdown is all that is drawn. It keeps the glow, the border, the tooltip, the pandemic reveal
+and the group's own **Colour text**, and it takes the Layout tab's icon controls, **Icon Size**
+included. The countdown is never dropped: the group's **Hide numbers** and **Centre stacks** are
+hidden for it, and the global **Disable Numbers** in Misc leaves it alone, because a text-only
+group with no text would show nothing at all. Masque skins nothing here, since there is no icon
+art for a skin to fit.
 
 **Texture** (since 5.15.0) draws one piece of art while any tracked aura is up, instead of an
 icon per aura. It is decoration hung beside a unit rather than a row of squares, so it carries
@@ -541,7 +566,7 @@ played engine-side, so they fire even though the addon cannot read the aura.
 For a **Sound only** group this tab is the whole feature. Such a group needs spells and at
 least one sound to do anything; with neither it simply does nothing, and the editor says
 nothing about it (an unfinished group is not a misconfigured one). Sound only groups on the
-**Unit Frames** unit follow the roster rather than the frames on screen, so they work with the
+**Raid Frames** unit follow the roster rather than the frames on screen, so they work with the
 party frames hidden and cover you as well as your group; the target and nameplate choices
 still only fire while the unit is on the side the choice names.
 
@@ -577,7 +602,7 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Show CC | on/off | off | on |
 | Show interrupts | on/off | off | on |
 | Relative size / Icon Size (%) | 25-100 % | 75 | 65 |
-| Icon Size | 10-100 px | 20 (30 before 5.16.0) | 25 |
+| Icon Size | 10-100 px | 20 (30 before 5.16.0) | 20 (25 before 5.23.0) |
 | Max Icons | 1-5 | 3 | 3 |
 | Icon Padding | 0-20 | 2 | 2 |
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | CENTER | CENTER |
@@ -628,33 +653,47 @@ switching it off puts the remembered value back. The cvar is only written when t
 turned Blizzard's buffs off themselves never gets them handed back. The write waits for combat to
 end, because flipping it makes the client rebuild the raid frames.
 
-- Icon size 25-50 (percent of the frame's own height), max icons 1-9, icons per row 1-6.
-- **Filtered** - show only the spells ticked on the Spells tab. Off shows every buff that gets past
-  the other filters.
-- **Mine** - only the buffs you cast yourself.
-- **Under 1min** - only buffs whose whole duration is under a minute, which drops raid buffs and
-  flasks.
-- **Important** / **Defensive** - let those two flagged categories into the row. Both off by
+Once a fight starts the game narrows this row to the buffs it rates as worth seeing on a raid
+frame, whatever the switches below say. Out of combat nothing is held back on those grounds.
+
+- Icon size 25-50 (percent of the frame's own height, default 35), max icons 1-9 (default 6),
+  icons per row 1-6 (default 3).
+- **Filtered** (on) - show only the spells ticked on the Spells tab. Off shows every buff that gets
+  past the other filters.
+- **Mine** (on) - only the buffs you cast yourself.
+- **Under 1min** (off) - only buffs whose whole duration is under a minute, which drops raid buffs
+  and flasks.
+- **Important** / **Defensives** - let those two flagged categories into the row. Both off by
   default, because the Important Auras page already draws its own row of them and two rows showing
   the same icon is the thing this avoids. Done by negating the game's own filter token
   (`!IMPORTANT`, `!BIG_DEFENSIVE`, `!EXTERNAL_DEFENSIVE`), which is the only filter weighed on
   every unit.
-- **Pandemic glow** plus a colour - lights a heal-over-time up as its refresh window opens. Which
-  spells carry it is fixed (Lifebloom), not a per-spell setting: the reveal is registered on a
-  button when the engine builds it.
+- **Show numbers** (off) - the countdown text on this row alone. The cooldown swipe stays either
+  way, and the global **Disable Numbers** in Misc still takes the text off everywhere.
+- **Pandemic glow** (on) plus a **Glow colour** (green, 0.1/0.9/0.3) - lights a heal-over-time up as
+  its refresh window opens. Which spells carry it is fixed (Lifebloom), not a per-spell setting: the
+  reveal is registered on a button when the engine builds it.
 
 **Debuffs sub-tab.** Replaces the debuff row, in the bottom left corner growing right and wrapping
 upward.
-Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. Encounter
-mechanics and role auras lead the row, then the debuffs the game flags as priority. No dispel-type
-colouring on any of these rows; they draw a plain icon like Blizzard's own.
+Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is ranked
+by the game's own raid frame debuff order, which already leads with encounter mechanics and the
+debuffs it flags as priority.
 
-- Icon size 25-50 (percent of the frame's height), max icons 1-9, icons per row 1-6.
-- **Dispellable** - only the debuffs your own spec can dispel. This replaces the priority list
-  rather than stacking with it.
-- **Under 1min** - only debuffs whose whole duration is under a minute.
-- **Crowd control** - lets crowd control into the row, via `!CROWD_CONTROL` the same way. Off by
-  default for the same reason as the two on the Buffs tab.
+- Icon size 25-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
+  row 1-6 (default 3).
+- **Dispellable** (on) - only the debuffs your own spec can dispel.
+- **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
+  also drops the debuffs that never run out.
+- **Crowd control** (off) - gives crowd control a group of its own at the head of the row, drawn a
+  quarter larger than the rest of it and capped at two icons on its own budget. Off by default for
+  the same reason as the two on the Buffs tab.
+- **Dispel colours** (on) - rings that leading crowd control in the game's colour for its dispel
+  type. The debuffs behind it draw a plain icon like Blizzard's own, whatever this is set to.
+- **Show numbers** (off) - as on the Buffs tab.
+
+The two narrowing switches are about the row rather than a category of it, so a stun the player
+cannot dispel is dropped exactly as a debuff would be. With both off nothing narrows the row at all.
 
 **Missing Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
 class brings (Mark of the Wild, Blessing of the Bronze, Power Word: Fortitude, Skyfury). The mark is
@@ -662,11 +701,14 @@ the buff's own icon, drained of colour, in the frame's top right corner. Unlike 
 it, this also reaches the standard party frames, since it adds a mark rather than replacing
 anything. A class that brings no group buff sees a line saying so and nothing to configure.
 
-- Icon size 25-50 (percent of the frame's height). The corner is fixed, like the corners the buff
-  and debuff rows take.
+- **Instances only** (on) - only marks a frame inside an instance, where a missing group buff costs
+  something. A house counts as the open world.
+- Icon size 25-50 (percent of the frame's height, default 35). The corner is fixed, like the corners
+  the buff and debuff rows take.
 
 **Spells sub-tab.** The buff whitelist the Buffs tab's **Filtered** switch draws from; with that
-switch off, every buff on the unit reaches the corner instead. A sidebar of sections, one per class
+switch off, every buff reaches the corner, though in combat the game still keeps that to what is
+worth seeing on a raid frame. A sidebar of sections, one per class
 that has tracked heal-over-time or shield spells, then Custom. Each spell is a checkbox with its
 icon. Custom IDs are added in the Custom section via the Spell ID box and removed with the cross
 button. Only differences from the curated list are saved, so an updated curated list still reaches
@@ -675,8 +717,9 @@ existing profiles.
 A row is only built for a frame that is actually on screen.
 
 **Test mode.** The Test button previews all three parts at once. The preview follows the category
-switches: turning crowd control on puts a stun at the head of the debuff row and turning it off
-takes it back out, so each switch visibly does something. On 12.1 an aura container is
+switches: turning crowd control on puts a stun at the head of the debuff row, drawn a quarter larger
+and ringed the way the live one would be, and turning it off takes it back out, so each switch
+visibly does something. On 12.1 an aura container is
 engine-driven and cannot be handed fake auras, so the preview is a separate row of stand-in icons
 drawn in the same corner at the same size, with the live row hidden behind it. Only a switched-on
 part previews anything. Outside a group it draws on the stand-in party frames test mode puts up.
@@ -954,6 +997,7 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons on, Raid o
 | Show icons | on/off | on |
 | Glow icons | on/off | on |
 | Warning text | on/off | on |
+| Text colour | swatch (since 5.23.0) | red (1, 0.1, 0.1) |
 | Reverse swipe | on/off | on |
 | Dispel colours | on/off | on |
 | Show tooltips | on/off | off |
@@ -965,6 +1009,9 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons on, Raid o
 
 **Max Icons** caps how many CC icons each healer shows at once. It stops at five because the
 displays are built with five icon slots, so a higher number would have nothing to draw into.
+
+**Text colour** paints the "Healer in CC!" line. The swatch is only on the page while **Warning
+text** is on, since with the line switched off there is nothing for it to colour.
 
 Position: centred, 220 px below the top of the screen; draggable in test mode. The sound plays
 engine-side, registered per known CC spell against the healer, so it works even though the
@@ -1058,6 +1105,7 @@ the profile.
 | Language override | Auto (client language) or a shipped locale | Auto; changing prompts a UI reload |
 | Configure Blizzard Nameplates | on/off | on (disables Blizzard's CC and BigDebuffs on nameplates when MiniAuras nameplates are used) |
 | Disable Swipe | on/off | off |
+| Disable Numbers | on/off (since 5.23.0) | off (drops the countdown text on every aura icon; the swipe stays) |
 | Zoom Icons | on/off | on (crops the baked silver border off icon art; changing it prompts a UI reload) |
 | Fade With Parent | on/off | on (icons fade with the unit frame they are attached to, for example out-of-range dimming) |
 | Colour Countdown | on/off | off |
@@ -1066,6 +1114,12 @@ the profile.
 | Font | Game Default, or any LibSharedMedia font | Game Default |
 | Font Scale | 0.5-1.5, step 0.05 | 1.0 |
 | Milliseconds Threshold | 1-6 seconds | 5 |
+
+**Disable Numbers** and **Disable Swipe** are a pair: one drops the countdown text and keeps the
+pie, the other drops the pie and keeps the text. Disable Numbers wins over a module's own numbers
+switch, such as the one on each Frame Auras row. It leaves two things alone: a personal aura group
+whose Display is **Text only**, where the countdown is the whole display, and the Ally Kicks bars,
+which draw their own clock rather than an icon's.
 
 Shipped languages: English, German (deDE), Spanish (esES and esMX), French (frFR), Italian
 (itIT), Korean (koKR), Portuguese-Brazil (ptBR), Russian (ruRU), Chinese simplified (zhCN)
@@ -1081,9 +1135,9 @@ Sidebar: Other > Profiles.
   the last remaining profile cannot be deleted), **Reset** (resets the active profile to
   factory defaults, confirmed), and **Import/Export**.
 - A profile contains: all module settings plus the Misc options Glow Type, Font, Font Scale,
-  Configure Blizzard Nameplates, Disable Swipe, Zoom Icons, Colour Countdown, Countdown
-  Colours and Fade With Parent. Not in the profile: Language override, Milliseconds Threshold
-  and the Auto-Switch rules.
+  Configure Blizzard Nameplates, Disable Swipe, Disable Numbers, Zoom Icons, Colour Countdown,
+  Countdown Colours and Fade With Parent. Not in the profile: Language override, Milliseconds
+  Threshold and the Auto-Switch rules.
 - **Import/Export**: export produces a string starting with `!MiniAuras:1!` (deflated CBOR,
   Base64). Import needs a profile name and creates a new profile, then switches to it. Old
   MiniCC strings (`!MiniCC:2!` and the older `!MiniCC!`) also import.
@@ -1120,8 +1174,8 @@ which other addons read to find them, so those values changed with the group nam
 
 A skin is applied when an icon is created, so **reload after changing a skin** for it
 to reach icons that already exist. Some displays stay unskinned by design: personal aura groups
-drawn as bars or as a texture, the round portrait icons (the skin would fight their own mask),
-and any button whose size the game keeps secret, which covers nameplate icons. If Masque itself errors while
+drawn as bars, as a texture or as text only, the round portrait icons (the skin would fight their
+own mask), and any button whose size the game keeps secret, which covers nameplate icons. If Masque itself errors while
 skinning, the display drops skinning for that sub-group for the rest of the session and prints
 one chat warning naming it, rather than losing the icons.
 
@@ -1156,7 +1210,7 @@ displays when frames are re-sorted.
 Global `MiniAurasApi.v1`, also reachable as `MiniCCApi.v1` (same table):
 
 - `RegisterFrameProvider(provider)`: adds unit frames from another addon; they receive the
-  same icons, cooldowns and glows as built-in sources (and Personal Auras "Unit Frames" groups
+  same icons, cooldowns and glows as built-in sources (and Personal Auras "Raid Frames" groups
   land on them too). The provider needs a unique `Name` and a `GetFrames()` returning an
   array of frames, and may supply `RegisterRefreshFrames(cb)` so it can tell MiniAuras when
   its frame list changes.
@@ -1195,6 +1249,12 @@ setting group; the open world while in a raid group uses the Raid toggle. Then u
 answers "Enable in" for the context being previewed, so a module drawing nothing there is a
 module switched off for that context rather than a broken display.
 
+**"The settings window won't open in combat."** Expected on the first open of a session. Building
+the window asks the client for keyboard control, which combat refuses, so the slash command prints
+"The options window can't open during combat." and the window opens once the fight ends. After that
+it opens and closes in combat like any other window. Before 5.23.0 the same attempt threw an error
+instead.
+
 **"That setting/tab doesn't exist for me."** The sidebar is the one listed under "Settings
 window layout"; anything not on it is not part of the addon. Cooldown tracking, both friendly
 and enemy, cannot exist on 12.1, because it worked by reading ally and enemy aura data.
@@ -1202,7 +1262,10 @@ and enemy, cannot exist on 12.1, because it worked by reading ally and enemy aur
 **"Icons are drawn twice."** Either the old MiniCC addon is still installed alongside
 MiniAuras (delete the MiniCC folder from AddOns and reload; settings are already copied), or
 another addon draws the same auras. For doubled nameplate auras, make sure Configure
-Blizzard Nameplates (Misc) is on, or disable the other addon's aura display.
+Blizzard Nameplates (Misc) is on, or disable the other addon's aura display. On party and raid
+frames, a defensive or important buff showing twice is the Frame Auras **Important** or
+**Defensives** switch turned on next to the Important Auras row that already draws it; both ship off
+for that reason.
 
 **"The personal aura settings are missing" / "there is nothing under the grid."** The editor
 only appears once a group is selected. Click one of the aura tiles at the top of the page and
@@ -1212,13 +1275,14 @@ says so in place of the editor.
 **"A personal aura group shows nothing."** Usual causes: (1) it is in Spell IDs mode with an
 empty spell list; (2) the spell ID added is the cast ID, not the aura the cast applies (the
 Record button records cast IDs; find the aura's ID instead); (3) it is a Debuff group on
-Self, My Pet or Unit Frames in Spell IDs mode, which the game forbids (switch to Aura
+Self, My Pet or Raid Frames in Spell IDs mode, which the game forbids (switch to Aura
 filters mode); (4) a caster filter (Cast by, From me or my pet, Applied by me) with the unit
 in another instance or phase, where the game cannot attribute casters, so the group hides
 until they return; (5) the group's unit names a side and the unit is currently on the other
 side (buffs show only while friendly, debuffs only while hostile); (6) the group's own
 Enabled toggle is off; (7) it is a Texture group whose art was cleared with the browser's
-Reset button, so there is nothing to draw.
+Reset button, so there is nothing to draw; (8) its **Show when** is In combat or Out of combat and
+the player is in the other state, which holds the whole group back, sounds included.
 
 **"A personal aura tracking a permanent buff never shows."** Fixed in 5.15.0, where a spell-ID
 group no longer hides an aura that runs forever. On an older version the group works for timed
@@ -1232,9 +1296,10 @@ they carry no countdown, stack count, glow, border or tooltip by design.
 
 **"A personal aura's countdown text disappeared."** Either **Hide numbers** or **Centre
 stacks** is on for that group (Appearance tab), or its **Display** is set to Texture, which
-draws art with no text at all. Centre stacks deliberately swaps the countdown
+draws art with no text at all, or **Disable Numbers** (Misc) is on, which drops the countdown on
+every aura icon in the addon. Centre stacks deliberately swaps the countdown
 for the stack count, so a group tracking an aura that never stacks shows no text at all with
-it on.
+it on. A group whose Display is **Text only** is the one that never loses its countdown.
 
 **"Colour Countdown does nothing on one personal aura group."** That group has **Colour text**
 on, which replaces the by-time ramp with its own **Text colour**. Turn Colour text off to put
@@ -1256,10 +1321,13 @@ check the trigger's sound is not "(None)" and check the chosen output channel's 
 After an addon update, new audio files need a full client restart, not just a reload.
 
 **"TTS voices missing / TTS not working."** All three announce toggles default off. After an
-addon update, new clips need a full client restart, not just a reload. The Mandarin and Korean
-voices are separate addons and only appear on the clients they are spoken for. A saved Mandarin
-voice falls back to David until "MiniAuras - Chinese Voice Pack" is installed, which is what a player
-who updated from 5.22.0 or earlier will see.
+addon update, new clips need a full client restart, not just a reload. The Mandarin, Korean, French
+and Spanish voices are separate addons and only appear on the clients they are spoken for:
+"MiniAuras - Chinese Voice Pack", "MiniAuras - Korean Voice Pack", "MiniAuras - French Voice Pack"
+and "MiniAuras - Spanish Voice Pack", all on CurseForge. A saved Mandarin voice falls back to David
+until the Chinese pack is installed, which is what a player who updated from 5.22.0 or earlier will
+see. Korean, French and Spanish players are pointed at their pack once in the What's New dialog on
+the login after updating.
 
 **"One particular spell is never announced."** Fourteen of the spells that land most often
 (Ice Barrier, Innervate, Demon Spikes, Blazing Barrier and the like) ship unticked on the TTS
@@ -1281,12 +1349,39 @@ check the Spells sub-tab in case the spell in question was unticked there.
 CC, defensives and importants can each fill Max Icons. There is no way to cap the row as a
 whole, because the addon cannot count what an aura container is showing.
 
+**"CC and important icons are different sizes in a battleground."** Fixed in 5.23.0. A battleground
+reads the Raids/Battlegrounds setting group, and an icon built before the switch could not be
+resized while aura data stayed secret, so the match ran with a mix of both sizes. CC and Important
+Auras now keep a display per setting group, so the right size is ready when the switch happens.
+
+**"Frame Auras does nothing."** All three parts ship switched off, so start with the Enable switch
+on the Buffs, Debuffs or Missing Buff tab. The buff and debuff rows replace Blizzard's **compact**
+party and raid frames only: a player on the standard party frames sees no change from them, and
+neither row draws at all while DandersFrames has replaced the compact frames. The missing buff mark
+is the one part that also reaches the standard party frames.
+
+**"Blizzard's own buffs are still there" / "they came back on their own."** Switching a row on sets
+the matching cvar (`raidFramesDisplayBuffs`, `raidFramesDisplayDebuffs`) to 0, and switching it off
+puts back the value it found. The write waits for combat to end, because flipping it makes the
+client rebuild the raid frames, so a switch thrown mid-fight lands when the fight does. A player who
+had already turned Blizzard's row off themselves never gets it handed back.
+
+**"The frame aura buff row is empty in a fight."** Both **Filtered** and **Mine** ship on, so the
+row starts as your own tracked heal-over-times and shields. On top of that the game narrows the row
+in combat to what it rates as worth seeing on a raid frame, whatever those switches say. Turn
+Filtered off for every buff the other switches allow, and add the spell in Frame Auras > Spells >
+Custom to keep the whitelist.
+
+**"The missing buff mark never shows."** **Instances only** ships on, so the mark waits for an
+instance and treats a house as the open world. A class that brings no group buff (anything but
+druid, evoker, priest and shaman) has nothing to mark, and its Missing Buff tab says so.
+
 **"The Important/Defensive colour does nothing."** The pair only applies while the module's
 colour setting asks for it: **Colours** for Important Auras, and on Nameplates an **Icon colours**
 of Dispel colours or Custom for the bar in question, not None. On Alerts it also needs **Class
 colours** off, since that tints by the owner's class instead. CC icons ignore the pair either
-way and take the game's dispel type colour, and the Twins, Mirror and Twins Mirror glow styles
-carry their own colours, so no swatch tints them.
+way and take the game's dispel type colour. Neither swatch reaches the Frame Auras rows: the crowd
+control leading the debuff row takes the game's dispel colour and everything behind it draws plain.
 
 **"A spell shows on nameplates or portraits but not on group frames."** Expected. Nameplates
 and portraits show whatever the game flags; group frames can only show spells on their

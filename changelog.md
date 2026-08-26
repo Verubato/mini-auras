@@ -1,20 +1,18 @@
 # Changelog
 
-## Unreleased
+## 5.23.0
 
-- Added a colour picker for the Healer Crowd Control warning text, so the "Healer in CC!" label can take a colour of your own instead of the stock red.
-- Important aura icons now start at 20 pixels in raids and battlegrounds rather than 25. Existing profiles keep the size they already have.
-- Pointed everyone at the new Frame Auras module once on the next login, since stopping Blizzard's own buffs and debuffs from overlapping on the raid frames is what most people want it for.
-- Told Korean, French, and Spanish players about the new "MiniAuras - Korean Voice Pack", "MiniAuras - French Voice Pack", and "MiniAuras - Spanish Voice Pack" addons, and Chinese players where the Mandarin voices went, once each on the next login. No note goes to a client that is offered no pack of its own.
-- Moved the Mandarin voices Amy, Anna Su, and Jason Chen out into their own addon, "MiniAuras - Chinese Voice Pack", so that everyone else stops downloading 6 MB of audio they cannot understand. The clips are unchanged and the setting still saves the voice by name, so installing that addon puts a saved Mandarin voice back. Without it, a saved Mandarin voice falls back to David.
-- Added a "Show when" option to a personal aura's trigger, so a group can be limited to in combat or out of combat.
-- Added a "Text only" display to personal auras, which draws a group's countdown with no icon art and no cooldown swipe.
-- Added Duel and Sharpen Blade to the enemy debuff announcements. Sharpen Blade is spoken as just "Sharpen" and listed as "Mortal Strike", the name the game gives the debuff it applies.
-- Added a Frame Auras module, which draws the auras on Blizzard's own party and raid frames in place of the ones the game puts there. Three parts, each with its own switch: the group buff row (with a tracked spell list and a pandemic glow), the group debuff row (which can lead with crowd control, drawn a quarter larger than the rest of the row and ringed in the game's dispel colours), and a mark for a member missing your class buff (kept to instances by default, since a missing buff in the open world costs nobody anything). All three ship switched off. The buff and debuff rows can each drop the countdown numbers from their icons.
-- Renamed "Group Auras" to "Important Auras", so the new module's name is not read as the same thing.
-- Fixed crowd control and important aura icons showing at the wrong size in battlegrounds. A battleground counts as a raid, so entering one switches to your Raid sizes, but the game will not let an addon resize icons that are already on screen during a match. The icons a frame was already carrying kept their old size for the whole battleground while newly shown frames got the right one, so sizes came out mixed.
-- Fixed the options window erroring when it was opened for the first time in combat. It now says it cannot open during combat, and a window opened earlier still works in combat.
-- Renamed the Masque addon group from "MiniCC" to "MiniAuras", and its sub-groups to the current module names: "CC" is now "Crowd Control", "Healer CC" is "Healer Crowd Control", "Friendly Indicators" is "Important Auras", "Custom Auras" is "Personal Auras", and "Kick Timer" is "Enemy Kicks". Masque remembers a skin against the group name, so pick your skins again on the renamed groups.
+- Added new Frame Auras module to replace Blizzard's and fix the overlap issue.
+- Added a "Show when" option to a personal aura's trigger, to show or hide it in combat.
+- Added a "Text only" display to personal auras, drawing the countdown with no icon.
+- Added a colour picker for the Healer Crowd Control warning text.
+- Added a Disable Numbers option to the misc tab.
+- Added Duel and Sharpen Blade to the enemy debuff announcements.
+- Renamed "Group Auras" to "Important Auras".
+- Renamed the "Unit Frames" unit on a personal aura's trigger to "Raid Frames".
+- Renamed the Masque group from "MiniCC" to "MiniAuras", and its sub-groups to the current module names. Masque saves a skin against the group name, so pick your skins again.
+- Fixed crowd control and important aura icons showing at mixed sizes in battlegrounds.
+- Fixed the options window erroring when it was opened for the first time in combat.
 
 ## 5.22.0
 
