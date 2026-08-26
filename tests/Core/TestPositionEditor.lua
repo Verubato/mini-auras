@@ -79,7 +79,7 @@ fw.describe("MakeMovable - the heading the editor opens under", function()
 		assert(opened[1] and opened[1].Title == "Alerts", "a setting about the screen left the editor alone")
 	end)
 
-	fw.it("drops the heading for a frame nothing has captioned", function()
+	fw.it("drops the heading when the sweep takes the caption down", function()
 		local frame = NewMovable()
 
 		moduleUtil:SetTestLabel(frame, "Alerts")

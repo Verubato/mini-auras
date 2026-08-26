@@ -271,7 +271,7 @@ fw.describe("ModuleUtil:SetTestLabel", function()
 	---Stands in for a module's test container, which is the only thing a caption is ever built on.
 	local function newFrame()
 		local function createFontString()
-			local label = { Shown = false }
+			local label = { Shown = true }
 
 			label.SetPoint = function() end
 

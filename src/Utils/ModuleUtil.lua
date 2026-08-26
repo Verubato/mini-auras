@@ -98,8 +98,7 @@ end
 local function TestLabelText(frame)
 	local label = frame.MiniAurasTestLabel
 
-	-- Not IsShown: the setting that keeps a caption off the screen must not take the name off
-	-- the editor as well.
+	-- The editor titles itself from this name, so the caption setting must not erase it.
 	if not label or not label.MiniAurasNamed then
 		return nil
 	end

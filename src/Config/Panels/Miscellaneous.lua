@@ -127,8 +127,8 @@ function M:Build(panel)
 		SetValue = function(value)
 			db.ShowTestLabels = value
 
-			-- Swept rather than left to the refresh, so a caption whose module is not redrawn
-			-- still goes away.
+			-- The refresh only revisits live modules, so a caption on a frame it skips needs
+			-- the sweep.
 			if not value then
 				moduleUtil:HideAllTestLabels()
 			end
