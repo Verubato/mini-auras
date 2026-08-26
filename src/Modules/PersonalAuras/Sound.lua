@@ -17,9 +17,6 @@ addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
 -- Variants times triggers times visible plates reaches the thousands on a careless configuration.
 local MAX_REGISTRATIONS = 1500
--- Consecutive short passes before a key is left alone until what it wants changes. Without it a
--- registration the engine will never accept costs a call on every nameplate coming and going.
-local MAX_ATTEMPTS = 3
 -- Group sound keys to the engine trigger each registers against.
 local TRIGGER_ENUM = Enum.UnitAuraSoundTrigger or {}
 local TRIGGERS = {
@@ -36,19 +33,19 @@ local registered = {}
 local requestStamp = changeStamp:New()
 -- Handles across every key, compared against the cap.
 local liveHandles = 0
--- Keys holding fewer handles than they asked for because the cap ran out.
-local cappedKeys = 0
+-- Whether the last pass ran out of budget with keys still wanting ids.
+local truncated = false
 -- The keys this pass wants, so the sweep below can tell a gone key from an unchanged one.
 ---@type table<string, boolean>
 local wantedKeys = {}
--- The keys still owing registrations, with the spell ids each wants and how far through them it
--- is. Parallel, drained a lap at a time, and empty between passes.
+-- The keys still wanting ids, with how far this pass has read into each one's list and where an
+-- id it could not place goes back. Parallel, drained a lap at a time, and empty between passes.
 ---@type PersonalAuraSoundKey[]
 local pendingKeys = {}
----@type number[][]
-local pendingSpells = {}
 ---@type number[]
-local pendingCursor = {}
+local pendingRead = {}
+---@type number[]
+local pendingWrite = {}
 -- This pass's key per request, so the sweep can run ahead of the registrations without working
 -- every key out twice.
 ---@type (string|false)[]
@@ -57,7 +54,7 @@ local requestKeys = {}
 -- them can still change the answer.
 ---@type table<string|boolean, string|false>
 local resolvedFiles = {}
--- Retired key records, each with its handle list already emptied, reused by the next new key.
+-- Retired key records, each with both its lists already emptied, reused by the next new key.
 ---@type PersonalAuraSoundKey[]
 local keyPool = {}
 -- Reused UnitAuraSoundInfo; AddAuraSound reads it synchronously.
@@ -99,17 +96,12 @@ local function ReleaseHandles(entry)
 
 	liveHandles = liveHandles - #handles
 
+	-- Both engine calls are wrapped, because they have been reported throwing as a blocked call
+	-- and nobody has pinned down why.
 	for index = #handles, 1, -1 do
-		C_UnitAuras.RemoveAuraSound(handles[index])
+		pcall(C_UnitAuras.RemoveAuraSound, handles[index])
 		handles[index] = nil
 	end
-
-	if entry.Capped then
-		entry.Capped = false
-		cappedKeys = cappedKeys - 1
-	end
-
-	entry.Stamp = nil
 end
 
 ---@param key string
@@ -117,6 +109,7 @@ local function Forget(key)
 	local entry = registered[key]
 
 	ReleaseHandles(entry)
+	wipe(entry.Wanted)
 
 	registered[key] = nil
 	requestStamp:Forget(key)
@@ -143,27 +136,39 @@ local function StampFor(key, file, request)
 	return requestStamp:Commit()
 end
 
----Records a key that has run out of spell ids, so a full set counts as done and a short one
----leaves the stamp unrecorded for the next pass to try again.
+---Points a key at a fresh spell list, every id of it still wanting a handle.
 ---@param entry PersonalAuraSoundKey
----@param asked number
-local function Settle(entry, asked)
-	-- It reached the end of its list, so the budget is not cutting this one short any more.
-	if entry.Capped then
-		entry.Capped = false
-		cappedKeys = cappedKeys - 1
+---@param spellIds number[]
+local function RefillWanted(entry, spellIds)
+	local wanted = entry.Wanted
+
+	for index = 1, #spellIds do
+		wanted[index] = spellIds[index]
 	end
 
-	if #entry.Handles == asked then
-		entry.Stamp = entry.TriedStamp
-		entry.Attempts = 0
-	else
-		entry.Attempts = entry.Attempts + 1
+	for index = #wanted, #spellIds + 1, -1 do
+		wanted[index] = nil
 	end
 end
 
----Registers the pending keys a spell id apiece per lap, so a group with a long spell list cannot
----eat the whole budget before the groups behind it have had any.
+---Closes a pass's walk of one key's list, leaving the ids it still has no handle for. The tail it
+---never reached moves down to join the ones it was refused.
+---@param wanted number[]
+---@param read number the first id the pass did not reach
+---@param write number where the next id it keeps goes
+local function TrimWanted(wanted, read, write)
+	for index = read, #wanted do
+		wanted[write] = wanted[index]
+		write = write + 1
+	end
+
+	for index = #wanted, write, -1 do
+		wanted[index] = nil
+	end
+end
+
+---Offers the pending keys a spell id apiece per lap, so a key with a long list cannot eat the
+---whole budget before the keys behind it have had any.
 ---@param pending number
 ---@return number remaining keys the budget could not reach
 local function DrainPending(pending)
@@ -174,41 +179,48 @@ local function DrainPending(pending)
 
 		for index = 1, remaining do
 			local entry = pendingKeys[index]
-			local spells = pendingSpells[index]
-			local cursor = pendingCursor[index]
+			local wanted = entry.Wanted
+			local read = pendingRead[index]
 
-			if cursor <= #spells and liveHandles < MAX_REGISTRATIONS then
+			if read <= #wanted and liveHandles < MAX_REGISTRATIONS then
 				local info = infoScratch
 
 				info.unitToken = entry.Unit
 				info.soundFileName = entry.File
 				info.outputChannel = entry.Channel
-				info.spellID = spells[cursor]
+				info.spellID = wanted[read]
 
-				local handle = C_UnitAuras.AddAuraSound(entry.Trigger, info)
+				local ok, handle = pcall(C_UnitAuras.AddAuraSound, entry.Trigger, info)
 
-				if handle then
+				if ok and handle then
 					entry.Handles[#entry.Handles + 1] = handle
 					liveHandles = liveHandles + 1
+				else
+					-- Kept, so the next pass offers this id again and nothing else.
+					local write = pendingWrite[index]
+
+					wanted[write] = wanted[read]
+					pendingWrite[index] = write + 1
 				end
 
-				cursor = cursor + 1
+				read = read + 1
+				pendingRead[index] = read
 			end
 
-			if cursor > #spells then
-				Settle(entry, #spells)
+			if read > #wanted then
+				TrimWanted(wanted, read, pendingWrite[index])
 			else
 				kept = kept + 1
 				pendingKeys[kept] = entry
-				pendingSpells[kept] = spells
-				pendingCursor[kept] = cursor
+				pendingRead[kept] = read
+				pendingWrite[kept] = pendingWrite[index]
 			end
 		end
 
 		for index = kept + 1, remaining do
 			pendingKeys[index] = nil
-			pendingSpells[index] = nil
-			pendingCursor[index] = nil
+			pendingRead[index] = nil
+			pendingWrite[index] = nil
 		end
 
 		remaining = kept
@@ -242,16 +254,6 @@ function M:Apply(requests)
 		end
 	end
 
-	-- Room has opened up since the pass that ran out of it, so let the keys it cut off ask for
-	-- the rest of what they wanted.
-	if cappedKeys > 0 and liveHandles < MAX_REGISTRATIONS then
-		for _, entry in pairs(registered) do
-			if entry.Capped then
-				entry.Stamp = nil
-			end
-		end
-	end
-
 	local pending = 0
 
 	for index, request in ipairs(requests) do
@@ -265,73 +267,54 @@ function M:Apply(requests)
 			local entry = registered[key]
 
 			if not entry then
-				entry = table.remove(keyPool) or { Handles = {} }
+				entry = table.remove(keyPool) or { Handles = {}, Wanted = {} }
 				entry.Stamp = nil
-				entry.TriedStamp = nil
-				entry.Attempts = 0
-				entry.Capped = false
-				entry.Cursor = 1
 				registered[key] = entry
 			end
 
 			if entry.Stamp ~= stamp then
-				local moved = entry.TriedStamp ~= stamp
+				local trigger = TRIGGERS[request.Trigger]
 
-				if moved then
-					entry.TriedStamp = stamp
-					entry.Attempts = 0
-				end
+				-- The file is baked into every handle, so nothing this one holds is any use once
+				-- the request behind it has moved.
+				ReleaseHandles(entry)
 
-				if entry.Attempts < MAX_ATTEMPTS then
-					local trigger = TRIGGERS[request.Trigger]
-					local spells = file and trigger and request.SpellIds or EMPTY
-					-- A key the budget cut off keeps what it holds and picks up where it stopped.
-					-- A refused one starts again, because the ids the engine turned down are
-					-- scattered through the list.
-					local resume = not moved and entry.Capped and entry.Cursor <= #spells
+				entry.Stamp = stamp
+				entry.Unit = request.Unit
+				entry.Trigger = trigger
+				entry.File = file
+				entry.Channel = request.Channel
 
-					if not resume then
-						ReleaseHandles(entry)
-					end
+				RefillWanted(entry, file and trigger and request.SpellIds or EMPTY)
+			end
 
-					entry.Unit = request.Unit
-					entry.Trigger = trigger
-					entry.File = file
-					entry.Channel = request.Channel
-
-					pending = pending + 1
-					pendingKeys[pending] = entry
-					pendingSpells[pending] = spells
-					pendingCursor[pending] = resume and entry.Cursor or 1
-				end
+			if #entry.Wanted > 0 then
+				pending = pending + 1
+				pendingKeys[pending] = entry
+				pendingRead[pending] = 1
+				pendingWrite[pending] = 1
 			end
 		end
 	end
 
 	local remaining = DrainPending(pending)
 
+	truncated = remaining > 0
+
 	for index = 1, remaining do
-		local entry = pendingKeys[index]
+		TrimWanted(pendingKeys[index].Wanted, pendingRead[index], pendingWrite[index])
 
-		-- Cut off by the budget rather than refused, so it does not count against the attempts.
-		if not entry.Capped then
-			entry.Capped = true
-			cappedKeys = cappedKeys + 1
-		end
-
-		entry.Cursor = pendingCursor[index]
-		entry.Stamp = entry.TriedStamp
 		pendingKeys[index] = nil
-		pendingSpells[index] = nil
-		pendingCursor[index] = nil
+		pendingRead[index] = nil
+		pendingWrite[index] = nil
 	end
 end
 
----True while some key holds fewer registrations than it asked for because of the cap, so the
----silence can be explained.
+---True while the cap is what stands between a key and everything it asked for, so the silence
+---can be explained.
 ---@return boolean
 function M:WasTruncated()
-	return cappedKeys > 0
+	return truncated
 end
 
 ---Plays a file directly for the options preview, while the live sound is engine-side.
@@ -345,6 +328,8 @@ function M:Clear()
 	for key in pairs(registered) do
 		Forget(key)
 	end
+
+	truncated = false
 end
 
 ---@class PersonalAuraSoundRequest
@@ -358,12 +343,9 @@ end
 
 ---@class PersonalAuraSoundKey
 ---@field Handles number[] What the engine gave back, one per spell id it accepted.
----@field Stamp number? The stamp the handles satisfy, nil while the key still owes registrations.
----@field TriedStamp number? The stamp Attempts is counted against.
----@field Attempts number Consecutive passes that came up short of what the key asked for.
----@field Capped boolean Whether the budget, rather than a refusal, is what cut it short.
----@field Cursor number How far through its spell list it got, so a key the budget cut off can
----pick up from there rather than start again.
+---@field Wanted number[] The spell ids it has no handle for yet, whether the engine refused them
+---or the budget never reached them.
+---@field Stamp number? The stamp of the request Handles and Wanted were built from.
 ---@field Unit string
 ---@field Trigger number?
 ---@field File string?

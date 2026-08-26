@@ -2209,6 +2209,44 @@ fw.describe("PersonalAuras - sounds", function()
 	end)
 end)
 
+---A two spell request whose second id the engine will turn down.
+---@param groupId string
+---@return PersonalAuraSoundRequest
+local function RefusedRequest(groupId)
+	return {
+		GroupId = groupId,
+		Unit = "player",
+		Trigger = "Applied",
+		File = "Sonar",
+		Channel = "Master",
+		SpellIds = { ICE_BLOCK, POLYMORPH },
+	}
+end
+
+---Makes the engine refuse the polymorph id, and counts what it was offered. The caller puts the
+---real function back.
+---@return function realAdd
+---@return fun(): number offered
+local function RefuseOne()
+	local realAdd = _G.C_UnitAuras.AddAuraSound
+	local offered = 0
+
+	-- A refusal, which the engine gives no reason for.
+	_G.C_UnitAuras.AddAuraSound = function(trigger, info)
+		offered = offered + 1
+
+		if info.spellID == POLYMORPH then
+			return nil
+		end
+
+		return realAdd(trigger, info)
+	end
+
+	return realAdd, function()
+		return offered
+	end
+end
+
 ---A run of distinct spell ids, for the cap tests that need more of them than the cap allows.
 ---@param count number
 ---@param base number
@@ -2643,58 +2681,158 @@ fw.describe("PersonalAuras - reconciling the sound registrations", function()
 		sound:Clear()
 	end)
 
-	fw.it("tries a short pass again, and gives up after three", function()
+	fw.it("retries the refused id every pass without disturbing the rest", function()
 		ClearGroups()
 		sound:Clear()
 
-		local requests = {
-			{
-				GroupId = "gRetry",
-				Unit = "player",
-				Trigger = "Applied",
-				File = "Sonar",
-				Channel = "Master",
-				SpellIds = { ICE_BLOCK, POLYMORPH },
-			},
-		}
+		local requests = { RefusedRequest("gRetry") }
+		local realAdd, offered = RefuseOne()
 
-		local realAdd = _G.C_UnitAuras.AddAuraSound
-		local offered = 0
-
-		-- A refusal, which the engine gives no reason for.
-		_G.C_UnitAuras.AddAuraSound = function(trigger, info)
-			offered = offered + 1
-
-			if info.spellID == POLYMORPH then
-				return nil
-			end
-
-			return realAdd(trigger, info)
+		local function OnPlayer(entry)
+			return entry.Unit == "player"
 		end
 
 		-- Counted first and asserted afterwards, so a failure still puts the engine back. Left
 		-- refusing, every test after this one would see nothing register.
-		local afterEach = {}
-
-		for pass = 1, 4 do
-			sound:Apply(requests)
-			afterEach[pass] = offered
-		end
-
-		requests[1].File = "AirHorn"
 		sound:Apply(requests)
 
-		local afterChange = offered
+		local first = offered()
+		local held, landed = SoundHandles(OnPlayer)
+
+		sound:Apply(requests)
+		sound:Apply(requests)
+
+		local later = offered()
+		local undisturbed = StillHeld(held)
+		local _, stillLanded = SoundHandles(OnPlayer)
+
+		_G.C_UnitAuras.AddAuraSound = realAdd
+
+		-- The engine takes it this time, and the key has been offering it all along.
+		sound:Apply(requests)
+
+		local _, recovered = SoundHandles(OnPlayer)
+
+		sound:Clear()
+
+		assert(first == 2, "both spell ids were offered")
+		assert(landed == 1, "and one of the two was refused")
+		assert(later == 4, "each pass after offers the missing id and nothing else")
+		assert(undisturbed and stillLanded == 1, "the id that did land is left alone")
+		assert(recovered == 2, "and the missing one lands as soon as the engine takes it")
+	end)
+
+	fw.it("starts over when what the key wants changes", function()
+		ClearGroups()
+		sound:Clear()
+
+		local request = RefusedRequest("gChange")
+		local requests = { request }
+		local realAdd, offered = RefuseOne()
+
+		sound:Apply(requests)
+
+		local first = offered()
+		local held = SoundHandles(function(entry)
+			return entry.Unit == "player"
+		end)
+
+		-- The file is baked into the handle it did get, so that one has to go back too.
+		request.File = "AirHorn"
+		sound:Apply(requests)
+
+		local afterChange = offered()
+		local kept = StillHeld(held)
 
 		_G.C_UnitAuras.AddAuraSound = realAdd
 
 		sound:Clear()
 
-		assert(afterEach[1] == 2, "both spell ids were offered")
-		assert(afterEach[2] == 4, "the short key is offered again")
-		assert(afterEach[3] == 6, "three attempts in all")
-		assert(afterEach[4] == 6, "then it is left alone")
-		assert(afterChange == 8, "until what it asks for changes")
+		assert(first == 2, "both spell ids were offered")
+		assert(afterChange == 4, "a changed sound offers the whole list again")
+		assert(not kept, "and the handle taken out on the old file went back")
+	end)
+
+	fw.it("treats a throw from the engine as a refusal", function()
+		ClearGroups()
+		sound:Clear()
+
+		local requests = { RefusedRequest("gThrow") }
+		local realAdd = _G.C_UnitAuras.AddAuraSound
+
+		_G.C_UnitAuras.AddAuraSound = function()
+			error("blocked")
+		end
+
+		local applied = pcall(function()
+			sound:Apply(requests)
+		end)
+
+		_G.C_UnitAuras.AddAuraSound = realAdd
+
+		local _, none = SoundHandles(function(entry)
+			return entry.Unit == "player"
+		end)
+
+		sound:Apply(requests)
+
+		local _, recovered = SoundHandles(function(entry)
+			return entry.Unit == "player"
+		end)
+
+		sound:Clear()
+
+		assert(applied, "the throw does not escape Apply")
+		assert(none == 0, "and nothing was registered")
+		assert(recovered == 2, "the key registers once the engine answers again")
+	end)
+
+	fw.it("releases the rest of a key's handles when one hand-back throws", function()
+		ClearGroups()
+		sound:Clear()
+
+		-- Exactly the cap, so the key cannot fit a second time unless every handle it held really
+		-- did come back.
+		local full = {
+			GroupId = "gFull",
+			Unit = "pet",
+			Trigger = "Applied",
+			File = "Sonar",
+			Channel = "Master",
+			SpellIds = SpellList(1500, 900100),
+		}
+
+		sound:Apply({ full })
+
+		local fitted = not sound:WasTruncated()
+		local realRemove = _G.C_UnitAuras.RemoveAuraSound
+		local thrown = false
+
+		_G.C_UnitAuras.RemoveAuraSound = function(handle)
+			if not thrown then
+				thrown = true
+				error("blocked")
+			end
+
+			return realRemove(handle)
+		end
+
+		local cleared = pcall(function()
+			sound:Clear()
+		end)
+
+		_G.C_UnitAuras.RemoveAuraSound = realRemove
+
+		sound:Apply({ full })
+
+		local roomCameBack = not sound:WasTruncated()
+
+		sound:Clear()
+
+		assert(fitted, "the first pass fits inside the cap")
+		assert(cleared, "the throw does not escape Clear")
+		assert(thrown, "one hand-back really did throw")
+		assert(roomCameBack, "and the room every handle held came back")
 	end)
 end)
 
