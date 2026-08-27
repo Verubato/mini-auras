@@ -106,12 +106,12 @@ fw.describe("ImportantAuras - the zone gate", function()
 
 	-- The tests above only prove the hooks do nothing, and nothing else in the suite reaches either
 	-- productive half. Without these two a guard widened to an unconditional return would pass.
-	-- Called on the display rather than through the hook, whose own refresh would build the watcher
-	-- either way and make the assertion tautological.
 	fw.it("still takes a frame that gets its unit while the zone allows it", function()
 		local joined = env.addUnitFrame("party4", "CUF_ZoneGateAllowed")
 		assert(#env.containersForUnit("party4") == 0, "fixture: the frame starts bare")
 
+		-- Called on the display rather than through the hook, whose own refresh would build the
+		-- watcher either way and make the assertion tautological.
 		env.addon.Modules.ImportantAuras.Display:OnCufSetUnit(joined, "party4")
 
 		assert(#env.containersForUnit("party4") > 0, "an enabled module must still take the frame")
