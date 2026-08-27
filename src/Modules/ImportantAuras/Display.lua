@@ -1031,6 +1031,11 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
+	-- A torn-down entry keeps the row it last drew, so showing it again puts those icons back.
+	if not enabled then
+		return
+	end
+
 	-- The aura icons live in entry.Display, not the kick/test container, so it has to follow
 	-- the unit frame's visibility too.
 	if entry.Display then
@@ -1046,6 +1051,11 @@ function M:OnCufSetUnit(frame, unit)
 	end
 
 	if not unit then
+		return
+	end
+
+	-- The hooks outlive the module being switched off.
+	if not moduleUtil:IsModuleEnabled(moduleName.ImportantAuras) then
 		return
 	end
 

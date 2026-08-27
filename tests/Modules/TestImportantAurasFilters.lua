@@ -339,6 +339,8 @@ fw.describe("ImportantAuras - an anchor returning without a refresh", function()
 		frames.IsFriendlyCuf = realIsFriendlyCuf
 
 		assert(not display._enabled, "the hook must not wake a disabled module's display back up")
+		-- The display stays disabled either way, so only the shown state catches the icons coming back.
+		assert(not display:IsShown(), "nor put its icons back on screen")
 
 		env.setModuleEnabled("ImportantAuras", true)
 		module:Refresh()
