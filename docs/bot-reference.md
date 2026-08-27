@@ -892,6 +892,11 @@ side the unit is on now, and the check runs on the events that announce the chan
 waiting for the next poll, so a flip costs about a frame of wrong icons instead of a quarter of
 a second.
 
+A mind controlled unit keeps its aura icons. The game reports that unit's own auras through the
+control, so the bars stay right. What it does not do is keep the alert sounds and text to speech,
+which are matched by spell alone and would announce whatever landed on the player driving. Those
+go quiet for as long as the mind control lasts and come back on their own when it ends.
+
 Related global option: **Configure Blizzard Nameplates** (Misc, on by default) disables
 Blizzard's own CC display and BigDebuffs on nameplates while MiniAuras nameplates are in use,
 so the same auras are not drawn twice.

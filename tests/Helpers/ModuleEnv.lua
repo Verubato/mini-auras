@@ -23,6 +23,8 @@ function M.build()
 		healers = {},
 		-- Units outside the player's visible world, so caster filters cannot work on them.
 		phased = {},
+		-- Mind controlled units, whose aura list is the controller's.
+		charmed = {},
 		plates = {},
 		-- Group member tokens handed back by Units:FriendlyUnits(), i.e. the roster.
 		friendlyUnits = {},
@@ -398,8 +400,8 @@ function M.build()
 		Exists = function(_, unit)
 			return env.missingUnits[unit] ~= true
 		end,
-		IsCharmed = function()
-			return false
+		IsCharmed = function(_, unit)
+			return env.charmed[unit] == true
 		end,
 		CanAttack = function(_, unit)
 			return env.enemies[unit] == true

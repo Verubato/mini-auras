@@ -175,6 +175,13 @@ end
 -- alert sound is enabled.
 ---@param unitToken string
 function M:RegisterToken(unitToken)
+	-- A sound registration matches on spell id, and a mind control makes the unit's aura list the
+	-- controller's, so this would announce what landed on whoever is driving. Ahead of the warm
+	-- check, since a token charmed after it registered has to lose what it already holds.
+	if units:IsCharmed(unitToken) then
+		self:RemoveToken(unitToken)
+		return
+	end
 	if alertSoundsByToken[unitToken] then
 		return
 	end

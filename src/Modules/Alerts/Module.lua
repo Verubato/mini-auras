@@ -132,10 +132,9 @@ local function OnNamePlateAdded(unitToken)
 	-- Baseline for the state poll, kept fresh on every (re)registration.
 	local isEnemy = stateSub:Seed(unitToken)
 
-	-- Only track enemy nameplates. A charmed unit is out too: mind control hands it to the
-	-- other team, its aura list becomes the controller's own buffs, and the containers would
-	-- announce and draw those as alerts. The poll routes back here when the charm ends.
-	if not isEnemy or units:IsCharmed(unitToken) then
+	-- Only track enemy nameplates. The poll routes back here when a duel or a mind control moves
+	-- the unit between the two sides.
+	if not isEnemy then
 		-- The token now belongs to a non-enemy, so its warm sound registrations are dropped along
 		-- with the display.
 		sound:RemoveToken(unitToken)
@@ -157,28 +156,25 @@ end
 ---@param unitToken string
 ---@return boolean
 local function IsArenaTokenDrawable(unitToken)
-	return units:IsVisible(unitToken) and not units:IsCharmed(unitToken)
+	return units:IsVisible(unitToken)
 end
 
 -- An arena token is an opponent for the whole match, so there is nothing to add or remove. Only a
--- mind control or a unit the client cannot answer for takes one away. While charmed the unit is on
--- your team and its aura list becomes the controller's own buffs, which the bars would announce
--- and draw as alerts.
+-- unit the client cannot answer for takes one away.
 local function OnArenaUnitChanged(unitToken)
-	if not IsArenaTokenDrawable(unitToken) then
-		-- A charmed opponent's aura list is the controller's, so its warm sound registrations go
-		-- too. A unit merely outside the visible world keeps them, since they match on spell id,
-		-- which no gate skips, so they stay right while the icons cannot be trusted.
-		if units:IsCharmed(unitToken) then
-			sound:RemoveToken(unitToken)
-		end
-
-		display:ReleaseDisplay(unitToken)
-		display:ChainDisplays()
+	if IsArenaTokenDrawable(unitToken) then
+		display:ApplyOneAndChain(unitToken)
 		return
 	end
 
-	display:ApplyOneAndChain(unitToken)
+	display:ReleaseDisplay(unitToken)
+	display:ChainDisplays()
+
+	-- Parking leaves the registrations warm, and nothing here reaches the charm check that
+	-- registering makes, so an opponent charmed out of sight would still be announced.
+	if units:IsCharmed(unitToken) then
+		sound:RemoveToken(unitToken)
+	end
 end
 
 -- The poll only ever holds the live source's tokens, so the source decides which handler a flip
@@ -233,9 +229,8 @@ local function RebuildNameplateDisplays()
 		local unitToken = nameplate.unitToken
 		if unitToken then
 			-- Seed the state-poll baseline here too, since plates that existed before Init or
-			-- enable never fire NAME_PLATE_UNIT_ADDED. Charmed units are skipped for the same
-			-- reason as the add path.
-			if stateSub:Seed(unitToken) and not units:IsCharmed(unitToken) then
+			-- enable never fire NAME_PLATE_UNIT_ADDED.
+			if stateSub:Seed(unitToken) then
 				activeTokens[unitToken] = true
 			end
 		end
@@ -458,7 +453,7 @@ local function Setup()
 
 	-- A duel opponent starts as an untracked friendly plate; when the duel begins the flip
 	-- routes through OnNamePlateAdded to build its displays and sound registrations, and when
-	-- it ends the same call releases them. On arena tokens the same poll catches a mind control.
+	-- it ends the same call releases them.
 	stateSub = unitStatePoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.Alerts)
 	end, OnUnitStateChanged)

@@ -577,6 +577,27 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 		env.instanceType = "none"
 		env.invalidateWorldState()
 	end)
+
+	-- The container filters answer for the real unit through a mind control, so what the bars draw
+	-- is still that unit's own auras.
+	fw.it("keeps drawing a plate somebody has mind controlled", function()
+		env.enemies.np_charmed = true
+		env.addPlate("np_charmed")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_charmed")
+		local containers = env.containersForUnit("np_charmed")
+		assert(#containers == 1 and containers[1]._enabled, "precondition: tracked")
+
+		env.charmed.np_charmed = true
+		acm.tickAll(1)
+		local drawn = containers[1]._enabled
+
+		env.charmed.np_charmed = nil
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_charmed")
+		env.plates.np_charmed = nil
+		env.enemies.np_charmed = nil
+
+		assert(drawn, "the charm left the display alone")
+	end)
 end)
 
 fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", function()

@@ -52,6 +52,16 @@ local function tracked(token)
 	return liveCount(token) > 0
 end
 
+---Whether the engine holds any alert sound registration for a token.
+local function hasSounds(token)
+	for _, registration in pairs(env.auraSounds) do
+		if registration and registration.Unit == token then
+			return true
+		end
+	end
+	return false
+end
+
 ---Puts the client in an arena with `opponents` enemies and refreshes.
 local function enterArena(opponents)
 	env.inInstance = true
@@ -499,5 +509,80 @@ fw.describe("Alerts - arena tokens changing hands", function()
 		assert(setUnitCalls("nameplate1") == before, "no re-read is owed on a plate")
 
 		removePlate("nameplate1")
+	end)
+end)
+
+-- The container filters answer for the real unit through a mind control, so the icons stay right.
+-- A sound registration matches on spell id instead, which no gate skips, so it would announce
+-- whatever landed on the controller.
+fw.describe("Alerts - an opponent somebody mind controls", function()
+	fw.it("keeps an arena token's bars and drops only its sounds", function()
+		enterArena(3)
+		assert(tracked("arena2") and hasSounds("arena2"), "precondition: drawn and registered")
+
+		env.charmed.arena2 = true
+		acm.tickAll(1)
+		local drawn, quiet, neighbour = tracked("arena2"), not hasSounds("arena2"), hasSounds("arena1")
+
+		env.charmed.arena2 = nil
+		acm.tickAll(1)
+
+		assert(drawn, "the bars carry on")
+		assert(quiet, "the registrations went")
+		assert(neighbour, "and the opponent nobody charmed keeps its own")
+		assert(tracked("arena2") and hasSounds("arena2"), "both back when the charm ends")
+	end)
+
+	-- Seeding the poll baseline is what a rebuild does first, and it re-reads the charm rather than
+	-- keeping the value the flip would have been measured against. The tick that follows therefore
+	-- sees no flip at all, so registering is the only thing left that can notice.
+	fw.it("drops the sounds when a refresh lands before the poll sees the charm", function()
+		enterArena(3)
+		assert(hasSounds("arena1"), "precondition: registered")
+
+		env.charmed.arena1 = true
+		events:TriggerEvent("ARENA_OPPONENT_UPDATE", "arena1", "seen")
+		acm.tickAll(1)
+		local quiet = not hasSounds("arena1")
+
+		env.charmed.arena1 = nil
+		acm.tickAll(1)
+
+		assert(quiet, "the rebuild caught what the swallowed flip did not")
+		assert(hasSounds("arena1"), "and they come back when the charm ends")
+	end)
+
+	fw.it("registers nothing for an arena token already charmed when it binds", function()
+		enterWorld()
+		env.charmed.arena3 = true
+		enterArena(3)
+		local drawn, quiet = tracked("arena3"), not hasSounds("arena3")
+
+		env.charmed.arena3 = nil
+		acm.tickAll(1)
+
+		assert(drawn, "the bars bind anyway")
+		assert(quiet, "nothing was registered against the controller's auras")
+		assert(hasSounds("arena3"), "and the charm ending registers them")
+	end)
+
+	fw.it("does the same on a nameplate", function()
+		enterWorld()
+		addEnemyPlate("nameplate2")
+		assert(tracked("nameplate2") and hasSounds("nameplate2"), "precondition: drawn and registered")
+
+		env.charmed.nameplate2 = true
+		acm.tickAll(1)
+		local drawn, quiet = tracked("nameplate2"), not hasSounds("nameplate2")
+
+		env.charmed.nameplate2 = nil
+		acm.tickAll(1)
+		local restored = tracked("nameplate2") and hasSounds("nameplate2")
+
+		removePlate("nameplate2")
+
+		assert(drawn, "the bars carry on")
+		assert(quiet, "the registrations went")
+		assert(restored, "both back when the charm ends")
 	end)
 end)

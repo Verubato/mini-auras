@@ -86,14 +86,6 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	-- A charmed unit is under the other team's control, so its aura list flips to the controller's
-	-- buffs and either faction's bars would draw those as the unit's own. Untracked entirely, and
-	-- the charm poll routes back here when the mind control ends.
-	if units:IsCharmed(unitToken) then
-		display:Untrack(unitToken)
-		return
-	end
-
 	-- Critters and the game's "minus" adds never carry anything worth showing, and a busy zone is
 	-- mostly them: each one tracked costs a live aura container the client parses for as long as the
 	-- plate is up. Pets are exempt so IgnorePets stays the only thing deciding those, since a
