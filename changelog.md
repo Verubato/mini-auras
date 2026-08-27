@@ -2,9 +2,10 @@
 
 ## Unreleased
 
-- Priority debuffs no longer draw as bigger icons. The game only answers that flag for buffs, so
-  the separate row added in 5.25.0 never picked up the debuffs that matter in a duel or an arena.
-  The frame aura debuff row shares one budget again.
+- The frame aura debuff row now leads with the game's own boss and role auras, drawn larger and in
+  their own slots, replacing the priority row added in 5.25.0. Out of the box the lead group shows
+  only the boss and role auras that are dispellable and under a minute, the same two switches that
+  narrow the rest of the row.
 
 ## 5.26.0
 

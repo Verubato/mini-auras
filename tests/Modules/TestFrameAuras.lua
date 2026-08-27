@@ -167,14 +167,16 @@ local CURATED = CuratedId()
 local CUSTOM = 99000001
 -- The second Lifebloom, which the client names after the spell it copies.
 local FULL_BLOOM = 290754
--- The aura groups the rows draw through. Crowd control leads the debuff row, drawn larger than
--- the rest of it.
+-- The aura groups the rows draw through. Boss and role auras lead the debuff row, then crowd
+-- control, both drawn larger than the rest of it.
 local PARTY_BUFF_GROUP = "FrameBuffs"
 local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
+local DEBUFF_ROLE_GROUP = "FrameDebuffsRole"
 -- What the front of the row is drawn at, as a share of the rest of it.
 local LEAD_SCALE = 1.25
--- The cap the group at the front of the row carries, whatever the row's own budget is.
+-- The cap each of the two groups at the front of the row carries, whatever the row's own budget
+-- is.
 local LEAD_MAX_ICONS = 2
 -- The gap the rows leave between one icon and the next.
 local ICON_SPACING = 1
@@ -831,11 +833,13 @@ fw.describe("Frame Auras - what one frame costs", function()
 		acm.tickAll(400)
 
 		local groups, buttons = CostOf(fresh)
-		local expected = options.Buffs.MaxIcons + options.Debuffs.MaxIcons + 1
+		local expected = options.Buffs.MaxIcons + options.Debuffs.MaxIcons
+			+ math.min(options.Debuffs.MaxIcons, LEAD_MAX_ICONS) + 1
 
 		-- Buffs are two groups only while the refresh-window reveal is on: the plain row plus one
-		-- button for the single spell that carries it. Debuffs are one, since crowd control is off.
-		assert(groups == 3, "three groups on a frame, got " .. groups)
+		-- button for the single spell that carries it. Debuffs are two, because the boss and role
+		-- auras always lead the row in a group of their own, even with crowd control off.
+		assert(groups == 4, "four groups on a frame, got " .. groups)
 		assert(buttons == expected,
 			"the row budgets are what a frame costs, expected " .. expected .. " got " .. buttons)
 
@@ -1830,6 +1834,14 @@ local function DebuffGroup(frame)
 	return nil
 end
 
+---The groups behind the lead are always the false half of the boss and role partition, whatever
+---the two switches on the page are set to, since the game never negates that flag in a filter
+---string.
+---@param filters table
+local function AssertRestHalf(filters)
+	assert(filters.isBossOrRoleAura == false, "the groups behind the lead are the half without the boss and role auras")
+end
+
 fw.describe("Frame Auras - what the debuff row lets through", function()
 	fw.before_each(function()
 		module:StopTesting()
@@ -1840,7 +1852,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		partyAuras:Refresh()
 	end)
 
-	fw.it("hands the engine no filter set at all with neither switch on", function()
+	fw.it("narrows the row by the boss and role partition alone with neither switch on", function()
 		options.Debuffs.Enabled = true
 
 		-- Its own frame, like the cost tests: a display is built once per frame and kept, so one that
@@ -1851,9 +1863,12 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		acm.tickAll(400)
 
 		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
+		local filters = assert(group.candidateFilters,
+			"the partition is on the group whatever the switches say, since the row always has both halves")
 
-		assert(group.candidateFilters == nil,
-			"with neither switch on the filter string is the whole of it")
+		AssertRestHalf(filters)
+		assert(filters.maxDuration == nil and filters.processedAuraType == nil,
+			"and with neither switch on there is nothing else to narrow by")
 
 		DropRaidFrame(21)
 	end)
@@ -1872,6 +1887,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		assert(filters.maxDuration == 60,
 			"under a minute is a bound on the whole duration, got " .. tostring(filters.maxDuration))
+		AssertRestHalf(filters)
 
 		options.Debuffs.ShortOnly = false
 		DropRaidFrame(22)
@@ -1891,6 +1907,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		assert(filters.processedAuraType == DISPEL_TYPE,
 			"the engine's own dispel classification is what it filters on")
+		AssertRestHalf(filters)
 
 		options.Debuffs.Dispellable = false
 		DropRaidFrame(23)
@@ -1912,6 +1929,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		assert(filters.maxDuration == 60,
 			"under a minute out of the box, got " .. tostring(filters.maxDuration))
+		AssertRestHalf(filters)
 
 		options.Debuffs.ShortOnly = false
 		DropRaidFrame(25)
@@ -1933,6 +1951,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		assert(filters.processedAuraType == DISPEL_TYPE,
 			"dispel classification out of the box, got " .. tostring(filters.processedAuraType))
+		AssertRestHalf(filters)
 
 		options.Debuffs.Dispellable = false
 		DropRaidFrame(28)
@@ -2258,6 +2277,197 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 	end)
 end)
 
+fw.describe("Frame Auras - the boss and role auras leading the debuff row", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.Dispellable = false
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+	end)
+
+	fw.it("leads the row ahead of crowd control, whatever that switch says", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(11)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row always carries the role group")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the crowd control group")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(role.layout.layoutIndex < cc.layout.layoutIndex, "it leads crowd control")
+		assert(cc.layout.layoutIndex < plain.layout.layoutIndex, "which leads the rest of the row")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(11)
+	end)
+
+	fw.it("still leads the row with crowd control switched off", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(12)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group without being asked")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP] == nil, "crowd control is off")
+		assert(role.layout.layoutIndex < plain.layout.layoutIndex, "and the role group still leads")
+
+		DropRaidFrame(12)
+	end)
+
+	fw.it("takes the boss and role half of the partition, leaving crowd control and the rest without it", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(13)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the crowd control group")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		local roleFilters = assert(role.candidateFilters, "the role group is handed a filter set")
+		local ccFilters = assert(cc.candidateFilters, "so is crowd control")
+		local plainFilters = assert(plain.candidateFilters, "and so is the rest of the row")
+
+		assert(roleFilters.isBossOrRoleAura == true, "the group takes the boss and role auras and nothing else")
+		AssertRestHalf(ccFilters)
+		AssertRestHalf(plainFilters)
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(13)
+	end)
+
+	fw.it("takes a plain HARMFUL filter string, with no crowd control token of its own", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(40)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+
+		assert(role.filterString == "HARMFUL",
+			"a crowd control debuff that is also boss or role flagged still has to reach this group, got "
+				.. tostring(role.filterString))
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(40)
+	end)
+
+	fw.it("narrows by whatever the rest of the row is narrowed by, on both halves of the partition", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShortOnly = true
+		options.Debuffs.Dispellable = true
+
+		local fresh = NewRaidFrame(14)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+		local roleFilters = assert(role.candidateFilters, "with a filter set on it")
+		local plainFilters = assert(row._groups[DEBUFF_GROUP].candidateFilters, "and on the rest of the row")
+
+		assert(roleFilters.maxDuration == 60 and roleFilters.processedAuraType == DISPEL_TYPE,
+			"the two switches on the page narrow the role group too, not only the rest of the row")
+		assert(plainFilters.maxDuration == 60 and plainFilters.processedAuraType == DISPEL_TYPE,
+			"which the rest of the row still carries")
+		assert(roleFilters.isBossOrRoleAura == true, "without losing the partition")
+
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.Dispellable = false
+		DropRaidFrame(14)
+	end)
+
+	fw.it("caps its budget at the row's own slider where that is smaller", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.MaxIcons = 1
+
+		local fresh = NewRaidFrame(15)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+
+		assert(role.maxFrameCount == 1,
+			"the row's slider wins under the group's own cap, got " .. tostring(role.maxFrameCount))
+
+		options.Debuffs.MaxIcons = dbDefaults.Modules.FrameAuras.Debuffs.MaxIcons
+		DropRaidFrame(15)
+	end)
+
+	fw.it("never needs the switch that gates crowd control, unlike the group ahead of it", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(16)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+
+		assert(role.maxFrameCount == LEAD_MAX_ICONS,
+			"the budget is never zeroed by a switch, got " .. tostring(role.maxFrameCount))
+
+		DropRaidFrame(16)
+	end)
+
+	fw.it("re-publishes the right filter set to each of the three groups when the switches flip", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(29)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "and the crowd control group")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(role.candidateFilters.maxDuration == nil, "nothing narrows the row yet")
+
+		options.Debuffs.ShortOnly = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(role.candidateFilters.maxDuration == 60, "the role group picked up the new bound")
+		assert(role.candidateFilters.isBossOrRoleAura == true, "without losing its own half of the partition")
+		assert(cc.candidateFilters.maxDuration == 60 and cc.candidateFilters.isBossOrRoleAura == false,
+			"crowd control took the rest half, with the same bound")
+		assert(plain.candidateFilters.maxDuration == 60 and plain.candidateFilters.isBossOrRoleAura == false,
+			"and so did the plain group behind it")
+
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(29)
+	end)
+end)
+
 fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 	fw.before_each(function()
 		module:StopTesting()
@@ -2337,9 +2547,14 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 			count = count + 1
 		end
 
-		assert(count == 1, "the row is one group, got " .. count)
+		-- The role group always leads the row, crowd control off or not, so "one pool" means the
+		-- role group plus the one group everything else shares.
+		assert(count == 2, "the row is the role group and one more, got " .. count)
 		assert(row._groups[DEBUFF_GROUP].maxFrameCount == 4,
 			"and it draws on the whole slider, got " .. tostring(row._groups[DEBUFF_GROUP].maxFrameCount))
+		assert(row._groups[DEBUFF_ROLE_GROUP].maxFrameCount == LEAD_MAX_ICONS,
+			"but the role group still takes its own cap, not the row's, got "
+				.. tostring(row._groups[DEBUFF_ROLE_GROUP].maxFrameCount))
 
 		options.Debuffs.MaxIcons = dbDefaults.Modules.FrameAuras.Debuffs.MaxIcons
 		DropRaidFrame(24)

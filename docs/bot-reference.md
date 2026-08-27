@@ -680,22 +680,26 @@ end, because flipping it makes the client rebuild the raid frames.
 upward.
 Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is
 ordered by the game itself, because an aura's spell id is secret and nothing can reorder a group
-once it has rendered. Crowd control, when it is switched on, leads the row.
+once it has rendered. The game's own boss and role auras lead the row, drawn a quarter larger than
+the rest of it and capped at two icons on their own budget. There is no switch for it: a debuff
+like Unstable Affliction has to be seen before anything else on the frame. Crowd control, when it
+is switched on, follows it.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3).
 - **Dispellable** (on) - only the debuffs your own spec can dispel.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
-- **Crowd control** (off) - gives crowd control a group of its own at the head of the row, drawn a
-  quarter larger than the rest of it and capped at two icons on its own budget. Off by default for
-  the same reason as the two on the Buffs tab.
-- **Dispel colours** (on) - rings that leading crowd control in the game's colour for its dispel
+- **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,
+  drawn a quarter larger than the rest of the row and capped at two icons on its own budget. Off by
+  default for the same reason as the two on the Buffs tab.
+- **Dispel colours** (on) - rings that crowd control group in the game's colour for its dispel
   type. The debuffs behind it draw a plain icon like Blizzard's own, whatever this is set to.
 - **Show numbers** (off) - as on the Buffs tab.
 
 The two narrowing switches are about the row rather than a category of it, so a stun the player
-cannot dispel is dropped exactly as a debuff would be. With both off nothing narrows the row at all.
+cannot dispel is dropped exactly as a debuff would be. The boss and role partition at the head of
+the row always narrows it, whatever those two switches are set to.
 
 **Missing Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
 class brings (Mark of the Wild, Blessing of the Bronze, Arcane Intellect, Power Word: Fortitude,

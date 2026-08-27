@@ -681,8 +681,8 @@ local dbDefaults = {
 				ShortOnly = true,
 				-- Same again: crowd control has its own row on the Important Auras page.
 				ShowCrowdControl = false,
-				-- Only the crowd control at the head of the row takes it. The debuffs behind it
-				-- stand in for Blizzard's own, which draws a plain icon.
+				-- Only the crowd control group takes it. Every other debuff on the row stands in for
+				-- Blizzard's own, which draws a plain icon.
 				ColorByDispelType = true,
 				EnableNumbers = false,
 				-- No "Mine" switch on this side. Everything landing on a group member came from
