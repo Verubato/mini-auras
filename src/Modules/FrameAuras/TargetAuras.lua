@@ -46,7 +46,7 @@ local DEFAULT_SIZE = 22
 local DEFAULT_PER_ROW = 6
 local DEFAULT_MAX_ICONS = 6
 -- A 22 pixel icon leaves a count of eight points at the shared ratio.
-local STACK_COEFFICIENT = 0.55
+local STACK_COEFFICIENT = 0.4
 local DEFAULT_PURGE_COLOR = { R = 0.35, G = 0.7, B = 1 }
 -- The two frames this stands in for, by the global the client publishes them under.
 local HOST_SPECS = {

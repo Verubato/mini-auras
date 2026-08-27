@@ -80,7 +80,7 @@ local DEFAULT_PER_ROW = 3
 local DEFAULT_SIZE_PERCENT = 35
 -- An icon sized off a party frame is about eighteen pixels, where the shared ratio leaves a count
 -- of six points.
-local STACK_COEFFICIENT = 0.55
+local STACK_COEFFICIENT = 0.4
 -- The Masque sub-group these rows are skinned under. One name for both sides, since a player
 -- picking a skin for the frame auras means the lot of them.
 local MASQUE_GROUP = "Frame Auras"
