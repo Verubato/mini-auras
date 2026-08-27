@@ -891,6 +891,11 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
+	-- A torn-down entry keeps the row it last drew, so showing it again puts those icons back.
+	if not entryEnabled then
+		return
+	end
+
 	-- The aura icons live in entry.Display, not the kick/test container, so it has to follow
 	-- the unit frame's visibility too.
 	if entry.Display then
