@@ -36,8 +36,10 @@ local groups = {
 	{
 		Class = "MONK",
 		Ids = {
-			448430, -- Renewing Mist
-			227345, -- Enveloping Mist
+			119611, -- Renewing Mist
+			124682, -- Enveloping Mist
+			411036, -- Sphere of Hope
+			116841, -- Tiger's Lust
 		},
 	},
 	{
