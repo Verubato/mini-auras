@@ -659,6 +659,16 @@ fw.describe("AuraCategoryIds", function()
 		assert(data.Defensive[45438], "Ice Block in Defensive")
 		assert(data.EnemyDebuff[236273], "Duel in EnemyDebuff")
 		assert(data.EnemyDebuff[198819], "Sharpen Blade in EnemyDebuff")
+		assert(data.EnemyDebuff[80240], "Havoc in EnemyDebuff")
+		assert(data.EnemyDebuff[356723], "Scorpid Venom in EnemyDebuff")
+	end)
+
+	fw.it("gives every enemy debuff a clip", function()
+		-- A spell the generator never rendered gets no config row and never announces.
+		local sounds = loadModule("src/Core/Auras/AuraTtsSounds.lua", newAddon({})).Core.AuraTtsSounds
+		for id in pairs(data.EnemyDebuff) do
+			assert(sounds.EnemyDebuff[id], "no clip for enemy debuff " .. id .. ", re-run GenerateTtsAudio.py")
+		end
 	end)
 
 	fw.it("Important and Defensive are disjoint", function()

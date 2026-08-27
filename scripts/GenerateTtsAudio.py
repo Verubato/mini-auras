@@ -101,6 +101,7 @@ SHORT_NAMES = {
     "Precognition": "Precog",
     "Rallying Cry": "Rally",
     "Roar of Sacrifice": "Pet Sac",
+    "Scorpid Venom": "Sting",
     "Shadow Dance": "Dance",
     "Sharpen Blade": "Sharpen",
     "Shield Wall": "Wall",
