@@ -8,6 +8,7 @@
 - Fixed Crowd Control icons coming back on the raid frames during a battleground it had been switched off for.
 - Frame aura icons can now go down to 15% of the frame's height, where the smallest they went before was 25%.
 - The stack count on frame aura icons is now drawn larger, so it can be read at the size those icons run at.
+- Fixed turning the Frame Auras buffs or debuffs off leaving Blizzard's own rows hidden. They now always come back on.
 
 ## 5.25.0
 

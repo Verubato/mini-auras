@@ -88,7 +88,7 @@ local MASQUE_GROUP = "Frame Auras"
 -- Blizzard's own party and raid frame auras, switched off while this draws its own in their place.
 local CVARS = { Buffs = "raidFramesDisplayBuffs", Debuffs = "raidFramesDisplayDebuffs" }
 local CVAR_HIDDEN = "0"
--- What a side hands back when nothing was remembered: the value a fresh install has.
+-- What a side hands back, whatever the player had before.
 local CVAR_SHOWN = "1"
 -- One dedupe key per side, so a toggle flipped twice in a fight only applies once.
 local CVAR_WORK_KEY = "MiniAuras_FrameAurasCVar_"
@@ -116,9 +116,6 @@ local testModeActive = false
 -- on the edge. Nil until the first refresh settles it, which is what keeps a side that was already
 -- off at login from handing Blizzard's row back to a player who turned it off themselves.
 local cvarState = { Buffs = nil, Debuffs = nil }
--- Whether a side still owes the client the value it took. True from the switch going off until the
--- write lands, which is the window where the client reports this module's own answer.
-local handingBack = { Buffs = false, Debuffs = false }
 -- Bumped on every refresh. An entry stamped with the current one is already drawn to the current
 -- settings, so a re-point can skip the geometry and only tell its displays who they are now.
 local generation = 0
@@ -1137,64 +1134,41 @@ local function ApplyCVar(side, enabled)
 
 	cvarState[side] = enabled
 
-	-- Nothing to hand back on the first pass of a side that is switched off. The player may have
-	-- turned Blizzard's own row off themselves, and this has never touched it.
-	if not enabled and not wasSettled then
-		local saved = mini:GetSavedVars().FrameAuraCVars
+	local db = mini:GetSavedVars()
 
-		-- A value is taken when the side goes on and let go only once the hand-back reaches the
-		-- client, so one still held here is a hand-back a reload cut short.
-		if not (saved and saved[side]) then
-			return
-		end
+	db.FrameAuraCVars = db.FrameAuraCVars or {}
+
+	local taken = db.FrameAuraCVars
+
+	-- The player may have turned Blizzard's own row off themselves, and this has never touched it.
+	-- A flag surviving from the last session is a hand-back a reload cut short, and that one still
+	-- goes out.
+	if not enabled and not wasSettled and not taken[side] then
+		return
 	end
 
 	local name = CVARS[side]
 	local value
 
-	local db = mini:GetSavedVars()
-
-	db.FrameAuraCVars = db.FrameAuraCVars or {}
-
-	local remembered = db.FrameAuraCVars
-
 	if enabled then
-		-- Remembered before it is overwritten, and kept in the saved variables because the row is
-		-- handed back on a switch the player may not flip for weeks, long past the reload that
-		-- would forget what they had.
-		--
-		-- Only on a switch the player threw. At login the cvar already carries this module's own
-		-- write from the last session, so reading it there would remember "off" and hand that back
-		-- as though the player had chosen it.
-		--
-		-- Not while this side owes the client a hand-back. The write has not gone out yet, so the
-		-- client still reports what this module put there.
-		if wasSettled and not remembered[side] and not handingBack[side] then
-			remembered[side] = GetCVar(name) or CVAR_SHOWN
-		end
-
+		-- Kept in the saved variables because the row is handed back on a switch the player may
+		-- not flip for weeks, long past the reload that would forget this ever took it.
+		taken[side] = true
 		value = CVAR_HIDDEN
 	else
-		value = remembered[side] or CVAR_SHOWN
-		handingBack[side] = true
+		-- Straight back on. A switch off is a player asking to see Blizzard's row.
+		value = CVAR_SHOWN
 	end
 
 	-- Writing the value the client already holds still makes it rebuild the raid frames. At login
 	-- the last session's write is still in place, so there is nothing to say.
-	--
-	-- While a hand-back waits on a fight, the client reports this module's own value. The clear
-	-- waits for the write, so a re-enable before then cannot take that value for the player's.
 	mini:RunWhenCombatEnds(function()
 		if GetCVar(name) ~= value then
 			SetCVar(name, value)
 		end
 
-		-- A re-enable replaces the hand-back's closure under the same key, so a clear in the off
-		-- branch would strand the flag for the session.
-		handingBack[side] = false
-
 		if not enabled then
-			remembered[side] = false
+			taken[side] = false
 		end
 	end, CVAR_WORK_KEY .. side)
 end

@@ -188,8 +188,8 @@ local function ArtOf(frame)
 end
 
 ---Blizzard draws its own auras on these frames and there is no setting that turns them off, so the
----container is switched off and hidden instead. Only those two can be taken back, since the counts
----and the unit have no getter to read the old value from.
+---container is switched off and hidden instead. The counts and the unit are left alone, since
+---nothing can put them back.
 ---@param frame table
 local function SuppressBlizzardAuras(frame)
 	local container = frame.GetAuraContainer and frame:GetAuraContainer()
@@ -198,28 +198,21 @@ local function SuppressBlizzardAuras(frame)
 		return
 	end
 
-	local taken = suppressed[frame]
-
 	if not active then
-		-- Only where this actually took the container over, and only back to what it found. A
-		-- profile that never switched the rows on has no business getting a container handed back.
-		if taken then
+		-- Only where this actually took the container over. A profile that never switched the rows
+		-- on has no business touching a container it never suppressed.
+		if suppressed[frame] then
 			suppressed[frame] = nil
 			-- On before shown, so the refresh that showing brings lands on a live container and
 			-- the target already on the frame gets its auras back without a target change.
-			container:SetEnabled(taken.Enabled)
-			container:SetShown(taken.Shown)
+			container:SetEnabled(true)
+			container:Show()
 		end
 
 		return
 	end
 
-	-- Read once, on the way in. The hook below re-applies this on every reconfigure, and by then
-	-- what the container is holding is this module's own answer rather than the client's.
-	if not taken then
-		suppressed[frame] = { Enabled = container:IsEnabled(), Shown = container:IsShown() }
-	end
-
+	suppressed[frame] = true
 	container:SetEnabled(false)
 	container:Hide()
 end

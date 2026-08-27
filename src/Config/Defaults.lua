@@ -39,8 +39,8 @@ local dbDefaults = {
 	-- Not a profile payload key. Whether the test captions are wanted is about the screen they
 	-- would crowd, not about the group the profile is for.
 	ShowTestLabels = true,
-	-- What Blizzard's own party and raid frame aura rows were set to before Frame Auras took one
-	-- over, so switching that side back off puts the client where it found it. False until a side is
+	-- Which of Blizzard's own party and raid frame aura rows Frame Auras has switched off, so a
+	-- reload between the switch and the write still hands the row back. False until a side is
 	-- switched on, and false again once it has been handed back. Written by the module.
 	--
 	-- Not a profile payload key. A cvar belongs to the client, so a profile that never enabled a
