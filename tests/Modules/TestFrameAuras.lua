@@ -1181,7 +1181,7 @@ fw.describe("Frame Auras - test mode", function()
 		assert(ContainersOn(hidden) == 0,
 			"a hidden frame costs no display, however occupied its token says it is")
 
-		-- Put it on screen and it gets one, so the gate defers the work rather than losing it.
+		-- Put it on screen and it gets one, so the walk defers the work rather than losing it.
 		hidden:Show()
 		partyAuras:Refresh()
 
@@ -1522,6 +1522,260 @@ fw.describe("Frame Auras - test mode", function()
 		-- The stand-ins leave the frame list with test mode, so the refresh that follows never
 		-- walks them: whatever cleared this row did it without being handed the frame.
 		assert(standIn:GetUsedSlotCount() == 0, "the stand-in row is cleared too")
+	end)
+end)
+
+-- The frame hooks the rows install, taken here because the missing buff mark installs its own set
+-- later in this file and the environment only remembers the last one.
+local partyHooks
+
+---@return table
+local function PartyHooks()
+	if not partyHooks then
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+		partyHooks = assert(env.unitFrameHooks, "the rows installed no frame hooks")
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+	end
+
+	return partyHooks
+end
+
+fw.describe("Frame Auras - frames the client has not shown yet", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+	end)
+
+	---One of Blizzard's raid frames, off screen, which is how a battleground hands them over
+	---before the gates open.
+	---@param index number
+	---@return table
+	local function NewHiddenRaidFrame(index)
+		local frame = NewRaidFrame(index)
+
+		frame:Hide()
+
+		return frame
+	end
+
+	fw.it("builds on a hidden frame the client has pointed at somebody", function()
+		local hooks = PartyHooks()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		local hidden = NewHiddenRaidFrame(30)
+
+		hooks.OnSetUnit(hidden)
+		acm.tickAll(400)
+
+		local built = ContainersOn(hidden)
+
+		DropRaidFrame(30)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(built > 0, "a hidden frame with a real unit on it was turned away, got " .. built)
+	end)
+
+	fw.it("draws nothing on it while it is off screen", function()
+		local hooks = PartyHooks()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		local hidden = NewHiddenRaidFrame(31)
+
+		hooks.OnSetUnit(hidden)
+		acm.tickAll(400)
+
+		local row = GroupRowOn(hidden, PARTY_BUFF_GROUP)
+		local tracking = row and row._enabled
+
+		DropRaidFrame(31)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(row, "the row was built for the frame")
+		assert(tracking == false, "the client is weighing every aura against a row nobody can see")
+	end)
+
+	fw.it("still waits for a definite answer about who is on a hidden frame", function()
+		local hooks = PartyHooks()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		local hidden = NewHiddenRaidFrame(32)
+		local realExists = _G.UnitExists
+		-- Building is a batch of buttons the engine can never free, so an answer the client will
+		-- not give has to mean "not yet" here as much as it does on a frame that is on screen.
+		local secret = wow.markSecret({})
+
+		_G.UnitExists = function()
+			return secret
+		end
+
+		hooks.OnSetUnit(hidden)
+
+		local built = ContainersOn(hidden)
+
+		_G.UnitExists = realExists
+		DropRaidFrame(32)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(built == 0, "a row was built for a unit the client never answered for, got " .. built)
+	end)
+
+	fw.it("builds for a unit the client only answers for once it comes into view", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewRaidFrame(33)
+		local realExists = _G.UnitExists
+		local secret = wow.markSecret({})
+
+		-- A battleground before the gates open, with the frame up and pointed at somebody outside
+		-- the player's visible world.
+		env.phased["raid33"] = true
+
+		_G.UnitExists = function(unit)
+			if unit == "raid33" then
+				return secret
+			end
+
+			return realExists(unit)
+		end
+
+		partyAuras:Refresh()
+
+		local beforeView = ContainersOn(frame)
+
+		-- Into view, which the client announces with nothing at all.
+		env.phased["raid33"] = nil
+		_G.UnitExists = realExists
+
+		acm.tickAll(1)
+
+		local afterView = ContainersOn(frame)
+
+		DropRaidFrame(33)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(beforeView == 0, "the row was built before the client would say who was there")
+		assert(afterView > 0, "and coming into view never built it, got " .. afterView)
+	end)
+
+	fw.it("watches the unit on a frame that comes on screen between passes", function()
+		local hooks = PartyHooks()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		local frame = NewHiddenRaidFrame(34)
+		local realExists = _G.UnitExists
+		local secret = wow.markSecret({})
+
+		env.phased["raid34"] = true
+
+		_G.UnitExists = function(unit)
+			if unit == "raid34" then
+				return secret
+			end
+
+			return realExists(unit)
+		end
+
+		hooks.OnSetUnit(frame)
+
+		-- On screen, still outside the player's visible world. Nothing has walked this frame since
+		-- it appeared, so the only thing that can hand its token to the poller is this hook.
+		frame:Show()
+		hooks.OnUpdateVisible(frame)
+		acm.tickAll(1)
+
+		env.phased["raid34"] = nil
+		_G.UnitExists = realExists
+
+		acm.tickAll(1)
+
+		local built = ContainersOn(frame)
+
+		DropRaidFrame(34)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(built > 0, "coming into view never built the row, got " .. built)
+	end)
+
+	fw.it("drops the rows on a frame a parent hid", function()
+		local hooks = PartyHooks()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		local frame = NewRaidFrame(35)
+
+		hooks.OnSetUnit(frame)
+		acm.tickAll(400)
+
+		local row = GroupRowOn(frame, PARTY_BUFF_GROUP)
+		local before = row and row._enabled
+		local shownBefore = row and row._shown
+
+		-- A container toggled off in Edit Mode takes its members with it, and none of them get a
+		-- hook of their own for that.
+		frame:Hide()
+		hooks.OnSorted()
+
+		local after = row and row._enabled
+		local shownAfter = row and row._shown
+
+		DropRaidFrame(35)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(before == true, "the row never tracked the unit while the frame was up")
+		assert(after == false, "the client is still weighing auras for a frame nobody can see")
+		assert(shownBefore == true, "the row never went up while the frame was there")
+		assert(shownAfter == false, "and it stayed up after the frame went, got " .. tostring(shownAfter))
+	end)
+
+	fw.it("zeroes the crowd control budget for a unit outside the visible world", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local frame = NewRaidFrame(36)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = GroupRowOn(frame, DEBUFF_CROWD_CONTROL_GROUP)
+		local group = row and row._groups[DEBUFF_CROWD_CONTROL_GROUP]
+		local before = group and group.maxFrameCount
+
+		-- Out of the visible world the token is the group's only filter and the engine stops
+		-- weighing it, so the head of the row fills with whatever else the unit has.
+		env.phased["raid36"] = true
+
+		acm.tickAll(400)
+
+		local after = group and group.maxFrameCount
+
+		env.phased["raid36"] = nil
+		DropRaidFrame(36)
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(group, "the crowd control group was built")
+		assert(before > 0, "the group never got a budget while the unit was in view, got " .. tostring(before))
+		assert(after == 0, "the group kept its budget out of view, got " .. tostring(after))
 	end)
 end)
 

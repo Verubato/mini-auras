@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local moduleUtil = addon.Utils.ModuleUtil
 local wowEx = addon.Utils.WoWEx
+local units = addon.Utils.UnitUtil
 local frames = addon.Core.Frames
 local growAnchors = addon.Core.GrowAnchors
 local eventGate = addon.Core.EventGate
@@ -11,6 +12,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local pixels = addon.Core.Pixels
 local sweep = addon.Core.Sweep
 local testSpells = addon.Core.TestSpells
+local unitStatePoller = addon.Core.UnitStatePoller
 local spells = addon.Modules.FrameAuras.Spells
 
 -- Stands in for Blizzard's own buff and debuff rows on the party and raid frames. Each side is a
@@ -136,6 +138,8 @@ local debuffCandidatesBuilt
 local eventsFrame
 ---@type EventGate?
 local rosterGate
+---@type UnitStatePollerSubscriber?
+local stateSub
 local hooked = false
 -- Refilled per pass because the frame list is asked for on every refresh, and a raid is forty of
 -- them.
@@ -165,7 +169,8 @@ local function SideOptions(side)
 	return options and options[side] or nil
 end
 
----Blizzard's compact party and raid member frames, and nothing else. Refilled in place.
+---The compact party and raid member frames the client is showing, and nothing else. Refilled in
+---place.
 ---
 ---The standard party frames are left out. The two cvars below only reach the compact ones, so a
 ---row drawn on a standard frame would sit on top of Blizzard's own rather than in place of it.
@@ -181,7 +186,7 @@ local function BlizzardFrames()
 		return frameScratch
 	end
 
-	frames:BlizzardFrames(false, frameScratch)
+	frames:BlizzardFrames(true, frameScratch)
 
 	-- The stand-ins test mode puts up for a solo player. Without them a preview outside a group
 	-- has nothing to draw on, because the client's own frames are all empty.
@@ -965,6 +970,16 @@ local function ApplyEntry(entry)
 	-- Always, unlike the rest, because who is on the frame is exactly what a re-point changes.
 	local occupied = HasUnit(entry.Unit) and frames:IsAnchorUsable(entry.Frame)
 
+	-- Outside the player's visible world the engine stops weighing the category token, and a group
+	-- that has nothing else to go on fills the head of the row with unrelated debuffs.
+	--
+	-- Urgent, because a unit that far away emits no aura events and a budget parked for combat
+	-- would leave the garbage up until regen.
+	if entry.Debuffs and entry.Debuffs:HasGroup(DEBUFF_CROWD_CONTROL_GROUP) then
+		local budget = entry.Unit and units:IsVisible(entry.Unit) and CrowdControlIcons() or 0
+		entry.Debuffs:SetMaxIcons(DEBUFF_CROWD_CONTROL_GROUP, budget, true)
+	end
+
 	-- A container the client is still tracking weighs every aura on the unit against its groups
 	-- whether or not anything is drawn, and a raid is forty frames of that.
 	if entry.Buffs then
@@ -990,26 +1005,29 @@ local function EnsureEntry(frame)
 		return nil
 	end
 
-	local entry = watchers[frame]
-
-	-- Only the first pass is gated. Once a frame has displays they are kept and re-pointed.
-	--
-	-- On screen as well as occupied. A hidden compact frame can still carry the unit it last held,
-	-- so a token on its own let fifteen frames through in a solo session, each paying for two
-	-- displays and their batch of buttons.
-	--
-	-- Blizzard briefly shows every frame it pre-creates, so the login layout pass reaches all of
-	-- them. Frames that never keep a unit leave a row behind, which is the accepted cost.
-	if not entry and not frames:IsAnchorUsable(frame) then
+	-- Anchoring anything to a forbidden frame taints it.
+	if frame.IsForbidden and frame:IsForbidden() then
 		return nil
 	end
 
+	local entry = watchers[frame]
 	local unit = UnitFor(frame)
 
-	-- Test mode is the same question with the occupancy half dropped, because the stand-ins name
-	-- units the player does not have.
-	if not entry and not (testModeActive or HasUnitForSure(unit)) then
-		return nil
+	-- Only the first pass is gated. Once a frame has displays they are kept and re-pointed.
+	if not entry then
+		-- A preview asks whether the frame is on screen, because the stand-ins name units the
+		-- player does not have.
+		local buildable
+
+		if testModeActive then
+			buildable = frames:IsAnchorUsable(frame)
+		else
+			buildable = HasUnitForSure(unit)
+		end
+
+		if not buildable then
+			return nil
+		end
 	end
 
 	if not entry then
@@ -1063,9 +1081,37 @@ local function ApplyToFrame(frame)
 	end
 end
 
+---Brings every frame on screen up to date, and hands the poller the units they hold.
+---
+---Seeded from this walk rather than from the entries, because a frame whose unit the client will
+---not answer for has no entry yet and is exactly what the poller is watching for.
 local function ApplyToAll()
+	-- Re-seeded per pass rather than tracked per frame, since the frames retarget constantly and a
+	-- baseline for a unit nobody is on is a flip fired for nothing.
+	if stateSub then
+		stateSub:ClearAll()
+	end
+
+	-- A preview names units the player does not have, and a baseline for one of those is a read
+	-- four times a second that can never flip.
+	local seeding = stateSub and not testModeActive
+
 	for _, frame in ipairs(BlizzardFrames()) do
 		ApplyToFrame(frame)
+
+		local unit = seeding and UnitFor(frame)
+
+		if unit then
+			stateSub:Seed(unit)
+		end
+	end
+
+	-- A frame hidden by a parent fires no hook of its own and the walk above cannot see it, so
+	-- its containers would keep reading a live token forever.
+	for _, entry in pairs(watchers) do
+		if not frames:IsAnchorUsable(entry.Frame) then
+			ApplyEntry(entry)
+		end
 	end
 end
 
@@ -1181,6 +1227,10 @@ local function InstallHooks()
 		"LOADING_SCREEN_DISABLED",
 	})
 
+	-- A unit walking into the player's visible world has no event, so the client will not say for
+	-- sure it is there and the row for it is never built.
+	stateSub = unitStatePoller:Register(AnySideActive, QueueApplyToAll)
+
 	frames:InstallUnitFrameHooks(eventsFrame, {
 		-- Blizzard re-points frames at units constantly while a raid sorts, and the token often
 		-- comes back the same one with a different member behind it. Nothing about that reaches
@@ -1190,10 +1240,17 @@ local function InstallHooks()
 				ApplyToFrame(frame)
 			end
 		end,
-		-- A frame the client empties rather than hides still has to drop its rows. It builds too,
-		-- since the gate in EnsureEntry turns a frame away while it is hidden.
 		OnUpdateVisible = function(frame)
-			if AnySideActive() or watchers[frame] then
+			if AnySideActive() then
+				ApplyToFrame(frame)
+
+				-- A frame that came on screen between passes carries a token nothing is polling
+				-- yet, and the walk is what seeds it.
+				if frames:IsAnchorUsable(frame) then
+					QueueApplyToAll()
+				end
+			elseif watchers[frame] then
+				-- A frame the client empties rather than hides still has to drop its rows.
 				ApplyToFrame(frame)
 			end
 		end,
@@ -1260,6 +1317,12 @@ function M:Refresh()
 
 	if rosterGate then
 		rosterGate:SetActive(false)
+	end
+
+	-- A watched token holds a baseline every other subscriber shares, so an off module lets its
+	-- own go.
+	if stateSub then
+		stateSub:ClearAll()
 	end
 
 	for _, entry in pairs(watchers) do
