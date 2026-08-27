@@ -678,12 +678,9 @@ end, because flipping it makes the client rebuild the raid frames.
 
 **Debuffs sub-tab.** Replaces the debuff row, in the bottom left corner growing right and wrapping
 upward.
-Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is ranked
-by the game's own raid frame debuff order, which already leads with encounter mechanics. The
-debuffs that order flags as priority are pulled into a group of their own since 5.25.0, drawn a
-quarter larger than the rest of the row and capped at two icons on their own budget. There is no
-switch for it: a healer has to see those before anything else on the frame. Crowd control, when it
-is switched on, still leads them.
+Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is
+ordered by the game itself, because an aura's spell id is secret and nothing can reorder a group
+once it has rendered. Crowd control, when it is switched on, leads the row.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3).

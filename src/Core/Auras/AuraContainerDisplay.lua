@@ -2106,9 +2106,8 @@ function M:SetPerLine(perLine)
 	ApplyFlowLayout(self)
 end
 
----Whether the engine classifies every aura before the candidate filters see it. Only the
----dispellable filter (processedAuraType) reads that classification, so it goes off again when
----nothing wants it. The work runs per aura, on every unit the display follows.
+---Whether the engine classifies every aura before the candidate filters see it, which is what the
+---dispellable filter reads. The work runs per aura, on every unit the display follows.
 ---@param processing boolean
 function M:SetProcessingPolicy(processing)
 	local policies = CustomAuraContainerAuraProcessingPolicy

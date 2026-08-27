@@ -559,6 +559,8 @@ local function NewAuraContainer(name, parent, template)
 			-- with. Raising the count afterwards does not conjure more.
 			maxFrameCountAtCreation = options.maxFrameCount,
 			layout = options.layout,
+			sortMethod = options.sortMethod,
+			sortDirection = options.sortDirection,
 			buttons = {},
 		}
 		container._groups[groupKey] = group
@@ -593,6 +595,9 @@ local function NewAuraContainer(name, parent, template)
 		local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
 		group.maxFrameCount = count
 		group.maxFrameCountSets = (group.maxFrameCountSets or 0) + 1
+	end
+	function container:SetAuraProcessingPolicy(policy)
+		container._processingPolicy = policy
 	end
 	function container:SetAuraGroupCandidateFilters(groupKey, filters)
 		local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
@@ -727,6 +732,11 @@ function M.setup()
 		timers[#timers + 1] = timer
 		return timer
 	end
+
+	_G.CustomAuraContainerAuraProcessingPolicy = _G.CustomAuraContainerAuraProcessingPolicy or {
+		None = 0,
+		ProcessAura = 1,
+	}
 
 	_G.AuraContainerSortMethod = _G.AuraContainerSortMethod or {
 		Default = 0, BigDefensive = 1, UnitFrameDebuff = 2, ImportantOnly = 3,

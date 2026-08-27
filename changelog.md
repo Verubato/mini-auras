@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Fixed frame aura debuffs going missing from the party and raid frames, Unstable Affliction among
+  them. The separate row for priority debuffs added in 5.25.0 relied on a flag the game only
+  answers for buffs, and a debuff it could not answer for was dropped from the row altogether.
+- Priority debuffs no longer draw as bigger icons, since the game does not flag the debuffs that
+  matter in a duel or an arena as priority ones. The whole row shares one budget again.
+
 ## 5.26.0
 
 - Added more default spells to the frame auras module, thanks to Rennar for finding them.

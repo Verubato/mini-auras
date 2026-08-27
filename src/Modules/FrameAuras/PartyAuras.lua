@@ -25,9 +25,8 @@ local BUFF_GROUP = "FrameBuffs"
 local BUFF_PANDEMIC_GROUP = "FrameBuffsPandemic"
 local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
-local DEBUFF_PRIORITY_GROUP = "FrameDebuffsPriority"
 local BUFF_GROUP_KEYS = { BUFF_PANDEMIC_GROUP, BUFF_GROUP }
-local DEBUFF_GROUP_KEYS = { DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_PRIORITY_GROUP, DEBUFF_GROUP }
+local DEBUFF_GROUP_KEYS = { DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }
 local BUFF_FILTER = "HELPFUL"
 local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
 local DEBUFF_FILTER = "HARMFUL"
@@ -42,23 +41,17 @@ local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
 -- lands in two of them.
 local DEBUFF_PLAIN_FILTER = DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
 local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
--- Identical to the plain string. What tells the two groups apart is in DebuffCandidates.
-local DEBUFF_PRIORITY_FILTER = DEBUFF_PLAIN_FILTER
 -- Where each part sits in the row. Spelled out because the crowd control group is declared after
 -- the others when the player switches it on mid-session, and the engine falls back to the order
 -- groups were declared in.
 local DEBUFF_CROWD_CONTROL_INDEX = 1
-local DEBUFF_PRIORITY_INDEX = 2
-local DEBUFF_PLAIN_INDEX = 3
--- What the front of the debuff row is drawn at, as a share of the rest of it. A stun or a priority
--- debuff on a party member is worth more than the debuff beside it.
+local DEBUFF_PLAIN_INDEX = 2
+-- What the front of the debuff row is drawn at, as a share of the rest of it. A stun on a party
+-- member is worth more than the debuff beside it.
 local LEAD_SIZE_SCALE = 1.25
 -- The most icons the head of the row holds. Its own cap rather than the row's, because two stuns
 -- at once on one member is already unusual.
 local MAX_CROWD_CONTROL_ICONS = 2
--- The same cap on the priority debuffs behind them, and for the same reason. Two of those at once
--- on one member is as unusual as two stuns.
-local MAX_PRIORITY_ICONS = 2
 -- What "under a minute" means to the engine: a bound on an aura's whole duration rather than on
 -- what is left of it. Any value at all also drops the auras that never run out.
 local SHORT_AURA_SECONDS = 60
@@ -127,10 +120,8 @@ local watchers = {}
 local pandemicCandidates
 local plainCandidates
 local debuffCandidates
-local priorityDebuffCandidates
-local plainDebuffCandidates
--- Whether the debuff sets have been worked out yet. Its own flag because the crowd control answer
--- is nil under stock settings, and testing the set itself would rebuild it on every call.
+-- Whether the debuff set has been worked out yet. Its own flag because the answer is nil under
+-- stock settings, and testing the set itself would rebuild it on every call.
 local debuffCandidatesBuilt
 local eventsFrame
 ---@type EventGate?
@@ -267,6 +258,7 @@ end
 ---Blizzard's own raid frame debuff order, which is what ranks a group's own matches against each
 ---other. The engine has to do it because an aura's spell id is secret, so nothing can reorder a
 ---group once it has rendered.
+
 ---@return number?
 local function DebuffSort()
 	if not AuraContainerSortMethod then
@@ -327,20 +319,12 @@ local function BuffCandidates()
 	return pandemicCandidates, plainCandidates
 end
 
----The debuff filters, built the same way and for the same reason.
----
----The two switches on the page narrow all three sets. They are about the row rather than about a
----category of it, so a stun the player cannot dispel is dropped exactly as a debuff would be.
----
----The priority flag on the last two sets is what tells those groups apart. Nothing else narrows
----the row, which is ranked by the game's own raid frame debuff order.
----@return table? crowdControl Nil when the row is not narrowed, which the engine reads as
----"everything".
----@return table priority
----@return table plain
+---The debuff filters, built the same way and for the same reason. One set between the groups,
+---since the two switches on the page are about the row rather than about a category of it.
+---@return table? Nil when the row is not narrowed, which the engine reads as "everything".
 local function DebuffCandidates()
 	if debuffCandidatesBuilt then
-		return debuffCandidates, priorityDebuffCandidates, plainDebuffCandidates
+		return debuffCandidates
 	end
 
 	local options = SideOptions("Debuffs") or {}
@@ -357,24 +341,7 @@ local function DebuffCandidates()
 		}
 	end
 
-	-- The two halves behind crowd control are told apart here rather than in their filter strings,
-	-- because the game flags a priority aura with no token a string can negate.
-	--
-	-- The engine compares the flag against these, so an answer that is neither true nor false is
-	-- turned away by both halves. A debuff row showing nothing behind the crowd control is the
-	-- shape that failure takes, and no partition can be written without a boolean.
-	priorityDebuffCandidates = {
-		maxDuration = maxDuration,
-		processedAuraType = dispellable,
-		isPriorityAura = true,
-	}
-	plainDebuffCandidates = {
-		maxDuration = maxDuration,
-		processedAuraType = dispellable,
-		isPriorityAura = false,
-	}
-
-	return debuffCandidates, priorityDebuffCandidates, plainDebuffCandidates
+	return debuffCandidates
 end
 
 ---Whether the debuff displays have to classify each aura for the dispellable filter. Asking for a
@@ -416,13 +383,6 @@ local function CrowdControlIcons()
 	return math.min(MaxIcons("Debuffs"), MAX_CROWD_CONTROL_ICONS)
 end
 
----How many icons the priority group behind the crowd control may draw. Capped for the same reason,
----and never more than the row's own budget.
----@return number
-local function PriorityIcons()
-	return math.min(MaxIcons("Debuffs"), MAX_PRIORITY_ICONS)
-end
-
 ---Whether the crowd control at the head of the debuff row is ringed in the game's dispel colours.
 ---Only that group asks.
 ---@return boolean
@@ -444,10 +404,6 @@ local function GroupIcons(side, key)
 
 	if key == DEBUFF_CROWD_CONTROL_GROUP then
 		return CrowdControlIcons()
-	end
-
-	if key == DEBUFF_PRIORITY_GROUP then
-		return PriorityIcons()
 	end
 
 	return MaxIcons(side)
@@ -625,8 +581,7 @@ end
 ---@param unit string?
 ---@return AuraContainerDisplay
 local function BuildDebuffs(frame, unit)
-	local _, priority, plain = DebuffCandidates()
-	local maxIcons = MaxIcons("Debuffs")
+	local candidates = DebuffCandidates()
 	local groups = {}
 
 	-- Crowd control leads the row, in a group of its own because an icon's size is fixed per group
@@ -635,22 +590,11 @@ local function BuildDebuffs(frame, unit)
 		groups[#groups + 1] = CrowdControlGroup()
 	end
 
-	-- The debuffs the game itself flags as priority follow, at the same size, because they are the
-	-- ones a healer has to see before the rest of the row.
-	groups[#groups + 1] = {
-		Key = DEBUFF_PRIORITY_GROUP,
-		FilterString = DEBUFF_PRIORITY_FILTER,
-		MaxIcons = PriorityIcons(),
-		CandidateFilters = priority,
-		SizeScale = LEAD_SIZE_SCALE,
-		LayoutIndex = DEBUFF_PRIORITY_INDEX,
-	}
-
 	groups[#groups + 1] = {
 		Key = DEBUFF_GROUP,
 		FilterString = DEBUFF_PLAIN_FILTER,
-		MaxIcons = maxIcons,
-		CandidateFilters = plain,
+		MaxIcons = MaxIcons("Debuffs"),
+		CandidateFilters = candidates,
 		LayoutIndex = DEBUFF_PLAIN_INDEX,
 	}
 
@@ -923,16 +867,15 @@ local function ApplySettings(entry)
 		-- the row it is on this way.
 		entry.Debuffs:SetGroupColorByDispelType(DEBUFF_CROWD_CONTROL_GROUP, CrowdControlDispelColors())
 
-		-- The filter strings are fixed, so only the candidate filters are re-published. One set per
-		-- group, since what keeps the three apart is the set rather than the string.
-		local candidates, priority, plain = DebuffCandidates()
+		-- The filter strings are fixed, so only the candidate filters are re-published. One set
+		-- between the groups, since the crowd control token is what keeps them apart.
+		local candidates = DebuffCandidates()
 
 		if entry.Debuffs:HasGroup(DEBUFF_CROWD_CONTROL_GROUP) then
 			entry.Debuffs:SetCandidateFilters(DEBUFF_CROWD_CONTROL_GROUP, candidates)
 		end
 
-		entry.Debuffs:SetCandidateFilters(DEBUFF_PRIORITY_GROUP, priority)
-		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, plain)
+		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, candidates)
 	end
 end
 
@@ -1277,8 +1220,6 @@ function M:Refresh()
 	pandemicCandidates = nil
 	plainCandidates = nil
 	debuffCandidates = nil
-	priorityDebuffCandidates = nil
-	plainDebuffCandidates = nil
 	debuffCandidatesBuilt = nil
 
 	if AnySideActive() then
