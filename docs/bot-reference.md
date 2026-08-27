@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.25.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.26.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -658,7 +658,7 @@ switching it off puts the remembered value back. The cvar is only written when t
 turned Blizzard's buffs off themselves never gets them handed back. The write waits for combat to
 end, because flipping it makes the client rebuild the raid frames.
 
-- Icon size 25-50 (percent of the frame's own height, default 35), max icons 1-9 (default 6),
+- Icon size 15-50 (percent of the frame's own height, default 35), max icons 1-9 (default 6),
   icons per row 1-6 (default 3).
 - **Filtered** (on) - show only the spells ticked on the Spells tab. Off shows every buff that gets
   past the other filters.
@@ -685,7 +685,7 @@ quarter larger than the rest of the row and capped at two icons on their own bud
 switch for it: a healer has to see those before anything else on the frame. Crowd control, when it
 is switched on, still leads them.
 
-- Icon size 25-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
+- Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3).
 - **Dispellable** (on) - only the debuffs your own spec can dispel.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
@@ -709,7 +709,7 @@ and nothing to configure.
 
 - **Instances only** (on) - only marks a frame inside an instance, where a missing group buff costs
   something. A house counts as the open world.
-- Icon size 25-50 (percent of the frame's height, default 35). The corner is fixed, like the corners
+- Icon size 15-50 (percent of the frame's height, default 35). The corner is fixed, like the corners
   the buff and debuff rows take.
 
 **Spells sub-tab.** The buff whitelist the Buffs tab's **Filtered** switch draws from; with that
@@ -719,7 +719,10 @@ are added in the Custom section via the same "Add a spell" picker Important Aura
 with the cross button. Only differences from the curated list are saved, so an updated curated list
 still reaches existing profiles.
 
-A row is only built for a frame that is actually on screen.
+Since 5.26.0 a row is built on every compact frame the client has, shown or not, so it is already
+there when a frame appears. The crowd control group at the head of the debuff row is the one part
+held back: it is only given a budget while the unit is visible, because out of sight the game
+stops weighing the crowd control token and the group would fill with unrelated debuffs.
 
 **Test mode.** The Test button previews all three parts at once. The preview follows the category
 switches: turning crowd control on puts a stun at the head of the debuff row, drawn a quarter larger

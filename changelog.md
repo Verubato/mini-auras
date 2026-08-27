@@ -1,15 +1,13 @@
 # Changelog
 
-## Unreleased
+## 5.26.0
 
-- Removed the workaround for stray auras appearing after a zone change or a vehicle ride, now that the game itself has been fixed.
-- Alert and nameplate auras now keep showing on a mind controlled enemy, since the game no longer reports the controller's buffs on them. The announcements and text to speech still stay quiet while the mind control lasts.
-- Fixed Important Auras icons coming back on the raid frames during a battleground it had been switched off for.
-- Fixed Crowd Control icons coming back on the raid frames during a battleground it had been switched off for.
-- Frame aura icons can now go down to 15% of the frame's height, where the smallest they went before was 25%.
-- The stack count on frame aura icons is now drawn slightly larger.
-- Fixed turning the Frame Auras buffs or debuffs off leaving Blizzard's own rows hidden. They now always come back on.
+- Added more default spells to the frame auras module, thanks to Rennar for finding them.
 - Added Havoc and Chimaeral Sting's Scorpid Venom to the enemy debuff announcements.
+- Changed minimum frame aura size from 25% to 15%.
+- The stack count text is now drawn slightly larger.
+- Potential fix for personal sound auras that randomly stopped working.
+- Fixed important auras showing in BGs when they are disabled.
 
 ## 5.25.0
 
