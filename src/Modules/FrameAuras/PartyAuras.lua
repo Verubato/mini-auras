@@ -76,6 +76,9 @@ local FALLBACK_ICON_SIZE = 14
 local DEFAULT_MAX_ICONS = { Buffs = 6, Debuffs = 2 }
 local DEFAULT_PER_ROW = 3
 local DEFAULT_SIZE_PERCENT = 35
+-- An icon sized off a party frame is about eighteen pixels, where the shared ratio leaves a count
+-- of six points.
+local STACK_COEFFICIENT = 0.55
 -- The Masque sub-group these rows are skinned under. One name for both sides, since a player
 -- picking a skin for the frame auras means the lot of them.
 local MASQUE_GROUP = "Frame Auras"
@@ -530,6 +533,7 @@ local function BuildStyle(side)
 	local style = auraContainerDisplay:BuildStandardStyle()
 
 	style.Stacks = true
+	style.StackCoefficient = STACK_COEFFICIENT
 	style.ReverseCooldown = true
 	-- Only ever adds to the global Disable Numbers switch, which the display resolves for itself.
 	style.HideNumbers = HidesNumbers(side)

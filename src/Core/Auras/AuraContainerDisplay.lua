@@ -35,6 +35,7 @@ local STYLE_FIELDS = {
 	"Border",
 	"Stacks",
 	"CenterStacks",
+	"StackCoefficient",
 	"ReverseCooldown",
 	"HideSwipe",
 	"HideNumbers",
@@ -843,7 +844,7 @@ local function StyleStacks(instance, button, widgets, size, fontScale)
 			end
 		end
 
-		fontUtil:UpdateStackFontSize(stacks, size, fontScale)
+		fontUtil:UpdateStackFontSize(stacks, size, style.StackCoefficient, fontScale)
 	end
 
 	widgets.StacksCentered = centered
@@ -2318,6 +2319,9 @@ end
 ---@field Stacks boolean? Show the engine-written application count in the icon's corner.
 ---@field CenterStacks boolean? Put the application count centred at countdown size, dropping the
 ---countdown text it replaces. Icon buttons only, so callers keep it off a bar's style.
+---@field StackCoefficient number? Fraction of the icon size the corner count is drawn at, for a
+---row whose icons are small enough that the shared default leaves the number unreadable. Ignored
+---while CenterStacks is on, where the count wears the countdown's own size.
 ---@field TextColor number[]? {r, g, b} for the countdown, stack count and bar name text. Unset
 ---keeps the fonts' own white and leaves the global colour-by-time countdown alone, while a set one
 ---wins over it, white included, so pass nil rather than white for "no opinion". Copied

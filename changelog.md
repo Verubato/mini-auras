@@ -5,6 +5,7 @@
 - Removed the workaround for stray auras appearing after a zone change or a vehicle ride, now that the game itself has been fixed.
 - Alert and nameplate auras now keep showing on a mind controlled enemy, since the game no longer reports the controller's buffs on them. The announcements and text to speech still stay quiet while the mind control lasts.
 - Frame aura icons can now go down to 15% of the frame's height, where the smallest they went before was 25%.
+- The stack count on frame aura icons is now drawn larger, so it can be read at the size those icons run at.
 
 ## 5.25.0
 

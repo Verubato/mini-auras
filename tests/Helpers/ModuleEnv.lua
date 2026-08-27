@@ -349,7 +349,12 @@ function M.build()
 
 	addon.Utils.FontUtil = {
 		UpdateCooldownFontSize = function() end,
-		UpdateStackFontSize = function() end,
+		-- What a row can get wrong is the ratio it asks for.
+		UpdateStackFontSize = function(_, fontString, _, coefficient)
+			if fontString then
+				fontString._stackRatio = coefficient
+			end
+		end,
 		UpdateFontSize = function() end,
 		-- No font option in this env, so Apply is the unpicked path, and the string keeps or is
 		-- handed the face it stands in for, sized as asked.

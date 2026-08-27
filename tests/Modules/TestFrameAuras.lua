@@ -2095,6 +2095,20 @@ local function StackAlphaOn(row, groupKey)
 	return stacks._lastArgs.SetAlpha[1]
 end
 
+-- FontUtil's shared stack ratio, which every other module's icons are large enough for.
+local SHARED_STACK_RATIO = 0.38
+
+---The share of the icon one row draws its count at, off the same button.
+---@param row table An aura container.
+---@param groupKey string
+---@return number?
+local function StackRatioOn(row, groupKey)
+	local button = assert(row._groups[groupKey].buttons[1], "the group built a button")
+	local stacks = assert(button._lastArgs.SetApplicationCount, "the button was given a count")[1]
+
+	return stacks._stackRatio
+end
+
 fw.describe("Frame Auras - the countdown numbers on one row", function()
 	fw.before_each(function()
 		module:StopTesting()
@@ -2179,6 +2193,40 @@ fw.describe("Frame Auras - the countdown numbers on one row", function()
 
 		options.Debuffs.EnableNumbers = true
 		module:StopTesting()
+	end)
+
+end)
+
+fw.describe("Frame Auras - how big the count on one row is", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+	end)
+
+	fw.it("draws it at the row's own share of the icon, the shared one being unreadable here", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(28)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(GroupRowOn(fresh, PARTY_BUFF_GROUP), "the frame got a buff row")
+		local debuffs = assert(DebuffRow(fresh), "and a debuff row")
+		local buffRatio = StackRatioOn(buffs, PARTY_BUFF_GROUP)
+		local debuffRatio = StackRatioOn(debuffs, DEBUFF_GROUP)
+
+		-- An icon here is a share of a party frame, so the shared ratio leaves a count of about six
+		-- points.
+		assert(buffRatio and buffRatio > SHARED_STACK_RATIO,
+			"the buff row asks for a bigger count, got " .. tostring(buffRatio))
+		assert(debuffRatio and debuffRatio > SHARED_STACK_RATIO,
+			"and so does the debuff row, got " .. tostring(debuffRatio))
+
+		DropRaidFrame(28)
 	end)
 end)
 
@@ -2378,6 +2426,25 @@ fw.describe("Frame Auras - how the target rows stack", function()
 		local _, relativeTo = targetFrame.spellbar:GetPoint(1)
 
 		assert(relativeTo == debuffs, "the bar follows the bottom row, so it cannot cover it")
+	end)
+end)
+
+fw.describe("Frame Auras - how big the count on the target row is", function()
+	fw.before_each(function()
+		module:StopTesting()
+		targetAuras.Available = true
+		options.TargetFocus.Enabled = true
+
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("draws it at the row's own share of the icon, like the group rows do", function()
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local ratio = StackRatioOn(container, BUFF_GROUP)
+
+		assert(ratio and ratio > SHARED_STACK_RATIO,
+			"these icons are small enough to need their own ratio too, got " .. tostring(ratio))
 	end)
 end)
 

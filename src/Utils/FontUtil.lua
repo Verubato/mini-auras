@@ -262,9 +262,10 @@ end
 
 --- @param fontString table The font string showing the count
 --- @param iconSize number The size of the icon
+--- @param coefficient? number Fraction of the icon size (default: the shared stack ratio)
 --- @param fontScale? number Optional font scale multiplier (default: 1.0)
-function M:UpdateStackFontSize(fontString, iconSize, fontScale)
-	M:UpdateFontSize(fontString, iconSize, STACK_COEFFICIENT, fontScale)
+function M:UpdateStackFontSize(fontString, iconSize, coefficient, fontScale)
+	M:UpdateFontSize(fontString, iconSize, coefficient or STACK_COEFFICIENT, fontScale)
 end
 
 --- @param cd table The cooldown frame

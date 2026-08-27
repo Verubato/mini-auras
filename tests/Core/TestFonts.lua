@@ -445,4 +445,25 @@ fw.describe("FontUtil:Apply", function()
 		assert(face == PACK_FACE, "the pick is on")
 		assert(size == 12, "at the countdown ratio of the icon size, got " .. tostring(size))
 	end)
+
+	fw.it("sizes a stack count off the shared ratio", function()
+		local text = NewFontString(GAME_FACE)
+
+		fontUtil:UpdateStackFontSize(text, 40)
+
+		local _, size = text:GetFont()
+
+		assert(size == 15, "38% of the icon, got " .. tostring(size))
+	end)
+
+	fw.it("takes a caller's own stack ratio, for a row the shared one leaves unreadable", function()
+		local text = NewFontString(GAME_FACE)
+
+		fontUtil:UpdateStackFontSize(text, 18, 0.55)
+
+		local _, size = text:GetFont()
+
+		-- The shared ratio would give six points on an icon this small.
+		assert(size == 9, "55% of the icon, got " .. tostring(size))
+	end)
 end)
