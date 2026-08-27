@@ -174,8 +174,8 @@ function M:CustomFrames(visibleOnly, frames)
 end
 
 ---Every unit frame the addon knows how to anchor to. Providers append into one table rather than
----each handing back their own, so a client running a single frame addon does not pay for
----seventeen empty ones per call.
+---each handing back their own, so a client running a single frame addon does not pay for an empty
+---table per provider it does not have.
 ---
 ---Pass `out` to reuse a table across calls. It is wiped, and the return value is that same table,
 ---so a caller must finish with it before asking again.
@@ -206,7 +206,6 @@ function M:GetAll(visibleOnly, includeTestFrames, out)
 	M:BuzzardFrames(visibleOnly, anchors)
 	M:NDuiFrames(visibleOnly, anchors)
 	M:GW2UIFrames(visibleOnly, anchors)
-	M:MSUFFrames(visibleOnly, anchors)
 	M:UUFFrames(visibleOnly, anchors)
 	M:UUFPinnedFrames(visibleOnly, anchors)
 	M:ExternalFrames(visibleOnly, anchors)

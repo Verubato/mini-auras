@@ -47,7 +47,7 @@ loadFile("src/Core/Frames/TestFrames.lua")
 loadFile("src/Core/Frames/ExternalProviders.lua")
 for _, provider in ipairs({
 	"Blizzard", "DandersFrames", "ElvUI", "Grid2", "ShadowedUF", "Plexus", "VuhDo", "Cell",
-	"TPerl", "EnhancedQoL", "Buzzard", "NDui", "GW2UI", "MSUF", "UUF",
+	"TPerl", "EnhancedQoL", "Buzzard", "NDui", "GW2UI", "UUF",
 }) do
 	loadFile("src/Core/Frames/" .. provider .. ".lua")
 end

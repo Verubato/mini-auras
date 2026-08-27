@@ -1198,7 +1198,7 @@ one chat warning naming it, rather than losing the icons.
 **Party/raid unit frames** (built-in providers): Blizzard raid and party frames, ElvUI,
 Grid2, Plexus, VuhDo, Cell (including Cell spotlight frames), Shadowed Unit Frames, TPerl,
 Danders Frames (when enabled it replaces the Blizzard frames as the source), EnhancedQoL,
-Buzzard Frames, NDui, GW2 UI, MSUF, UUF (Unhalted Unit Frames, including its pinned-name
+Buzzard Frames, NDui, GW2 UI, UUF (Unhalted Unit Frames, including its pinned-name
 frames, which get their own icons on top of the raid frame for the same unit). Other addons
 can add their own frames through the public
 API (see below). There is also a power-user path: saved variables named `Anchor1`,

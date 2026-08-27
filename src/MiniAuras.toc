@@ -96,7 +96,6 @@ Core\Frames\EnhancedQoL.lua
 Core\Frames\Buzzard.lua
 Core\Frames\NDui.lua
 Core\Frames\GW2UI.lua
-Core\Frames\MSUF.lua
 Core\Frames\UUF.lua
 Core\Display\AnchoredIcons.lua
 Core\Trinkets\TrinketsTracker.lua
