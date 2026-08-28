@@ -496,17 +496,17 @@ local function BuildBuffs(content, options)
 		{
 			Key = "ShowImportant",
 			Label = L["Important"],
-			Tooltip = L["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."],
+			Tooltip = L["Includes important buffs."],
 		},
 		{
 			Key = "ShowDefensives",
 			Label = L["Defensives"],
-			Tooltip = L["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."],
+			Tooltip = L["Includes defensive buffs."],
 		},
 		{
 			Key = "EnableNumbers",
 			Label = L["Show numbers"],
-			Tooltip = L["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."],
+			Tooltip = L["Shows cooldown numbers."],
 		},
 	}, blurb)
 
@@ -601,7 +601,7 @@ local function BuildDebuffs(content, options)
 		{
 			Key = "ShowCrowdControl",
 			Label = L["Crowd control"],
-			Tooltip = L["Lets crowd control into this row. Off by default, because Important Auras already draws it."],
+			Tooltip = L["Shows crowd control debuffs."],
 		},
 		{
 			Key = "ColorByDispelType",
@@ -611,7 +611,7 @@ local function BuildDebuffs(content, options)
 		{
 			Key = "EnableNumbers",
 			Label = L["Show numbers"],
-			Tooltip = L["Shows the countdown timer text on this row. Turning it off leaves the cooldown swipe animation shown."],
+			Tooltip = L["Shows cooldown numbers."],
 		},
 	}, blurb)
 
