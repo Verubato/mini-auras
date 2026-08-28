@@ -85,6 +85,7 @@ L:RegisterLocale("frFR", function() return {
 	["Buffs ticked here are shown on your own portrait."] = "Les améliorations cochées ici s'affichent sur votre propre portrait.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Ce sont les améliorations que le jeu ne marque pas, et qui n'apparaissent donc jamais autrement.",
 	["Grow"] = "Direction",
+	["Due to technical limitations we can't get centre aligned perfectly."] = "En raison de limites techniques, le centrage n'est pas parfait.",
 	["Strata"] = "Couche",
 	["Automatic"] = "Automatique",
 	["Icon Padding"] = "Espacement des icônes",

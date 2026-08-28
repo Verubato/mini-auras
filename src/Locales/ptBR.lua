@@ -85,6 +85,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Buffs ticked here are shown on your own portrait."] = "Os bônus marcados aqui aparecem no seu próprio retrato.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Estes são os bônus que o jogo não marca, que por isso nunca aparecem de outra forma.",
 	["Grow"] = "Crescer",
+	["Due to technical limitations we can't get centre aligned perfectly."] = "Por limitações técnicas, não é possível centralizar com perfeição.",
 	["Strata"] = "Camada",
 	["Automatic"] = "Automático",
 	["Icon Padding"] = "Espaçamento de ícone",

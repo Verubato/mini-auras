@@ -86,6 +86,7 @@ L:RegisterLocale("esMX", function() return {
 	["Buffs ticked here are shown on your own portrait."] = "Los beneficios marcados aquí se muestran en tu propio retrato.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Estos son los beneficios que el juego no marca, que por eso nunca se muestran de otro modo.",
 	["Grow"] = "Crecer",
+	["Due to technical limitations we can't get centre aligned perfectly."] = "Por limitaciones técnicas no podemos centrarlo con exactitud.",
 	["Strata"] = "Capa",
 	["Automatic"] = "Automático",
 	["Icon Padding"] = "Relleno de icono",

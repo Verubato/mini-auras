@@ -85,6 +85,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Buffs ticked here are shown on your own portrait."] = "Отмеченные здесь положительные эффекты показываются на вашем портрете.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Это положительные эффекты, которые игра не помечает, поэтому иначе они никогда не показываются.",
 	["Grow"] = "Рост",
+	["Due to technical limitations we can't get centre aligned perfectly."] = "Из-за технических ограничений точное центрирование невозможно.",
 	["Strata"] = "Слой",
 	["Automatic"] = "Автоматически",
 	["Icon Padding"] = "Отступ иконки",

@@ -22,6 +22,9 @@ addon.Modules.Alerts = addon.Modules.Alerts or {}
 local M = {}
 addon.Modules.Alerts.Display = M
 
+-- Which token set the rows are drawn on. The layout differs per source.
+M.Source = { Arena = "arena", Nameplate = "nameplate" }
+
 -- Rows of per-enemy AuraContainers chained off the movable bar frames, one container per enemy
 -- because a container tracks a single unit and aura data cannot be merged across units.
 
@@ -44,6 +47,8 @@ local classTokenBySpec = {}
 local db
 local testModeActive = false
 local inPrepRoom = false
+-- The token source the module settled on, or nil while it draws nothing. See M.Source.
+local activeSource
 
 -- Main alerts bar: enemy defensive cooldowns, plus important spells when combined.
 ---@type IconSlotContainer
@@ -80,6 +85,11 @@ local QueueChainAlertDisplays
 local activeTokensScratch = {}
 -- Refilled by RestyleStaleDisplayPairs to tell a parked pair from one on screen.
 local activePairsScratch = {}
+-- The tracked tokens in row order, refilled and sorted by ChainAlertDisplays.
+local rowTokensScratch = {}
+-- Their pairs, in the same order. Collected once so the two bars give a unit the same place in
+-- each row.
+local rowEntriesScratch = {}
 -- Background walker converting parked pairs after a look change; see RestyleStaleDisplayPairs.
 local parkedSweep = sweep:New()
 -- Background walker building the prewarmed set, a pair at a time.
@@ -224,13 +234,25 @@ local function AlertBorderShown()
 	return icons ~= nil and icons.Border == true and icons.Glow ~= true
 end
 
--- Effective grow direction for the alert bars. CENTER needs a readable row width to centre on,
--- which the chained displays don't have, so anything but LEFT or RIGHT falls back to RIGHT.
+-- The grow direction the options ask for. The rows are horizontal, so a vertical setting left over
+-- from an older profile falls back to RIGHT.
 local function GetGrow()
 	local grow = db.Modules.Alerts.Grow
-	if grow ~= "LEFT" and grow ~= "RIGHT" then
+	if grow ~= "LEFT" and grow ~= "RIGHT" and grow ~= "CENTER" then
 		return "RIGHT"
 	end
+	return grow
+end
+
+-- The direction the chained rows actually run in. Only the arena tokens hold still, and a
+-- nameplate coming or going would re-partition a centred row.
+local function GetRowGrow()
+	local grow = GetGrow()
+
+	if grow == "CENTER" and activeSource ~= M.Source.Arena then
+		return "RIGHT"
+	end
+
 	return grow
 end
 
@@ -274,9 +296,101 @@ local function SetUpBarDragging(bar, anchorOptions, saveTarget)
 	bar.Frame:SetMovable(false)
 	moduleUtil:MakeMovable(bar.Frame, saveTarget or anchorOptions, function(frame, position)
 		if position then
-			growAnchors:PinSavedAnchor(frame, position, GetGrow())
+			growAnchors:PinSavedAnchor(frame, position, GetRowGrow())
 		end
 	end)
+end
+
+---Runs one half of a centred row outward from the middle. Walking from the seam outward is what
+---lets each display chain off the one nearer the centre, so no half ever needs its own width.
+---@param entries table Pairs in row order.
+---@param field string Which of a pair's two containers this row draws, Def or Imp.
+---@param from number Entry nearest the centre.
+---@param to number Entry furthest out.
+---@param grow string Which way the half runs, and the direction its displays fill in.
+---@param spacing number
+---@param bar IconSlotContainer
+---@param straddleFrame table? The middle display's frame, when the count is odd.
+local function ChainCenteredHalf(entries, field, from, to, grow, spacing, bar, straddleFrame)
+	if from < 1 or from > #entries then
+		return
+	end
+
+	local point, relativePoint, step = growAnchors:GetChain(grow, spacing)
+	local previous = straddleFrame
+
+	for index = from, to, (to < from and -1 or 1) do
+		local display = entries[index][field]
+		-- The half a display lands in decides which way it fills, so its icons run outward from the
+		-- centre like the displays around it.
+		display:SetGrow(grow)
+
+		local frame = display.Frame
+		frame:ClearAllPoints()
+
+		if previous then
+			frame:SetPoint(point, previous, relativePoint, step, 0)
+		else
+			-- Half the spacing each side leaves the same gap at the seam as every other join.
+			frame:SetPoint(point, bar.Frame, "CENTER", step / 2, 0)
+		end
+
+		previous = frame
+	end
+end
+
+---Places one row split around the bar's centre, so it centres without anyone reading its width.
+---An odd count gives its middle unit the centre and hangs the two halves off that unit's edges.
+---@param bar IconSlotContainer
+---@param entries table
+---@param field string
+---@param spacing number
+local function ChainCenteredRow(bar, entries, field, spacing)
+	local count = #entries
+	local leftLast = math.floor(count / 2)
+	local straddler = count % 2 == 1 and entries[leftLast + 1][field] or nil
+	local straddleFrame
+
+	if straddler then
+		straddler:SetGrow("RIGHT")
+		straddleFrame = straddler.Frame
+		straddleFrame:ClearAllPoints()
+		straddleFrame:SetPoint("CENTER", bar.Frame, "CENTER", 0, 0)
+	end
+
+	ChainCenteredHalf(entries, field, leftLast, 1, "LEFT", spacing, bar, straddleFrame)
+	ChainCenteredHalf(entries, field, straddler and leftLast + 2 or leftLast + 1, count, "RIGHT",
+		spacing, bar, straddleFrame)
+end
+
+---Places one row of per-unit displays against its bar.
+---@param bar IconSlotContainer
+---@param entries table
+---@param field string
+---@param grow string
+---@param spacing number
+local function ChainRow(bar, entries, field, grow, spacing)
+	if grow == "CENTER" then
+		ChainCenteredRow(bar, entries, field, spacing)
+		return
+	end
+
+	local point, relativePoint, step = growAnchors:GetChain(grow, spacing)
+	local previous
+
+	for index = 1, #entries do
+		local frame = entries[index][field].Frame
+		frame:ClearAllPoints()
+
+		if previous then
+			frame:SetPoint(point, previous, relativePoint, step, 0)
+		else
+			-- The row starts on the bar's own pinned edge rather than beyond it.
+			frame:SetPoint(point, bar.Frame, point, 0, 0)
+		end
+
+		previous = frame
+	end
 end
 
 -- Re-anchors the active per-unit displays into rows. Defensive displays chain off the main bar
@@ -286,47 +400,33 @@ end
 local function ChainAlertDisplays()
 	local options = db.Modules.Alerts
 	local spacing = options.IconSpacing or 2
-	local splitBars = options.SplitBars
-	-- Same chain geometry the aura displays use when they follow a kick icon: continue the row
-	-- in the grow direction, offset by the icon spacing.
-	local point, relativePoint, step = growAnchors:GetChain(GetGrow(), spacing)
+	local grow = GetRowGrow()
+	local tokens = rowTokensScratch
+	wipe(tokens)
 
-	-- The rows come out in whatever order the token map yields. Which enemy comes first carries no
-	-- meaning, so no ordering is imposed.
-	--
-	-- The first display in each row anchors point -> point on the bar frame rather than
-	-- point -> relativePoint, since the zero-width bar frame is the row's origin and not a
-	-- preceding icon.
-	local prevMain
-	for _, entry in pairs(activeDisplays) do
-		local defFrame = entry.Def.Frame
-		defFrame:ClearAllPoints()
-		if prevMain then
-			defFrame:SetPoint(point, prevMain, relativePoint, step, 0)
-		else
-			defFrame:SetPoint(point, container.Frame, point, 0, 0)
-		end
-		prevMain = defFrame
+	for unitToken in pairs(activeDisplays) do
+		tokens[#tokens + 1] = unitToken
 	end
 
+	-- The row follows token order rather than whatever order the map yields.
+	table.sort(tokens)
+
+	local entries = rowEntriesScratch
+	wipe(entries)
+
+	for index = 1, #tokens do
+		entries[index] = activeDisplays[tokens[index]]
+	end
+
+	ChainRow(container, entries, "Def", grow, spacing)
+
 	-- Combined mode draws importants from the Def container's own Important group, so there is no
-	-- second frame to place. The engine reserves each frame's full icon budget of width, so keeping
-	-- a unit's categories in one container is what removes the gap.
-	if not splitBars then
+	-- second frame to place.
+	if not options.SplitBars then
 		return
 	end
 
-	local prevImp
-	for _, entry in pairs(activeDisplays) do
-		local impFrame = entry.Imp.Frame
-		impFrame:ClearAllPoints()
-		if prevImp then
-			impFrame:SetPoint(point, prevImp, relativePoint, step, 0)
-		else
-			impFrame:SetPoint(point, importantContainer.Frame, point, 0, 0)
-		end
-		prevImp = impFrame
-	end
+	ChainRow(importantContainer, entries, "Imp", grow, spacing)
 end
 
 QueueChainAlertDisplays = moduleUtil:Coalesced(ChainAlertDisplays)
@@ -437,6 +537,18 @@ local function SetGroupBudget(display, groupKey, maxIcons)
 	end
 end
 
+---Sets which way a display fills, unless a centred row will decide it from the half the display
+---lands in. See ChainCenteredRow.
+---@param display AuraContainerDisplay
+---@param grow string
+local function SetDisplayGrow(display, grow)
+	if grow == "CENTER" then
+		return
+	end
+
+	display:SetGrow(grow)
+end
+
 ---Kept apart from the rest of the push because parking a pair turns both displays off, so a token
 ---that comes back has to be switched on again even when nothing else has moved.
 ---@param importantOnImp boolean? Whether the important category renders on the second display.
@@ -473,7 +585,7 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	local maxIcons = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 	local spacing = options.IconSpacing or 2
-	local grow = GetGrow()
+	local grow = GetRowGrow()
 
 	-- Both displays take the same style, so fill the scratch once and hand it to each. ApplyConfig
 	-- copies it field by field.
@@ -493,13 +605,13 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	-- The pair wears this look now, so the parked walker has nothing left to do for it.
 	entry.StyleGeneration = pairGeneration
 
-	entry.Def:SetGrow(grow)
+	SetDisplayGrow(entry.Def, grow)
 	entry.Def:ApplyConfig(size, spacing, style)
 	SetGroupBudget(entry.Def, auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
 	SetGroupBudget(entry.Def, auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
 	SetGroupBudget(entry.Def, auraFilters.GroupKey.Important, importantOnDef and maxIcons or 0)
 
-	entry.Imp:SetGrow(grow)
+	SetDisplayGrow(entry.Imp, grow)
 	entry.Imp:ApplyConfig(size, spacing, style)
 	SetGroupBudget(entry.Imp, auraFilters.GroupKey.Important, importantOnImp and maxIcons or 0)
 
@@ -924,6 +1036,11 @@ function M:SetInPrepRoom(value)
 	inPrepRoom = value
 end
 
+---@param source string? One of M.Source, or nil while nothing is drawn.
+function M:SetSource(source)
+	activeSource = source
+end
+
 -- Parks a token's display pair when the token stops being tracked. The pair stays in
 -- displayPairsByToken for the token's return, and the sound registrations are left warm.
 ---@param unitToken string
@@ -1126,7 +1243,7 @@ end
 
 ---@param options AlertsModuleOptions
 function M:ApplyBarOptions(options)
-	local grow = GetGrow()
+	local grow = GetRowGrow()
 
 	-- Combined mode keeps the single bar on the module anchor. Split mode moves the defensives onto
 	-- their own anchor, mirrored against the important bar's.

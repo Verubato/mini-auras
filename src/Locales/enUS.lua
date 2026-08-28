@@ -86,6 +86,7 @@ L:SetDefaultStrings({
 	["Buffs ticked here are shown on your own portrait."] = "Buffs ticked here are shown on your own portrait.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "These are the buffs the game does not flag, which is why they never show otherwise.",
 	["Grow"] = "Grow",
+	["Due to technical limitations we can't get centre aligned perfectly."] = "Due to technical limitations we can't get centre aligned perfectly.",
 	["Strata"] = "Strata",
 	["Automatic"] = "Automatic",
 	["Icon Padding"] = "Icon Padding",

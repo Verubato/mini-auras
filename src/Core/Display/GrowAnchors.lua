@@ -37,8 +37,8 @@ M.Anchor = {
 M.Chain = {
 	LEFT = { Point = "RIGHT", RelativePoint = "LEFT", XMul = -1, YMul = 0 },
 	RIGHT = { Point = "LEFT", RelativePoint = "RIGHT", XMul = 1, YMul = 0 },
-	-- CENTER cannot be centred without a readable row width, and 12.1 container sizes can be
-	-- secret, so it chains rightwards like RIGHT.
+	-- A row continuing after another frame has no centre of its own to work from, so CENTER
+	-- chains rightwards like RIGHT.
 	CENTER = { Point = "LEFT", RelativePoint = "RIGHT", XMul = 1, YMul = 0 },
 	DOWN = { Point = "TOP", RelativePoint = "BOTTOM", XMul = 0, YMul = -1 },
 	UP = { Point = "BOTTOM", RelativePoint = "TOP", XMul = 0, YMul = 1 },

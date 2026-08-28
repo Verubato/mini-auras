@@ -85,6 +85,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Buffs ticked here are shown on your own portrait."] = "此处勾选的增益会显示在你自己的头像上。",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "这些是游戏未标记的增益，正因如此它们平时从不显示。",
 	["Grow"] = "增长",
+	["Due to technical limitations we can't get centre aligned perfectly."] = "受技术限制，无法做到完全居中。",
 	["Strata"] = "层级",
 	["Automatic"] = "自动",
 	["Icon Padding"] = "图标间距",

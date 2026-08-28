@@ -30,6 +30,11 @@ local SHOW_CC_OWNERS = {
 	{ "FrameAuras", "Debuffs" },
 }
 
+-- The alerts grow directions this step moves between, frozen so a later change to the shipped
+-- default cannot move what it decided.
+local PREVIOUS_ALERTS_GROW = "RIGHT"
+local CENTRED_ALERTS_GROW = "CENTER"
+
 ---Moves one key's value onto another and drops the old key.
 ---@param owner table The table holding both keys.
 local function MoveKey(owner, from, to)
@@ -153,5 +158,33 @@ function M:UpgradeToVersion76(vars)
 	vars.NotifiedChanges = false
 
 	vars.Version = 76
+	return true
+end
+
+---Moves the alerts bars onto the centred default. Anything other than the old shipped value is a
+---direction the player chose, so it stays.
+---@param vars table The live saved variables, or one profile's snapshot of them.
+local function AdoptCentredAlerts(vars)
+	local alerts = vars and vars.Modules and vars.Modules.Alerts
+
+	if alerts and alerts.Grow == PREVIOUS_ALERTS_GROW then
+		alerts.Grow = CENTRED_ALERTS_GROW
+	end
+end
+
+function M:UpgradeToVersion77(vars)
+	if vars.Version ~= 76 then return false end
+
+	AdoptCentredAlerts(vars)
+
+	-- A profile switch writes its snapshot back over the live db wholesale, so one still holding
+	-- the old direction would put it straight back.
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			AdoptCentredAlerts(profile)
+		end
+	end
+
+	vars.Version = 77
 	return true
 end

@@ -85,6 +85,7 @@ L:RegisterLocale("koKR", function() return {
 	["Buffs ticked here are shown on your own portrait."] = "여기에서 선택한 버프는 내 초상화에 표시됩니다.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "게임이 표시하지 않는 버프들입니다. 그래서 평소에는 초상화에 나타나지 않습니다.",
 	["Grow"] = "성장",
+	["Due to technical limitations we can't get centre aligned perfectly."] = "기술적인 한계로 정확한 가운데 정렬은 어렵습니다.",
 	["Strata"] = "레이어",
 	["Automatic"] = "자동",
 	["Icon Padding"] = "아이콘 여백",

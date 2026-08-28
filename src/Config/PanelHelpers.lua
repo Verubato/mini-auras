@@ -444,6 +444,8 @@ end
 ---@class GrowDropdownOptions
 ---@field Parent table
 ---@field Items string[]
+---@field Tooltip string?
+---@field GetText (fun(value: string): string)? Display text for an item; defaults to the value.
 ---@field Width number?
 ---@field Target table? Options table holding the Grow value; used unless GetValue/SetValue are given.
 ---@field Key string? Defaults are built from Target[Key].
@@ -453,8 +455,6 @@ end
 
 ---@class LabelledDropdownOptions : GrowDropdownOptions
 ---@field LabelText string
----@field Tooltip string?
----@field GetText (fun(value: string): string)? Display text for an item; defaults to the value.
 
 ---@class OffsetSlidersOptions
 ---@field Parent table

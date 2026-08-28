@@ -52,6 +52,7 @@ local testFiles = {
     "tests/Modules/TestModuleSmoke.lua",
     "tests/Modules/TestAlertsBars.lua",
     "tests/Modules/TestAlertsUnitSource.lua",
+    "tests/Modules/TestAlertsCenterGrow.lua",
     "tests/Modules/TestAlertsClassColors.lua",
     "tests/Modules/TestAlertsTtsSpells.lua",
     "tests/Modules/TestPortraitDisplay.lua",
@@ -67,6 +68,7 @@ local testFiles = {
     "tests/Modules/TestPersonalAuras.lua",
     "tests/Modules/TestFrameAuras.lua",
 
+    "tests/Config/TestAlertsPanel.lua",
     "tests/Config/TestPersonalAurasPanel.lua",
     "tests/Config/TestPortraitsPanel.lua",
     "tests/Config/TestFrameAurasPanel.lua",

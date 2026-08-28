@@ -1743,3 +1743,63 @@ fw.describe("Migrator - the v76 frame auras note", function()
 		assert(db.NotifiedChanges == false, "the dialog has to open again")
 	end)
 end)
+
+fw.describe("Migrator - the v77 centred alerts default", function()
+	fw.it("moves a db still on the old shipped direction", function()
+		local vars = {
+			Version = 76,
+			Modules = { Alerts = { Grow = "RIGHT" } },
+		}
+
+		assert(migrator:UpgradeToVersion77(vars) == true)
+		assert(vars.Modules.Alerts.Grow == "CENTER", "the shipped default carries across")
+		assert(vars.Version == 77)
+	end)
+
+	fw.it("leaves a direction the player picked alone", function()
+		local vars = {
+			Version = 76,
+			Modules = { Alerts = { Grow = "LEFT" } },
+		}
+
+		assert(migrator:UpgradeToVersion77(vars) == true)
+		assert(vars.Modules.Alerts.Grow == "LEFT", "a chosen direction is not the old default")
+	end)
+
+	fw.it("moves a stored profile too", function()
+		-- A profile switch writes its snapshot back over the live db wholesale, so one left on
+		-- RIGHT would undo the step the moment the player changed profile.
+		local vars = {
+			Version = 76,
+			Modules = { Alerts = { Grow = "RIGHT" } },
+			Profiles = {
+				Arena = { Modules = { Alerts = { Grow = "RIGHT" } } },
+				Mine = { Modules = { Alerts = { Grow = "LEFT" } } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion77(vars) == true)
+		assert(vars.Profiles.Arena.Modules.Alerts.Grow == "CENTER", "the snapshot moves as well")
+		assert(vars.Profiles.Mine.Modules.Alerts.Grow == "LEFT", "and a chosen one still stands")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = { Version = 75, Modules = { Alerts = { Grow = "RIGHT" } } }
+
+		assert(migrator:UpgradeToVersion77(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.Alerts.Grow == "RIGHT", "and must move nothing")
+		assert(vars.Version == 75)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 76,
+			Modules = { Alerts = { Grow = "RIGHT" } },
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 77, "the shipped version has to be past this step")
+		assert(db.Modules.Alerts.Grow == "CENTER", "the login path has to reach step 77")
+	end)
+end)

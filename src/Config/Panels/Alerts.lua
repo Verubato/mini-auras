@@ -13,9 +13,7 @@ local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
 local dbDefaults = addon.Config.Defaults
 local ttsPacks = addon.Core.TtsPacks
--- CENTER growth needs a readable row width to center on the anchor, which the chained displays
--- do not have, so only LEFT and RIGHT are offered.
-local GROW_OPTIONS = { "LEFT", "RIGHT" }
+local GROW_OPTIONS = { "LEFT", "RIGHT", "CENTER" }
 
 ---@class AlertsConfig
 local M = {}
@@ -224,10 +222,15 @@ local function BuildSettingsTab(parent, options)
 	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,
 		Items = GROW_OPTIONS,
+		-- CENTER-ish stays English, because LEFT and RIGHT show their raw values beside it.
+		GetText = function(value)
+			return value == "CENTER" and "CENTER-ish" or value
+		end,
+		Tooltip = L["Due to technical limitations we can't get centre aligned perfectly."],
 		GetValue = function()
-			-- An older profile can still hold CENTER, which no longer renders.
+			-- The rows are horizontal, so an older profile holding UP or DOWN has nothing to draw.
 			local grow = options.Grow
-			if grow ~= "LEFT" and grow ~= "RIGHT" then
+			if grow ~= "LEFT" and grow ~= "RIGHT" and grow ~= "CENTER" then
 				return "RIGHT"
 			end
 			return grow

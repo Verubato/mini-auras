@@ -329,9 +329,9 @@ fw.describe("Alerts 12.1 - prep room gating", function()
 end)
 
 fw.describe("Alerts 12.1 - split vs combined bars", function()
-	---Resolves a two-frame row into (start, follower). The chain imposes no token order, so which
-	---frame anchors the bar is the map's business. The shape is what the row must always have: one
-	---at the bar, one chained off it.
+	---Resolves a two-frame row into (start, follower). The chain runs in token order now, so
+	---nameplate1 starts the row, but the shape is what these tests are about: one frame at the
+	---bar, one chained off it.
 	local function chainPair(frameA, frameB, bar)
 		local _, relativeToA = frameA:GetPoint(1)
 
@@ -349,8 +349,8 @@ fw.describe("Alerts 12.1 - split vs combined bars", function()
 		local def1, def2 = defOf("nameplate1"), defOf("nameplate2")
 		assert(def1 and def2, "both plates tracked")
 
-		-- One container per unit holding every category is what removes the gap: separate
-		-- containers are separate frames and the engine reserves each one's full icon budget.
+		-- The engine reserves each container's full icon budget of width, so a second container for
+		-- one unit leaves a gap in the row.
 		assert(def1._groups.important.maxFrameCount > 0, "the defensive container carries them")
 		assert(not impOf("nameplate1"):IsShown(), "the dedicated important container is parked")
 		assert(not importantBar:IsShown(), "no dedicated bar in combined mode")
