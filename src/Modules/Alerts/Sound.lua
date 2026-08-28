@@ -23,6 +23,9 @@ addon.Modules.Alerts.Sound = M
 -- anything else leaves them alone.
 local ALERT_SOUND_KEY = "AlertSounds"
 local ALLY_SOUND_KEY = "AlertAllySounds"
+-- What each category plays until the player picks something.
+local IMPORTANT_FALLBACK = "AirHorn.ogg"
+local DEFENSIVE_FALLBACK = "AlertToastWarm.ogg"
 -- Spells worth an icon but not a noise. The engine plays these per aura application, so an
 -- ability that lands often turns the alert sound into a metronome.
 local SILENT_ALERT_SPELL_IDS = {
@@ -81,24 +84,24 @@ local function MutedSpellIds(category)
 	return ttsMutes:EffectiveSet(category, options and options.MutedSpellIds)
 end
 
+---The file one category plays.
+---@param config table? Sound options (File).
+---@param fallbackFile string
+---@return string file
+local function AlertSoundPath(config, fallbackFile)
+	return addon.Core.Sounds:Resolve(config and config.File or fallbackFile)
+end
+
 -- Registers one spell list's sounds for a token, appending to `ids`, or starting a new pooled list
--- when it is nil. Hoisted out of RegisterToken so the per-nameplate path doesn't build a closure.
+-- when it is nil.
 ---@param ids number[]?
 ---@param unitToken string
 ---@param list table<number, boolean> Spell ids to register.
----@param config table Sound options (File).
----@param fallbackFile string
+---@param file string
 ---@param channel string The one output channel both alert categories share.
 ---@return number[] ids
-local function RegisterAlertSoundList(ids, unitToken, list, config, fallbackFile, channel)
-	return auraSounds:RegisterSet(
-		ids,
-		unitToken,
-		list,
-		addon.Core.Sounds:Resolve(config.File or fallbackFile),
-		channel,
-		SILENT_ALERT_SPELL_IDS
-	)
+local function RegisterAlertSoundList(ids, unitToken, list, file, channel)
+	return auraSounds:RegisterSet(ids, unitToken, list, file, channel, SILENT_ALERT_SPELL_IDS)
 end
 
 ---@param value boolean
@@ -202,10 +205,14 @@ function M:RegisterToken(unitToken)
 	local ids = nil
 	local channel = sound.Channel or "Master"
 	if importantEnabled then
-		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Important, sound.Important, "AirHorn.ogg", channel)
+		local file = AlertSoundPath(sound.Important, IMPORTANT_FALLBACK)
+
+		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Important, file, channel)
 	end
 	if defensiveEnabled then
-		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg", channel)
+		local file = AlertSoundPath(sound.Defensive, DEFENSIVE_FALLBACK)
+
+		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Defensive, file, channel)
 	end
 	-- The silent list is deliberately not applied here: a repeated ding is noise, but a spoken
 	-- name still tells you what landed.
@@ -280,9 +287,11 @@ function M:Refresh(activeTokens)
 	settingsStamp:Begin(ALERT_SOUND_KEY)
 	settingsStamp:Add(active)
 	settingsStamp:Add(importantEnabled)
-	settingsStamp:Add(sound.Important and sound.Important.File)
+	-- The resolved path rather than the saved name, so a media addon loading after us moves the
+	-- stamp and the registrations are redone against the file it brought.
+	settingsStamp:Add(AlertSoundPath(sound.Important, IMPORTANT_FALLBACK))
 	settingsStamp:Add(defensiveEnabled)
-	settingsStamp:Add(sound.Defensive and sound.Defensive.File)
+	settingsStamp:Add(AlertSoundPath(sound.Defensive, DEFENSIVE_FALLBACK))
 	settingsStamp:Add(sound.Channel)
 	settingsStamp:Add(importantTts)
 	settingsStamp:Add(defensiveTts)

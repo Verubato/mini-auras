@@ -55,6 +55,7 @@ local testFiles = {
     "tests/Modules/TestAlertsCenterGrow.lua",
     "tests/Modules/TestAlertsClassColors.lua",
     "tests/Modules/TestAlertsTtsSpells.lua",
+    "tests/Modules/TestAlertsLateMedia.lua",
     "tests/Modules/TestPortraitDisplay.lua",
     "tests/Modules/TestUnitFrameRetarget.lua",
     "tests/Modules/TestUnitFrameWarmup.lua",

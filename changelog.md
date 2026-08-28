@@ -11,6 +11,8 @@
   switched off, which is what it was already doing.
 - Sound lists now name the addon each sound came from, so the many that share a name can be told
   apart.
+- Fixed an alert sound from another addon playing the default for the whole session when that addon
+  loaded after MiniAuras.
 
 ## 5.27.0
 
