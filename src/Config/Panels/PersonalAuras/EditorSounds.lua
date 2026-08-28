@@ -68,7 +68,7 @@ function ui.BuildSoundsTab(ctx)
 			GetText = function(value)
 				-- NONE is Blizzard's, so silence needs no translation of ours.
 				return value == groups.NoSound and ("(" .. (NONE or "None") .. ")")
-					or sounds:Normalise(value)
+					or sounds:DisplayText(value)
 			end,
 			GetValue = function()
 				local group = ui.Current()

@@ -807,6 +807,22 @@ local function DropdownLabelled(label)
 	return nil
 end
 
+fw.describe("Personal auras page - naming where a sound came from", function()
+	fw.it("names the addon a sound came from in the trigger's dropdown", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		group.Sound.Applied = "Sonar"
+
+		ShowPage(addon, group)
+
+		local dropdown = DropdownLabelled("When applied")
+
+		fw.not_nil(dropdown, "the sounds tab offers a dropdown per trigger")
+		fw.eq(dropdown:GetText(), "Sonar |cff888888(MiniAuras)|r",
+			"the reported bug was that rows sharing a name cannot be told apart")
+	end)
+end)
+
 fw.describe("Personal auras page - a group drawing text only", function()
 	fw.it("names the shape in the display dropdown", function()
 		local addon, group = LoadWithGroup({ 45438 })

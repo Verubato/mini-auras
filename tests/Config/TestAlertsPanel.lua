@@ -95,6 +95,48 @@ local function TooltipBodyOf(frame)
 	return captured
 end
 
+---The media dropdown on the alerts page reading a given sound. It carries no caption of its own,
+---so the text it settled on is the only way to pick it out.
+---@param addon table
+---@param fragment string
+---@return table?
+local function DropdownReading(addon, fragment)
+	local page = addon.Config.TabController:GetContent("Alerts")
+
+	fw.not_nil(page, "the alerts tab exists")
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.MiniRefresh and frame.GetText and Inside(frame, page) then
+			frame:MiniRefresh()
+
+			local text = frame:GetText()
+
+			if text and text:find(fragment, 1, true) then
+				return frame
+			end
+		end
+	end
+
+	return nil
+end
+
+fw.describe("Alerts page - naming where a sound came from", function()
+	fw.it("names the addon each sound ships in", function()
+		local addon = Load()
+		local options = addon.Framework:GetSavedVars().Modules.Alerts
+
+		options.Sound.Important.File = "SuddenShock"
+
+		addon.Config:EnsureWindow()
+
+		local dropdown = DropdownReading(addon, "SuddenShock")
+
+		fw.not_nil(dropdown, "the important sound dropdown is on the page")
+		fw.eq(dropdown:GetText(), "SuddenShock |cff888888(MiniAuras)|r",
+			"the reported bug was that rows sharing a name cannot be told apart")
+	end)
+end)
+
 fw.describe("Alerts page - the grow control", function()
 	fw.it("calls the centre option approximate while the profile keeps CENTER", function()
 		local addon = Load()

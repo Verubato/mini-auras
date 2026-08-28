@@ -292,12 +292,17 @@ end
 function M:BuildMediaDropdown(opts)
 	local media = opts.Media
 
+	local function SourceText(value)
+		return media:DisplayText(value)
+	end
+
 	local dropdown, modern = mini:Dropdown({
 		Parent = opts.Parent,
 		Items = media:GetNames(),
 		GetValue = opts.GetValue,
 		SetValue = opts.SetValue,
-		GetText = opts.GetText,
+		-- Only the sound provider names a source.
+		GetText = opts.GetText or (media.DisplayText and SourceText),
 	})
 
 	if opts.Width then
@@ -466,7 +471,8 @@ end
 ---@class MediaDropdownOptions
 ---@field Parent table
 ---@field RefreshOn table Frame whose OnShow re-reads the media list.
----@field Media table Provider with GetNames() and OnChanged(fn) (sounds, bar textures).
+---@field Media table Provider with GetNames() and OnChanged(fn), and DisplayText(value) where its
+---rows name a source (sounds, bar textures).
 ---@field GetValue fun(): any
 ---@field SetValue fun(value: any)
 ---@field GetText (fun(value: any): string)?

@@ -98,6 +98,9 @@ fw.describe("Sounds - resolving for a registration", function()
     end)
 end)
 
+-- What the library would call on a registration, captured so a test can play one.
+local mediaCallbacks = {}
+
 -- LibSharedMedia holds a sound as a path or as a plain number.
 ---@param entries table<string, string|number>
 ---@param fn fun()
@@ -123,6 +126,9 @@ local function WithMedia(entries, fn)
         end,
         Register = function()
             return false
+        end,
+        RegisterCallback = function(_, event, handler)
+            mediaCallbacks[event] = handler
         end,
     }
 
@@ -178,3 +184,58 @@ fw.describe("Sounds - media entries that are not files", function()
     end)
 end)
 
+fw.describe("Sounds - naming where a sound came from", function()
+    fw.it("names the addon a media sound ships in", function()
+        WithMedia({ ["Ping"] = "Interface\\AddOns\\SomePack\\Sounds\\Ping.ogg" }, function()
+            assert(sounds:DisplayText("Ping") == "Ping |cff888888(SomePack)|r",
+                "two addons routinely ship the same name, and the list cannot otherwise tell them apart")
+        end)
+    end)
+
+    fw.it("names MiniAuras for its own sounds", function()
+        assert(sounds:DisplayText("Sonar") == "Sonar |cff888888(MiniAuras)|r",
+            "which of these are ours is exactly what a player cannot work out from the list")
+    end)
+
+    fw.it("reads a forward slash path too", function()
+        -- Each test needs a fresh name, since the folder is remembered per name.
+        WithMedia({ ["Chime"] = "Interface/AddOns/OtherPack/Sounds/Chime.ogg" }, function()
+            assert(sounds:DisplayText("Chime") == "Chime |cff888888(OtherPack)|r", "both separators reach the client")
+        end)
+    end)
+
+    fw.it("says only the name when the file sits outside an addon", function()
+        WithMedia({ ["Bell"] = "Interface\\Sounds\\Bell.ogg" }, function()
+            assert(sounds:DisplayText("Bell") == "Bell", "there is no addon to credit")
+        end)
+    end)
+
+    fw.it("says only the name when nothing can resolve it", function()
+        assert(sounds:DisplayText("SomeUninstalledMedia") == "SomeUninstalledMedia",
+            "a name whose addon has gone still has to read as itself")
+    end)
+
+    fw.it("picks up a source once the media addon finally loads", function()
+        local entries = {}
+
+        WithMedia(entries, function()
+            -- Subscribing is what a picker does, and what arms the memo being dropped.
+            sounds:OnChanged(function() end)
+
+            assert(sounds:DisplayText("LatePack") == "LatePack", "nothing has registered it yet")
+
+            entries["LatePack"] = "Interface\\AddOns\\LatePack\\Sounds\\Horn.ogg"
+
+            assert(mediaCallbacks.LibSharedMedia_Registered, "subscribed on first interest")
+            mediaCallbacks.LibSharedMedia_Registered()
+
+            assert(sounds:DisplayText("LatePack") == "LatePack |cff888888(LatePack)|r",
+                "a media addon loading after us must not leave the row unnamed for the session")
+        end)
+    end)
+
+    fw.it("folds a legacy file name onto its media name first", function()
+        assert(sounds:DisplayText("Sonar.ogg") == "Sonar |cff888888(MiniAuras)|r",
+            "an option saved before the media list still has to match a row")
+    end)
+end)

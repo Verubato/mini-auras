@@ -9,6 +9,8 @@
   same name as an id.
 - An alert or healer crowd control sound left on the media list's "None" entry now reads as
   switched off, which is what it was already doing.
+- Sound lists now name the addon each sound came from, so the many that share a name can be told
+  apart.
 
 ## 5.27.0
 

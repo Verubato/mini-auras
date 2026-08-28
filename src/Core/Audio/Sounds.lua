@@ -50,6 +50,10 @@ local nameScratch = {}
 local changeCallbacks = {}
 local subscribedToMedia = false
 local registeredBuiltIns = false
+-- The addon folder each name's file sits in, since a dropdown asks for every row's text every
+-- time it opens.
+---@type table<string, string|false>
+local sourceFolders = {}
 -- CHANNELS split the two ways callers need it: the values a picker lists, and the entry for one.
 local channelValues = {}
 local channelsByValue = {}
@@ -74,6 +78,14 @@ end
 ---@return string?
 local function UsablePath(value)
 	return type(value) == "string" and value ~= "" and value or nil
+end
+
+---The addon folder a sound's file sits in. LibSharedMedia keeps no record of who registered an
+---entry, so the path is the only thing left to read a source off.
+---@param file string?
+---@return string?
+local function SourceFolder(file)
+	return file and file:match("^[Ii]nterface[\\/][Aa]dd[Oo]ns[\\/]([^\\/]+)") or nil
 end
 
 ---Hands MiniAuras's own files to the media library, once. Doing it lazily rather than at file scope
@@ -106,6 +118,9 @@ local function EnsureBuiltInsRegistered()
 end
 
 local function NotifyChanged()
+	-- A name that resolved to nothing at login can pick up a source now.
+	wipe(sourceFolders)
+
 	for _, fn in ipairs(changeCallbacks) do
 		fn()
 	end
@@ -239,6 +254,25 @@ end
 ---@return string
 function M:Resolve(name)
 	return self:ResolveStrict(name) or (SOUND_LOCATION .. BUILT_IN[DEFAULT_NAME])
+end
+
+---How a name reads in a picker, naming the addon it came from where the path gives one up. Two
+---addons routinely ship a sound under the same name, and the list is otherwise no help telling
+---them apart.
+---@param name string?
+---@return string
+function M:DisplayText(name)
+	local resolved = self:Normalise(name)
+	local folder = sourceFolders[resolved]
+
+	if folder == nil then
+		-- False rather than nil, so a name with no addon behind it memoises as a miss.
+		folder = SourceFolder(self:ResolveStrict(resolved)) or false
+		sourceFolders[resolved] = folder
+	end
+
+	-- Dimmed like the spell rows, so the name still reads first in a list being scanned.
+	return folder and ("%s |cff888888(%s)|r"):format(resolved, folder) or resolved
 end
 
 ---@return string
