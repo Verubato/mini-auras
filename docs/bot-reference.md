@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.26.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.27.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -139,7 +139,7 @@ other.
   frame/nameplate/arena-anchored personal aura groups) have an X/Y offset from the frame they
   hang off plus a **Grow** direction. Grow options vary by module:
   LEFT/RIGHT/CENTER/DOWN/UP for most frame-attached ones, LEFT/RIGHT/CENTER for nameplates,
-  DOWN/UP for Ally Kicks, LEFT/RIGHT for Alerts.
+  DOWN/UP for Ally Kicks, LEFT/RIGHT/CENTER for Alerts.
 
 ### Common icon options and ranges
 
@@ -767,10 +767,19 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons off, Raid 
 | Class colours | on/off (since 5.19.0) | on |
 | Important colour | swatch (applies while Glow icons or Show border is on, and while Class colours is off) | red (1, 0.2, 0.2) |
 | Defensive colour | swatch (applies while Glow icons or Show border is on, and while Class colours is off) | green (0.2, 1, 0.2) |
-| Grow | LEFT / RIGHT | RIGHT (a saved CENTER from an older profile reads back as RIGHT) |
+| Grow | LEFT / RIGHT / CENTER (since 5.27.0) | CENTER (RIGHT before 5.27.0) |
 | Icon Size | 10-100 | 50 |
 | Max Icons | 1-10 | 8 |
 | Icon Padding | 0-20 | 4 (2 before 5.16.0) |
+
+**CENTER** (since 5.27.0) splits the row either side of the anchor instead of running it off
+one edge, and is the new default. The dropdown shows it as **CENTER-ish**, in English whatever
+the client language, since LEFT and RIGHT show their raw values beside it. The name is hedged
+because the alignment is not pixel perfect, which the tooltip beside the control says too. A
+profile still on RIGHT, the old default, is moved onto it on upgrade, while anyone who picked
+LEFT keeps their choice. It applies to the arena bars only, because a centred row on nameplates
+would shift across the screen every time a plate appeared or left. A profile holding UP or DOWN
+from an older version reads back as RIGHT, because the row is horizontal.
 
 **Class colours** (on by default) tints every icon in the owner's class colour instead of the
 two category colours, which is what makes a row readable at a glance in an arena. It needs the

@@ -1,17 +1,10 @@
 # Changelog
 
-## Unreleased
+## 5.27.0
 
-- Fixed the frame aura icons per row setting being ignored inside an arena, where a row could end
-  up one icon wide however many were asked for.
-- Added a CENTER-ish grow direction to the alerts bars, which splits the enemies either side of
-  the anchor instead of running them off one edge. It applies in arena only, because a centred
-  row on nameplates would shift across the screen every time a plate appeared or left. It is now
-  the default, and anyone on RIGHT, the old default, is moved onto it.
-- The frame aura debuff row now leads with the game's own boss and role auras, drawn larger and in
-  their own slots, replacing the priority row added in 5.25.0. Out of the box the lead group shows
-  only the boss and role auras that are dispellable and under a minute, the same two switches that
-  narrow the rest of the row.
+- Fixed a bug with icons per row not working in arena.
+- Added a CENTER-ish grow direction to the alerts bars.
+- Added support for bigger priority debuffs (e.g. Unstable Affliction).
 
 ## 5.26.0
 
