@@ -1803,3 +1803,113 @@ fw.describe("Migrator - the v77 centred alerts default", function()
 		assert(db.Modules.Alerts.Grow == "CENTER", "the login path has to reach step 77")
 	end)
 end)
+
+-- A db left on the "None" entry would start playing the fallback, so the step switches it off.
+fw.describe("Migrator - the v78 silent sound settings", function()
+	---@param file string
+	---@return table
+	local function VarsWithSound(file)
+		return {
+			Version = 77,
+			Modules = {
+				Alerts = {
+					Sound = {
+						Important = { Enabled = true, File = file },
+						Defensive = { Enabled = true, File = "AlertToastWarm" },
+					},
+				},
+				HealerCrowdControl = { Sound = { Enabled = true, File = file } },
+			},
+		}
+	end
+
+	fw.it("turns an alert sound left on the media None entry off instead", function()
+		local vars = VarsWithSound("None")
+
+		assert(migrator:UpgradeToVersion78(vars) == true)
+
+		local important = vars.Modules.Alerts.Sound.Important
+
+		assert(important.Enabled == false, "silence is what the player picked, so it has to hold")
+		assert(important.File == nil, "a name the list no longer offers is not worth keeping")
+		assert(vars.Version == 78)
+	end)
+
+	fw.it("leaves a sound the player actually chose alone", function()
+		local vars = VarsWithSound("None")
+
+		assert(migrator:UpgradeToVersion78(vars) == true)
+
+		local defensive = vars.Modules.Alerts.Sound.Defensive
+
+		assert(defensive.Enabled == true, "a real file is not the entry being moved")
+		assert(defensive.File == "AlertToastWarm")
+	end)
+
+	fw.it("covers the healer crowd control sound", function()
+		-- It registers across the whole ~1k CC list per healer, so this is the loudest of them.
+		local vars = VarsWithSound("None")
+
+		assert(migrator:UpgradeToVersion78(vars) == true)
+		assert(vars.Modules.HealerCrowdControl.Sound.Enabled == false)
+		assert(vars.Modules.HealerCrowdControl.Sound.File == nil)
+	end)
+
+	fw.it("moves a personal aura group onto its own silent choice", function()
+		local vars = {
+			Version = 77,
+			Modules = {
+				PersonalAuras = {
+					Groups = {
+						{ Sound = { Applied = "None", Stacks = "Sonar", Removed = "" } },
+						-- An old payload, whose one file Groups folds onto Applied later.
+						{ Sound = { File = "None" } },
+					},
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion78(vars) == true)
+
+		local groups = vars.Modules.PersonalAuras.Groups
+
+		assert(groups[1].Sound.Applied == "",
+			"the group's own no-sound value, which the dropdown can show")
+		assert(groups[1].Sound.Stacks == "Sonar", "a real file still stands")
+		assert(groups[2].Sound.File == "", "or the fold would put the entry back")
+	end)
+
+	fw.it("moves a stored profile too", function()
+		local vars = VarsWithSound("None")
+
+		vars.Profiles = { Arena = VarsWithSound("None"), Mine = VarsWithSound("Sonar") }
+
+		assert(migrator:UpgradeToVersion78(vars) == true)
+		assert(vars.Profiles.Arena.Modules.Alerts.Sound.Important.Enabled == false,
+			"a snapshot switched back in would undo the step")
+
+		local mine = vars.Profiles.Mine.Modules.Alerts.Sound.Important
+
+		assert(mine.Enabled == true and mine.File == "Sonar", "and a chosen sound still stands")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = VarsWithSound("None")
+
+		vars.Version = 76
+
+		assert(migrator:UpgradeToVersion78(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.Alerts.Sound.Important.Enabled == true, "and must move nothing")
+		assert(vars.Version == 76)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = VarsWithSound("None")
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 78, "the shipped version has to be past this step")
+		assert(db.Modules.Alerts.Sound.Important.Enabled == false,
+			"the login path has to reach step 78")
+	end)
+end)

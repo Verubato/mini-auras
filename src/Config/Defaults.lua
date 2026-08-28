@@ -3,7 +3,7 @@ local _, addon = ...
 
 ---@class Db
 local dbDefaults = {
-	Version = 77,
+	Version = 78,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},

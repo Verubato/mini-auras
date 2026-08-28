@@ -68,6 +68,14 @@ local function SharedMedia()
 	return LibStub and LibStub("LibSharedMedia-3.0", true)
 end
 
+---A media entry only counts when it is a path. LibSharedMedia also carries sound kit and file ids
+---as plain numbers, and every sound here ends up at C_UnitAuras.AddAuraSound, which takes a name.
+---@param value any
+---@return string?
+local function UsablePath(value)
+	return type(value) == "string" and value ~= "" and value or nil
+end
+
 ---Hands MiniAuras's own files to the media library, once. Doing it lazily rather than at file scope
 ---keeps the order robust: LibStub is loaded before Core, but a failed library is not worth an
 ---error at load when the addon works fine without one.
@@ -157,8 +165,11 @@ function M:GetNames()
 
 	if media then
 		for _, name in ipairs(media:List("sound") or {}) do
-			seen[name] = true
-			nameScratch[#nameScratch + 1] = name
+			-- Picking a sound kit id is silence with nothing on screen to explain it.
+			if UsablePath(media:Fetch("sound", name, true)) then
+				seen[name] = true
+				nameScratch[#nameScratch + 1] = name
+			end
 		end
 	end
 
@@ -208,7 +219,12 @@ function M:ResolveStrict(name)
 	local media = SharedMedia()
 
 	if media and media:IsValid("sound", resolved) then
-		return media:Fetch("sound", resolved)
+		-- A built-in name another addon claimed first still plays our file.
+		local file = UsablePath(media:Fetch("sound", resolved, true))
+
+		if file then
+			return file
+		end
 	end
 
 	local file = BuiltInFile(resolved)

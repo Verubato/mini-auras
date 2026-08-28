@@ -97,3 +97,84 @@ fw.describe("Sounds - resolving for a registration", function()
             "silence would read as a broken setting when previewing")
     end)
 end)
+
+-- LibSharedMedia holds a sound as a path or as a plain number.
+---@param entries table<string, string|number>
+---@param fn fun()
+local function WithMedia(entries, fn)
+    local previous = _G.LibStub
+    local list = {}
+
+    for name in pairs(entries) do
+        list[#list + 1] = name
+    end
+
+    table.sort(list)
+
+    local media = {
+        List = function()
+            return list
+        end,
+        IsValid = function(_, _, key)
+            return entries[key] ~= nil
+        end,
+        Fetch = function(_, _, key)
+            return entries[key]
+        end,
+        Register = function()
+            return false
+        end,
+    }
+
+    _G.LibStub = function(major)
+        return major == "LibSharedMedia-3.0" and media or nil
+    end
+
+    local ok, err = pcall(fn)
+
+    _G.LibStub = previous
+
+    if not ok then
+        error(err, 0)
+    end
+end
+
+fw.describe("Sounds - media entries that are not files", function()
+    local MEDIA = {
+        ["PackByPath"] = "Interface\\AddOns\\SomePack\\Sounds\\Ping.ogg",
+        ["PackBySoundKit"] = 12345,
+    }
+
+    fw.it("keeps a sound kit id out of the list", function()
+        WithMedia(MEDIA, function()
+            local names = sounds:GetNames()
+
+            assert(Contains(names, "PackByPath"), "a pack registering paths is offered")
+            assert(not Contains(names, "PackBySoundKit"),
+                "an id cannot be registered with the engine, so offering it only buys silence")
+        end)
+    end)
+
+    fw.it("reports a sound kit id as unresolvable rather than handing the number on", function()
+        WithMedia(MEDIA, function()
+            assert(sounds:ResolveStrict("PackBySoundKit") == nil,
+                "AddAuraSound takes a file name, and refuses a number without saying so")
+            assert(sounds:ResolveStrict("PackByPath") == MEDIA.PackByPath, "a path is used as-is")
+        end)
+    end)
+
+    fw.it("still gives the preview something to play", function()
+        WithMedia(MEDIA, function()
+            assert(sounds:Resolve("PackBySoundKit") == SOUND_LOCATION .. "Sonar.ogg",
+                "silence would read as a broken setting")
+        end)
+    end)
+
+    fw.it("falls back to our own file when a pack claims a built-in name as an id", function()
+        WithMedia({ ["Sonar"] = 54321 }, function()
+            assert(sounds:ResolveStrict("Sonar") == SOUND_LOCATION .. "Sonar.ogg",
+                "whoever registered the name first must not be able to silence ours")
+        end)
+    end)
+end)
+

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Sounds that another addon registers as an id rather than a file cannot be played by the game's
+  aura sound system, and picking one gave silence with nothing to explain it. They are no longer
+  offered in the sound lists.
+- Fixed one of MiniAuras's own sounds going silent when another addon had already registered the
+  same name as an id.
+- An alert or healer crowd control sound left on the media list's "None" entry now reads as
+  switched off, which is what it was already doing.
+
 ## 5.27.0
 
 - Fixed a bug with icons per row not working in arena.

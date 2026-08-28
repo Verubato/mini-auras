@@ -34,6 +34,12 @@ local SHOW_CC_OWNERS = {
 -- default cannot move what it decided.
 local PREVIOUS_ALERTS_GROW = "RIGHT"
 local CENTRED_ALERTS_GROW = "CENTER"
+-- LibSharedMedia carries its own "None" entry as the number 1, and the engine takes a file name,
+-- so a sound left on it played nothing.
+local LSM_NONE = "None"
+-- "File" is the pre-split key, which Groups folds onto Applied, so it has to be caught here or
+-- the fold puts the entry back.
+local PERSONAL_AURA_SOUND_KEYS = { "Applied", "Stacks", "Removed", "File" }
 
 ---Moves one key's value onto another and drops the old key.
 ---@param owner table The table holding both keys.
@@ -186,5 +192,65 @@ function M:UpgradeToVersion77(vars)
 	end
 
 	vars.Version = 77
+	return true
+end
+
+---The sound list no longer offers a name that cannot play, and the resolver falls back to the
+---shipped default, so a setting left naming it would start making a noise nobody asked for.
+---@param sound table? A settings table holding Enabled and File.
+local function AdoptSilenceSwitch(sound)
+	if sound and sound.File == LSM_NONE then
+		sound.Enabled = false
+		sound.File = nil
+	end
+end
+
+---@param vars table The live saved variables, or one profile's snapshot of them.
+local function AdoptExplicitSilence(vars)
+	local modules = vars and vars.Modules
+
+	if not modules then
+		return
+	end
+
+	local alerts = modules.Alerts and modules.Alerts.Sound
+
+	if alerts then
+		AdoptSilenceSwitch(alerts.Important)
+		AdoptSilenceSwitch(alerts.Defensive)
+	end
+
+	AdoptSilenceSwitch(modules.HealerCrowdControl and modules.HealerCrowdControl.Sound)
+
+	local personalAuras = modules.PersonalAuras
+
+	for _, group in ipairs(personalAuras and personalAuras.Groups or {}) do
+		local sound = group.Sound
+
+		if sound then
+			for _, key in ipairs(PERSONAL_AURA_SOUND_KEYS) do
+				-- Empty is this module's own silent value, and the dropdown still offers that row.
+				if sound[key] == LSM_NONE then
+					sound[key] = ""
+				end
+			end
+		end
+	end
+end
+
+function M:UpgradeToVersion78(vars)
+	if vars.Version ~= 77 then return false end
+
+	AdoptExplicitSilence(vars)
+
+	-- A profile switch writes its snapshot back over the live db wholesale, so one still naming
+	-- the entry would put it straight back.
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			AdoptExplicitSilence(profile)
+		end
+	end
+
+	vars.Version = 78
 	return true
 end
