@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed the frame aura icons per row setting being ignored inside an arena, where a row could end
+  up one icon wide however many were asked for.
 - Added a CENTER-ish grow direction to the alerts bars, which splits the enemies either side of
   the anchor instead of running them off one edge. It applies in arena only, because a centred
   row on nameplates would shift across the screen every time a plate appeared or left. It is now

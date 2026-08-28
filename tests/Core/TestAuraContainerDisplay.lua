@@ -343,6 +343,53 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 		assert(instance.Frame._groups.cc.layout.elementWidth == startSize + 20, "size applied")
 	end)
 
+	-- The line cap is a pixel width worked out from the size the buttons carry, so it only means
+	-- what it says when the two agree. The engine creates a deferred group's buttons through
+	-- initializeFrame, which the restyle gate never reaches.
+	fw.it("a button the engine builds while restricted still matches the line cap, both before and after the restyle catches up", function()
+		local perLine, spacing = 3, 2
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, spacing, "Test", { PerLine = perLine, DeferGroups = true })
+
+		-- A display left restricted keeps its pending flag for the rest of the run, and the
+		-- restyle ticker then never empties across a reset. Undo both however this ends.
+		local ok, err = pcall(function()
+			local startCap = instance.Frame._flowMaxLineSize
+			assert(startCap == perLine * 30 + perLine * spacing,
+				"the cap must equal perLine*size + perLine*spacing with no scaled groups, got " .. tostring(startCap))
+
+			acm.restricted = true
+			instance:ApplyConfig(50, spacing, {})
+			assert(instance.RestylePending, "precondition: the size change is deferred")
+
+			assert(instance:AddNextGroup(), "the engine declared the group and built its buttons")
+
+			local group = instance.Frame._groups.plain
+			-- Read off the field rather than asked: GetHeight is itself refused on a button while
+			-- restricted, same as any other call on one.
+			assert(group.buttons[1]._height == 30,
+				"a button built while restricted must still carry the old size, got "
+				.. tostring(group.buttons[1]._height))
+			assert(instance.Frame._flowMaxLineSize == perLine * 30 + perLine * spacing,
+				"and the cap must still agree with that old size while the restyle is deferred, got "
+				.. tostring(instance.Frame._flowMaxLineSize))
+
+			acm.restricted = false
+			instance:RestyleButtons()
+
+			assert(group.buttons[1]:GetHeight() == 50, "the button moves to the new size once the restyle runs")
+			assert(instance.Frame._flowMaxLineSize == perLine * 50 + perLine * spacing,
+				"and the cap moves to it together, matching the formula again, got "
+				.. tostring(instance.Frame._flowMaxLineSize))
+		end)
+
+		acm.restricted = false
+		instance:RestyleButtons()
+
+		assert(ok, err)
+	end)
+
 	fw.it("parking a display leaves its glows alone, so reuse under restriction still glows", function()
 		-- Glow frames are children of AuraButtons, so re-showing one needs a restyle, and a
 		-- restyle is blocked for as long as auras are secret (the whole of an arena). Nothing on

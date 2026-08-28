@@ -78,17 +78,19 @@ end
 ---measured against the frame rather than given a size of its own.
 ---@param frame table
 ---@param share number percentage of the frame's height
----@param fallback number size to use when the client will not say how big anything is
----@return number
-function M:ShareOfHeight(frame, share, fallback)
+---@return number? nil when the client will not say how big the frame or the screen is
+function M:ShareOfHeight(frame, share)
 	local perUnit = M:PerUnit(frame)
 
 	if not perUnit then
-		return fallback
+		return nil
 	end
 
 	local height = M:Number(frame:GetHeight())
-	local size = height and height > 0 and height * share / 100 or fallback
 
-	return M:Snap(size, perUnit)
+	if not height or height <= 0 then
+		return nil
+	end
+
+	return M:Snap(height * share / 100, perUnit)
 end

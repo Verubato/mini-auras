@@ -1558,6 +1558,10 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 
 	instance.Size = size or 20
 	instance.Spacing = spacing or 2
+	-- Size and Spacing must stay at what the buttons were built with, so the setters move these
+	-- instead until a restyle can carry both across together.
+	instance.PendingSize = instance.Size
+	instance.PendingSpacing = instance.Spacing
 	instance.Groups = groups
 	-- Key -> spec, so the per-category budget setter is a lookup rather than a scan and can tell a
 	-- caller that its group key is wrong instead of silently doing nothing.
@@ -1826,11 +1830,11 @@ end
 ---@param newSize number
 function M:SetIconSize(newSize)
 	newSize = tonumber(newSize)
-	if not newSize or newSize <= 0 or self.Size == newSize then
+	if not newSize or newSize <= 0 or self.PendingSize == newSize then
 		return
 	end
 
-	self.Size = newSize
+	self.PendingSize = newSize
 	-- Applies the layout too, gated so it can't run ahead of the button resize.
 	self:RestyleButtons()
 end
@@ -1838,11 +1842,11 @@ end
 ---@param newSpacing number
 function M:SetSpacing(newSpacing)
 	newSpacing = tonumber(newSpacing)
-	if not newSpacing or newSpacing < 0 or self.Spacing == newSpacing then
+	if not newSpacing or newSpacing < 0 or self.PendingSpacing == newSpacing then
 		return
 	end
 
-	self.Spacing = newSpacing
+	self.PendingSpacing = newSpacing
 	-- Routed through the restyle gate as well, because BuildGroupLayout reads Size and applying
 	-- the layout for a spacing change would also publish a Size the buttons haven't taken yet.
 	self:RestyleButtons()
@@ -1863,13 +1867,13 @@ function M:ApplyConfig(size, spacing, style)
 
 	local changed = false
 
-	if size and size > 0 and self.Size ~= size then
-		self.Size = size
+	if size and size > 0 and self.PendingSize ~= size then
+		self.PendingSize = size
 		changed = true
 	end
 
-	if spacing and spacing >= 0 and self.Spacing ~= spacing then
-		self.Spacing = spacing
+	if spacing and spacing >= 0 and self.PendingSpacing ~= spacing then
+		self.PendingSpacing = spacing
 		changed = true
 	end
 
@@ -2258,6 +2262,13 @@ function M:RestyleButtons()
 		return
 	end
 
+	-- Committed only once the buttons below are about to be resized to match, so a button the
+	-- engine creates before this point still sees the size it was actually built at.
+	self.Size = self.PendingSize
+	self.Spacing = self.PendingSpacing
+
+	-- Cleared after the commit, so anything returning early between the two leaves the display
+	-- pending rather than claiming a size its buttons never took.
 	SetRestylePending(self, false)
 
 	-- The group layout spaces icons by elementWidth, but the engine only ever positions a button,
@@ -2442,6 +2453,8 @@ end
 ---@field Initialize fun(instance: AuraContainerDisplay, button: table, group: AuraDisplayGroupSpec)
 ---@field Size number
 ---@field Spacing number
+---@field PendingSize number Size the buttons will carry once a deferred restyle lifts.
+---@field PendingSpacing number Spacing the buttons will carry once a deferred restyle lifts.
 ---@field Groups AuraDisplayGroupSpec[]
 ---@field GroupsByKey table<string, AuraDisplayGroupSpec>
 ---@field Grow string

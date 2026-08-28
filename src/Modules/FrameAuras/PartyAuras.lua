@@ -68,7 +68,7 @@ local PLACEMENT = {
 local ICON_SPACING = 1
 -- Icons take a share of the frame's height rather than a fixed size, because a raid profile and a
 -- party profile size their frames very differently. This is what one falls back to when the client
--- will not say how tall the frame is.
+-- has never once said how tall the frame is.
 local FALLBACK_ICON_SIZE = 14
 -- The shipped budgets a profile written before a key existed falls back to. Spelled out rather
 -- than read off the defaults table, which loads after the modules do.
@@ -119,6 +119,9 @@ local generation = 0
 -- Unit frame -> its two displays. The frames are Blizzard's own and live for the session, so there
 -- is nothing to clear.
 local watchers = {}
+-- Last size each side measured on each frame, so a frame the client can't measure right now keeps
+-- the size it actually has instead of jumping to the fallback.
+local lastIconSize = setmetatable({}, { __mode = "k" })
 -- The filters the displays currently hold, one set between them all. The engine keeps the
 -- reference it is handed, and handing the same one back costs nothing.
 local pandemicCandidates
@@ -245,8 +248,18 @@ end
 local function IconSize(frame, side)
 	local options = SideOptions(side)
 	local percent = options and options.Size or DEFAULT_SIZE_PERCENT
+	local size = pixels:ShareOfHeight(frame, percent)
+	local sides = lastIconSize[frame]
 
-	return pixels:ShareOfHeight(frame, percent, FALLBACK_ICON_SIZE)
+	if size then
+		sides = sides or {}
+		sides[side] = size
+		lastIconSize[frame] = sides
+
+		return size
+	end
+
+	return (sides and sides[side]) or FALLBACK_ICON_SIZE
 end
 
 ---The engine's own answer to "can I dispel this", which it works out per aura from the player's
@@ -1300,3 +1313,4 @@ end
 ---@field Generation number|string? The refresh it was last drawn for, or a stand-in while a
 ---loading screen is up.
 ---@field PowerBarInset number? The power bar height the rows were last placed above.
+

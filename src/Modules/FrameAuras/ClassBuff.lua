@@ -48,6 +48,9 @@ local eventsFrame
 local hooked = false
 -- Refilled per pass because the frame list is asked for on every refresh.
 local frameScratch = {}
+-- Last size measured per frame, so a frame the client can't measure right now keeps the size it
+-- actually has instead of jumping to the fallback.
+local lastIconSize = setmetatable({}, { __mode = "k" })
 
 ---@return FrameAurasClassBuffOptions?
 local function Options()
@@ -242,7 +245,13 @@ local function Place(mark, frame)
 		return
 	end
 
-	local size = pixels:ShareOfHeight(frame, options.Size or DEFAULT_SIZE_PERCENT, FALLBACK_ICON_SIZE)
+	local size = pixels:ShareOfHeight(frame, options.Size or DEFAULT_SIZE_PERCENT)
+
+	if size then
+		lastIconSize[frame] = size
+	else
+		size = lastIconSize[frame] or FALLBACK_ICON_SIZE
+	end
 
 	mark:SetSize(size, size)
 	mark:ClearAllPoints()

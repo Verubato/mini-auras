@@ -180,6 +180,8 @@ local LEAD_SCALE = 1.25
 local LEAD_MAX_ICONS = 2
 -- The gap the rows leave between one icon and the next.
 local ICON_SPACING = 1
+-- What an icon falls back to only when its frame has never once been measured successfully.
+local FALLBACK_ICON_SIZE = 14
 
 local function ResetSpells()
 	options.Spells.Disabled = {}
@@ -903,6 +905,59 @@ fw.describe("Frame Auras - what one frame costs", function()
 		end
 
 		DropPartyFrame(5)
+	end)
+end)
+
+fw.describe("Frame Auras - the icon size measured off the frame", function()
+	fw.before_each(function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+	end)
+
+	fw.it("keeps the size it last measured when the frame stops answering, not the fallback", function()
+		-- The mock's UIParent carries no size until told, which always fails the measurement and
+		-- hides a real one behind the fallback. Give the screen a real height so this test can
+		-- tell the two apart.
+		local screenWidth, screenHeight = _G.UIParent:GetWidth(), _G.UIParent:GetHeight()
+		local fresh, realGetHeight
+
+		_G.UIParent:SetSize(1920, 1080)
+
+		-- Every other test in this file measures against a sizeless screen, so the two changes
+		-- above have to come back however this one ends.
+		local ok, err = pcall(function()
+			fresh = NewRaidFrame(39)
+			fresh:SetSize(100, 200)
+
+			partyAuras:Refresh()
+			acm.tickAll(400)
+
+			local row = assert(GroupRowOn(fresh, PARTY_BUFF_GROUP), "the frame got a buff row")
+			local measured = row._groups[PARTY_BUFF_GROUP].layout.elementHeight
+
+			assert(measured > 0 and measured ~= FALLBACK_ICON_SIZE,
+				"measured against the frame's real height, got " .. tostring(measured))
+
+			realGetHeight = fresh.GetHeight
+			fresh.GetHeight = function() return 0 end
+
+			partyAuras:Refresh()
+			acm.tickAll(400)
+
+			assert(row._groups[PARTY_BUFF_GROUP].layout.elementHeight == measured,
+				"kept the size it last measured rather than the fallback, got "
+				.. tostring(row._groups[PARTY_BUFF_GROUP].layout.elementHeight))
+		end)
+
+		if realGetHeight then
+			fresh.GetHeight = realGetHeight
+		end
+
+		_G.UIParent:SetSize(screenWidth, screenHeight)
+		DropRaidFrame(39)
+
+		assert(ok, err)
 	end)
 end)
 
@@ -3248,6 +3303,43 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 		module:Refresh()
 
 		assert(Marked(markFrame), "the switch is what holds the mark back, not the module")
+	end)
+
+	fw.it("keeps the mark at the size it last measured when the frame stops answering", function()
+		local screenWidth, screenHeight = _G.UIParent:GetWidth(), _G.UIParent:GetHeight()
+		local frameWidth, frameHeight = markFrame:GetWidth(), markFrame:GetHeight()
+		local realGetHeight = markFrame.GetHeight
+
+		-- Every other test in this file measures against a sizeless screen, so all three changes
+		-- below have to come back however this one ends.
+		_G.UIParent:SetSize(1920, 1080)
+		markFrame:SetSize(100, 200)
+
+		local ok, err = pcall(function()
+			MoveTo("party")
+			module:Refresh()
+
+			local measured = MarkOn(markFrame):GetHeight()
+
+			assert(measured > 0 and measured ~= FALLBACK_ICON_SIZE,
+				"measured against the frame's real height, got " .. tostring(measured))
+
+			markFrame.GetHeight = function()
+				return 0
+			end
+
+			module:Refresh()
+
+			assert(MarkOn(markFrame):GetHeight() == measured,
+				"kept the size it last measured rather than the fallback, got "
+				.. tostring(MarkOn(markFrame):GetHeight()))
+		end)
+
+		markFrame.GetHeight = realGetHeight
+		markFrame:SetSize(frameWidth, frameHeight)
+		_G.UIParent:SetSize(screenWidth, screenHeight)
+
+		assert(ok, err)
 	end)
 
 	fw.it("previews the mark in the open world", function()
