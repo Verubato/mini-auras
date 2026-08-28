@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.27.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.28.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -241,11 +241,16 @@ Fourteen sounds ship with the addon: AirHorn, AlertToastWarm, BubblePop, Cheerfu
 CinematicHit, ElectricalSpark, Error, NewNotification09, Notification18, Notification38,
 Sonar, SuddenShock, WatchOut, WhooshSwing. A fifteenth, XiaYike, is offered only on Chinese
 (zhCN/zhTW) clients. All are registered with LibSharedMedia, so any sound another addon
-registers there is also selectable, and other addons can use MiniAuras's sounds. If a saved
-sound comes from a media addon that was uninstalled, it falls back to Sonar. A media addon that
-loads *after* MiniAuras is waited for instead: the aura stays silent for a second or so rather
-than firing the fallback, then registers with the right file. Sound settings have an output
-channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, default Master.
+registers there is also selectable, and other addons can use MiniAuras's sounds. Each row in a
+sound list names the addon its file came from in parentheses, since several packs ship
+different sounds under the same name. LibSharedMedia also carries entries registered as a sound
+kit id rather than a file; the game's aura sound registration takes a file path and refuses a
+number, so those are left out of the lists entirely. If a saved sound comes from a media addon
+that was uninstalled, it falls back to Sonar. A media addon that loads *after* MiniAuras is
+waited for instead: the aura stays silent for a second or so rather than firing the fallback,
+then registers with the right file. Alert sounds play the default until that addon arrives and
+then switch to the file it brought. Sound settings have an output channel dropdown: Master,
+Sound Effects (SFX), Music, Ambience, or Dialog, default Master.
 
 ### Countdown text
 
