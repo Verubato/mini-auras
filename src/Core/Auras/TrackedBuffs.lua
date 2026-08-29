@@ -29,6 +29,7 @@ local groups = {
 			366155, -- Reversion
 			367364, -- Reversion (Echo copy)
 			355941, -- Dream Breath
+			376788, -- Dream Breath (Echo copy)
 			373267, -- Lifebind
 			360827, -- Blistering Scales
 		},
@@ -91,6 +92,7 @@ local pandemic = {
 local names = {
 	[155777] = "Germination",
 	[290754] = "Full Bloom",
+	[376788] = "Echo Breath",
 }
 
 -- Flat lookup off the same data, so nothing has to walk the groups to answer "does this ship
