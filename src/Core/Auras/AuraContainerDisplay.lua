@@ -60,6 +60,8 @@ local STYLE_FIELDS = {
 	"TextureAlpha",
 }
 
+-- How far the corner stack count sits off the icon's bottom right corner.
+local STACK_INSET = 0
 -- Geometry for bar buttons, all derived from the bar's height so one size setting drives the row.
 -- The icon leads the bar and is square, and the fill starts where it ends with no gap, so the icon
 -- reads as the bar's head.
@@ -835,7 +837,7 @@ local function StyleStacks(instance, button, widgets, size, fontScale)
 			stacks:ClearAllPoints()
 			stacks:SetJustifyH("RIGHT")
 			stacks:SetPoint("BOTTOMRIGHT", widgets.Bar and widgets.Icon or button,
-				"BOTTOMRIGHT", -1, 1)
+				"BOTTOMRIGHT", -STACK_INSET, STACK_INSET)
 
 			if stacks.MiniAurasFace then
 				local _, currentSize = stacks:GetFont()
@@ -1202,7 +1204,7 @@ local function InitializeButton(instance, button, group)
 	end
 
 	local stacks = CreateStacks(button, textOverlay)
-	stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1, 1)
+	stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -STACK_INSET, STACK_INSET)
 
 	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
 
@@ -1331,7 +1333,7 @@ local function InitializeBarButton(instance, button, group)
 
 	-- On the icon rather than the fill, which already carries the name and the countdown.
 	local stacks = CreateStacks(button, textOverlay)
-	stacks:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -1, 1)
+	stacks:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -STACK_INSET, STACK_INSET)
 
 	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
 

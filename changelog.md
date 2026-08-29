@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Moved the corner stack count flush into the icon's bottom right corner.
 - Added a text size slider and a centre stacks switch to the frame aura buff and debuff rows,
   matching the ones personal auras already had.
 

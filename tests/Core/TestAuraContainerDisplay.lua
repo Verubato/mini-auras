@@ -2043,3 +2043,30 @@ fw.describe("AuraContainerDisplay - the icon zoom option", function()
 		mockDb.IconZoom = nil
 	end)
 end)
+
+fw.describe("AuraContainerDisplay - where the corner stack count sits", function()
+	fw.it("puts a fresh button's count flush into the bottom right", function()
+		local instance = newInstance()
+		local widgets = instance.ButtonWidgets[instance.Buttons[1]]
+		local args = widgets.Stacks._lastArgs.SetPoint
+
+		assert(args[1] == "BOTTOMRIGHT" and args[3] == "BOTTOMRIGHT",
+			"the count hangs off the button's own corner")
+		assert(args[4] == 0 and args[5] == 0, "and sits in it rather than inset off it")
+	end)
+
+	fw.it("puts a count back in the same corner after it was centred", function()
+		local instance = newInstance()
+		local widgets = instance.ButtonWidgets[instance.Buttons[1]]
+
+		instance:SetStyle({ Stacks = true, CenterStacks = true })
+		assert(widgets.StacksCentered, "the switch moves it to the middle")
+
+		instance:SetStyle({ Stacks = true, CenterStacks = false })
+		local args = widgets.Stacks._lastArgs.SetPoint
+
+		assert(args[1] == "BOTTOMRIGHT" and args[3] == "BOTTOMRIGHT",
+			"turning it off returns the count to the corner")
+		assert(args[4] == 0 and args[5] == 0, "on the same inset a button is created with")
+	end)
+end)
