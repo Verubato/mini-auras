@@ -145,6 +145,11 @@ local function BuildStyle(group)
 	style.BarTexture = icons.BarTexture
 	style.SpellName = icons.SpellName
 
+	-- Art brings its own picture and the text shape draws no icon, so neither has one to replace.
+	if not groups:DrawsTexture(group) and not groups:DrawsTextOnly(group) then
+		style.IconAsset = icons.UseGroupIcon and groups:GetIcon(group) or nil
+	end
+
 	if groups:DrawsTexture(group) then
 		local art = group.Texture
 
@@ -685,8 +690,12 @@ local function RenderTestIcons(state, entry)
 	local nextSlot
 
 	if groups:TracksSpells(group) then
+		local iconOverride = not textOnly and group.Icons.UseGroupIcon
+			and groups:GetIcon(group) or nil
+
 		nextSlot = testSpellData:FillContainer(container, group.Spells, 1, {
 			ReverseCooldown = group.Icons.ReverseCooldown,
+			IconOverride = iconOverride,
 			HideIcon = textOnly,
 			HideSwipe = hideSwipe,
 			HideNumbers = hideNumbers,

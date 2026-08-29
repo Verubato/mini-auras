@@ -452,6 +452,7 @@ function M:Normalise(group)
 	-- the group's own TextColor on all of it.
 	icons.ColorText = icons.ColorText == true
 	icons.ShowTooltips = icons.ShowTooltips == true
+	icons.UseGroupIcon = icons.UseGroupIcon == true
 	icons.Color = icons.Color or {}
 	icons.Color.R = tonumber(icons.Color.R) or 1
 	icons.Color.G = tonumber(icons.Color.G) or 1
@@ -1203,7 +1204,7 @@ end
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
 ---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
----@field Icons { Size: number, Spacing: number, FontScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Icons { Size: number, Spacing: number, FontScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, UseGroupIcon: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Texture { Asset: string|number, Width: number, Height: number, Rotation: number, Opacity: number, Mirror: boolean, Desaturate: boolean, Additive: boolean } Texture display only; Asset is a file id or a path, and empty draws nothing.
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.

@@ -58,6 +58,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Hide the countdown text on this group's icons."] = "Скрывает текст обратного отсчёта на значках этой группы.",
 	["Centre stacks"] = "Заряды по центру",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Показывает число зарядов в центре значка вместо текста обратного отсчёта.",
+	["Group icon"] = "Значок группы",
+	["Draw the group's own icon on every aura instead of each spell's artwork."] = "Показывает на каждой ауре значок группы вместо изображения соответствующего заклинания.",
 	["Text colour"] = "Цвет текста",
 	["Change the colour of the countdown, stack count, and spell name text."] = "Меняет цвет текста обратного отсчёта, числа зарядов и названия заклинания.",
 	["Colour text"] = "Цветной текст",

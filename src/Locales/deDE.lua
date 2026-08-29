@@ -58,6 +58,8 @@ L:RegisterLocale("deDE", function() return {
 	["Hide the countdown text on this group's icons."] = "Blendet den Zeittext auf den Symbolen dieser Gruppe aus.",
 	["Centre stacks"] = "Stufen mittig",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Zeigt die Stufenanzahl mittig auf dem Symbol statt des Zeittexts.",
+	["Group icon"] = "Gruppensymbol",
+	["Draw the group's own icon on every aura instead of each spell's artwork."] = "Zeigt auf jeder Aura das Symbol der Gruppe statt der Grafik des jeweiligen Zaubers.",
 	["Text colour"] = "Textfarbe",
 	["Change the colour of the countdown, stack count, and spell name text."] = "Ändert die Farbe von Zeittext, Stufenanzahl und Zaubername.",
 	["Colour text"] = "Text färben",

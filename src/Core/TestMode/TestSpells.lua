@@ -124,7 +124,8 @@ M.KickSpecIds = {
 ---returns the next free slot, so a second category (or a trailing SetSlotUnused sweep) can pick
 ---up where it stopped. The one preview renderer: every module draws the same row of fake icons,
 ---differing only in which spells, where the row starts and how the icons are styled.
----A spell whose texture cannot be resolved is skipped without leaving a gap.
+---Without an IconOverride, a spell whose texture cannot be resolved is skipped without
+---leaving a gap.
 ---@param container IconSlotContainer
 ---@param spells table[]|number[] TestSpell entries, or bare spell ids.
 ---@param startSlot number First slot to write (after a kick icon, for the modules that show one).
@@ -136,6 +137,7 @@ M.KickSpecIds = {
 --- while it is set;
 --- CenterStackText puts that text centred on each icon in place of the countdown (the icon
 --- containers only, where the live displays can centre a stack count);
+--- IconOverride draws that picture on every icon in place of the spell's own artwork;
 --- ShowTooltips attaches each spell id;
 --- Count caps how many spells are drawn (default all);
 --- Repeat draws the list round again once it runs out, so Count is met rather than capped;
@@ -175,7 +177,7 @@ function M:FillContainer(container, spells, startSlot, options)
 
 		local spell = spells[index]
 		local spellId = type(spell) == "table" and spell.SpellId or spell
-		local texture = C_Spell.GetSpellTexture(spellId)
+		local texture = options.IconOverride or C_Spell.GetSpellTexture(spellId)
 
 		if texture then
 			local duration = 15

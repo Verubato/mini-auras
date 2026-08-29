@@ -59,6 +59,8 @@ L:RegisterLocale("esMX", function() return {
 	["Hide the countdown text on this group's icons."] = "Oculta el texto de la cuenta atrás en los iconos de este grupo.",
 	["Centre stacks"] = "Centrar acumulaciones",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Muestra el número de acumulaciones en el centro del icono en lugar del texto de la cuenta atrás.",
+	["Group icon"] = "Icono del grupo",
+	["Draw the group's own icon on every aura instead of each spell's artwork."] = "Muestra el icono del grupo en cada aura en lugar de la imagen de cada hechizo.",
 	["Text colour"] = "Color del texto",
 	["Change the colour of the countdown, stack count, and spell name text."] = "Cambia el color del texto de la cuenta atrás, las acumulaciones y el nombre del hechizo.",
 	["Colour text"] = "Colorear texto",

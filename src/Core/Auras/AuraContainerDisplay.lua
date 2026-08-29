@@ -46,6 +46,7 @@ local STYLE_FIELDS = {
 	"FontScale",
 	"ShowTooltips",
 	"Pandemic",
+	"IconAsset",
 	"LabelFontSize",
 	"LabelFontFlags",
 	"BarWidth",
@@ -62,6 +63,8 @@ local STYLE_FIELDS = {
 
 -- How far the corner stack count sits off the icon's bottom right corner.
 local STACK_INSET = 0
+-- The cover has to draw over the engine's icon and under the cooldown swipe.
+local ICON_COVER_LAYER, ICON_COVER_SUBLEVEL = "BACKGROUND", 2
 -- Geometry for bar buttons, all derived from the bar's height so one size setting drives the row.
 -- The icon leads the bar and is square, and the fill starts where it ends with no gap, so the icon
 -- reads as the bar's head.
@@ -978,6 +981,61 @@ local function StylePandemic(widgets, style, size)
 	pandemic.Texture:SetShown(shown)
 end
 
+---One picture painted over the engine's spell art, for a display whose every aura draws the
+---caller's own icon. The engine owns the icon region through SetIcon, so the art is covered
+---rather than replaced.
+---The texture is only ever built for a caller that asked for it, and only from StyleButton, which
+---is reached from initializeFrame or out of combat.
+---@param instance AuraContainerDisplay
+---@param button table
+---@param widgets table
+local function StyleIconCover(instance, button, widgets)
+	local icon = widgets.Icon
+	local cover = widgets.IconCover
+	local asset = instance.Style.IconAsset
+
+	if not icon or (not cover and asset == nil) then
+		return
+	end
+
+	if not cover then
+		cover = button:CreateTexture(nil, ICON_COVER_LAYER, nil, ICON_COVER_SUBLEVEL)
+		cover:SetAllPoints(icon)
+
+		local texCoord = instance.IconTexCoord
+
+		if texCoord then
+			cover:SetTexCoord(texCoord[1], texCoord[2], texCoord[3], texCoord[4])
+		end
+
+		if instance.IconMask then
+			cover:AddMaskTexture(instance.IconMask)
+		end
+
+		widgets.IconCover = cover
+	end
+
+	if widgets.IconCoverAsset ~= asset then
+		widgets.IconCoverAsset = asset
+		cover:SetTexture(asset)
+	end
+
+	-- A square cover under a rounded ring shows its corners.
+	local rounded = widgets.CornersRounded == true and widgets.CornerMask ~= nil
+
+	if widgets.CoverRounded ~= rounded then
+		widgets.CoverRounded = rounded
+
+		if rounded then
+			cover:AddMaskTexture(widgets.CornerMask)
+		elseif widgets.CornerMask then
+			cover:RemoveMaskTexture(widgets.CornerMask)
+		end
+	end
+
+	cover:SetShown(asset ~= nil)
+end
+
 -- Applies the stored per-button style (size, cooldown settings, border, glow, mouse) to one
 -- button. Safe only while buttons are not forbidden, which is initializeFrame or out of combat.
 ---@param instance AuraContainerDisplay
@@ -1021,6 +1079,8 @@ local function StyleButton(instance, button)
 	end
 
 	StyleGlow(instance, button, widgets, size)
+	-- After StyleGlow, which is what decides the corner rounding the cover has to match.
+	StyleIconCover(instance, button, widgets)
 	StylePandemic(widgets, style, size)
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
@@ -2335,6 +2395,9 @@ end
 ---keeps the fonts' own white and leaves the global colour-by-time countdown alone, while a set one
 ---wins over it, white included, so pass nil rather than white for "no opinion". Copied
 ---component-wise like GlowColor, so callers may pass a reused scratch.
+---@field IconAsset string|number? One picture painted over every aura's own icon, so a display
+---draws the caller's art rather than the engine's spell art. Unset leaves the spell art showing
+---and costs the display nothing.
 ---@field Pandemic boolean? Reveal the engine-driven refresh-window ring. Only displays created
 ---with the Pandemic option carry the regions, and elsewhere this field is inert.
 ---@field PandemicColor number[]? {r, g, b} tint for the pandemic ring. Unset keeps the built-in

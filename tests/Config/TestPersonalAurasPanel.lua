@@ -848,7 +848,9 @@ fw.describe("Personal auras page - a group drawing text only", function()
 
 		ShowPage(addon, group)
 
-		local gone = { "Reverse swipe", "Hide swipe", "Hide numbers", "Centre stacks" }
+		local gone = {
+			"Reverse swipe", "Hide swipe", "Hide numbers", "Centre stacks", "Group icon",
+		}
 
 		for _, label in ipairs(gone) do
 			local check = CheckboxLabelled(label)
@@ -859,5 +861,35 @@ fw.describe("Personal auras page - a group drawing text only", function()
 
 		fw.truthy(CheckboxLabelled("Show border"):IsShown(), "the border switch stays")
 		fw.truthy(CheckboxLabelled("Show tooltips"):IsShown(), "and so does the tooltip one")
+	end)
+end)
+
+fw.describe("Personal auras page - laying out the appearance switches", function()
+	fw.it("gives every switch on an icon group a slot of its own", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		ShowPage(addon, group)
+
+		-- Pandemic is left out because the swatch caption beside it carries the same word.
+		local labels = {
+			"Glow icons", "Show border", "Reverse swipe", "Hide swipe", "Hide numbers",
+			"Centre stacks", "Show tooltips", "Group icon", "Colour text",
+		}
+		local taken = {}
+
+		for _, label in ipairs(labels) do
+			local check = CheckboxLabelled(label)
+
+			fw.not_nil(check, label .. " is built")
+			fw.truthy(check:IsShown(), label .. " is shown for an icon group")
+
+			-- The anchor the flow sets, so a switch landing where another already sits is caught
+			-- here rather than on screen.
+			local _, row, _, offsetX = check:GetPoint(1)
+			local slot = tostring(row) .. " at " .. tostring(offsetX)
+
+			fw.is_nil(taken[slot], label .. " draws on top of " .. tostring(taken[slot]))
+			taken[slot] = label
+		end
 	end)
 end)

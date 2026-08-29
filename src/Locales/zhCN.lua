@@ -58,6 +58,8 @@ L:RegisterLocale("zhCN", function() return {
 	["Hide the countdown text on this group's icons."] = "隐藏该组图标上的倒计时文字。",
 	["Centre stacks"] = "层数居中",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "在图标中央显示层数，以取代倒计时文字。",
+	["Group icon"] = "组图标",
+	["Draw the group's own icon on every aura instead of each spell's artwork."] = "在每个光环上显示该组自己的图标，以取代各法术的图像。",
 	["Text colour"] = "文字颜色",
 	["Change the colour of the countdown, stack count, and spell name text."] = "更改倒计时、层数和法术名称文字的颜色。",
 	["Colour text"] = "着色文字",

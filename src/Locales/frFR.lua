@@ -58,6 +58,8 @@ L:RegisterLocale("frFR", function() return {
 	["Hide the countdown text on this group's icons."] = "Masque le texte du décompte sur les icônes de ce groupe.",
 	["Centre stacks"] = "Cumuls centrés",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Affiche le nombre de cumuls au centre de l'icône à la place du texte du décompte.",
+	["Group icon"] = "Icône du groupe",
+	["Draw the group's own icon on every aura instead of each spell's artwork."] = "Affiche l'icône du groupe sur chaque aura à la place de l'image de chaque sort.",
 	["Text colour"] = "Couleur du texte",
 	["Change the colour of the countdown, stack count, and spell name text."] = "Change la couleur du texte du décompte, des cumuls et du nom du sort.",
 	["Colour text"] = "Colorer le texte",

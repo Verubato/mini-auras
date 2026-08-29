@@ -29,18 +29,21 @@ function ui.BuildAppearanceTab(ctx)
 	local checkColumn = mini:ColumnWidth(CHECK_COLUMNS, 0, 0)
 
 	local shapeRow = ctx.NewRow(appearancePanel, ui.DropdownRowHeight)
-	local checkRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW_GAP)
-	-- Whatever a shape has beyond a full row of checkboxes. Collapsed when it holds nothing.
-	local checkRow2 = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP)
+	-- Rows past the first collapse when the shape does not reach them.
+	local checkRows = {
+		ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW_GAP),
+		ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP),
+		ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP),
+	}
 	local swatchRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP)
 
-	---Puts one control in the next slot of the checkbox flow: the first row until it is full, the
-	---second after that.
+	---Puts one control in the next slot of the checkbox flow, filling each row from the left
+	---before starting the one below it.
 	---@param control table
 	---@param column number
 	---@param center boolean? For a swatch, which is shorter than a checkbox and would sit high.
 	local function PlaceInFlow(control, column, center)
-		local row = column < CHECK_COLUMNS and checkRow or checkRow2
+		local row = checkRows[math.floor(column / CHECK_COLUMNS) + 1]
 		local offsetY = center and -math.floor((CHECK_ROW_HEIGHT - control:GetHeight()) / 2) or 0
 
 		control:ClearAllPoints()
@@ -171,6 +174,14 @@ function ui.BuildAppearanceTab(ctx)
 			Label = L["Show tooltips"], Tooltip = L["Shows a spell tooltip when hovering over an icon."],
 			Get = function(group) return group.Icons.ShowTooltips end,
 			Set = function(group, value) group.Icons.ShowTooltips = value end,
+		},
+		{
+			-- Off the text shape, which draws no icon to cover.
+			Text = false,
+			Label = L["Group icon"],
+			Tooltip = L["Draw the group's own icon on every aura instead of each spell's artwork."],
+			Get = function(group) return group.Icons.UseGroupIcon end,
+			Set = function(group, value) group.Icons.UseGroupIcon = value end,
 		},
 		{
 			Texture = true,
@@ -330,8 +341,8 @@ function ui.BuildAppearanceTab(ctx)
 			spec.Control:SetShown(shown)
 
 			if shown then
-				-- Wraps onto the second row once the first is full, so a shape with more switches
-				-- than columns keeps them all readable rather than running off the panel.
+				-- Wraps onto the next row once one is full, so a shape with more switches than
+				-- columns keeps them all readable rather than running off the panel.
 				PlaceInFlow(spec.Control, column)
 				column = column + 1
 			end
@@ -357,8 +368,6 @@ function ui.BuildAppearanceTab(ctx)
 			column = column + 2
 		end
 
-		local wrapped = column > CHECK_COLUMNS
-
 		-- The row holds the bar fill for one shape and the art picker for another, and nothing at
 		-- all for the rest, so it goes away with them rather than holding open a blank strip.
 		textureDropdown:SetShown(bars)
@@ -377,8 +386,13 @@ function ui.BuildAppearanceTab(ctx)
 
 		-- Rows keep their height whatever is in them, so the emptied ones are collapsed rather
 		-- than left holding the tab open around nothing.
-		checkRow2:SetHeight(wrapped and CHECK_ROW_HEIGHT or 1)
-		ctx.SetRowGap(checkRow2, wrapped and CHECK_ROW2_GAP or 0)
+		for index = 2, #checkRows do
+			local reached = column > (index - 1) * CHECK_COLUMNS
+
+			checkRows[index]:SetHeight(reached and CHECK_ROW_HEIGHT or 1)
+			ctx.SetRowGap(checkRows[index], reached and CHECK_ROW2_GAP or 0)
+		end
+
 		ctx.UpdateEditorHeight()
 	end
 

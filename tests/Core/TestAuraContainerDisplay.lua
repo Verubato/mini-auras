@@ -773,6 +773,16 @@ fw.describe("AuraContainerDisplay - CarriesConfig", function()
 		assert(not instance:CarriesConfig(30, 2, { Glow = true }), "a different style is not")
 	end)
 
+	fw.it("answers false for two styles differing only in the icon they cover with", function()
+		local instance = newInstance()
+
+		instance:SetStyle({ IconAsset = 556000 })
+		assert(instance:CarriesConfig(30, 2, { IconAsset = 556000 }), "the same cover is carried")
+		assert(not instance:CarriesConfig(30, 2, { IconAsset = 450930 }),
+			"another owner's cover is not")
+		assert(not instance:CarriesConfig(30, 2, {}), "and neither is no cover at all")
+	end)
+
 	fw.it("a style stored under restriction is not carried until its restyle lands", function()
 		local instance = newInstance()
 
@@ -2068,5 +2078,27 @@ fw.describe("AuraContainerDisplay - where the corner stack count sits", function
 		assert(args[1] == "BOTTOMRIGHT" and args[3] == "BOTTOMRIGHT",
 			"turning it off returns the count to the corner")
 		assert(args[4] == 0 and args[5] == 0, "on the same inset a button is created with")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - the icon cover", function()
+	fw.before_each(acm.reset)
+
+	fw.it("builds no cover texture for a style that never asks for one", function()
+		local instance = newInstance()
+
+		for _, widgets in pairs(instance.ButtonWidgets) do
+			assert(widgets.IconCover == nil, "a style without IconAsset costs no texture")
+		end
+	end)
+
+	fw.it("builds one for a style that does", function()
+		local instance = newInstance()
+
+		instance:SetStyle({ IconAsset = 556000 })
+
+		for _, widgets in pairs(instance.ButtonWidgets) do
+			assert(widgets.IconCover ~= nil, "every button is covered")
+		end
 	end)
 end)

@@ -59,6 +59,8 @@ L:SetDefaultStrings({
 	["Hide the countdown text on this group's icons."] = "Hide the countdown text on this group's icons.",
 	["Centre stacks"] = "Centre stacks",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Show the stack count in the middle of the icon instead of the countdown text.",
+	["Group icon"] = "Group icon",
+	["Draw the group's own icon on every aura instead of each spell's artwork."] = "Draw the group's own icon on every aura instead of each spell's artwork.",
 	["Text colour"] = "Text colour",
 	["Change the colour of the countdown, stack count, and spell name text."] = "Change the colour of the countdown, stack count, and spell name text.",
 	["Colour text"] = "Colour text",

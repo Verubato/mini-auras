@@ -4224,3 +4224,95 @@ fw.describe("PersonalAuras - a teardown between the request and the rebuild", fu
 			.. rebuilds .. ")")
 	end)
 end)
+
+fw.describe("PersonalAuras - the group's icon on every aura", function()
+	-- A file id rather than a path, since that is what the icon browser hands back.
+	local GROUP_ICON = 556000
+
+	---The texture on a button that was painted with the given picture, if there is one.
+	---@param button table
+	---@param asset string|number
+	---@return table?
+	local function PaintedWith(button, asset)
+		for _, texture in ipairs(button._createdTextures) do
+			local args = texture._lastArgs.SetTexture
+
+			if args and args[1] == asset then
+				return texture
+			end
+		end
+
+		return nil
+	end
+
+	---@param overrides table?
+	---@return PersonalAuraGroup
+	local function AddIconGroup(overrides)
+		overrides = overrides or {}
+		overrides.Unit = "player"
+		overrides.Spells = { ICE_BLOCK }
+
+		return AddGroup(overrides)
+	end
+
+	---@return table
+	local function PlayerButton()
+		return ContainerFor("player")._groups.helpful.buttons[1]
+	end
+
+	fw.it("defaults to off and keeps the switch once it is set", function()
+		assert(groups:Normalise({}).Icons.UseGroupIcon == false, "a bare group draws spell art")
+		assert(groups:Normalise({ Icons = { UseGroupIcon = true } }).Icons.UseGroupIcon == true,
+			"a group that asked for the group icon keeps it")
+	end)
+
+	fw.it("covers the spell art with the chosen icon", function()
+		ClearGroups()
+		AddIconGroup({ Icon = GROUP_ICON, Icons = { UseGroupIcon = true } })
+		module:Refresh()
+
+		local button = PlayerButton()
+		local cover = PaintedWith(button, GROUP_ICON)
+
+		assert(cover, "the group's icon is painted onto the button")
+		assert(cover._shown, "and it is showing")
+		assert(button._calls.SetIcon == 1, "the engine keeps its own icon region")
+	end)
+
+	fw.it("borrows the first spell's icon for a group that picked none", function()
+		ClearGroups()
+		AddIconGroup({ Icons = { UseGroupIcon = true } })
+		module:Refresh()
+
+		assert(PaintedWith(PlayerButton(), C_Spell.GetSpellTexture(ICE_BLOCK)),
+			"an empty choice resolves the same way the options grid does")
+	end)
+
+	fw.it("puts the spell art back when the switch goes off", function()
+		ClearGroups()
+
+		local group = AddIconGroup({ Icon = GROUP_ICON, Icons = { UseGroupIcon = true } })
+
+		module:Refresh()
+
+		local button = PlayerButton()
+		local cover = PaintedWith(button, GROUP_ICON)
+
+		group.Icons.UseGroupIcon = false
+		module:Refresh()
+
+		assert(PlayerButton() == button, "the same button is still the live one")
+		assert(cover._shown == false, "so the spell art is showing again")
+	end)
+
+	fw.it("leaves the text shape alone", function()
+		ClearGroups()
+		AddIconGroup({
+			Icon = GROUP_ICON,
+			Icons = { Display = groups.DisplayStyle.TextOnly, UseGroupIcon = true },
+		})
+		module:Refresh()
+
+		assert(PaintedWith(PlayerButton(), GROUP_ICON) == nil, "the text shape draws no icon")
+	end)
+end)

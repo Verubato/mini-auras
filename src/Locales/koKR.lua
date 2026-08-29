@@ -58,6 +58,8 @@ L:RegisterLocale("koKR", function() return {
 	["Hide the countdown text on this group's icons."] = "이 그룹 아이콘의 남은 시간 텍스트를 숨깁니다.",
 	["Centre stacks"] = "중첩 가운데 표시",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "남은 시간 텍스트 대신 아이콘 가운데에 중첩 수를 표시합니다.",
+	["Group icon"] = "그룹 아이콘",
+	["Draw the group's own icon on every aura instead of each spell's artwork."] = "각 주문의 그림 대신 그룹의 아이콘을 모든 오라에 표시합니다.",
 	["Text colour"] = "텍스트 색상",
 	["Change the colour of the countdown, stack count, and spell name text."] = "남은 시간, 중첩 수, 주문 이름 텍스트의 색상을 변경합니다.",
 	["Colour text"] = "텍스트 색상 사용",
