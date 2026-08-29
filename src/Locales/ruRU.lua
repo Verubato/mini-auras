@@ -132,10 +132,15 @@ L:RegisterLocale("ruRU", function() return {
 	["Failed to decode profile string."] = "Не удалось декодировать строку профиля.",
 	["Healer in CC!"] = "Целитель в СС",
 	["Invalid profile string."] = "Неверная строка профиля.",
+	["No more sound failures will be reported this session."] = "Дальнейшие ошибки звука в этой сессии показаны не будут.",
 	["Please paste a profile string to import."] = "Пожалуйста, вставьте строку профиля для импорта.",
 	["Profile imported successfully."] = "Профиль успешно импортирован.",
 	["Profile string is corrupted."] = "Строка профиля повреждена.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Не удалось зарегистрировать звук. Заклинание %s, юнит %s, триггер %s, файл %s, канал %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "Регистрация звуков достигла предела в %d. Звуков групп в очереди: %d.",
+	["Sound removal failed. Handle %s. %s"] = "Не удалось удалить звук. Дескриптор %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Этот профиль был экспортирован более новой версией аддона.",
+	["the game returned no handle"] = "игра не вернула дескриптор",
 
 	-- Profiles tab
 	["Active Profile"] = "Активный профиль",
@@ -319,6 +324,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Отключает CC и BigDebuffs на табличках Blizzard при использовании табличек MiniAuras.",
 	["Show Test Labels"] = "Показывать метки теста",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Подписывает каждый модуль над его тестовыми значками. Отключите, когда названия перекрываются.",
+	["Sound Debug Messages"] = "Отладочные сообщения звука",
+	["Prints a message in chat when a sound fails to register with the game."] = "Выводит сообщение в чат, когда звук не удаётся зарегистрировать в игре.",
 
 	-- General home screen
 

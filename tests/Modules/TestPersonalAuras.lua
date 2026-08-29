@@ -22,6 +22,7 @@ local artTextures = addon.Core.ArtTextures
 local display = addon.Modules.PersonalAuras.Display
 local recorder = addon.Modules.PersonalAuras.Recorder
 local sound = addon.Modules.PersonalAuras.Sound
+local auraSounds = addon.Core.AuraSounds
 local module = addon.Modules.PersonalAurasModule
 local db = env.db
 local options = db.Modules.PersonalAuras
@@ -30,6 +31,10 @@ local options = db.Modules.PersonalAuras
 -- they would otherwise be built against fixture spell names that are not installed yet, and
 -- every "the container for the player" lookup would find one of them instead.
 options.SeededDefaults = true
+
+-- Off, because the tests that make the engine refuse are about what the module does next, not
+-- about the chat message. The block that covers the messages switches it back on for itself.
+db.SoundDebugMessages = false
 
 module:Init()
 
@@ -2982,6 +2987,217 @@ fw.describe("PersonalAuras - reconciling the sound registrations", function()
 		assert(cleared, "the throw does not escape Clear")
 		assert(thrown, "one hand-back really did throw")
 		assert(roomCameBack, "and the room every handle held came back")
+	end)
+end)
+
+fw.describe("PersonalAuras - reporting a sound the engine would not take", function()
+	---Runs body with the messages switched on, and hands back what it printed to chat.
+	---@param body function
+	---@return string[]
+	local function Printed(body)
+		wipe(env.notifications)
+		db.SoundDebugMessages = true
+
+		local ok, err = pcall(body)
+
+		db.SoundDebugMessages = false
+
+		assert(ok, err)
+
+		local said = {}
+
+		for index = 1, #env.notifications do
+			said[index] = env.notifications[index]
+		end
+
+		wipe(env.notifications)
+
+		return said
+	end
+
+	---Makes every registration throw for the length of body.
+	---@param body function
+	local function Throwing(body)
+		local realAdd = _G.C_UnitAuras.AddAuraSound
+
+		_G.C_UnitAuras.AddAuraSound = function()
+			error("blocked")
+		end
+
+		local ok, err = pcall(body)
+
+		_G.C_UnitAuras.AddAuraSound = realAdd
+
+		assert(ok, err)
+	end
+
+	fw.it("names a throwing registration once, however many passes it takes", function()
+		ClearGroups()
+		sound:Clear()
+
+		local requests = { RefusedRequest("gSaid") }
+
+		local said = Printed(function()
+			Throwing(function()
+				sound:Apply(requests)
+				sound:Apply(requests)
+			end)
+		end)
+
+		sound:Clear()
+
+		assert(#said == 2, "one message per spell id, got " .. #said .. ": " .. table.concat(said, " | "))
+		assert(said[1]:find("blocked", 1, true), "the message carries what the engine threw")
+		assert(said[1]:find(tostring(ICE_BLOCK), 1, true), "and the spell it was for")
+		assert(said[1]:find("player", 1, true), "and the unit it was for")
+		assert(said[2]:find(tostring(POLYMORPH), 1, true), "the second names the other spell")
+	end)
+
+	fw.it("tells a refusal apart from a throw", function()
+		ClearGroups()
+		sound:Clear()
+
+		local realAdd = RefuseOne()
+
+		local said = Printed(function()
+			sound:Apply({ RefusedRequest("gRefused") })
+		end)
+
+		_G.C_UnitAuras.AddAuraSound = realAdd
+
+		sound:Clear()
+
+		assert(#said == 1, "only the refused id is reported, got " .. #said)
+		assert(said[1]:find("no handle", 1, true), "and says the engine gave nothing back")
+		assert(not said[1]:find("blocked", 1, true), "with no error text, because there was none")
+	end)
+
+	fw.it("says nothing when the engine takes every id", function()
+		ClearGroups()
+		sound:Clear()
+
+		local said = Printed(function()
+			sound:Apply({
+				{
+					GroupId = "gQuiet",
+					Unit = "player",
+					Trigger = "Applied",
+					File = "Sonar",
+					Channel = "Master",
+					SpellIds = { ICE_BLOCK, POLYMORPH },
+				},
+			})
+		end)
+
+		sound:Clear()
+
+		assert(#said == 0, "unexpected messages: " .. table.concat(said, " | "))
+	end)
+
+	fw.it("stays quiet while the setting is off", function()
+		ClearGroups()
+		sound:Clear()
+		wipe(env.notifications)
+
+		Throwing(function()
+			sound:Apply({ RefusedRequest("gOff") })
+		end)
+
+		local quiet = #env.notifications == 0
+		local heard = table.concat(env.notifications, " | ")
+
+		wipe(env.notifications)
+		sound:Clear()
+
+		assert(quiet, "unexpected messages: " .. heard)
+	end)
+
+	fw.it("says a failure again once it has been cleared", function()
+		ClearGroups()
+		sound:Clear()
+
+		local requests = { RefusedRequest("gAgain") }
+
+		local first = Printed(function()
+			Throwing(function()
+				sound:Apply(requests)
+			end)
+		end)
+
+		sound:Clear()
+
+		local afterClear = Printed(function()
+			Throwing(function()
+				sound:Apply(requests)
+			end)
+		end)
+
+		sound:Clear()
+
+		assert(#first == 2, "both ids were reported the first time, got " .. #first)
+		assert(#afterClear == 2, "and again after the clear, got " .. #afterClear)
+	end)
+
+	fw.it("says a spell again when another module asked for it on another unit", function()
+		ClearGroups()
+		sound:Clear()
+
+		local said = Printed(function()
+			Throwing(function()
+				-- The route the alert and healer CC modules take. The personal aura below is the
+				-- same spell on the player, which is the failure we would be chasing.
+				auraSounds:RemoveSet(
+					auraSounds:RegisterSet(nil, "party1", { [ICE_BLOCK] = true }, "Sonar.ogg", "Master"))
+
+				sound:Apply({
+					{
+						GroupId = "gShared",
+						Unit = "player",
+						Trigger = "Applied",
+						File = "Sonar",
+						Channel = "Master",
+						SpellIds = { ICE_BLOCK },
+					},
+				})
+			end)
+		end)
+
+		sound:Clear()
+
+		assert(#said == 2, "one message per unit, got " .. #said .. ": " .. table.concat(said, " | "))
+		assert(said[1]:find("party1", 1, true), "the first names the unit the set was for")
+		assert(said[2]:find("player", 1, true), "and the second the player's own aura")
+	end)
+
+	fw.it("says the cap was hit as it goes over and not on the passes after", function()
+		ClearGroups()
+		sound:Clear()
+
+		local requests = {
+			{
+				GroupId = "gCap",
+				Unit = "player",
+				Trigger = "Applied",
+				File = "Sonar",
+				Channel = "Master",
+				SpellIds = SpellList(1600, 900100),
+			},
+		}
+
+		local said = Printed(function()
+			sound:Apply(requests)
+			sound:Apply(requests)
+		end)
+
+		local stillTruncated = sound:WasTruncated()
+
+		sound:Clear()
+
+		assert(stillTruncated, "the second pass is still over the cap")
+		assert(#said == 1, "the cap is reported once, got " .. #said .. ": " .. table.concat(said, " | "))
+		-- One hundred, because the key holds 1600 ids and only 1500 of them fit.
+		assert(said[1] == "Sound registration hit its limit of 1500. Group sounds still waiting: 100.",
+			"and it carries the cap and how many ids were left waiting: " .. said[1])
 	end)
 end)
 

@@ -132,10 +132,15 @@ L:RegisterLocale("itIT", function() return {
 	["Failed to decode profile string."] = "Impossibile decodificare la stringa del profilo.",
 	["Healer in CC!"] = "Guaritore sotto controllo!",
 	["Invalid profile string."] = "Stringa del profilo non valida.",
+	["No more sound failures will be reported this session."] = "Non verranno segnalati altri errori audio in questa sessione.",
 	["Please paste a profile string to import."] = "Incolla una stringa del profilo da importare.",
 	["Profile imported successfully."] = "Profilo importato con successo.",
 	["Profile string is corrupted."] = "La stringa del profilo è corrotta.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Registrazione del suono fallita. Incantesimo %s, unità %s, attivatore %s, file %s, canale %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "La registrazione dei suoni ha raggiunto il limite di %d. Suoni di gruppo in attesa: %d.",
+	["Sound removal failed. Handle %s. %s"] = "Rimozione del suono non riuscita. Identificatore %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Questo profilo è stato esportato da una versione più recente dell'addon.",
+	["the game returned no handle"] = "il gioco non ha restituito alcun identificatore",
 
 	-- Profiles tab
 	["Active Profile"] = "Profilo attivo",
@@ -319,6 +324,8 @@ L:RegisterLocale("itIT", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Disabilita CC e BigDebuffs sulle barre dei nomi di Blizzard quando si usano le barre dei nomi di MiniAuras.",
 	["Show Test Labels"] = "Mostra etichette di test",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nomina ogni modulo sopra le sue icone di test. Disattivalo quando i nomi si sovrappongono.",
+	["Sound Debug Messages"] = "Messaggi di debug del suono",
+	["Prints a message in chat when a sound fails to register with the game."] = "Mostra un messaggio in chat quando un suono non viene registrato dal gioco.",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Aggiunte icone CC sui frame di gruppo/incursione degli animali da compagnia (disabilitato per impostazione predefinita).",

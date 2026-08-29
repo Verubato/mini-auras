@@ -132,10 +132,15 @@ L:RegisterLocale("zhCN", function() return {
 	["Failed to decode profile string."] = "无法解码配置字符串。",
 	["Healer in CC!"] = "治疗者被控制！",
 	["Invalid profile string."] = "无效的配置字符串。",
+	["No more sound failures will be reported this session."] = "本次会话不再报告更多声音失败。",
 	["Please paste a profile string to import."] = "请粘贴要导入的配置字符串。",
 	["Profile imported successfully."] = "配置导入成功。",
 	["Profile string is corrupted."] = "配置字符串已损坏。",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "声音注册失败。法术 %s，单位 %s，触发 %s，文件 %s，声道 %s。%s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "声音注册达到上限 %d。等待中的分组声音：%d 项。",
+	["Sound removal failed. Handle %s. %s"] = "移除声音失败。句柄 %s。%s",
 	["This profile was exported by a newer version of the addon."] = "该配置由更新版本的插件导出。",
+	["the game returned no handle"] = "游戏没有返回句柄",
 
 	-- Profiles tab
 	["Active Profile"] = "当前配置",
@@ -319,6 +324,8 @@ L:RegisterLocale("zhCN", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "使用MiniAuras姓名板时，在暴雪姓名板上禁用CC和BigDebuffs。",
 	["Show Test Labels"] = "显示测试标签",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "在每个模块的测试图标上方标注模块名称。名称重叠时可以关闭。",
+	["Sound Debug Messages"] = "声音调试消息",
+	["Prints a message in chat when a sound fails to register with the game."] = "当声音无法在游戏中注册时，在聊天框中显示一条消息。",
 
 	-- General home screen
 

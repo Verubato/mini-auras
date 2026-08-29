@@ -133,10 +133,15 @@ L:RegisterLocale("esMX", function() return {
 	["Failed to decode profile string."] = "No se pudo decodificar la cadena de perfil.",
 	["Healer in CC!"] = "¡Sanador bajo control!",
 	["Invalid profile string."] = "Cadena de perfil inválida.",
+	["No more sound failures will be reported this session."] = "No se informarán más fallas de sonido en esta sesión.",
 	["Please paste a profile string to import."] = "Por favor, pega una cadena de perfil para importar.",
 	["Profile imported successfully."] = "Perfil importado correctamente.",
 	["Profile string is corrupted."] = "La cadena de perfil está corrupta.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Fallo al registrar el sonido. Hechizo %s, unidad %s, disparador %s, archivo %s, canal %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "El registro de sonidos alcanzó su límite de %d. Sonidos de grupo en espera: %d.",
+	["Sound removal failed. Handle %s. %s"] = "No se pudo eliminar el sonido. Identificador %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Este perfil se exportó con una versión más reciente del addon.",
+	["the game returned no handle"] = "el juego no devolvió ningún identificador",
 
 	-- Profiles tab
 	["Active Profile"] = "Perfil activo",
@@ -320,6 +325,8 @@ L:RegisterLocale("esMX", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Desactiva CC y BigDebuffs en las placas de nombre de Blizzard al usar las placas de nombre de MiniAuras.",
 	["Show Test Labels"] = "Mostrar etiquetas de prueba",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nombra cada módulo encima de sus iconos de prueba. Desactívalo cuando los nombres se solapen.",
+	["Sound Debug Messages"] = "Mensajes de depuración de sonido",
+	["Prints a message in chat when a sound fails to register with the game."] = "Muestra un mensaje en el chat cuando un sonido no se puede registrar en el juego.",
 
 	-- General home screen
 

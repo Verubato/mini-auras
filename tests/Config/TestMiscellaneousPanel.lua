@@ -70,3 +70,23 @@ fw.describe("Miscellaneous page - the test mode captions", function()
 		assert(db.ShowTestLabels == false, "and the switch turns them off")
 	end)
 end)
+
+fw.describe("Miscellaneous page - the sound debug messages", function()
+	fw.it("offers a switch that ships on and writes the setting the registrations read", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local switch = SwitchFor(addon, addon.L["Sound Debug Messages"])
+
+		fw.not_nil(switch, "the page offers the debug switch")
+
+		local db = addon.Framework:GetSavedVars()
+
+		assert(db.SoundDebugMessages == true, "the messages ship on")
+
+		switch:GetScript("OnClick")(switch)
+
+		assert(db.SoundDebugMessages == false, "and the switch turns them off")
+	end)
+end)

@@ -132,10 +132,15 @@ L:RegisterLocale("ptBR", function() return {
 	["Failed to decode profile string."] = "Falha ao decodificar a string do perfil.",
 	["Healer in CC!"] = "Curandeiro sob controle!",
 	["Invalid profile string."] = "String de perfil inválida.",
+	["No more sound failures will be reported this session."] = "Nenhuma outra falha de som será relatada nesta sessão.",
 	["Please paste a profile string to import."] = "Por favor, cole uma string de perfil para importar.",
 	["Profile imported successfully."] = "Perfil importado com sucesso.",
 	["Profile string is corrupted."] = "A string do perfil está corrompida.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Falha ao registrar o som. Magia %s, unidade %s, gatilho %s, arquivo %s, canal %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "O registro de sons atingiu o limite de %d. Sons de grupo aguardando: %d.",
+	["Sound removal failed. Handle %s. %s"] = "Falha ao remover o som. Identificador %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Este perfil foi exportado por uma versão mais recente do addon.",
+	["the game returned no handle"] = "o jogo não retornou nenhum identificador",
 
 	-- Profiles tab
 	["Active Profile"] = "Perfil ativo",
@@ -319,6 +324,8 @@ L:RegisterLocale("ptBR", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Desativa CC e BigDebuffs nas placas de nome da Blizzard ao usar as placas de nome do MiniAuras.",
 	["Show Test Labels"] = "Mostrar rótulos de teste",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nomeia cada módulo acima dos seus ícones de teste. Desative quando os nomes se sobrepuserem.",
+	["Sound Debug Messages"] = "Mensagens de depuração de som",
+	["Prints a message in chat when a sound fails to register with the game."] = "Mostra uma mensagem no chat quando um som não consegue ser registrado no jogo.",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Adicionados ícones de CC nos quadros de grupo/raide de mascotes (desativado por padrão).",

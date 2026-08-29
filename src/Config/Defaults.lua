@@ -38,6 +38,9 @@ local dbDefaults = {
 	-- Not a profile payload key. Whether the test captions are wanted is about the screen they
 	-- would crowd, not about the group the profile is for.
 	ShowTestLabels = true,
+	-- Not a profile payload key. A sound the game refuses is a fault to report wherever the
+	-- player is, not a setting the group they are playing with decides.
+	SoundDebugMessages = true,
 	-- Which of Blizzard's own party and raid frame aura rows Frame Auras has switched off, so a
 	-- reload between the switch and the write still hands the row back. False until a side is
 	-- switched on, and false again once it has been handed back. Written by the module.

@@ -133,10 +133,15 @@ L:SetDefaultStrings({
 	["Failed to decode profile string."] = "Failed to decode profile string.",
 	["Healer in CC!"] = "Healer in CC!",
 	["Invalid profile string."] = "Invalid profile string.",
+	["No more sound failures will be reported this session."] = "No more sound failures will be reported this session.",
 	["Please paste a profile string to import."] = "Please paste a profile string to import.",
 	["Profile imported successfully."] = "Profile imported successfully.",
 	["Profile string is corrupted."] = "Profile string is corrupted.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "Sound registration hit its limit of %d. Group sounds still waiting: %d.",
+	["Sound removal failed. Handle %s. %s"] = "Sound removal failed. Handle %s. %s",
 	["This profile was exported by a newer version of the addon."] = "This profile was exported by a newer version of the addon.",
+	["the game returned no handle"] = "the game returned no handle",
 
 	-- Profiles tab
 	["Active Profile"] = "Active Profile",
@@ -320,6 +325,8 @@ L:SetDefaultStrings({
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates.",
 	["Show Test Labels"] = "Show Test Labels",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Names each module above its test icons. Turn it off when the names overlap each other.",
+	["Sound Debug Messages"] = "Sound Debug Messages",
+	["Prints a message in chat when a sound fails to register with the game."] = "Prints a message in chat when a sound fails to register with the game.",
 
 	-- General home screen
 

@@ -132,10 +132,15 @@ L:RegisterLocale("koKR", function() return {
 	["Failed to decode profile string."] = "프로필 문자열을 디코딩하지 못했습니다.",
 	["Healer in CC!"] = "치유사가 군중 제어당함!",
 	["Invalid profile string."] = "유효하지 않은 프로필 문자열입니다.",
+	["No more sound failures will be reported this session."] = "이번 세션에서는 더 이상 소리 오류를 보고하지 않습니다.",
 	["Please paste a profile string to import."] = "가져올 프로필 문자열을 붙여넣으세요.",
 	["Profile imported successfully."] = "프로필을 성공적으로 가져왔습니다.",
 	["Profile string is corrupted."] = "프로필 문자열이 손상되었습니다.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "소리 등록에 실패했습니다. 주문 %s, 대상 %s, 시점 %s, 파일 %s, 채널 %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "소리 등록이 제한 %d에 도달했습니다. 대기 중인 그룹 소리: %d개.",
+	["Sound removal failed. Handle %s. %s"] = "사운드 제거에 실패했습니다. 핸들 %s. %s",
 	["This profile was exported by a newer version of the addon."] = "이 프로필은 더 새로운 버전의 애드온에서 내보냈습니다.",
+	["the game returned no handle"] = "게임이 핸들을 반환하지 않았습니다",
 
 	-- Profiles tab
 	["Active Profile"] = "현재 프로필",
@@ -319,6 +324,8 @@ L:RegisterLocale("koKR", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "MiniAuras 이름표 사용 시 블리자드 이름표의 CC와 BigDebuffs를 비활성화합니다.",
 	["Show Test Labels"] = "테스트 라벨 표시",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "테스트 아이콘 위에 각 모듈의 이름을 표시합니다. 이름이 겹치면 끄십시오.",
+	["Sound Debug Messages"] = "소리 디버그 메시지",
+	["Prints a message in chat when a sound fails to register with the game."] = "소리를 게임에 등록하지 못하면 대화창에 메시지를 표시합니다.",
 
 	-- General home screen
 

@@ -132,10 +132,15 @@ L:RegisterLocale("frFR", function() return {
 	["Failed to decode profile string."] = "Impossible de décoder la chaîne de profil.",
 	["Healer in CC!"] = "Heal sous CC !",
 	["Invalid profile string."] = "Chaîne de profil invalide.",
+	["No more sound failures will be reported this session."] = "Aucun autre échec de son ne sera signalé pendant cette session.",
 	["Please paste a profile string to import."] = "Collez une chaîne de profil à importer.",
 	["Profile imported successfully."] = "Profil importé avec succès.",
 	["Profile string is corrupted."] = "La chaîne de profil est corrompue.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Échec de l'enregistrement du son. Sort %s, unité %s, déclencheur %s, fichier %s, canal %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "L'enregistrement des sons a atteint sa limite de %d. Sons de groupe en attente : %d.",
+	["Sound removal failed. Handle %s. %s"] = "Échec de la suppression du son. Identifiant %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Ce profil a été exporté par une version plus récente de l'addon.",
+	["the game returned no handle"] = "le jeu n'a renvoyé aucun identifiant",
 
 	-- Profiles tab
 	["Active Profile"] = "Profil actif",
@@ -319,6 +324,8 @@ L:RegisterLocale("frFR", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Désactive les CC et BigDebuffs sur les nameplates Blizzard si vous utilisez celles de MiniAuras.",
 	["Show Test Labels"] = "Afficher les libellés de test",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nomme chaque module au-dessus de ses icônes de test. Désactivez-le quand les noms se chevauchent.",
+	["Sound Debug Messages"] = "Messages de débogage du son",
+	["Prints a message in chat when a sound fails to register with the game."] = "Affiche un message dans le chat quand un son ne peut pas être enregistré par le jeu.",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Ajout des icônes de CC sur les cadres de familiers (désactivé par défaut).",

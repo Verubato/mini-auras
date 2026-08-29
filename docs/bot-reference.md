@@ -1156,8 +1156,8 @@ Position: centred, 200 px below screen centre; draggable in test mode.
 
 ## Miscellaneous (Misc tab, global settings)
 
-These apply addon-wide. All except Language override, Milliseconds Threshold and Show Test Labels
-are part of the profile.
+These apply addon-wide. All except Language override, Milliseconds Threshold, Show Test Labels,
+and Sound Debug Messages are part of the profile.
 
 | Setting | Values / range | Default |
 |---|---|---|
@@ -1166,6 +1166,7 @@ are part of the profile.
 | Disable Swipe | on/off | off |
 | Disable Numbers | on/off (since 5.23.0) | off (drops the countdown text on every aura icon; the swipe stays) |
 | Show Test Labels | on/off (since 5.24.0) | on (names each module above its test icons; turn it off when the names crowd each other) |
+| Sound Debug Messages | on/off (since 5.30.0) | on (prints a chat message when a sound fails to register with the game) |
 | Zoom Icons | on/off | on (crops the baked silver border off icon art; changing it prompts a UI reload) |
 | Fade With Parent | on/off | on (icons fade with the unit frame they are attached to, for example out-of-range dimming) |
 | Colour Countdown | on/off | off |
@@ -1196,7 +1197,7 @@ Sidebar: Other > Profiles.
 - A profile contains: all module settings plus the Misc options Glow Type, Font,
   Configure Blizzard Nameplates, Disable Swipe, Disable Numbers, Zoom Icons, Colour Countdown,
   Countdown Colours and Fade With Parent. Not in the profile: Language override, Milliseconds
-  Threshold, Show Test Labels and the Auto-Switch rules.
+  Threshold, Show Test Labels, Sound Debug Messages, and the Auto-Switch rules.
 - **Import/Export**: export produces a string starting with `!MiniAuras:1!` (deflated CBOR,
   Base64). Import needs a profile name and creates a new profile, then switches to it. Old
   MiniCC strings (`!MiniCC:2!` and the older `!MiniCC!`) also import.

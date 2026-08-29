@@ -132,10 +132,15 @@ L:RegisterLocale("deDE", function() return {
 	["Failed to decode profile string."] = "Profilzeichenkette konnte nicht dekodiert werden.",
 	["Healer in CC!"] = "Heiler unter Kontrolle!",
 	["Invalid profile string."] = "Ungültige Profilzeichenkette.",
+	["No more sound failures will be reported this session."] = "Es werden in dieser Sitzung keine weiteren Sound-Fehler mehr gemeldet.",
 	["Please paste a profile string to import."] = "Bitte eine Profilzeichenkette zum Importieren einfügen.",
 	["Profile imported successfully."] = "Profil erfolgreich importiert.",
 	["Profile string is corrupted."] = "Profilzeichenkette ist beschädigt.",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Sound-Registrierung fehlgeschlagen. Zauber %s, Einheit %s, Auslöser %s, Datei %s, Kanal %s. %s",
+	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "Sound-Registrierung hat ihr Limit von %d erreicht. Wartende Gruppen-Sounds: %d.",
+	["Sound removal failed. Handle %s. %s"] = "Entfernen des Sounds fehlgeschlagen. Handle %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Dieses Profil wurde mit einer neueren Version des Addons exportiert.",
+	["the game returned no handle"] = "das Spiel hat keinen Handle zurückgegeben",
 
 	-- Profiles tab
 	["Active Profile"] = "Aktives Profil",
@@ -319,6 +324,8 @@ L:RegisterLocale("deDE", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Deaktiviert CC und BigDebuffs auf Blizzard-Namenschildern bei Verwendung von MiniAuras-Namenschildern.",
 	["Show Test Labels"] = "Testbeschriftungen anzeigen",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nennt jedes Modul über seinen Testsymbolen. Schalte es aus, wenn sich die Namen überlappen.",
+	["Sound Debug Messages"] = "Sound-Debugmeldungen",
+	["Prints a message in chat when a sound fails to register with the game."] = "Gibt eine Meldung im Chat aus, wenn ein Sound nicht beim Spiel registriert werden kann.",
 
 	-- General home screen
 
