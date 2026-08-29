@@ -825,10 +825,13 @@ Master).
 pack** dropdown, a **Channel** dropdown (Master/SFX/Music/Ambience/Dialog), and three
 per-category announce toggles, **Important**, **Defensive** and **Enemy Debuffs** (all off by
 default; Enemy Debuffs covers big enemy cooldowns that land on you or your party rather than
-on the caster). Ten spells ship in that category: Deathmark, Kingsbane, Feral Frenzy,
-Bloodshed, Dark Simulacrum, Duel, Sharpen Blade, Havoc, Colossus Smash since 5.18.0, and
-Scorpid Venom, the first venom of the hunter's Chimaeral Sting. The English packs shorten
-two of them, announcing Colossus Smash as just "Smash" and Scorpid Venom as just "Sting". Five packs ship: David, Elise, Emma, Grampa Werthers, Theo Silk. Default pack: David.
+on the caster). Eleven spells ship in that category: Deathmark, Kingsbane, Feral Frenzy,
+Bloodshed, Dark Simulacrum, Duel, Sharpen Blade, Havoc, Colossus Smash since 5.18.0,
+Scorpid Venom, the first venom of the hunter's Chimaeral Sting, and Goremaw's Bite. The
+English packs shorten five of them, announcing Colossus Smash as just "Smash", Dark
+Simulacrum as just "Simulacrum", Sharpen Blade as just "Sharpen", Scorpid Venom as just
+"Sting", and Goremaw's Bite as just "Goremaw". Duel is respelled "Dual", which changes
+only how the voices pronounce it. Five packs ship: David, Elise, Emma, Grampa Werthers, Theo Silk. Default pack: David.
 Other addons can register packs via the API, and the localized voices are separate addons that
 do exactly that: "MiniAuras - Chinese Voice Pack" (folder MiniAurasVoicePackChinese; Amy,
 Anna Su, Jason Chen, on zhCN/zhTW), "MiniAuras - Korean Voice Pack" (folder

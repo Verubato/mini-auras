@@ -9,6 +9,7 @@
 - Crowd control now keeps its font scale per instance tab, alongside its other per-tab settings.
 - Fixed the preview bars of a personal aura group keeping their old text size when the font scale was dragged.
 - Added a Custom icon switch to the personal aura groups, drawing the group's own icon on every aura in place of each spell's artwork.
+- Added Goremaw's Bite to the enemy debuff announcements, spoken as just "Goremaw".
 
 ## 5.29.0
 

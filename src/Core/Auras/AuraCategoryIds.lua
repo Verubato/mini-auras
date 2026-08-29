@@ -1154,6 +1154,7 @@ addon.Core.AuraCategoryIds = {
 		[198819] = true, -- Sharpen Blade
 		[80240] = true, -- Havoc
 		[356723] = true, -- Scorpid Venom
+		[426593] = true, -- Goremaw's Bite
 	},
 
 	-- Announced only when the player asks for them. These land often enough that a spoken name

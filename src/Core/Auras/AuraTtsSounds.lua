@@ -155,6 +155,7 @@ addon.Core.AuraTtsSounds = {
 		[360194] = "Deathmark.ogg", -- Deathmark
 		[236273] = "Duel.ogg", -- Duel
 		[274837] = "FeralFrenzy.ogg", -- Feral Frenzy
+		[426593] = "GoremawsBite.ogg", -- Goremaw's Bite
 		[80240] = "Havoc.ogg", -- Havoc
 		[385627] = "Kingsbane.ogg", -- Kingsbane
 		[356723] = "ScorpidVenom.ogg", -- Scorpid Venom

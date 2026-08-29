@@ -83,6 +83,7 @@ SHORT_NAMES = {
     "Enraged Regeneration": "Wall",
     "Feint": "Faint",
     "Fortifying Brew": "Wall",
+    "Goremaw's Bite": "Goremaw",
     "Greater Invisibility": "Invisibility",
     "Grounding Totem": "Grounding",
     "Guardian of the Forgotten Queen": "Forgotten Queen",
