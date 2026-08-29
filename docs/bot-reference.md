@@ -348,6 +348,8 @@ the old Precognition module's settings is frozen at what that release shipped.
   - **Friendly Target** / **Enemy Target** - your target; only shows while the target is on
     that side. Screen-anchored.
   - **Friendly Nameplates** / **Enemy Nameplates** - one copy on every matching nameplate.
+    These copies follow the plate's scale while the Nameplates option Scale with Nameplate is
+    on. Every other unit choice always draws at absolute pixel size.
   - (Groups saved with the older units target/focus/targettarget/nameplate are migrated to the
     matching target or nameplate choice; focus no longer exists as a choice.)
 - **Display**: **Icons**, **Bars**, **Texture**, **Text only** or **Sound only**. First on the row,
@@ -868,7 +870,7 @@ Enable in (defaults): all five on (World, Arena, Battlegrounds, Dungeons, Raid).
 |---|---|---|
 | Ignore Enemy Pets | on | no auras on enemy pet nameplates |
 | Ignore Friendly Pets | on | no auras on friendly pet nameplates |
-| Scale with Nameplate | on | icons follow the plate's scale; keep on if the target plate is a different size (for example via BBP) |
+| Scale with Nameplate | on | icons follow the plate's scale, including personal aura groups anchored to a nameplate; keep on if the target plate is a different size (for example via BBP) |
 | Anchor to Health Bar | off | anchor icons to the plate's health bar instead of the plate frame; turn on if another addon (for example BetterBlizzPlates) changes plate width or height |
 | Important colour | red (1, 0.2, 0.2) | tint for important icons on every bar whose Icon colours is Dispel colours or Custom |
 | Defensive colour | green (0.2, 1, 0.2) | the same for defensive icons |

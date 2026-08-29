@@ -251,6 +251,7 @@ local function ParkDisplay(entry)
 	-- Cleared, or the next group to take this entry would skip applying its own geometry.
 	entry.StyleGeneration = nil
 	entry.FilterGeneration = nil
+	entry.NameplateIgnoreScale = nil
 	entry.Unit = nil
 
 	if entry.Test then
@@ -547,6 +548,15 @@ local function PreviewSize(group)
 	return size, size
 end
 
+---The stand-ins are dragged into place against where the live copy will land, so they have to take
+---the plate's scale wherever the live copy does.
+---@param entry PersonalAuraDisplayEntry
+---@param parent table
+local function ParentTestContainer(entry, parent)
+	entry.Test.Frame:SetParent(parent)
+	entry.Test.Frame:SetIgnoreParentScale(entry.NameplateIgnoreScale ~= false)
+end
+
 ---The stand-in container for one copy, matching the shape the live display draws. Built on first
 ---use and kept, since an entry only ever comes from the pool of its own shape, so the container it
 ---grew is always the right one for whoever holds it next.
@@ -562,7 +572,7 @@ local function EnsureTestContainer(state, entry, parent)
 			entry.Test = textureSlotContainer:New(parent, width, height, MODULE_TAG)
 		end
 
-		entry.Test.Frame:SetParent(parent)
+		ParentTestContainer(entry, parent)
 		entry.Test:SetTextureSize(width, height)
 
 		return entry.Test
@@ -575,7 +585,7 @@ local function EnsureTestContainer(state, entry, parent)
 		end
 
 		-- Entries come from a shared pool, so the parent is routinely somebody else's.
-		entry.Test.Frame:SetParent(parent)
+		ParentTestContainer(entry, parent)
 		entry.Test:SetBarSize(width, height)
 		entry.Test:SetSpacing(group.Icons.Spacing)
 		entry.Test:SetGrow(group.Grow)
@@ -598,7 +608,7 @@ local function EnsureTestContainer(state, entry, parent)
 		)
 	end
 
-	entry.Test.Frame:SetParent(parent)
+	ParentTestContainer(entry, parent)
 	entry.Test:SetIconSize(height)
 	entry.Test:SetSpacing(group.Icons.Spacing)
 	-- The live display reads the grow direction off the group, so the stand-ins have to as well
@@ -811,8 +821,8 @@ local function OnOffsetDragStart(handle)
 	dragContext.StartY = y
 	dragContext.StartOffsetX = handle.Group.Offset.X
 	dragContext.StartOffsetY = handle.Group.Offset.Y
-	-- The offset lands on the display, which ignores its parent's scale, so the cursor delta
-	-- converts through that frame's scale and not the host frame's or UIParent's.
+	-- The offset lands on the display, so the cursor delta converts through that frame's own
+	-- scale, which on a nameplate follows the plate.
 	dragContext.Scale = handle.DisplayFrame:GetEffectiveScale()
 
 	handle:SetScript("OnUpdate", OnOffsetDragUpdate)
@@ -1019,6 +1029,38 @@ local function EnsureState(groupDef)
 	return state
 end
 
+---Whether a nameplate copy should scale with its plate. The saved table holds the option even
+---while the Nameplates module has never inited, which its own cached copy does not.
+---@return boolean
+local function ScaleWithNameplateEnabled()
+	local nameplateOptions = db.Modules.Nameplates
+
+	if nameplateOptions and nameplateOptions.ScaleWithNameplate ~= nil then
+		return nameplateOptions.ScaleWithNameplate
+	end
+
+	return true
+end
+
+---Every parenting site must call this, since a pooled copy carries its last choice into whatever
+---group takes it next.
+---@param entry PersonalAuraDisplayEntry
+---@param isNameplate boolean? Whether the new parent is a nameplate, so the option applies.
+local function ApplyParentScale(entry, isNameplate)
+	local ignoreScale = not (isNameplate and ScaleWithNameplateEnabled())
+
+	if entry.NameplateIgnoreScale ~= ignoreScale then
+		entry.NameplateIgnoreScale = ignoreScale
+		entry.Display.Frame:SetIgnoreParentScale(ignoreScale)
+	end
+
+	-- Set every time rather than on the change, since the stand-ins are grown before this runs
+	-- and would otherwise keep whatever the entry was carrying when they appeared.
+	if entry.Test then
+		entry.Test.Frame:SetIgnoreParentScale(ignoreScale)
+	end
+end
+
 ---@param state PersonalAuraGroupState
 local function RefreshScreenGroup(state)
 	local group = state.Group
@@ -1035,6 +1077,7 @@ local function RefreshScreenGroup(state)
 	local strata = ResolveStrata(group, UIParent)
 	local frame = entry.Display.Frame
 	frame:SetParent(UIParent)
+	ApplyParentScale(entry)
 	frame:SetFrameStrata(strata)
 	frame:ClearAllPoints()
 	frame:SetPoint(point, anchor, point, 0, 0)
@@ -1056,7 +1099,8 @@ end
 ---@param state PersonalAuraGroupState
 ---@param entry PersonalAuraDisplayEntry
 ---@param host table The nameplate, unit frame or arena frame the copy hangs off.
-local function AnchorEntry(state, entry, host)
+---@param isNameplate boolean? Whether host is the nameplate itself, so ScaleWithNameplate applies.
+local function AnchorEntry(state, entry, host, isNameplate)
 	local group = state.Group
 	local point = growAnchors:GetPinPoint(group.Grow)
 	local level = host:GetFrameLevel() + 10
@@ -1064,6 +1108,7 @@ local function AnchorEntry(state, entry, host)
 	local frame = entry.Display.Frame
 
 	frame:SetParent(host)
+	ApplyParentScale(entry, isNameplate)
 	frame:SetFrameStrata(strata)
 	frame:SetFrameLevel(level)
 	frame:ClearAllPoints()
@@ -1150,7 +1195,7 @@ local function RefreshPlateGroup(state, token)
 	end
 
 	ConfigureDisplay(state, entry, token)
-	AnchorEntry(state, entry, plate)
+	AnchorEntry(state, entry, plate, true)
 	ApplyPreview(state, entry, plate)
 end
 
@@ -1506,7 +1551,7 @@ function M:AnchorGroup(groupId)
 		local plate = C_NamePlate.GetNamePlateForUnit(token)
 
 		if plate then
-			AnchorEntry(state, entry, plate)
+			AnchorEntry(state, entry, plate, true)
 		end
 	end
 
@@ -1817,6 +1862,7 @@ end
 ---@field Unit string? The unit a unit frame or arena frame copy resolved to, for the sounds.
 ---@field StyleGeneration number?
 ---@field FilterGeneration number?
+---@field NameplateIgnoreScale boolean? The SetIgnoreParentScale state last applied to the frame.
 
 ---@class PersonalAuraGroupState
 ---@field Group PersonalAuraGroup

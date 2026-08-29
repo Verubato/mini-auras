@@ -315,6 +315,8 @@ local function BuildSettingsTab(parent, options)
 		SetValue = function(value)
 			options.ScaleWithNameplate = value
 			config:Apply(moduleName.Nameplates)
+			-- Nameplate-anchored personal auras read the same option.
+			config:Apply(moduleName.PersonalAuras)
 		end,
 	})
 	scaleWithNameplateChk:SetPoint("TOPLEFT", enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)

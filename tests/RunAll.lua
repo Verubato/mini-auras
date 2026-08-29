@@ -75,6 +75,7 @@ local testFiles = {
     "tests/Config/TestFrameAurasPanel.lua",
     "tests/Config/TestImportantAurasPanel.lua",
     "tests/Config/TestMiscellaneousPanel.lua",
+    "tests/Config/TestNameplatesPanel.lua",
     "tests/Config/TestPanelRefresh.lua",
 
     -- Whole addon, loaded from the TOC into the shared mocked client. Last, because the shared

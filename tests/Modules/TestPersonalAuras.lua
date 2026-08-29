@@ -1248,6 +1248,132 @@ fw.describe("PersonalAuras - nameplate anchored displays", function()
 		assert(entry.Display.Size == 55, "and the new size landed")
 		assert(entry.Display.Frame:GetParent() == plate, "the copy is back on its plate after")
 	end)
+
+	fw.it("scales a plate copy with its nameplate, and never a unit frame copy", function()
+		ClearGroups()
+		local plateGroup = AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+		local frameGroup = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+		local nmOptions = db.Modules.Nameplates
+		local original = nmOptions.ScaleWithNameplate
+
+		nmOptions.ScaleWithNameplate = true
+		env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		local frame = env.addUnitFrame("party1")
+		module:Refresh()
+
+		local plateEntry = display:GetStates()[plateGroup.Id].Plates.nameplate1
+		local frameEntry = display:GetStates()[frameGroup.Id].Frames[frame]
+
+		assert(not plateEntry.Display.Frame:IsIgnoringParentScale(),
+			"the plate copy follows its plate's scale")
+		assert(frameEntry.Display.Frame:IsIgnoringParentScale(),
+			"a copy anchored to anything but a nameplate is never affected by the option")
+
+		nmOptions.ScaleWithNameplate = original
+		env.plates.nameplate1 = nil
+		env.enemies.nameplate1 = nil
+
+		for index = #env.unitFrames, 1, -1 do
+			env.unitFrames[index] = nil
+		end
+
+		module:Refresh()
+	end)
+
+	fw.it("drops a plate copy back to pixel size when the option is turned off", function()
+		ClearGroups()
+		local group = AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+		local nmOptions = db.Modules.Nameplates
+		local original = nmOptions.ScaleWithNameplate
+
+		nmOptions.ScaleWithNameplate = true
+		env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+
+		local entry = display:GetStates()[group.Id].Plates.nameplate1
+
+		assert(not entry.Display.Frame:IsIgnoringParentScale(), "scaling engages first")
+
+		nmOptions.ScaleWithNameplate = false
+		module:Refresh()
+
+		assert(entry.Display.Frame:IsIgnoringParentScale(),
+			"and turning the option back off returns the copy to pixel size")
+
+		nmOptions.ScaleWithNameplate = true
+		module:Refresh()
+
+		assert(not entry.Display.Frame:IsIgnoringParentScale(),
+			"and back on again, since the cached state must not strand a live copy")
+
+		nmOptions.ScaleWithNameplate = original
+		env.plates.nameplate1 = nil
+		env.enemies.nameplate1 = nil
+	end)
+
+	fw.it("takes the scaling off a pooled copy a screen group reuses", function()
+		ClearGroups()
+		local plateGroup = AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+		local nmOptions = db.Modules.Nameplates
+		local original = nmOptions.ScaleWithNameplate
+
+		nmOptions.ScaleWithNameplate = true
+		env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+
+		local scaledFrame = display:GetStates()[plateGroup.Id].Plates.nameplate1.Display.Frame
+
+		assert(not scaledFrame:IsIgnoringParentScale(), "the plate copy is scaled to begin with")
+
+		ClearGroups()
+		env.plates.nameplate1 = nil
+		env.enemies.nameplate1 = nil
+
+		local screenGroup = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		local screenEntry = display:GetStates()[screenGroup.Id].Screen
+
+		assert(screenEntry.Display.Frame == scaledFrame, "the pool handed the same copy back")
+		assert(scaledFrame:IsIgnoringParentScale(),
+			"and it is back at pixel size now it hangs off the screen rather than a plate")
+
+		nmOptions.ScaleWithNameplate = original
+	end)
+
+	fw.it("scales the preview stand-ins with the plate too, or a drag lands them wrong", function()
+		ClearGroups()
+		local group = AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+		local nmOptions = db.Modules.Nameplates
+		local original = nmOptions.ScaleWithNameplate
+
+		nmOptions.ScaleWithNameplate = true
+		env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		display:SetPreviewGroup(group.Id)
+		module:Refresh()
+
+		local entry = display:GetStates()[group.Id].Plates.nameplate1
+
+		assert(entry.Test, "the group is previewing, so it grew stand-ins")
+		assert(not entry.Test.Frame:IsIgnoringParentScale(),
+			"the stand-ins take the plate's scale, as the live copy does")
+
+		nmOptions.ScaleWithNameplate = false
+		module:Refresh()
+
+		assert(entry.Test.Frame:IsIgnoringParentScale(),
+			"and drop back to pixel size with it")
+
+		display:SetPreviewGroup(nil)
+		nmOptions.ScaleWithNameplate = original
+		env.plates.nameplate1 = nil
+		env.enemies.nameplate1 = nil
+	end)
 end)
 
 fw.describe("PersonalAuras - the layer a group draws in", function()

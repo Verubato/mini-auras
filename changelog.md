@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Scale with Nameplate now also scales personal aura groups anchored to a nameplate.
+
 ## 5.29.0
 
 - Added a text size slider and a centre stacks switch to frame auras.

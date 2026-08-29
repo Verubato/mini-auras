@@ -346,7 +346,12 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:GetFrameStrata()
 		return frame._strata or "MEDIUM"
 	end
-	function frame:SetIgnoreParentScale() end
+	function frame:SetIgnoreParentScale(value)
+		frame._ignoreParentScale = value
+	end
+	function frame:IsIgnoringParentScale()
+		return frame._ignoreParentScale == true
+	end
 	function frame:SetIgnoreParentAlpha() end
 	function frame:SetFlattensRenderLayers(value)
 		frame._flattens = value
