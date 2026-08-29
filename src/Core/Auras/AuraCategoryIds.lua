@@ -1105,6 +1105,7 @@ addon.Core.AuraCategoryIds = {
 		[61336] = true, -- Survival Instincts
 		[79206] = true, -- Spiritwalker's Grace
 		[81256] = true, -- Dancing Rune Weapon
+		[86659] = true, -- Guardian of Ancient Kings
 		[97463] = true, -- Rallying Cry
 		[108416] = true, -- Dark Pact
 		[110960] = true, -- Greater Invisibility
@@ -1264,6 +1265,7 @@ addon.Core.AuraCategoryIds = {
 		[125174] = "MONK", -- Touch of Karma
 		[1249625] = "MONK", -- Zenith
 		-- Paladin
+		[86659] = "PALADIN", -- Guardian of Ancient Kings
 		[228050] = "PALADIN", -- Guardian of the Forgotten Queen
 		[31821] = "PALADIN", -- Aura Mastery
 		[210256] = "PALADIN", -- Blessing of Sanctuary

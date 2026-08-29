@@ -663,6 +663,14 @@ fw.describe("AuraCategoryIds", function()
 		assert(data.EnemyDebuff[356723], "Scorpid Venom in EnemyDebuff")
 	end)
 
+	fw.it("tracks the Paladin guardians with no user action", function()
+		for _, id in ipairs({ 86659, 228050 }) do
+			assert(data.UnflaggedDefensive[id], "guardian missing from UnflaggedDefensive: " .. id)
+			assert(data.Classes[id] == "PALADIN", "guardian not filed under Paladin: " .. id)
+			assert(not data.DefaultOff[id], "guardian ships switched off: " .. id)
+		end
+	end)
+
 	fw.it("gives every enemy debuff a clip", function()
 		-- A spell the generator never rendered gets no config row and never announces.
 		local sounds = loadModule("src/Core/Auras/AuraTtsSounds.lua", newAddon({})).Core.AuraTtsSounds
