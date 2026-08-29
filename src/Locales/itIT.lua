@@ -324,8 +324,8 @@ L:RegisterLocale("itIT", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Disabilita CC e BigDebuffs sulle barre dei nomi di Blizzard quando si usano le barre dei nomi di MiniAuras.",
 	["Show Test Labels"] = "Mostra etichette di test",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nomina ogni modulo sopra le sue icone di test. Disattivalo quando i nomi si sovrappongono.",
-	["Sound Debug Messages"] = "Messaggi di debug del suono",
-	["Prints a message in chat when a sound fails to register with the game."] = "Mostra un messaggio in chat quando un suono non viene registrato dal gioco.",
+	["Debug Mode"] = "Modalità debug",
+	["Prints extra messages in chat to help track down problems."] = "Mostra messaggi aggiuntivi in chat per aiutare a individuare i problemi.",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Aggiunte icone CC sui frame di gruppo/incursione degli animali da compagnia (disabilitato per impostazione predefinita).",

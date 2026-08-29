@@ -324,8 +324,8 @@ L:RegisterLocale("koKR", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "MiniAuras 이름표 사용 시 블리자드 이름표의 CC와 BigDebuffs를 비활성화합니다.",
 	["Show Test Labels"] = "테스트 라벨 표시",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "테스트 아이콘 위에 각 모듈의 이름을 표시합니다. 이름이 겹치면 끄십시오.",
-	["Sound Debug Messages"] = "소리 디버그 메시지",
-	["Prints a message in chat when a sound fails to register with the game."] = "소리를 게임에 등록하지 못하면 대화창에 메시지를 표시합니다.",
+	["Debug Mode"] = "디버그 모드",
+	["Prints extra messages in chat to help track down problems."] = "문제를 추적하는 데 도움이 되도록 대화창에 추가 메시지를 표시합니다.",
 
 	-- General home screen
 

@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
+local debugOptions = addon.Core.DebugOptions
 
 -- Shared plumbing for engine-side aura sounds (C_UnitAuras.AddAuraSound): on 12.1 the addon cannot
 -- see auras appear, but the engine can play a sound when a spell it knows lands on a unit it knows.
@@ -62,14 +63,6 @@ local function ReportOnce(throttleKey, message, ...)
 	end
 end
 
----Whether a failed engine call is worth a line in chat.
----@return boolean
-function M:DebugEnabled()
-	local db = mini:GetSavedVars()
-
-	return db.SoundDebugMessages ~= false
-end
-
 ---Clears the record of what has failed, for every module, so failures are said again.
 function M:ResetDebugLog()
 	wipe(reportedFailures)
@@ -89,7 +82,7 @@ function M:Add(trigger, info)
 	end
 
 	-- Checked here as well, because the key below builds a fresh string on every failure.
-	if not self:DebugEnabled() or ReportingSpent() then
+	if not debugOptions:Enabled() or ReportingSpent() then
 		return nil
 	end
 
@@ -116,7 +109,7 @@ end
 function M:Remove(handle)
 	local ok, err = pcall(C_UnitAuras.RemoveAuraSound, handle)
 
-	if ok or not self:DebugEnabled() or ReportingSpent() then
+	if ok or not debugOptions:Enabled() or ReportingSpent() then
 		return
 	end
 

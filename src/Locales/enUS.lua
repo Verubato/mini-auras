@@ -325,8 +325,8 @@ L:SetDefaultStrings({
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates.",
 	["Show Test Labels"] = "Show Test Labels",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Names each module above its test icons. Turn it off when the names overlap each other.",
-	["Sound Debug Messages"] = "Sound Debug Messages",
-	["Prints a message in chat when a sound fails to register with the game."] = "Prints a message in chat when a sound fails to register with the game.",
+	["Debug Mode"] = "Debug Mode",
+	["Prints extra messages in chat to help track down problems."] = "Prints extra messages in chat to help track down problems.",
 
 	-- General home screen
 

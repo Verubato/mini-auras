@@ -34,7 +34,7 @@ options.SeededDefaults = true
 
 -- Off, because the tests that make the engine refuse are about what the module does next, not
 -- about the chat message. The block that covers the messages switches it back on for itself.
-db.SoundDebugMessages = false
+db.DebugMode = false
 
 module:Init()
 
@@ -2996,11 +2996,11 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 	---@return string[]
 	local function Printed(body)
 		wipe(env.notifications)
-		db.SoundDebugMessages = true
+		db.DebugMode = true
 
 		local ok, err = pcall(body)
 
-		db.SoundDebugMessages = false
+		db.DebugMode = false
 
 		assert(ok, err)
 

@@ -324,8 +324,8 @@ L:RegisterLocale("deDE", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Deaktiviert CC und BigDebuffs auf Blizzard-Namenschildern bei Verwendung von MiniAuras-Namenschildern.",
 	["Show Test Labels"] = "Testbeschriftungen anzeigen",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "Nennt jedes Modul über seinen Testsymbolen. Schalte es aus, wenn sich die Namen überlappen.",
-	["Sound Debug Messages"] = "Sound-Debugmeldungen",
-	["Prints a message in chat when a sound fails to register with the game."] = "Gibt eine Meldung im Chat aus, wenn ein Sound nicht beim Spiel registriert werden kann.",
+	["Debug Mode"] = "Debug-Modus",
+	["Prints extra messages in chat to help track down problems."] = "Gibt zusätzliche Meldungen im Chat aus, um bei der Fehlersuche zu helfen.",
 
 	-- General home screen
 

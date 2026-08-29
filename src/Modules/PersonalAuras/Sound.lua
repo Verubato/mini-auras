@@ -4,6 +4,7 @@ local mini = addon.Framework
 local L = addon.L
 local sounds = addon.Core.Sounds
 local auraSounds = addon.Core.AuraSounds
+local debugOptions = addon.Core.DebugOptions
 local changeStamp = addon.Utils.ChangeStamp
 
 -- The engine plays the sound, because the addon is never told an aura landed. Registrations bake
@@ -170,7 +171,7 @@ end
 
 ---@param waiting number spell ids the pass left with no handle
 local function ReportTruncated(waiting)
-	if not auraSounds:DebugEnabled() then
+	if not debugOptions:Enabled() then
 		return
 	end
 

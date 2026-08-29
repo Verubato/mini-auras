@@ -13,7 +13,7 @@ local FIRST = 700001
 local SECOND = 700002
 local THIRD = 700003
 
-db.SoundDebugMessages = false
+db.DebugMode = false
 
 ---Runs body with the messages switched on and the throttle empty, and hands back what it printed.
 ---@param body function
@@ -21,11 +21,11 @@ db.SoundDebugMessages = false
 local function Printed(body)
 	wipe(env.notifications)
 	auraSounds:ResetDebugLog()
-	db.SoundDebugMessages = true
+	db.DebugMode = true
 
 	local ok, err = pcall(body)
 
-	db.SoundDebugMessages = false
+	db.DebugMode = false
 
 	assert(ok, err)
 

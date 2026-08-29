@@ -324,8 +324,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "使用MiniAuras姓名板時，在暴雪姓名板上停用CC和BigDebuffs。",
 	["Show Test Labels"] = "顯示測試標籤",
 	["Names each module above its test icons. Turn it off when the names overlap each other."] = "在每個模組的測試圖示上方標註模組名稱。名稱重疊時可以關閉。",
-	["Sound Debug Messages"] = "音效偵錯訊息",
-	["Prints a message in chat when a sound fails to register with the game."] = "當音效無法在遊戲中註冊時，在聊天視窗顯示訊息。",
+	["Debug Mode"] = "偵錯模式",
+	["Prints extra messages in chat to help track down problems."] = "在聊天視窗顯示額外訊息，協助追蹤問題。",
 
 	-- General home screen
 

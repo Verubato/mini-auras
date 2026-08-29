@@ -140,20 +140,20 @@ function M:Build(panel)
 	showTestLabelsChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	showTestLabelsChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
 
-	local soundDebugChk = mini:Checkbox({
+	local debugModeChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Sound Debug Messages"],
-		Tooltip = L["Prints a message in chat when a sound fails to register with the game."],
+		LabelText = L["Debug Mode"],
+		Tooltip = L["Prints extra messages in chat to help track down problems."],
 		GetValue = function()
-			return db.SoundDebugMessages ~= false
+			return db.DebugMode ~= false
 		end,
 		-- No refresh, because the setting is read where a message would be printed.
 		SetValue = function(value)
-			db.SoundDebugMessages = value
+			db.DebugMode = value
 		end,
 	})
 
-	soundDebugChk:SetPoint("TOPLEFT", configureBlizzardNameplatesChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	debugModeChk:SetPoint("TOPLEFT", configureBlizzardNameplatesChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconsDivider = mini:Divider({
 		Parent = panel,
@@ -161,7 +161,7 @@ function M:Build(panel)
 	})
 	iconsDivider:SetPoint("LEFT", panel, "LEFT")
 	iconsDivider:SetPoint("RIGHT", panel, "RIGHT")
-	iconsDivider:SetPoint("TOP", soundDebugChk, "BOTTOM", 0, -verticalSpacing)
+	iconsDivider:SetPoint("TOP", debugModeChk, "BOTTOM", 0, -verticalSpacing)
 
 	local disableSwipeChk = mini:Checkbox({
 		Parent = panel,

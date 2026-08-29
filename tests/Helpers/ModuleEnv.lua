@@ -304,6 +304,7 @@ function M.build()
 	local addonFiles = require("AddonFiles")
 	addonFiles.load(addonFiles.framework, addon)
 	loadFile("src/Core/Profiles/ProfileManager.lua")
+	loadFile("src/Core/Options/DebugOptions.lua")
 	-- The real resolver. With no LibSharedMedia in the mock it falls back to the bundled files,
 	-- which is the path a client without a media addon takes anyway.
 	loadFile("src/Core/Audio/Sounds.lua")
