@@ -1,10 +1,9 @@
 # Changelog
 
-## Unreleased
+## 5.29.0
 
+- Added a text size slider and a centre stacks switch to frame auras.
 - Moved the corner stack count flush into the icon's bottom right corner.
-- Added a text size slider and a centre stacks switch to the frame aura buff and debuff rows,
-  matching the ones personal auras already had.
 
 ## 5.28.0
 
