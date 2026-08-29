@@ -38,8 +38,7 @@ local DEBUFF_FILTER = "HARMFUL"
 local EXCLUDE_IMPORTANT = "|!IMPORTANT"
 local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
--- The debuff row's parts. The plain group negates the crowd control token, and the role group ahead
--- of both depends on the boss and role partition below to stay clear of them instead.
+-- The plain group never draws crowd control, whatever the switch says.
 local DEBUFF_PLAIN_FILTER = DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
 local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
 -- Where each part sits in the row. Spelled out because the crowd control group is declared after
@@ -407,6 +406,18 @@ local function CrowdControlIcons()
 	return math.min(MaxIcons("Debuffs"), MAX_CROWD_CONTROL_ICONS)
 end
 
+---The boss and role group's filter, which closes to crowd control when that switch is off.
+---@return string
+local function RoleFilter()
+	local options = SideOptions("Debuffs")
+
+	if options ~= nil and options.ShowCrowdControl == true then
+		return DEBUFF_FILTER
+	end
+
+	return DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
+end
+
 ---How many icons the boss and role group at the head of the row may draw. Never gated on a
 ---setting, because a boss or role aura has to be on the row whatever the player switched off.
 ---Still never more than the row's own budget.
@@ -642,9 +653,7 @@ local function RoleGroup()
 
 	return {
 		Key = DEBUFF_ROLE_GROUP,
-		-- No !CROWD_CONTROL token, so a boss or role aura that is also crowd control still draws
-		-- here even with that switch off.
-		FilterString = DEBUFF_FILTER,
+		FilterString = RoleFilter(),
 		MaxIcons = RoleIcons(),
 		CandidateFilters = role,
 		SizeScale = LEAD_SIZE_SCALE,
@@ -948,10 +957,10 @@ local function ApplySettings(entry)
 		-- the row it is on this way.
 		entry.Debuffs:SetGroupColorByDispelType(DEBUFF_CROWD_CONTROL_GROUP, CrowdControlDispelColors())
 
-		-- The filter strings are fixed, so only the candidate filters are re-published. The boss and
-		-- role flag is what keeps the leading group apart from the two behind it.
+		-- The boss and role flag is what keeps the leading group apart from the two behind it.
 		local role, rest = DebuffCandidates()
 
+		entry.Debuffs:SetFilterString(DEBUFF_ROLE_GROUP, RoleFilter())
 		entry.Debuffs:SetCandidateFilters(DEBUFF_ROLE_GROUP, role)
 
 		if entry.Debuffs:HasGroup(DEBUFF_CROWD_CONTROL_GROUP) then

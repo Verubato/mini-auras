@@ -2550,7 +2550,7 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		DropRaidFrame(13)
 	end)
 
-	fw.it("takes a plain HARMFUL filter string, with no crowd control token of its own", function()
+	fw.it("takes a plain HARMFUL filter string while crowd control is switched on", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 
@@ -2563,10 +2563,58 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
 
 		assert(role.filterString == "HARMFUL",
-			"a crowd control debuff that is also boss or role flagged still has to reach this group, got "
+			"a crowd control debuff that is also boss or role flagged reaches this group, got "
 				.. tostring(role.filterString))
 
 		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(40)
+	end)
+
+	fw.it("negates crowd control with that switch off, so nothing on the row draws a stun", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(40)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+
+		assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP] == nil, "crowd control has no group of its own")
+		assert(role.filterString:find("!CROWD_CONTROL", 1, true),
+			"and the one group that could still have drawn it keeps it out, got " .. tostring(role.filterString))
+
+		DropRaidFrame(40)
+	end)
+
+	fw.it("follows the switch on a row that was already built", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(40)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+
+		assert(role.filterString:find("!CROWD_CONTROL", 1, true), "it starts with the switch off")
+
+		options.Debuffs.ShowCrowdControl = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(not role.filterString:find("!CROWD_CONTROL", 1, true),
+			"the switch going on re-opens the group, got " .. tostring(role.filterString))
+
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(role.filterString:find("!CROWD_CONTROL", 1, true),
+			"and going off again closes it, got " .. tostring(role.filterString))
+
 		DropRaidFrame(40)
 	end)
 
