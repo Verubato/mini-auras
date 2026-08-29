@@ -8,7 +8,7 @@
 - Renamed Text Size (%) to Font Scale on the frame aura rows and the personal aura groups, and widened every Font Scale slider to 0.5-2.0. Sizes saved as a percentage carry over.
 - Crowd control now keeps its font scale per instance tab, alongside its other per-tab settings.
 - Fixed the preview bars of a personal aura group keeping their old text size when the font scale was dragged.
-- Added a Group icon switch to the personal aura groups, drawing the group's own icon on every aura in place of each spell's artwork.
+- Added a Custom icon switch to the personal aura groups, drawing the group's own icon on every aura in place of each spell's artwork.
 
 ## 5.29.0
 

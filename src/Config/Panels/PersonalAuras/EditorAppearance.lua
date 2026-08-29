@@ -178,8 +178,8 @@ function ui.BuildAppearanceTab(ctx)
 		{
 			-- Off the text shape, which draws no icon to cover.
 			Text = false,
-			Label = L["Group icon"],
-			Tooltip = L["Draw the group's own icon on every aura instead of each spell's artwork."],
+			Label = L["Custom icon"],
+			Tooltip = L["Displays your selected aura icon instead of the spell icon."],
 			Get = function(group) return group.Icons.UseGroupIcon end,
 			Set = function(group, value) group.Icons.UseGroupIcon = value end,
 		},

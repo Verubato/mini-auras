@@ -849,7 +849,7 @@ fw.describe("Personal auras page - a group drawing text only", function()
 		ShowPage(addon, group)
 
 		local gone = {
-			"Reverse swipe", "Hide swipe", "Hide numbers", "Centre stacks", "Group icon",
+			"Reverse swipe", "Hide swipe", "Hide numbers", "Centre stacks", "Custom icon",
 		}
 
 		for _, label in ipairs(gone) do
@@ -873,7 +873,7 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 		-- Pandemic is left out because the swatch caption beside it carries the same word.
 		local labels = {
 			"Glow icons", "Show border", "Reverse swipe", "Hide swipe", "Hide numbers",
-			"Centre stacks", "Show tooltips", "Group icon", "Colour text",
+			"Centre stacks", "Show tooltips", "Custom icon", "Colour text",
 		}
 		local taken = {}
 

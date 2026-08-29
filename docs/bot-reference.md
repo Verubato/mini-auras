@@ -454,7 +454,7 @@ have an appearance." and no controls. **Display** itself lives on the Trigger ta
 group shows its own short set of controls instead of the ones below: **Select Texture** with a
 preview beside it, **Additive**, **Mirror**, **Desaturate**, and the **Colour** swatch, which
 tints the art. A **Text only** group drops the five switches that are about an icon's art and
-swipe (Reverse swipe, Hide swipe, Hide numbers, Centre stacks, Group icon) and keeps the rest.
+swipe (Reverse swipe, Hide swipe, Hide numbers, Centre stacks, Custom icon) and keeps the rest.
 Everything else here belongs to icons and bars.
 
 | Setting | Values / range | Default |
@@ -468,7 +468,7 @@ Everything else here belongs to icons and bars.
 | Centre stacks | on/off (icons only); the stack count replaces the countdown | off |
 | Show tooltips | on/off | off |
 | Spell name | on/off (bars only) | on |
-| Group icon | on/off (icons and bars only); draws the group's own icon over each spell's art | off |
+| Custom icon | on/off (icons and bars only); draws the group's own icon over each spell's art | off |
 | Pandemic | on/off | off |
 | Colour (glow/border tint, or the bar's fill) | colour swatch | white |
 | Pandemic colour | colour swatch | red (1, 0.1, 0.1) |
