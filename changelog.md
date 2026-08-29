@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added a text size slider and a centre stacks switch to the frame aura buff and debuff rows,
+  matching the ones personal auras already had.
+
 ## 5.28.0
 
 - Various fixes around sound alerts to work better with media from other addons.

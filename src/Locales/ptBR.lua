@@ -517,6 +517,7 @@ L:RegisterLocale("ptBR", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "A lista de onde a opção Filtrado da fila de bônus tira os feitiços. Desligada, todos os bônus chegam ao canto.",
 	["Includes important buffs."] = "Inclui bônus importantes.",
 	["Includes defensive buffs."] = "Inclui bônus defensivos.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "Ajusta a contagem e os acúmulos desta linha, além da escala de fonte global.",
 	["Show numbers"] = "Mostrar números",
 	["Shows cooldown numbers."] = "Mostra os números da contagem regressiva.",
 	["Shows crowd control debuffs."] = "Mostra as penalidades de controle de grupo.",

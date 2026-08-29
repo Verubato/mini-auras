@@ -519,6 +519,7 @@ L:RegisterLocale("koKR", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "버프 줄의 필터 적용 스위치가 참고하는 목록입니다. 꺼두면 모든 버프가 구석에 표시됩니다.",
 	["Includes important buffs."] = "중요 버프를 포함합니다.",
 	["Includes defensive buffs."] = "방어 버프를 포함합니다.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "전역 글꼴 배율에 더해 이 줄의 남은 시간과 중첩 수 글자 크기를 조절합니다.",
 	["Show numbers"] = "숫자 표시",
 	["Shows cooldown numbers."] = "카운트다운 숫자를 표시합니다.",
 	["Shows crowd control debuffs."] = "군중 제어 디버프를 표시합니다.",

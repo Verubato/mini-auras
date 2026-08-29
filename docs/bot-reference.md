@@ -664,7 +664,7 @@ turned Blizzard's buffs off themselves never gets them handed back. The write wa
 end, because flipping it makes the client rebuild the raid frames.
 
 - Icon size 15-50 (percent of the frame's own height, default 35), max icons 1-9 (default 6),
-  icons per row 1-6 (default 3).
+  icons per row 1-6 (default 3), text size 50-200 % (default 100).
 - **Filtered** (on) - show only the spells ticked on the Spells tab. Off shows every buff that gets
   past the other filters.
 - **Mine** (on) - only the buffs you cast yourself.
@@ -677,6 +677,8 @@ end, because flipping it makes the client rebuild the raid frames.
   every unit.
 - **Show numbers** (off) - the countdown text on this row alone. The cooldown swipe stays either
   way, and the global **Disable Numbers** in Misc still takes the text off everywhere.
+- **Centre stacks** (off) - draws the stack count in the middle of the icon at countdown size,
+  which takes the countdown's place whatever **Show numbers** is set to.
 - **Pandemic glow** (on) plus a **Glow colour** (green, 0.1/0.9/0.3) - lights a heal-over-time up as
   its refresh window opens. Which spells carry it is fixed (Lifebloom), not a per-spell setting: the
   reveal is registered on a button when the engine builds it.
@@ -691,7 +693,7 @@ like Unstable Affliction has to be seen before anything else on the frame. Crowd
 is switched on, follows it.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
-  row 1-6 (default 3).
+  row 1-6 (default 3), text size 50-200 % (default 100).
 - **Dispellable** (on) - only the debuffs your own spec can dispel.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
@@ -701,6 +703,10 @@ is switched on, follows it.
 - **Dispel colours** (on) - rings that crowd control group in the game's colour for its dispel
   type. The debuffs behind it draw a plain icon like Blizzard's own, whatever this is set to.
 - **Show numbers** (off) - as on the Buffs tab.
+- **Centre stacks** (off) - as on the Buffs tab.
+
+**Text size** on either tab scales that row's countdown and stack count on top of the global font
+scale in Misc, so a row left at 100 % still follows whatever the player set there.
 
 The two narrowing switches are about the row rather than a category of it, so a stun the player
 cannot dispel is dropped exactly as a debuff would be. The boss and role partition at the head of

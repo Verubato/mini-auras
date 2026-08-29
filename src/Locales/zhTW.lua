@@ -519,6 +519,7 @@ L:RegisterLocale("zhTW", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "增益列的「已篩選」開關所依據的列表。關閉時，所有增益都會顯示在角落。",
 	["Includes important buffs."] = "包含重要增益。",
 	["Includes defensive buffs."] = "包含防禦增益。",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "在全域字體縮放的基礎上，縮放該列的倒數與層數文字。",
 	["Show numbers"] = "顯示倒數數字",
 	["Shows cooldown numbers."] = "顯示倒數數字。",
 	["Shows crowd control debuffs."] = "顯示控制減益。",

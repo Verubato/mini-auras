@@ -520,6 +520,7 @@ L:SetDefaultStrings({
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner.",
 	["Includes important buffs."] = "Includes important buffs.",
 	["Includes defensive buffs."] = "Includes defensive buffs.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "Scales this row's countdown and stack count text, on top of the global font scale.",
 	["Show numbers"] = "Show numbers",
 	["Shows cooldown numbers."] = "Shows cooldown numbers.",
 	["Shows crowd control debuffs."] = "Shows crowd control debuffs.",

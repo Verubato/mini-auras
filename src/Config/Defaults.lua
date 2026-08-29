@@ -665,6 +665,9 @@ local dbDefaults = {
 				-- fixed in the tracked data.
 				PandemicGlow = true,
 				PandemicColor = { R = 0.1, G = 0.9, B = 0.3 },
+				-- A percentage of the size the row would draw its text at anyway.
+				TextScale = 100,
+				CenterStacks = false,
 			},
 
 			---@class FrameAurasDebuffOptions
@@ -684,6 +687,8 @@ local dbDefaults = {
 				-- Blizzard's own, which draws a plain icon.
 				ColorByDispelType = true,
 				EnableNumbers = false,
+				TextScale = 100,
+				CenterStacks = false,
 				-- No "Mine" switch on this side. Everything landing on a group member came from
 				-- somebody else, so filtering to your own would only ever empty the row.
 			},

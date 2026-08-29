@@ -519,6 +519,7 @@ L:RegisterLocale("ruRU", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "Список, из которого берёт заклинания переключатель \"С фильтром\" ряда усилений. Если он выключен, в угол попадают все усиления.",
 	["Includes important buffs."] = "Включает важные усиления.",
 	["Includes defensive buffs."] = "Включает защитные усиления.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "Масштабирует отсчёт и число зарядов в этом ряду, поверх общего масштаба шрифта.",
 	["Show numbers"] = "Показывать цифры",
 	["Shows cooldown numbers."] = "Показывает цифры обратного отсчёта.",
 	["Shows crowd control debuffs."] = "Показывает ослабления контроля.",

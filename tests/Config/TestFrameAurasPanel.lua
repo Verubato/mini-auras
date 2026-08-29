@@ -79,12 +79,13 @@ local function SwitchOnTabWith(addon, labelText, tabLabel)
 	return nil
 end
 
----The icon size slider on one tab of the frame auras page. It is the only slider there reaching
----50, so the range names it without the label it shares with the other tabs.
+---A slider on one tab of the frame auras page, named by the top of its range, which tells the
+---sliders apart on the three tabs below where their labels are shared.
 ---@param addon table
 ---@param tabLabel string A label carried by one tab and no other.
+---@param top number
 ---@return table?
-local function SizeSliderOnTabWith(addon, tabLabel)
+local function SliderOnTabWith(addon, tabLabel, top)
 	local sibling = SwitchFor(addon, tabLabel)
 
 	fw.not_nil(sibling, "the page offers " .. tabLabel .. ", which names the tab")
@@ -93,7 +94,7 @@ local function SizeSliderOnTabWith(addon, tabLabel)
 		if frame.GetMinMaxValues and frame:GetParent() == sibling:GetParent() then
 			local _, high = frame:GetMinMaxValues()
 
-			if high == 50 then
+			if high == top then
 				return frame
 			end
 		end
@@ -356,7 +357,7 @@ fw.describe("Frame Auras page - the icon size sliders", function()
 		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
 
 		for _, row in ipairs(rows) do
-			local slider = SizeSliderOnTabWith(addon, row.Tab)
+			local slider = SliderOnTabWith(addon, row.Tab, 50)
 
 			fw.not_nil(slider, row.Part .. " offers a size slider")
 
@@ -369,5 +370,64 @@ fw.describe("Frame Auras page - the icon size sliders", function()
 			fw.eq(frameAuras[row.Part].Size, 15,
 				row.Part .. " takes the smallest size it offers unclamped")
 		end
+	end)
+end)
+
+fw.describe("Frame Auras page - the text size sliders", function()
+	fw.it("gives each aura row a slider of its own over the same range", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local rows = {
+			{ Tab = addon.L["Mine"], Part = "Buffs" },
+			{ Tab = addon.L["Dispellable"], Part = "Debuffs" },
+		}
+		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
+
+		for _, row in ipairs(rows) do
+			local slider = SliderOnTabWith(addon, row.Tab, 200)
+
+			fw.not_nil(slider, row.Part .. " offers a text size slider")
+
+			local low = slider:GetMinMaxValues()
+
+			fw.eq(low, 50, row.Part .. " scales its text down to half")
+			fw.eq(frameAuras[row.Part].TextScale, 100, row.Part .. " ships at the plain size")
+
+			slider:GetScript("OnValueChanged")(slider, 150, true)
+
+			fw.eq(frameAuras[row.Part].TextScale, 150,
+				row.Part .. " takes what the slider was dragged to")
+		end
+	end)
+end)
+
+fw.describe("Frame Auras page - centring the stack count", function()
+	fw.it("gives each tab a switch that writes its own row and not the other", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local buffs = SwitchOnTabWith(addon, addon.L["Centre stacks"], addon.L["Mine"])
+		local debuffs = SwitchOnTabWith(addon, addon.L["Centre stacks"], addon.L["Dispellable"])
+
+		fw.not_nil(buffs, "the buff tab offers the switch")
+		fw.not_nil(debuffs, "and so does the debuff tab")
+		assert(buffs ~= debuffs, "each tab has one of its own")
+
+		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
+
+		assert(frameAuras.Buffs.CenterStacks == false and frameAuras.Debuffs.CenterStacks == false,
+			"both rows ship with the count in its own corner")
+
+		buffs:GetScript("OnClick")(buffs)
+
+		assert(frameAuras.Buffs.CenterStacks == true, "the buff tab's switch writes the buff row")
+		assert(frameAuras.Debuffs.CenterStacks == false, "and leaves the debuff row alone")
+
+		debuffs:GetScript("OnClick")(debuffs)
+
+		assert(frameAuras.Debuffs.CenterStacks == true, "the debuff tab's switch writes the debuff row")
 	end)
 end)

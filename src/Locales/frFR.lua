@@ -517,6 +517,7 @@ L:RegisterLocale("frFR", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "La liste dans laquelle puise l'option Filtré de la rangée d'améliorations. Désactivée, toutes les améliorations atteignent le coin.",
 	["Includes important buffs."] = "Inclut les améliorations importantes.",
 	["Includes defensive buffs."] = "Inclut les améliorations défensives.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "Met à l'échelle le décompte et les cumuls de cette rangée, en plus de l'échelle de police globale.",
 	["Show numbers"] = "Afficher le décompte",
 	["Shows cooldown numbers."] = "Affiche les chiffres du décompte.",
 	["Shows crowd control debuffs."] = "Affiche les affaiblissements de contrôle des foules.",

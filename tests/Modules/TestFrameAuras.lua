@@ -147,6 +147,20 @@ local readableAuraIds = env.addon.Core.ReadableAuraIds
 local options = db.Modules.FrameAuras
 local dbDefaults = env.addon.Config.Defaults
 local moduleUtil = env.addon.Utils.ModuleUtil
+local auraContainerDisplay = env.addon.Core.AuraContainerDisplay
+
+-- Every display the rows build, kept as it is made. The module holds them privately, and the style
+-- one was built with can only be read off the display itself.
+local builtDisplays = {}
+local realNewDisplay = auraContainerDisplay.New
+
+auraContainerDisplay.New = function(self, ...)
+	local display = realNewDisplay(self, ...)
+
+	builtDisplays[#builtDisplays + 1] = display
+
+	return display
+end
 
 ---The lowest curated buff id, picked by value so the assertions survive a change to the list.
 ---@return number
@@ -613,6 +627,8 @@ testSpells.FillContainer = function(self, container, previewSpells, startSlot, f
 		Frame = container.Frame,
 		Lead = fillOptions.LeadCount,
 		HideNumbers = fillOptions.HideNumbers,
+		FontScale = fillOptions.FontScale,
+		CenterStackText = fillOptions.CenterStackText,
 	}
 
 	return originalFill(self, container, previewSpells, startSlot, fillOptions)
@@ -690,6 +706,19 @@ local function GroupRowOn(frame, groupKey)
 		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
 			and candidate._groups[groupKey] then
 			return candidate
+		end
+	end
+
+	return nil
+end
+
+---The display behind one of those containers, which is where its style is kept.
+---@param container table?
+---@return table?
+local function DisplayBehind(container)
+	for index = #builtDisplays, 1, -1 do
+		if builtDisplays[index].Frame == container then
+			return builtDisplays[index]
 		end
 	end
 
@@ -2060,6 +2089,126 @@ fw.describe("Frame Auras - what the buff row lets through", function()
 
 		options.Buffs.Mine = true
 		DropRaidFrame(26)
+	end)
+end)
+
+fw.describe("Frame Auras - the text size and the stack count on each row", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Buffs.TextScale = 100
+		options.Debuffs.TextScale = 100
+		options.Buffs.CenterStacks = false
+		options.Debuffs.CenterStacks = false
+		db.FontScale = 1.0
+		ResetFills()
+		partyAuras:Refresh()
+	end)
+
+	fw.it("carries both settings into a row that is already on screen", function()
+		db.FontScale = 1.25
+		options.Buffs.Enabled = true
+
+		local fresh = NewRaidFrame(30)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
+			"the frame got a buff row")
+
+		fw.eq(display.Style.FontScale, 1.25, "the shipped hundred percent is the global scale on its own")
+
+		-- Dragging either control while the options window is open reaches a display already on
+		-- screen, not a freshly built one.
+		options.Buffs.TextScale = 200
+		options.Buffs.CenterStacks = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		fw.eq(display.Style.FontScale, 2.5, "the display it already had picked the new text size up")
+		assert(display.Style.CenterStacks == true, "and the centred count with it")
+
+		db.FontScale = 1.0
+		options.Buffs.TextScale = 100
+		options.Buffs.CenterStacks = false
+		DropRaidFrame(30)
+	end)
+
+	fw.it("scales each row's text by its own setting, on top of the global one", function()
+		db.FontScale = 1.25
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+		options.Buffs.TextScale = 200
+		options.Debuffs.TextScale = 50
+
+		local fresh = NewRaidFrame(5)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)), "the frame got a buff row")
+		local debuffs = assert(DisplayBehind(GroupRowOn(fresh, DEBUFF_GROUP)), "and a debuff row")
+
+		fw.eq(buffs.Style.FontScale, 2.5, "double the text, over the global scale rather than instead of it")
+		fw.eq(debuffs.Style.FontScale, 0.625, "and half of it on the row set the other way")
+
+		db.FontScale = 1.0
+		options.Buffs.TextScale = 100
+		options.Debuffs.TextScale = 100
+		DropRaidFrame(5)
+	end)
+
+	fw.it("centres the stack count on the row that asked for it and no other", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+		options.Buffs.CenterStacks = true
+
+		local fresh = NewRaidFrame(4)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)), "the frame got a buff row")
+		local debuffs = assert(DisplayBehind(GroupRowOn(fresh, DEBUFF_GROUP)), "and a debuff row")
+
+		assert(buffs.Style.CenterStacks == true, "the switch reached the buff row's style")
+		assert(debuffs.Style.CenterStacks == false, "and left the debuff row's countdown where it was")
+
+		options.Buffs.CenterStacks = false
+		DropRaidFrame(4)
+	end)
+
+	fw.it("shows both of them in the preview they are read against", function()
+		db.FontScale = 1.25
+		options.Buffs.Enabled = true
+		-- The countdown has to be on, or there is nothing for the centred count to displace.
+		options.Buffs.EnableNumbers = true
+
+		module:StartTesting()
+
+		assert(#fills > 0, "the buff row previews something")
+		fw.eq(fills[1].FontScale, 1.25, "the preview starts on the global scale like the live row")
+		assert(fills[1].CenterStackText == nil, "and leaves the count out while the switch is off")
+		assert(fills[1].HideNumbers == false, "so the countdown is what the stand-ins draw")
+
+		module:StopTesting()
+		ResetFills()
+		options.Buffs.TextScale = 200
+		options.Buffs.CenterStacks = true
+		module:StartTesting()
+
+		fw.eq(fills[1].FontScale, 2.5, "the preview scales its text with the row")
+		assert(fills[1].CenterStackText ~= nil, "and stands a count in the middle of each icon")
+		-- The live display folds this in for itself, so only the stand-ins have to be told.
+		assert(fills[1].HideNumbers == true, "which takes the countdown's place rather than joining it")
+
+		module:StopTesting()
+		db.FontScale = 1.0
+		options.Buffs.EnableNumbers = false
+		options.Buffs.TextScale = 100
+		options.Buffs.CenterStacks = false
 	end)
 end)
 

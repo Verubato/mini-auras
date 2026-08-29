@@ -75,6 +75,7 @@ local FALLBACK_ICON_SIZE = 14
 local DEFAULT_MAX_ICONS = { Buffs = 6, Debuffs = 2 }
 local DEFAULT_PER_ROW = 3
 local DEFAULT_SIZE_PERCENT = 35
+local DEFAULT_TEXT_SCALE = 100
 -- An icon sized off a party frame is about eighteen pixels, where the shared ratio leaves a count
 -- of six points.
 local STACK_COEFFICIENT = 0.4
@@ -98,6 +99,8 @@ local SIDES = { "Buffs", "Debuffs" }
 -- Where each side's preview row is kept on an entry. The engine decides what an AuraContainer
 -- shows, so a fake aura cannot be fed to one and the preview draws its own icons instead.
 local TEST_FIELDS = { Buffs = "TestBuffs", Debuffs = "TestDebuffs" }
+-- What a stand-in icon shows for a centred stack count, where a live icon shows the real one.
+local PREVIEW_STACK_COUNT = "3"
 
 addon.Modules.FrameAuras = addon.Modules.FrameAuras or {}
 
@@ -464,6 +467,24 @@ local function PreviewLeadsWithCrowdControl(side)
 	return options ~= nil and options.ShowCrowdControl == true
 end
 
+---What one row scales its text by, as a percentage of the size it would take anyway.
+---@param side "Buffs"|"Debuffs"
+---@return number
+local function TextScale(side)
+	local options = SideOptions(side)
+
+	return tonumber(options and options.TextScale) or DEFAULT_TEXT_SCALE
+end
+
+---Whether one row puts the stack count where the countdown goes.
+---@param side "Buffs"|"Debuffs"
+---@return boolean
+local function CentersStacks(side)
+	local options = SideOptions(side)
+
+	return options ~= nil and options.CenterStacks == true
+end
+
 ---Whether one row drops its countdown text. The display's own vocabulary is the negative one, so
 ---the row's positive switch is turned round here.
 ---@param side "Buffs"|"Debuffs"
@@ -528,6 +549,10 @@ local function BuildStyle(side)
 	style.ReverseCooldown = true
 	-- Only ever adds to the global Disable Numbers switch, which the display resolves for itself.
 	style.HideNumbers = HidesNumbers(side)
+	-- On top of the global scale rather than instead of it, so a row left at 100% keeps following
+	-- whatever the player picked in Miscellaneous.
+	style.FontScale = (style.FontScale or 1) * TextScale(side) / 100
+	style.CenterStacks = CentersStacks(side)
 
 	if side == "Buffs" then
 		style.Pandemic = options.PandemicGlow == true
@@ -812,14 +837,17 @@ local function ApplyTestSide(entry, side)
 
 	local db = mini:GetSavedVars()
 	local list, leading = TestSpellList(side)
+	-- The stand-ins have to fold this in themselves, where a live button gets it from the display.
+	local centersStacks = CentersStacks(side)
 	local nextSlot = testSpells:FillContainer(container, list, 1, {
 		ReverseCooldown = true,
-		HideNumbers = HidesNumbers(side),
+		HideNumbers = HidesNumbers(side) or centersStacks,
 		Glow = false,
 		-- Only the crowd control stand-in carries a tint, so the plain spells behind it stay bare
 		-- however this is set.
 		ColorByDispelType = PreviewLeadsWithCrowdControl(side) and CrowdControlDispelColors(),
-		FontScale = db and db.FontScale,
+		CenterStackText = centersStacks and PREVIEW_STACK_COUNT or nil,
+		FontScale = (db and db.FontScale or 1) * TextScale(side) / 100,
 		Stagger = true,
 		Count = count,
 		Repeat = true,

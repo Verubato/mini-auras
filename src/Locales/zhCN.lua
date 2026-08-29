@@ -519,6 +519,7 @@ L:RegisterLocale("zhCN", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "增益栏的“已过滤”开关所依据的列表。关闭时，所有增益都会显示在角落。",
 	["Includes important buffs."] = "包含重要增益。",
 	["Includes defensive buffs."] = "包含防御增益。",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "在全局字体缩放的基础上，缩放该行的倒计时和层数文字。",
 	["Show numbers"] = "显示倒计时数字",
 	["Shows cooldown numbers."] = "显示倒计时数字。",
 	["Shows crowd control debuffs."] = "显示控制减益。",

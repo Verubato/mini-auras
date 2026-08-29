@@ -519,6 +519,7 @@ L:RegisterLocale("deDE", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "Die Liste, aus der sich der Schalter \"Gefiltert\" der Buff-Reihe bedient. Ist er aus, erreicht jeder Buff die Ecke.",
 	["Includes important buffs."] = "Enthält wichtige Stärkungszauber.",
 	["Includes defensive buffs."] = "Enthält defensive Stärkungszauber.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "Skaliert Zeittext und Stufenanzahl dieser Reihe, zusätzlich zur globalen Schriftskalierung.",
 	["Show numbers"] = "Zahlen zeigen",
 	["Shows cooldown numbers."] = "Zeigt die Countdown-Zahlen.",
 	["Shows crowd control debuffs."] = "Zeigt Massenkontroll-Schwächungszauber.",

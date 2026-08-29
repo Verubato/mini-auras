@@ -520,6 +520,7 @@ L:RegisterLocale("esMX", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "La lista de la que se sirve el interruptor Filtrado de la fila de beneficios. Con él apagado, todos los beneficios llegan a la esquina.",
 	["Includes important buffs."] = "Incluye beneficios importantes.",
 	["Includes defensive buffs."] = "Incluye beneficios defensivos.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "Escala la cuenta atrás y las acumulaciones de esta fila, además de la escala de fuente global.",
 	["Show numbers"] = "Mostrar números",
 	["Shows cooldown numbers."] = "Muestra los números de la cuenta atrás.",
 	["Shows crowd control debuffs."] = "Muestra los perjuicios de control de masas.",

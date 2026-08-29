@@ -517,6 +517,7 @@ L:RegisterLocale("itIT", function() return {
 	["The list the buff row's Filtered switch draws from. With it off, every buff reaches the corner."] = "L'elenco da cui attinge l'interruttore Filtrato della fila di benefici. Se è spento, ogni beneficio raggiunge l'angolo.",
 	["Includes important buffs."] = "Include i benefici importanti.",
 	["Includes defensive buffs."] = "Include i benefici difensivi.",
+	["Scales this row's countdown and stack count text, on top of the global font scale."] = "Ridimensiona il conto alla rovescia e i cumuli di questa riga, oltre alla scala del carattere globale.",
 	["Show numbers"] = "Mostra numeri",
 	["Shows cooldown numbers."] = "Mostra i numeri del conto alla rovescia.",
 	["Shows crowd control debuffs."] = "Mostra le penalità di controllo delle masse.",

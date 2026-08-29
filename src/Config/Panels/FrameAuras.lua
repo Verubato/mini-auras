@@ -51,11 +51,13 @@ local BOUNDS = {
 		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
+		TextScale = { Min = 50, Max = 200 },
 	},
 	Debuffs = {
 		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
+		TextScale = { Min = 50, Max = 200 },
 	},
 	ClassBuff = {
 		Size = { Min = 15, Max = 50 },
@@ -508,6 +510,11 @@ local function BuildBuffs(content, options)
 			Label = L["Show numbers"],
 			Tooltip = L["Shows cooldown numbers."],
 		},
+		{
+			Key = "CenterStacks",
+			Label = L["Centre stacks"],
+			Tooltip = L["Show the stack count in the middle of the icon instead of the countdown text."],
+		},
 	}, blurb)
 
 	local layout = Divider(content, L["Layout"], top)
@@ -525,6 +532,10 @@ local function BuildBuffs(content, options)
 	local perRow = Slider(content, options, "Buffs", "PerRow", L["Icons per row"],
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+
+	local textScale = Slider(content, options, "Buffs", "TextScale", L["Text Size (%)"],
+		L["Scales this row's countdown and stack count text, on top of the global font scale."])
+	textScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
 
 	local glow = Divider(content, L["Refresh window"], perRow.Slider)
 
@@ -613,6 +624,11 @@ local function BuildDebuffs(content, options)
 			Label = L["Show numbers"],
 			Tooltip = L["Shows cooldown numbers."],
 		},
+		{
+			Key = "CenterStacks",
+			Label = L["Centre stacks"],
+			Tooltip = L["Show the stack count in the middle of the icon instead of the countdown text."],
+		},
 	}, blurb)
 
 	local layout = Divider(content, L["Layout"], top)
@@ -628,6 +644,10 @@ local function BuildDebuffs(content, options)
 	local perRow = Slider(content, options, "Debuffs", "PerRow", L["Icons per row"],
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+
+	local textScale = Slider(content, options, "Debuffs", "TextScale", L["Text Size (%)"],
+		L["Scales this row's countdown and stack count text, on top of the global font scale."])
+	textScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
 end
 
 ---The name of the buff the player brings, for a page that can then say which one it means.
