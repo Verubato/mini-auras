@@ -118,7 +118,7 @@ end
 ---@param entryOptions table
 ---@return AuraDisplayStyle
 local function BuildStyle(entryOptions)
-	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons)
+	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons, entryOptions.FontScale)
 
 	-- The display only ever holds CC, and most of that is physical: without this a stun gets the
 	-- tinted glow but no ring, which reads as the border being broken.
@@ -217,7 +217,7 @@ local function UpdateKickIcon(entry)
 	anchoredIcons:RenderKickIcon(entry, options, kickEntry, function()
 		entry.KickTimer = nil
 		UpdateKickIcon(entry)
-	end)
+	end, options.FontScale)
 end
 
 ---Budgets the CC group for the entry's current unit. The spell-id map is identity-gated off on
@@ -831,7 +831,7 @@ function M:RefreshTestIcons()
 				Color = FlatCcColor(entryOptions.Icons),
 				-- The live buttons draw border and glow together, so the preview does too.
 				Border = true,
-				FontScale = db.FontScale,
+				FontScale = entryOptions.FontScale,
 				ShowTooltips = entryOptions.ShowTooltips ~= false,
 				Stagger = true,
 			})

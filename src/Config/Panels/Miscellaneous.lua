@@ -342,25 +342,6 @@ function M:Build(panel)
 
 	glowNote:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local slidersAnchor = glowNote
-
-	local fontScaleSlider = helpers:BuildClampedSlider({
-		Parent = panel,
-		LabelText = L["Font Scale"],
-		Tooltip = L["Scales the countdown text on every icon, leaving the icon size alone."],
-		Min = 0.5,
-		Max = 1.5,
-		Step = 0.05,
-		Default = dbDefaults.FontScale,
-		Fallback = dbDefaults.FontScale,
-		Float = true,
-		Width = controlWidth,
-		Target = db,
-		Key = "FontScale",
-	})
-
-	fontScaleSlider.Slider:SetPoint("TOPLEFT", slidersAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
-
 	local millisThresholdSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Milliseconds Threshold"],
@@ -374,8 +355,7 @@ function M:Build(panel)
 		Key = "MillisecondsThreshold",
 	})
 
-	millisThresholdSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", horizontalSpacing, 0)
-	millisThresholdSlider.Slider:SetPoint("TOP", fontScaleSlider.Slider, "TOP", 0, 0)
+	millisThresholdSlider.Slider:SetPoint("TOPLEFT", glowNote, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local countdownDivider = mini:Divider({
 		Parent = panel,
@@ -383,7 +363,7 @@ function M:Build(panel)
 	})
 	countdownDivider:SetPoint("LEFT", panel, "LEFT")
 	countdownDivider:SetPoint("RIGHT", panel, "RIGHT")
-	countdownDivider:SetPoint("TOP", fontScaleSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
+	countdownDivider:SetPoint("TOP", millisThresholdSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
 
 	local colorCountdownChk = mini:Checkbox({
 		Parent = panel,

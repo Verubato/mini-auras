@@ -148,7 +148,8 @@ Unless a module's table below says otherwise: Icon Size slider 10-100 px, Icon P
 displays with a **Relative size** checkbox size icons as a percentage of the unit frame's
 height instead of pixels (Icon Size (%) slider, 25-100). Most displays also share: Glow
 icons, Reverse swipe (reverses the cooldown swipe animation), Show tooltips (spell tooltip on
-hover), and a colour rule.
+hover), a Font Scale slider (0.5-2.0, step 0.05, default 1.0) for that module's countdown text,
+and a colour rule.
 
 Since 5.14.0 every slider in the settings window has its own hover tooltip explaining what it
 does, so "what does this slider do" is answerable in the UI. The **Max Icons** one also says
@@ -261,7 +262,12 @@ Sound Effects (SFX), Music, Ambience, or Dialog, default Master.
 - **Milliseconds**: displays with a "Milliseconds" checkbox (CC, Pet CC via CC path,
   nameplate bars) show decimal seconds once the remaining time drops below the
   **Milliseconds Threshold** (Misc, 1-6 s, default 5).
-- **Font Scale** (Misc, 0.5-1.5, step 0.05, default 1.0) scales the addon's text.
+- **Font Scale** (0.5-2.0, step 0.05, default 1.0) scales one module's countdown
+  text without touching its icon size. It is a per-module slider on its own page rather than one
+  global value: Pet CC, Healer (labelled **Icon Text Scale** there, so it is not confused with
+  the warning line's **Text Size**), Nameplates, Alerts, Portraits, Party Trinkets, Ally Kicks,
+  and Enemy Kicks. CC and Important Auras carry one per sub-tab, beside that tab's Icon Padding.
+  Frame Auras carries one per row and Personal Auras one per group.
 - **Font** (Misc, since 5.17.0) sets the face that text is drawn in; see "Font" above.
 - **Disable Swipe** (Misc, off by default) removes the cooldown pie animation everywhere;
   timer text stays. The swipe is drawn at 70% black since 5.21.0, a little lighter than before,
@@ -546,7 +552,7 @@ have a position." and no controls.
 | Rotation | 0-359 degrees clockwise (texture only) | 0 |
 | Opacity (%) | 0-100 % (texture only) | 100 |
 | Icon Padding | 0-50 | 2 |
-| Text Size (%) | 50-200 % | 100 |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 |
 
 A **Texture** group keeps only Texture Width, Texture Height, Rotation, Opacity, Strata and the
 offsets: one picture has no order to sort into, no direction to grow in, no spacing between
@@ -555,10 +561,9 @@ copies, and no text to scale, so those four controls are hidden and the row clos
 Dragging the icons or bars on screen writes the same values the Offset X/Y boxes edit, and the
 boxes update when the drag ends.
 
-**Text Size (%)** (since 5.14.0) scales this group's countdown, stack count and bar spell name
-on top of the global font scale in Misc, rather than setting a point size: every text on an
-icon or bar is measured off that shape. Hidden for a Sound only group along with the rest of
-the tab.
+**Font Scale** (since 5.14.0) scales this group's countdown, stack count and bar spell name
+rather than setting a point size: every text on an icon or bar is measured off that shape.
+Hidden for a Sound only group along with the rest of the tab.
 
 **Strata** is the layer the group draws in, for a group that has to sit over or under something
 else on screen. Automatic uses the layer of whatever the group hangs off, which is UIParent's
@@ -587,7 +592,7 @@ still only fire while the unit is on the side the choice names.
 - Max 40 icons or bars shown per group; 3 preview stand-ins while positioning. A texture group
   draws exactly one picture, with one stand-in.
 - Icon size 10-200, bar height 8-50, bar width 40-250, texture width/height 8-400, rotation
-  0-359, opacity 0-100 %, spacing 0-50, text size 50-200 %, offsets typed up to +/-2000.
+  0-359, opacity 0-100 %, spacing 0-50, font scale 0.5-2.0, offsets typed up to +/-2000.
 
 ---
 
@@ -616,6 +621,7 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Icon Size | 10-100 px | 20 (30 before 5.16.0) | 20 (25 before 5.23.0) |
 | Max Icons | 1-5 | 3 | 3 |
 | Icon Padding | 0-20 | 2 | 2 |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 | 1.0 |
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | CENTER | CENTER |
 | Offset X / Y | -250..250 | 0 / 0 | 0 / 0 |
 
@@ -666,7 +672,7 @@ turned Blizzard's buffs off themselves never gets them handed back. The write wa
 end, because flipping it makes the client rebuild the raid frames.
 
 - Icon size 15-50 (percent of the frame's own height, default 35), max icons 1-9 (default 6),
-  icons per row 1-6 (default 3), text size 50-200 % (default 100).
+  icons per row 1-6 (default 3), font scale 0.5-2.0 (default 1.0).
 - **Filtered** (on) - show only the spells ticked on the Spells tab. Off shows every buff that gets
   past the other filters.
 - **Mine** (on) - only the buffs you cast yourself.
@@ -695,7 +701,7 @@ like Unstable Affliction has to be seen before anything else on the frame. Crowd
 is switched on, follows it.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
-  row 1-6 (default 3), text size 50-200 % (default 100).
+  row 1-6 (default 3), font scale 0.5-2.0 (default 1.0).
 - **Dispellable** (on) - only the debuffs your own spec can dispel.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
@@ -707,8 +713,8 @@ is switched on, follows it.
 - **Show numbers** (off) - as on the Buffs tab.
 - **Centre stacks** (off) - as on the Buffs tab.
 
-**Text size** on either tab scales that row's countdown and stack count on top of the global font
-scale in Misc, so a row left at 100 % still follows whatever the player set there.
+**Font Scale** on either tab scales that row's countdown and stack count, and the target and focus
+rows carry the same slider on their own tab once that part is switched on.
 
 The two narrowing switches are about the row rather than a category of it, so a stun the player
 cannot dispel is dropped exactly as a debuff would be. The boss and role partition at the head of
@@ -725,6 +731,9 @@ and nothing to configure.
   something. A house counts as the open world.
 - Icon size 15-50 (percent of the frame's height, default 35). The corner is fixed, like the corners
   the buff and debuff rows take.
+
+The held-back target and focus part has icon size 12-40 px (default 22), max icons 1-12 (default
+6), icons per row 1-12 (default 6), and font scale 0.5-2.0 (default 1.0).
 
 **Spells sub-tab.** The buff whitelist the Buffs tab's **Filtered** switch draws from; with that
 switch off, every buff reaches the corner. A sidebar of sections, one per class that has tracked
@@ -784,6 +793,7 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons off, Raid 
 | Icon Size | 10-100 | 50 |
 | Max Icons | 1-10 | 8 |
 | Icon Padding | 0-20 | 4 (2 before 5.16.0) |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 |
 
 **CENTER** (since 5.27.0) splits the row either side of the anchor instead of running it off
 one edge, and is the new default. The dropdown shows it as **CENTER-ish**, in English whatever
@@ -874,6 +884,7 @@ Enable in (defaults): all five on (World, Arena, Battlegrounds, Dungeons, Raid).
 | Anchor to Health Bar | off | anchor icons to the plate's health bar instead of the plate frame; turn on if another addon (for example BetterBlizzPlates) changes plate width or height |
 | Important colour | red (1, 0.2, 0.2) | tint for important icons on every bar whose Icon colours is Dispel colours or Custom |
 | Defensive colour | green (0.2, 1, 0.2) | the same for defensive icons |
+| Font Scale | 1.0 | 0.5-2.0, step 0.05; sizes the countdown text on all four bars |
 
 **Four independently configured bars**, each its own sub-tab: Enemy - Bar 1, Enemy - Bar 2,
 Friendly - Bar 1, Friendly - Bar 2. Per bar:
@@ -935,8 +946,8 @@ so the same auras are not drawn twice.
 Sidebar: General > Portraits. Shows CC, defensives and other important spells on the player,
 target, focus and pet portraits.
 
-Settings: **Enabled** (single switch, applies everywhere, default on) and **Reverse swipe**
-(default on).
+Settings: **Enabled** (single switch, applies everywhere, default on), **Reverse swipe**
+(default on), and **Font Scale** (0.5-2.0, step 0.05, default 1.0).
 
 **Extra buffs** (since 5.19.0) is a searchable spell list under the settings, and the buffs
 ticked there are shown on the player's own portrait, under every flagged category. It exists
@@ -982,6 +993,7 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Icon Size | 10-100 px | 32 | 20 |
 | Max Icons | 1-5 | 3 | 3 |
 | Icon Padding | 0-20 | 2 | 2 |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 | 1.0 |
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | RIGHT | CENTER |
 | Offset X / Y | -250..250 | 2 / 0 | 2 / 0 |
 | CC colour | swatch (since 5.19.0) | white | white |
@@ -1014,6 +1026,7 @@ One setting group (no raid split):
 | Icon Size | 10-100 px | 20 |
 | Max Icons | 1-5 | 3 |
 | Icon Padding | 0-20 | 2 |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 |
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | RIGHT |
 | Offset X / Y | -250..250 | 0 / 0 |
 
@@ -1044,9 +1057,13 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons on, Raid o
 | Max Icons | 1-5 (since 5.19.0) | 5 |
 | Text Size | 10-100 | 32 |
 | Icon Padding | 0-20 | 2 |
+| Icon Text Scale | 0.5-2.0, step 0.05 | 1.0 |
 
 **Max Icons** caps how many CC icons each healer shows at once. It stops at five because the
 displays are built with five icon slots, so a higher number would have nothing to draw into.
+
+**Text Size** is the point size of the "Healer in CC!" line alone. The countdown on the CC icons
+follows **Icon Text Scale** instead, which is this module's copy of the per-module Font Scale.
 
 **Text colour** paints the "Healer in CC!" line. The swatch is only on the page while **Warning
 text** is on, since with the line switched off there is nothing for it to colour.
@@ -1069,6 +1086,7 @@ party frames. Trinket data comes from the C_PvP API, not from auras.
 | Show border | on/off | off |
 | Colour | swatch | white |
 | Icon Size | 10-100 | 40 |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 |
 | Offset X / Y | -200..200 | -2 / 0 (icon hangs left of the frame) |
 
 Stated limitations (shown on the page): only works inside arena, and it cannot see a trinket
@@ -1095,6 +1113,7 @@ Enable in (defaults): Dungeons on; World, Arena, Battlegrounds, Raid off.
 | Bar Height | 8-60 | 35 |
 | Bar Padding | 0-20 | 2 |
 | Max Bars | 1-10 | 5 |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 |
 
 Default position: 620 px left and 160 px above screen centre. Since 5.18.0 the saved
 position pins the edge the rows grow away from (the top edge growing down, the bottom edge
@@ -1128,6 +1147,7 @@ team** (15 s fallback until the opponents' specs are known).
 | Colour | swatch | white |
 | Icon Size | 20-120 | 50 |
 | Icon Padding | 0-20 | 2 |
+| Font Scale | 0.5-2.0, step 0.05 | 1.0 |
 
 Position: centred, 200 px below screen centre; draggable in test mode.
 
@@ -1151,7 +1171,6 @@ are part of the profile.
 | Countdown Colours | three swatches: Under 5s, Under 1m, Above 1m | red (1, 0, 0), yellow (1, 0.8, 0), white (1, 1, 1) |
 | Glow Type | see "Glow Type" above | Slot Glow |
 | Font | Game Default, or any LibSharedMedia font | Game Default |
-| Font Scale | 0.5-1.5, step 0.05 | 1.0 |
 | Milliseconds Threshold | 1-6 seconds | 5 |
 
 **Disable Numbers** and **Disable Swipe** are a pair: one drops the countdown text and keeps the
@@ -1173,7 +1192,7 @@ Sidebar: Other > Profiles.
 - **Active Profile** dropdown plus **New**, **Rename**, **Clone**, **Delete** (confirmed;
   the last remaining profile cannot be deleted), **Reset** (resets the active profile to
   factory defaults, confirmed), and **Import/Export**.
-- A profile contains: all module settings plus the Misc options Glow Type, Font, Font Scale,
+- A profile contains: all module settings plus the Misc options Glow Type, Font,
   Configure Blizzard Nameplates, Disable Swipe, Disable Numbers, Zoom Icons, Colour Countdown,
   Countdown Colours and Fade With Parent. Not in the profile: Language override, Milliseconds
   Threshold, Show Test Labels and the Auto-Switch rules.

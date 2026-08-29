@@ -355,7 +355,12 @@ function M.build()
 				fontString._stackRatio = coefficient
 			end
 		end,
-		UpdateFontSize = function() end,
+		-- What a bar can get wrong is the scale it asks for.
+		UpdateFontSize = function(_, fontString, _, _, fontScale)
+			if fontString then
+				fontString._fontScale = fontScale
+			end
+		end,
 		-- No font option in this env, so Apply is the unpicked path, and the string keeps or is
 		-- handed the face it stands in for, sized as asked.
 		CurrentFace = function()

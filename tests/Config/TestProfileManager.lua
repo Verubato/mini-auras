@@ -124,7 +124,7 @@ fw.describe("ProfileManager - switching", function()
 	fw.it("round-trips values and preserves nested table identities", function()
 		-- Snapshot current state into a second profile, then diverge the live db.
 		profileManager:CreateProfile("Alt", nil)
-		db.FontScale = 1.4
+		db.GlowType = "Static Pixel Border"
 		db.Modules.CrowdControl.Default.Icons.Size = 48
 
 		-- References captured "at Build time" by config UI closures.
@@ -133,14 +133,14 @@ fw.describe("ProfileManager - switching", function()
 
 		profileManager:SwitchProfile("Alt")
 		assert(db.ActiveProfile == "Alt")
-		assert(db.FontScale ~= 1.4, "Alt restored the pre-divergence FontScale")
+		assert(db.GlowType ~= "Static Pixel Border", "Alt restored the pre-divergence glow type")
 		assert(iconsRef.Size ~= 48, "Alt restored the pre-divergence icon size")
 		assert(db.Modules == modulesRef, "db.Modules identity preserved")
 		assert(db.Modules.CrowdControl.Default.Icons == iconsRef, "nested table identity preserved")
 
 		-- Switching saved the divergent state into Default. Switching back restores it.
 		profileManager:SwitchProfile("Default")
-		assert(db.FontScale == 1.4 and iconsRef.Size == 48, "Default kept the divergent values")
+		assert(db.GlowType == "Static Pixel Border" and iconsRef.Size == 48, "Default kept the divergent values")
 		assert(db.Modules == modulesRef and db.Modules.CrowdControl.Default.Icons == iconsRef, "identities stable across both switches")
 	end)
 
@@ -219,11 +219,11 @@ fw.describe("ProfileManager - lifecycle operations", function()
 	fw.it("deleting the ACTIVE profile switches to a remaining one", function()
 		profileManager:CreateProfile("Doomed", nil)
 		profileManager:SwitchProfile("Doomed")
-		db.FontScale = 0.77
+		db.IconZoom = false
 		profileManager:DeleteProfile("Doomed")
 		assert(db.Profiles.Doomed == nil, "active profile deleted")
 		assert(db.ActiveProfile ~= "Doomed", "switched away")
-		assert(db.FontScale ~= 0.77, "remaining profile's payload applied")
+		assert(db.IconZoom ~= false, "remaining profile's payload applied")
 	end)
 
 	fw.it("deleting the ACTIVE profile heals keys the survivor's snapshot predates", function()

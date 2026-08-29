@@ -67,7 +67,7 @@ local function SetIconState(container, durationData)
 		ReverseCooldown = options.Icons.ReverseCooldown,
 		Glow = options.Icons.Glow,
 		Color = moduleUtil:GetIconColor(options.Icons),
-		FontScale = db.FontScale,
+		FontScale = db.Modules.Trinkets.FontScale,
 	})
 end
 

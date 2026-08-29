@@ -79,11 +79,10 @@ local DEFAULT_BAR_TEXTURE = "Blizzard Raid Bar"
 local DEFAULT_POSITION_Y = 220
 local MIN_ICON_SIZE = 10
 local MAX_ICON_SIZE = 200
--- Text is sized off the icon, so a group tunes it with a percentage rather than a point size. Held
--- as a whole number so it clamps like every other group value.
-local DEFAULT_TEXT_SCALE = 100
-local MIN_TEXT_SCALE = 50
-local MAX_TEXT_SCALE = 200
+-- Text is sized off the icon, so a group tunes it with a multiplier rather than a point size.
+local DEFAULT_FONT_SCALE = 1.0
+local MIN_FONT_SCALE = 0.5
+local MAX_FONT_SCALE = 2.0
 -- How many icons one group can ever show. The engine only builds a frame when there is an aura for
 -- it, so a high cap costs nothing until it is used.
 local MAX_ICONS = 40
@@ -237,8 +236,8 @@ M.MaxIcons = MAX_ICONS
 M.PreviewIcons = PREVIEW_ICONS
 M.MinIconSize = MIN_ICON_SIZE
 M.MaxIconSize = MAX_ICON_SIZE
-M.MinTextScale = MIN_TEXT_SCALE
-M.MaxTextScale = MAX_TEXT_SCALE
+M.MinFontScale = MIN_FONT_SCALE
+M.MaxFontScale = MAX_FONT_SCALE
 M.DisplayStyle = {
 	Icons = AS_ICONS, Bars = AS_BARS, SoundOnly = AS_SOUND, Texture = AS_TEXTURE,
 	TextOnly = AS_TEXT,
@@ -256,8 +255,13 @@ M.MaxRotation = MAX_ROTATION
 ---@param fallback number
 ---@param minimum number
 ---@param maximum number
+---@param float boolean? True keeps the fraction, for a setting whose slider steps below one.
 ---@return number
-local function Clamped(value, fallback, minimum, maximum)
+local function Clamped(value, fallback, minimum, maximum, float)
+	if float then
+		return mini:ClampFloat(value, minimum, maximum, fallback)
+	end
+
 	return mini:ClampInt(value, minimum, maximum, fallback)
 end
 
@@ -421,7 +425,8 @@ function M:Normalise(group)
 	group.Icons = icons
 	icons.Size = Clamped(icons.Size, DEFAULT_ICON_SIZE, MIN_ICON_SIZE, MAX_ICON_SIZE)
 	icons.Spacing = Clamped(icons.Spacing, DEFAULT_SPACING, 0, 50)
-	icons.TextScale = Clamped(icons.TextScale, DEFAULT_TEXT_SCALE, MIN_TEXT_SCALE, MAX_TEXT_SCALE)
+	icons.FontScale = Clamped(icons.FontScale, DEFAULT_FONT_SCALE, MIN_FONT_SCALE,
+		MAX_FONT_SCALE, true)
 	-- Icons unless the group asked for something else. A group saved before bars existed has no
 	-- field, and changing what those groups look like is not something a version bump gets to do.
 	icons.Display = (icons.Display == AS_BARS or icons.Display == AS_SOUND
@@ -1198,7 +1203,7 @@ end
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
 ---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
----@field Icons { Size: number, Spacing: number, TextScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Icons { Size: number, Spacing: number, FontScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Texture { Asset: string|number, Width: number, Height: number, Rotation: number, Opacity: number, Mirror: boolean, Desaturate: boolean, Additive: boolean } Texture display only; Asset is a file id or a path, and empty draws nothing.
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.

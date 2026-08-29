@@ -739,6 +739,66 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 			"expected font size 48, got " .. tostring(text._lastArgs.SetFont[2]))
 	end)
 
+	---What the icon container stamped on its buttons' cooldowns, which is the module's own text
+	---multiplier. The label container has no cooldown, because it draws no icon.
+	---@param token string
+	---@return number?
+	local function iconFontScale(token)
+		local _, icons = splitContainers(token)
+		local button = assert(icons and icons._buttons[1], "an icon button for " .. token)
+
+		for _, frame in ipairs(acm.frames) do
+			if frame._type == "Cooldown" and frame._parent == button then
+				return frame.FontScale
+			end
+		end
+	end
+
+	fw.it("scales the icon countdown by its own font scale, not another module's", function()
+		options.FontScale = 1.4
+		db.Modules.CrowdControl.Default.FontScale = 0.6
+		healerCC:Refresh()
+
+		assert(iconFontScale("party1") == 1.4,
+			"the icons follow this module, got " .. tostring(iconFontScale("party1")))
+
+		-- The warning label is sized in points by Font.Size, so the scale must leave it where it is.
+		local before = warningText("party1")._lastArgs.SetFont[2]
+
+		options.FontScale = 0.6
+		healerCC:Refresh()
+
+		assert(iconFontScale("party1") == 0.6, "and moves when this module's own value moves")
+		assert(warningText("party1")._lastArgs.SetFont[2] == before, "the label keeps its point size")
+
+		options.FontScale = 1.0
+		db.Modules.CrowdControl.Default.FontScale = 1.0
+		healerCC:Refresh()
+	end)
+
+	fw.it("previews the icons at this module's own font scale", function()
+		-- The preview draws through TestSpells:FillContainer rather than through an aura
+		-- container, so what it was told is only readable off the call.
+		local testSpells = env.addon.Core.TestSpells
+		local original = testSpells.FillContainer
+		local seen
+
+		testSpells.FillContainer = function(self, container, spells, startSlot, fillOptions)
+			seen = fillOptions.FontScale
+
+			return original(self, container, spells, startSlot, fillOptions)
+		end
+
+		options.FontScale = 1.35
+		healerCC:StartTesting()
+		healerCC:StopTesting()
+
+		testSpells.FillContainer = original
+		options.FontScale = 1.0
+
+		assert(seen == 1.35, "the stand-in icons follow the slider, got " .. tostring(seen))
+	end)
+
 	fw.it("turning the warning text off parks the label containers, on brings them back", function()
 		db.Modules.HealerCrowdControl.ShowWarningText = false
 		healerCC:Refresh()

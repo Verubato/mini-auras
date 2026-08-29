@@ -2092,22 +2092,20 @@ fw.describe("Frame Auras - what the buff row lets through", function()
 	end)
 end)
 
-fw.describe("Frame Auras - the text size and the stack count on each row", function()
+fw.describe("Frame Auras - the font scale and the stack count on each row", function()
 	fw.before_each(function()
 		module:StopTesting()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
-		options.Buffs.TextScale = 100
-		options.Debuffs.TextScale = 100
+		options.Buffs.FontScale = 1
+		options.Debuffs.FontScale = 1
 		options.Buffs.CenterStacks = false
 		options.Debuffs.CenterStacks = false
-		db.FontScale = 1.0
 		ResetFills()
 		partyAuras:Refresh()
 	end)
 
 	fw.it("carries both settings into a row that is already on screen", function()
-		db.FontScale = 1.25
 		options.Buffs.Enabled = true
 
 		local fresh = NewRaidFrame(30)
@@ -2118,30 +2116,28 @@ fw.describe("Frame Auras - the text size and the stack count on each row", funct
 		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
 			"the frame got a buff row")
 
-		fw.eq(display.Style.FontScale, 1.25, "the shipped hundred percent is the global scale on its own")
+		fw.eq(display.Style.FontScale, 1, "the shipped scale draws the text at its own size")
 
 		-- Dragging either control while the options window is open reaches a display already on
 		-- screen, not a freshly built one.
-		options.Buffs.TextScale = 200
+		options.Buffs.FontScale = 2
 		options.Buffs.CenterStacks = true
 		partyAuras:Refresh()
 		acm.tickAll(400)
 
-		fw.eq(display.Style.FontScale, 2.5, "the display it already had picked the new text size up")
+		fw.eq(display.Style.FontScale, 2, "the display it already had picked the new text size up")
 		assert(display.Style.CenterStacks == true, "and the centred count with it")
 
-		db.FontScale = 1.0
-		options.Buffs.TextScale = 100
+		options.Buffs.FontScale = 1
 		options.Buffs.CenterStacks = false
 		DropRaidFrame(30)
 	end)
 
-	fw.it("scales each row's text by its own setting, on top of the global one", function()
-		db.FontScale = 1.25
+	fw.it("scales each row's text by its own setting", function()
 		options.Buffs.Enabled = true
 		options.Debuffs.Enabled = true
-		options.Buffs.TextScale = 200
-		options.Debuffs.TextScale = 50
+		options.Buffs.FontScale = 2
+		options.Debuffs.FontScale = 0.5
 
 		local fresh = NewRaidFrame(5)
 
@@ -2151,12 +2147,11 @@ fw.describe("Frame Auras - the text size and the stack count on each row", funct
 		local buffs = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)), "the frame got a buff row")
 		local debuffs = assert(DisplayBehind(GroupRowOn(fresh, DEBUFF_GROUP)), "and a debuff row")
 
-		fw.eq(buffs.Style.FontScale, 2.5, "double the text, over the global scale rather than instead of it")
-		fw.eq(debuffs.Style.FontScale, 0.625, "and half of it on the row set the other way")
+		fw.eq(buffs.Style.FontScale, 2, "double the text on the row set that way")
+		fw.eq(debuffs.Style.FontScale, 0.5, "and half of it on the row set the other")
 
-		db.FontScale = 1.0
-		options.Buffs.TextScale = 100
-		options.Debuffs.TextScale = 100
+		options.Buffs.FontScale = 1
+		options.Debuffs.FontScale = 1
 		DropRaidFrame(5)
 	end)
 
@@ -2181,7 +2176,6 @@ fw.describe("Frame Auras - the text size and the stack count on each row", funct
 	end)
 
 	fw.it("shows both of them in the preview they are read against", function()
-		db.FontScale = 1.25
 		options.Buffs.Enabled = true
 		-- The countdown has to be on, or there is nothing for the centred count to displace.
 		options.Buffs.EnableNumbers = true
@@ -2189,25 +2183,24 @@ fw.describe("Frame Auras - the text size and the stack count on each row", funct
 		module:StartTesting()
 
 		assert(#fills > 0, "the buff row previews something")
-		fw.eq(fills[1].FontScale, 1.25, "the preview starts on the global scale like the live row")
+		fw.eq(fills[1].FontScale, 1, "the preview starts at the row's own text size")
 		assert(fills[1].CenterStackText == nil, "and leaves the count out while the switch is off")
 		assert(fills[1].HideNumbers == false, "so the countdown is what the stand-ins draw")
 
 		module:StopTesting()
 		ResetFills()
-		options.Buffs.TextScale = 200
+		options.Buffs.FontScale = 2
 		options.Buffs.CenterStacks = true
 		module:StartTesting()
 
-		fw.eq(fills[1].FontScale, 2.5, "the preview scales its text with the row")
+		fw.eq(fills[1].FontScale, 2, "the preview scales its text with the row")
 		assert(fills[1].CenterStackText ~= nil, "and stands a count in the middle of each icon")
 		-- The live display folds this in for itself, so only the stand-ins have to be told.
 		assert(fills[1].HideNumbers == true, "which takes the countdown's place rather than joining it")
 
 		module:StopTesting()
-		db.FontScale = 1.0
 		options.Buffs.EnableNumbers = false
-		options.Buffs.TextScale = 100
+		options.Buffs.FontScale = 1
 		options.Buffs.CenterStacks = false
 	end)
 end)
@@ -3140,6 +3133,21 @@ fw.describe("Frame Auras - how big the count on the target row is", function()
 		assert(ratio and ratio > SHARED_STACK_RATIO,
 			"these icons are small enough to need their own ratio too, got " .. tostring(ratio))
 	end)
+
+	fw.it("scales the text by the target row's own setting, not a group row's", function()
+		options.TargetFocus.FontScale = 1.5
+		options.Buffs.FontScale = 0.5
+
+		module:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(BuffContainer(targetFrame)), "the target frame got a row")
+
+		fw.eq(display.Style.FontScale, 1.5, "the target row follows its own text size")
+
+		options.TargetFocus.FontScale = 1
+		options.Buffs.FontScale = 1
+	end)
 end)
 
 fw.describe("Frame Auras - the target preview rows", function()
@@ -3152,6 +3160,28 @@ fw.describe("Frame Auras - the target preview rows", function()
 		module:Refresh()
 		acm.tickAll(400)
 		ResetFills()
+	end)
+
+	fw.it("previews the text at the target row's own size", function()
+		options.TargetFocus.FontScale = 1.5
+		options.Buffs.FontScale = 0.5
+
+		module:StartTesting()
+
+		local target
+
+		for _, fill in ipairs(fills) do
+			if fill.Frame:GetParent() == targetFrame then
+				target = fill
+			end
+		end
+
+		assert(target, "the target frame previews something")
+		fw.eq(target.FontScale, 1.5, "the stand-in icons follow the target row's own slider")
+
+		module:StopTesting()
+		options.TargetFocus.FontScale = 1
+		options.Buffs.FontScale = 1
 	end)
 
 	fw.it("draws the whole icon budget, wrapped at the icons per row", function()

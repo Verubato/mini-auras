@@ -444,7 +444,7 @@ end
 ---@return AuraDisplayStyle
 local function AlertStyle()
 	local options = db and db.Modules.Alerts
-	local style = auraContainerDisplay:BuildStandardStyle(options and options.Icons)
+	local style = auraContainerDisplay:BuildStandardStyle(options and options.Icons, options and options.FontScale)
 	style.Border = AlertBorderShown()
 	style.ShowTooltips = not options or options.ShowTooltips ~= false
 	return style
@@ -1008,7 +1008,7 @@ local function PlaceTestIcon(target, slot, spellId, glowColor, elapsed, duration
 	testSlotScratch.ReverseCooldown = testIconCtx.Reverse
 	testSlotScratch.Color = glowColor
 	testSlotScratch.Border = testIconCtx.Border
-	testSlotScratch.FontScale = db.FontScale
+	testSlotScratch.FontScale = db.Modules.Alerts.FontScale
 	testSlotScratch.SpellId = testIconCtx.ShowTooltips and spellId or nil
 	target:SetSlot(slot, testSlotScratch)
 

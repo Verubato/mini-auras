@@ -93,6 +93,19 @@ local function iconSize(container)
 	return button._width
 end
 
+---What a display stamped on its buttons' cooldowns, which is the owning module's text multiplier.
+---@param container table
+---@return number?
+local function fontScale(container)
+	local button = assert(container._buttons[1], "the display has no buttons yet")
+
+	for _, frame in ipairs(acm.frames) do
+		if frame._type == "Cooldown" and frame._parent == button then
+			return frame.FontScale
+		end
+	end
+end
+
 ---The size the kick and test icon container is drawn at. It leads the same row as the aura icons,
 ---so the two have to move together.
 ---@param moduleTag string
@@ -298,6 +311,83 @@ fw.describe("Unit frame auras - the profile a battleground switches to", functio
 
 		petOptions.Icons.Size = petSize
 		env.setModuleEnabled("PetCrowdControl", false)
+		petAnchor:Hide()
+	end)
+
+	fw.it("takes each important auras tab's own font scale into that tab's display", function()
+		local defaultScale = importantProfiles.Default.FontScale
+		local raidScale = importantProfiles.Raid.FontScale
+
+		importantProfiles.Default.FontScale = 1.4
+		importantProfiles.Raid.FontScale = 0.7
+
+		refreshBoth()
+
+		assert(fontScale(liveDisplay(IMPORTANT_GROUPS)) == 1.4,
+			"the open world tab drew at " .. tostring(fontScale(liveDisplay(IMPORTANT_GROUPS))))
+
+		SetInBattleground(true)
+		refreshBoth()
+
+		assert(fontScale(liveDisplay(IMPORTANT_GROUPS)) == 0.7,
+			"the raid tab drew at " .. tostring(fontScale(liveDisplay(IMPORTANT_GROUPS))))
+
+		importantProfiles.Default.FontScale = defaultScale
+		importantProfiles.Raid.FontScale = raidScale
+	end)
+
+	fw.it("takes each crowd control tab's own font scale into that tab's display", function()
+		local defaultScale = ccProfiles.Default.FontScale
+		local raidScale = ccProfiles.Raid.FontScale
+
+		ccProfiles.Default.FontScale = 1.4
+		ccProfiles.Raid.FontScale = 0.7
+
+		refreshBoth()
+
+		assert(fontScale(liveDisplay(CC_GROUPS)) == 1.4,
+			"the open world tab drew at " .. tostring(fontScale(liveDisplay(CC_GROUPS))))
+
+		SetInBattleground(true)
+		refreshBoth()
+
+		assert(fontScale(liveDisplay(CC_GROUPS)) == 0.7,
+			"the raid tab drew at " .. tostring(fontScale(liveDisplay(CC_GROUPS))))
+
+		ccProfiles.Default.FontScale = defaultScale
+		ccProfiles.Raid.FontScale = raidScale
+		-- Inside the match still, so the spares waiting on the list are rebuilt to the restored
+		-- look rather than left carrying this test's.
+		refreshBoth()
+		acm.tickAll(WALK_TICKS)
+	end)
+
+	fw.it("takes the pet module's font scale on a pet and the member one elsewhere", function()
+		local petOptions = db.Modules.PetCrowdControl
+		local petAnchor = env.addUnitFrame("party9", "CUF_PetFont")
+
+		env.setModuleEnabled("PetCrowdControl", true)
+		env.pets["partypet2"] = true
+		petAnchor.unit = "partypet2"
+
+		local ccScale = ccProfiles.Default.FontScale
+		local petScale = petOptions.FontScale
+
+		ccProfiles.Default.FontScale = 0.75
+		petOptions.FontScale = 1.4
+
+		crowdControl:Refresh()
+		acm.tickAll(WALK_TICKS)
+
+		assert(fontScale(liveDisplay(CC_GROUPS, "partypet2")) == 1.4,
+			"the pet drew at " .. tostring(fontScale(liveDisplay(CC_GROUPS, "partypet2"))))
+		assert(fontScale(liveDisplay(CC_GROUPS, "party4")) == 0.75,
+			"the member drew at " .. tostring(fontScale(liveDisplay(CC_GROUPS, "party4"))))
+
+		ccProfiles.Default.FontScale = ccScale
+		petOptions.FontScale = petScale
+		env.setModuleEnabled("PetCrowdControl", false)
+		env.pets["partypet2"] = nil
 		petAnchor:Hide()
 	end)
 

@@ -269,7 +269,7 @@ end
 ---@param entryOptions table
 ---@return AuraDisplayStyle
 local function BuildStyle(entryOptions)
-	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons)
+	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons, entryOptions.FontScale)
 
 	-- Only the CC group goes untinted here, and most CC is physical: without this a stun gets the
 	-- tinted glow but no ring, which reads as the border being broken. The tinted helpful groups
@@ -365,7 +365,7 @@ local function UpdateKickIcon(entry)
 	anchoredIcons:RenderKickIcon(entry, options, kickEntry, function()
 		entry.KickTimer = nil
 		UpdateKickIcon(entry)
-	end)
+	end, options.FontScale)
 end
 
 ---Budgets every group for the entry's current unit, which is a question about the unit rather
@@ -947,7 +947,7 @@ function M:RefreshTestIcons()
 				Alpha = true,
 				ReverseCooldown = iconsReverse,
 				Glow = iconsGlow,
-				FontScale = db.FontScale,
+				FontScale = options.FontScale,
 			})
 			slotIndex = slotIndex + 1
 		end
@@ -962,7 +962,7 @@ function M:RefreshTestIcons()
 			ColorByDispelType = colorByDispelType,
 			-- The live buttons draw border and glow together, so the preview does too.
 			Border = true,
-			FontScale = db.FontScale,
+			FontScale = options.FontScale,
 			ShowTooltips = showTooltips,
 			Count = ccSlots,
 		})
@@ -972,7 +972,7 @@ function M:RefreshTestIcons()
 			Glow = iconsGlow,
 			Color = colors[DEFENSIVE_GROUP_KEY],
 			Border = true,
-			FontScale = db.FontScale,
+			FontScale = options.FontScale,
 			ShowTooltips = showTooltips,
 			Count = defensiveSlots,
 		})
@@ -982,7 +982,7 @@ function M:RefreshTestIcons()
 			Glow = iconsGlow,
 			Color = colors[IMPORTANT_GROUP_KEY],
 			Border = true,
-			FontScale = db.FontScale,
+			FontScale = options.FontScale,
 			ShowTooltips = showTooltips,
 			Count = importantSlots,
 		})

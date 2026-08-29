@@ -171,8 +171,10 @@ function ui.BuildLayoutTab(ctx)
 	---@param maximum number
 	---@param get fun(group: PersonalAuraGroup): number
 	---@param set fun(group: PersonalAuraGroup, value: number)
+	---@param step number? A fractional step makes the slider a float one. Defaults to whole numbers.
 	---@return table
-	local function Slider(label, tooltip, minimum, maximum, get, set)
+	local function Slider(label, tooltip, minimum, maximum, get, set, step)
+		local float = step ~= nil and step < 1
 		local slider = mini:Slider({
 			Parent = layoutPanel,
 			LabelText = label,
@@ -180,7 +182,7 @@ function ui.BuildLayoutTab(ctx)
 			Width = sliderWidth,
 			Min = minimum,
 			Max = maximum,
-			Step = 1,
+			Step = step or 1,
 			GetValue = function()
 				local group = ui.Current()
 				return group and get(group) or minimum
@@ -192,7 +194,8 @@ function ui.BuildLayoutTab(ctx)
 					return
 				end
 
-				local clamped = mini:ClampInt(value, minimum, maximum, minimum)
+				local clamped = float and mini:ClampFloat(value, minimum, maximum, minimum)
+					or mini:ClampInt(value, minimum, maximum, minimum)
 
 				if get(group) ~= clamped then
 					set(group, clamped)
@@ -232,20 +235,20 @@ function ui.BuildLayoutTab(ctx)
 		function(group, value) group.Icons.Spacing = value end)
 	spacingSlider.Slider:SetPoint("LEFT", sizeSlider.Slider, "RIGHT", SLIDER_GAP, 0)
 
-	-- A percentage of the size the text would take anyway, since every text on an icon or a bar is
+	-- A multiplier on the size the text would take anyway, since every text on an icon or a bar is
 	-- measured off that shape rather than set in points.
-	local textScaleSlider = Slider(L["Text Size (%)"],
-		L["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."],
-		groups.MinTextScale, groups.MaxTextScale,
-		function(group) return group.Icons.TextScale end,
-		function(group, value) group.Icons.TextScale = value end)
-	textScaleSlider.Slider:SetPoint("TOPLEFT", secondSliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
+	local fontScaleSlider = Slider(L["Font Scale"],
+		L["Scales this group's countdown, stack count, and bar name text."],
+		groups.MinFontScale, groups.MaxFontScale,
+		function(group) return group.Icons.FontScale end,
+		function(group, value) group.Icons.FontScale = value end, 0.05)
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", secondSliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
 
 	local widthSlider = Slider(L["Bar Width"], L["Width of each bar."],
 		groups.MinBarWidth, groups.MaxBarWidth,
 		function(group) return group.Icons.BarWidth end,
 		function(group, value) group.Icons.BarWidth = value end)
-	widthSlider.Slider:SetPoint("LEFT", textScaleSlider.Slider, "RIGHT", SLIDER_GAP, 0)
+	widthSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", SLIDER_GAP, 0)
 
 	-- Art keeps its own pair of sides: it is decoration hung beside a unit rather than a square in
 	-- a row, so neither the icon size nor the bar's ranges fit it.
@@ -292,7 +295,7 @@ function ui.BuildLayoutTab(ctx)
 		SetSliderShown(heightSlider, bars)
 		SetSliderShown(widthSlider, bars)
 		SetSliderShown(spacingSlider, not texture)
-		SetSliderShown(textScaleSlider, not texture)
+		SetSliderShown(fontScaleSlider, not texture)
 		SetSliderShown(textureWidthSlider, texture)
 		SetSliderShown(textureHeightSlider, texture)
 		SetSliderShown(rotationSlider, texture)

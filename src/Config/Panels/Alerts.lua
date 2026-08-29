@@ -301,6 +301,25 @@ local function BuildSettingsTab(parent, options)
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
+	local fontScale = helpers:BuildClampedSlider({
+		Parent = parent,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = dbDefaults.Modules.Alerts.FontScale,
+		Fallback = dbDefaults.Modules.Alerts.FontScale,
+		Float = true,
+		Width = sliderWidth,
+		Target = options,
+		Key = "FontScale",
+		SettingsKey = moduleName.Alerts,
+	})
+
+	fontScale.Slider:SetPoint("LEFT", iconSpacing.Slider, "RIGHT", horizontalSpacing, 0)
+	fontScale.Slider:SetPoint("TOP", iconSpacing.Slider, "TOP", 0, 0)
+
 	local importantBarChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show Important"],

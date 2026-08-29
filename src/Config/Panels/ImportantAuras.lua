@@ -248,6 +248,25 @@ local function BuildInstance(panel, options, defaults)
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
+	local fontScale = helpers:BuildClampedSlider({
+		Parent = parent,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = defaults.FontScale,
+		Fallback = defaults.FontScale,
+		Float = true,
+		Width = sliderWidth,
+		Target = options,
+		Key = "FontScale",
+		SettingsKey = moduleName.ImportantAuras,
+	})
+
+	fontScale.Slider:SetPoint("LEFT", iconSpacing.Slider, "RIGHT", horizontalSpacing, 0)
+	fontScale.Slider:SetPoint("TOP", iconSpacing.Slider, "TOP", 0, 0)
+
 	local offsetX = helpers:BuildOffsetSliders({
 		Parent = parent,
 		Offset = options.Offset,

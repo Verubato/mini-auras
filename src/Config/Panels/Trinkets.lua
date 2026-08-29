@@ -110,6 +110,24 @@ function M:Build(panel)
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", borderChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
+	local fontScaleSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = dbDefaults.Modules.Trinkets.FontScale,
+		Fallback = dbDefaults.Modules.Trinkets.FontScale,
+		Float = true,
+		Width = columns * columnWidth - horizontalSpacing,
+		Target = db.Modules.Trinkets,
+		Key = "FontScale",
+		SettingsKey = moduleName.Trinkets,
+	})
+
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	local offsetXSlider = helpers:BuildOffsetSliders({
 		Parent = panel,
 		Offset = db.Modules.Trinkets.Offset,
@@ -118,7 +136,7 @@ function M:Build(panel)
 		SettingsKey = moduleName.Trinkets,
 	})
 
-	offsetXSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	offsetXSlider.Slider:SetPoint("TOPLEFT", fontScaleSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local lines = mini:TextBlock({
 		Parent = panel,

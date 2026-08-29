@@ -76,7 +76,7 @@ end
 ---@return AuraDisplayStyle
 local function BuildPortraitStyle()
 	-- The cooldown direction lives on the module options root, so there is no Icons table to pass.
-	local style = auraContainerDisplay:BuildStandardStyle(nil)
+	local style = auraContainerDisplay:BuildStandardStyle(nil, db.Modules.Portrait.FontScale)
 	style.ReverseCooldown = db.Modules.Portrait.ReverseCooldown or false
 	style.ShowTooltips = false
 
@@ -434,7 +434,7 @@ function M:UpdateKickIcon(unit, container)
 		slotOptions.DurationObject = kickEntry.DurationObject
 		slotOptions.Alpha = true
 		slotOptions.ReverseCooldown = db.Modules.Portrait.ReverseCooldown
-		slotOptions.FontScale = db.FontScale
+		slotOptions.FontScale = db.Modules.Portrait.FontScale
 		slotOptions.Color = kickEntry.Color
 	end
 
@@ -472,7 +472,7 @@ function M:RefreshTestIcons()
 			Alpha = true,
 			Glow = false,
 			ReverseCooldown = db.Modules.Portrait.ReverseCooldown,
-			FontScale = db.FontScale,
+			FontScale = db.Modules.Portrait.FontScale,
 		})
 	end
 end

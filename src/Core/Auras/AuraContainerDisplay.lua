@@ -2149,14 +2149,12 @@ function M:GetStyleScratch()
 	return styleScratch
 end
 
----Fills the shared style scratch with the fields every module resolves the same way:
----ReverseCooldown, ShowMilliseconds, ColorByDispelType and Glow are read off the module's Icons
----options sub-table, and FontScale comes from the global db. Returns the same scratch as
----GetStyleScratch with every other field cleared, so append any extras (ShowTooltips, GlowColor,
----Stacks, Border, ...) before handing it to New/SetStyle/ApplyConfig, and never retain it.
+---Returns the shared scratch with every other field cleared, so append any extras before handing
+---it to New/SetStyle/ApplyConfig, and never retain it.
 ---@param iconOptions table? A module's Icons options table. Nil leaves the four fields unset.
+---@param fontScale number? The owning module's text multiplier.
 ---@return AuraDisplayStyle
-function M:BuildStandardStyle(iconOptions)
+function M:BuildStandardStyle(iconOptions, fontScale)
 	local style = self:GetStyleScratch()
 
 	if iconOptions then
@@ -2166,8 +2164,7 @@ function M:BuildStandardStyle(iconOptions)
 		style.Glow = iconOptions.Glow
 	end
 
-	local db = GetDb()
-	style.FontScale = db and db.FontScale
+	style.FontScale = fontScale
 
 	return style
 end

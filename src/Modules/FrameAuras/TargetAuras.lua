@@ -43,6 +43,7 @@ local CASTBAR_Y = -5
 local MASQUE_GROUP = "Frame Auras"
 -- What a profile written before a key existed falls back to.
 local DEFAULT_SIZE = 22
+local DEFAULT_FONT_SCALE = 1.0
 local DEFAULT_PER_ROW = 6
 local DEFAULT_MAX_ICONS = 6
 -- A 22 pixel icon leaves a count of eight points at the shared ratio.
@@ -217,9 +218,17 @@ local function SuppressBlizzardAuras(frame)
 	container:Hide()
 end
 
+---What the rows multiply their text size by.
+---@return number
+local function FontScale()
+	local options = Options()
+
+	return tonumber(options and options.FontScale) or DEFAULT_FONT_SCALE
+end
+
 ---@return AuraDisplayStyle
 local function BuildStyle()
-	local style = auraContainerDisplay:BuildStandardStyle()
+	local style = auraContainerDisplay:BuildStandardStyle(nil, FontScale())
 
 	style.Stacks = true
 	style.StackCoefficient = STACK_COEFFICIENT
@@ -476,8 +485,7 @@ end
 ---row. Nil draws the row plain.
 ---@param leadColor table? The colour those icons take.
 local function FillTestRow(container, previewSpells, size, maxIcons, perRow, leadSpells, leadColor)
-	local db = mini:GetSavedVars()
-	local fontScale = db and db.FontScale
+	local fontScale = FontScale()
 	local slot = 1
 
 	container:SetIconSize(size)

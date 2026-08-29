@@ -51,13 +51,13 @@ local BOUNDS = {
 		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
-		TextScale = { Min = 50, Max = 200 },
+		FontScale = { Min = 0.5, Max = 2.0, Step = 0.05 },
 	},
 	Debuffs = {
 		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
-		TextScale = { Min = 50, Max = 200 },
+		FontScale = { Min = 0.5, Max = 2.0, Step = 0.05 },
 	},
 	ClassBuff = {
 		Size = { Min = 15, Max = 50 },
@@ -66,6 +66,7 @@ local BOUNDS = {
 		Size = { Min = 12, Max = 40 },
 		MaxIcons = { Min = 1, Max = 12 },
 		PerRow = { Min = 1, Max = 12 },
+		FontScale = { Min = 0.5, Max = 2.0, Step = 0.05 },
 	},
 }
 
@@ -137,6 +138,9 @@ local function Slider(parent, options, part, key, label, tooltip)
 		Tooltip = tooltip,
 		Min = range.Min,
 		Max = range.Max,
+		Step = range.Step,
+		-- A fractional step has to clamp without rounding.
+		Float = range.Step ~= nil and range.Step < 1,
 		Default = dbDefaults.Modules.FrameAuras[part][key],
 		Width = controlWidth,
 		Target = options,
@@ -533,9 +537,9 @@ local function BuildBuffs(content, options)
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
 
-	local textScale = Slider(content, options, "Buffs", "TextScale", L["Text Size (%)"],
-		L["Scales this row's countdown and stack count text, on top of the global font scale."])
-	textScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
+	local fontScale = Slider(content, options, "Buffs", "FontScale", L["Font Scale"],
+		L["Scales this row's countdown and stack count text."])
+	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
 
 	local glow = Divider(content, L["Refresh window"], perRow.Slider)
 
@@ -645,9 +649,9 @@ local function BuildDebuffs(content, options)
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
 
-	local textScale = Slider(content, options, "Debuffs", "TextScale", L["Text Size (%)"],
-		L["Scales this row's countdown and stack count text, on top of the global font scale."])
-	textScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
+	local fontScale = Slider(content, options, "Debuffs", "FontScale", L["Font Scale"],
+		L["Scales this row's countdown and stack count text."])
+	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
 end
 
 ---The name of the buff the player brings, for a page that can then say which one it means.
@@ -750,6 +754,10 @@ local function BuildTargetFocus(content, options)
 	local perRow = Slider(content, options, "TargetFocus", "PerRow", L["Icons per row"],
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+
+	local fontScale = Slider(content, options, "TargetFocus", "FontScale", L["Font Scale"],
+		L["Scales this row's countdown and stack count text."])
+	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
 
 	local purge = Divider(content, L["Purgeable buffs"], perRow.Slider)
 

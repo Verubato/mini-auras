@@ -382,21 +382,36 @@ fw.describe("AllyKickTracker - the list", function()
 		assert(#VisibleBars() == 2, "a busy pull must not become a wall of rows")
 	end)
 
-	fw.it("scales the row text with the shared font scale", function()
-		-- The one font setting shared by every module. The rows must follow it like the icons do.
-		db.FontScale = 1.5
+	---@return number? The point size the first visible row drew its name at.
+	local function NameSize()
 		module:Refresh()
-
 		Interrupted("nameplate1")
 
-		local name = VisibleBars()[1]._createdFontStrings[1]
-		local args = name._lastArgs.SetFont
+		local args = VisibleBars()[1]._createdFontStrings[1]._lastArgs.SetFont
 
-		db.FontScale = 1.0
+		return args and args[2]
+	end
+
+	fw.it("scales the row text with its own font scale", function()
+		db.Modules.AllyKickTracker.FontScale = 1.5
+
+		local size = NameSize()
+
+		db.Modules.AllyKickTracker.FontScale = 1.0
 		module:Refresh()
 
 		-- Height 35 at the 0.42 name coefficient: 14 unscaled, 22 at one and a half.
-		assert(args and args[2] == 22, "the name follows the scale, got " .. tostring(args and args[2]))
+		assert(size == 22, "the name follows the scale, got " .. tostring(size))
+	end)
+
+	fw.it("ignores another module's font scale", function()
+		db.Modules.EnemyKickTracker.FontScale = 1.5
+
+		local size = NameSize()
+
+		db.Modules.EnemyKickTracker.FontScale = 1.0
+
+		assert(size == 14, "a sibling's scale must not reach this row, got " .. tostring(size))
 	end)
 
 	fw.it("pins a dropped list by the edge the rows grow away from", function()

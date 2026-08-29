@@ -300,6 +300,24 @@ function M:Build(panel, options)
 	fontSize.Slider:SetPoint("LEFT", iconSpacing.Slider, "RIGHT", horizontalSpacing, 0)
 	fontSize.Slider:SetPoint("TOP", iconSpacing.Slider, "TOP", 0, 0)
 
+	local fontScale = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Icon Text Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Float = true,
+		Default = dbDefaults.Modules.HealerCrowdControl.FontScale,
+		Fallback = dbDefaults.Modules.HealerCrowdControl.FontScale,
+		Width = sliderWidth,
+		Target = options,
+		Key = "FontScale",
+		SettingsKey = moduleName.HealerCrowdControl,
+	})
+
+	fontScale.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
 	end)

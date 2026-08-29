@@ -96,7 +96,7 @@ fw.describe("Migrator - fresh install", function()
 			assert(db.Modules[name] == nil, "removed module still seeded: " .. name)
 		end
 		assert(type(db.Modules.CrowdControl.Default.Icons.Size) == "number", "representative nested default")
-		assert(db.GlowType == "Slot Glow" and type(db.FontScale) == "number", "top-level defaults")
+		assert(db.GlowType == "Slot Glow" and type(db.MillisecondsThreshold) == "number", "top-level defaults")
 		assert(next(db.WhatsNew) == nil, "a first login has no release notes to catch up on")
 	end)
 
@@ -270,10 +270,10 @@ fw.describe("Migrator - arbitrary input safety", function()
 	end
 
 	fw.it("a db from a NEWER version soft-resets but keeps recognized settings", function()
-		_G.MiniAurasDB = { Version = LATEST_VERSION + 100, FontScale = 1.4, Garbage = "x" }
+		_G.MiniAurasDB = { Version = LATEST_VERSION + 100, MillisecondsThreshold = 4, Garbage = "x" }
 		local db = migrator:GetAndUpgradeDb()
 		assert(db.Version == LATEST_VERSION, "version reset to current")
-		assert(db.FontScale == 1.4, "recognized custom value preserved")
+		assert(db.MillisecondsThreshold == 4, "recognized custom value preserved")
 		assert(db.Garbage == nil, "unknown key cleaned")
 	end)
 end)
@@ -1352,31 +1352,31 @@ fw.describe("Migrator - adopting the MiniCC saved variable", function()
 	end)
 
 	fw.it("carries the old settings over on the first run under the new name", function()
-		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+		_G.MiniCCDB = { Version = LATEST_VERSION, MillisecondsThreshold = 3 }
 
 		local db = migrator:GetAndUpgradeDb()
 
-		assert(db.FontScale == 1.35, "the old value came across")
+		assert(db.MillisecondsThreshold == 3, "the old value came across")
 		assert(db.Version == LATEST_VERSION, "and lands on the current schema")
 	end)
 
 	fw.it("copies rather than adopts, so a rollback still finds the old table", function()
-		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+		_G.MiniCCDB = { Version = LATEST_VERSION, MillisecondsThreshold = 3 }
 
 		local db = migrator:GetAndUpgradeDb()
-		db.FontScale = 1.6
+		db.MillisecondsThreshold = 6
 
-		assert(_G.MiniCCDB.FontScale == 1.35, "the old table is untouched")
+		assert(_G.MiniCCDB.MillisecondsThreshold == 3, "the old table is untouched")
 		assert(_G.MiniAurasDB ~= _G.MiniCCDB, "and is a separate table")
 	end)
 
 	fw.it("leaves an existing MiniAurasDB alone", function()
-		_G.MiniAurasDB = { Version = LATEST_VERSION, FontScale = 1.1 }
-		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+		_G.MiniAurasDB = { Version = LATEST_VERSION, MillisecondsThreshold = 2 }
+		_G.MiniCCDB = { Version = LATEST_VERSION, MillisecondsThreshold = 3 }
 
 		local db = migrator:GetAndUpgradeDb()
 
-		assert(db.FontScale == 1.1, "the new table wins once it exists")
+		assert(db.MillisecondsThreshold == 2, "the new table wins once it exists")
 	end)
 
 	fw.it("still produces a fresh install when there is nothing to adopt", function()
@@ -1395,7 +1395,7 @@ fw.describe("Migrator - adopting the MiniCC saved variable", function()
 	end)
 
 	fw.it("records no miss when the old table was there to adopt", function()
-		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+		_G.MiniCCDB = { Version = LATEST_VERSION, MillisecondsThreshold = 3 }
 
 		local db = migrator:GetAndUpgradeDb()
 
@@ -1595,10 +1595,10 @@ fw.describe("Migrator - defaults helpers", function()
 	fw.it("FillDefaults adds missing keys without overwriting existing values", function()
 		_G.MiniAurasDB = nil
 		local db = migrator:GetAndUpgradeDb()
-		db.FontScale = 1.25
+		db.MillisecondsThreshold = 3
 		db.Modules.CrowdControl.Default.Icons.Size = 48
 		migrator:FillDefaults()
-		assert(db.FontScale == 1.25 and db.Modules.CrowdControl.Default.Icons.Size == 48, "existing values kept")
+		assert(db.MillisecondsThreshold == 3 and db.Modules.CrowdControl.Default.Icons.Size == 48, "existing values kept")
 		assert(db.Modules.Alerts ~= nil, "missing keys restored")
 	end)
 end)
@@ -1911,5 +1911,227 @@ fw.describe("Migrator - the v78 silent sound settings", function()
 		assert(LATEST_VERSION >= 78, "the shipped version has to be past this step")
 		assert(db.Modules.Alerts.Sound.Important.Enabled == false,
 			"the login path has to reach step 78")
+	end)
+end)
+
+-- Every module grew a font scale of its own, so the one global value has to land on all of them.
+fw.describe("Migrator - the v79 per-module font scale", function()
+	local FONT_SCALE_MODULES = {
+		"Nameplates",
+		"PetCrowdControl",
+		"Portrait",
+		"Alerts",
+		"Trinkets",
+		"EnemyKickTracker",
+		"AllyKickTracker",
+		"HealerCrowdControl",
+	}
+
+	---@param scale number?
+	---@return table
+	local function VarsWithGlobal(scale)
+		return {
+			Version = 78,
+			FontScale = scale,
+			Modules = {
+				Nameplates = { IconSize = 24 },
+				FrameAuras = {
+					Buffs = { TextScale = 100 },
+					Debuffs = { TextScale = 80 },
+					TargetFocus = { TextScale = 100 },
+				},
+				PersonalAuras = { Groups = { { Icons = { TextScale = 100 } } } },
+				HealerCrowdControl = { Font = { Size = 32 } },
+			},
+		}
+	end
+
+	fw.it("hands the old global to every module that gained one", function()
+		local vars = VarsWithGlobal(1.25)
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+
+		for _, name in ipairs(FONT_SCALE_MODULES) do
+			assert(vars.Modules[name], name .. " needs a table to hold its own scale")
+			assert(vars.Modules[name].FontScale == 1.25,
+				name .. " has to keep the size the player was seeing")
+		end
+
+		assert(vars.Modules.Nameplates.IconSize == 24, "and nothing else on the table moves")
+		assert(vars.Version == 79)
+	end)
+
+	fw.it("hands it to both instance tabs of the two modules that tab, one each", function()
+		local vars = VarsWithGlobal(1.25)
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+
+		for _, name in ipairs({ "ImportantAuras", "CrowdControl" }) do
+			local module = vars.Modules[name]
+
+			assert(module.Default.FontScale == 1.25)
+			assert(module.Raid.FontScale == 1.25)
+			assert(module.FontScale == nil,
+				name .. " never held one on the module table, so nothing goes there")
+		end
+	end)
+
+	fw.it("holds a global past the new slider's range inside it", function()
+		local vars = VarsWithGlobal(4)
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.Alerts.FontScale == 2.0, "clamped to the slider's top")
+		assert(vars.Modules.ImportantAuras.Default.FontScale == 2.0)
+	end)
+
+	fw.it("clears the old root key", function()
+		local vars = VarsWithGlobal(1.25)
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.FontScale == nil, "a leftover root key would multiply twice")
+	end)
+
+	fw.it("turns the percentages the other two modules kept into scales, global and all", function()
+		local vars = VarsWithGlobal(1.25)
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.FontScale == 1.25)
+		assert(vars.Modules.FrameAuras.Debuffs.FontScale == 1.0, "80% of the 1.25 it was drawn at")
+		assert(vars.Modules.FrameAuras.TargetFocus.FontScale == 1.25)
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons.FontScale == 1.25)
+		-- The healer warning label is sized in points and never scaled by the global, so the
+		-- step has to leave it alone.
+		assert(vars.Modules.HealerCrowdControl.Font.Size == 32)
+	end)
+
+	fw.it("leaves no percentage behind, which would multiply a second time", function()
+		local vars = VarsWithGlobal(1.25)
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.TextScale == nil)
+		assert(vars.Modules.FrameAuras.Debuffs.TextScale == nil)
+		assert(vars.Modules.FrameAuras.TargetFocus.TextScale == nil)
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons.TextScale == nil)
+	end)
+
+	-- The widened slider is what makes the conversion lossless, so the biggest row anyone could
+	-- have saved has to arrive whole.
+	fw.it("carries a row saved at the old maximum all the way to the new one", function()
+		local vars = VarsWithGlobal(1.0)
+
+		vars.Modules.FrameAuras.Buffs.TextScale = 200
+		vars.Modules.PersonalAuras.Groups[1].Icons.TextScale = 200
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.FontScale == 2.0, "200% is twice the size, not 1.5")
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons.FontScale == 2.0)
+	end)
+
+	fw.it("holds a conversion inside the range its slider offers", function()
+		local vars = VarsWithGlobal(1.5)
+
+		vars.Modules.FrameAuras.Buffs.TextScale = 200
+		vars.Modules.FrameAuras.TargetFocus.TextScale = 180
+		vars.Modules.PersonalAuras.Groups[1].Icons.TextScale = 200
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.FontScale == 2.0, "clamped to the slider's top")
+		assert(vars.Modules.FrameAuras.TargetFocus.FontScale == 2.0)
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons.FontScale == 2.0)
+	end)
+
+	fw.it("holds a shrinking conversion off the bottom of the range too", function()
+		local vars = VarsWithGlobal(0.5)
+
+		vars.Modules.FrameAuras.Buffs.TextScale = 50
+		vars.Modules.FrameAuras.TargetFocus.TextScale = 60
+		vars.Modules.PersonalAuras.Groups[1].Icons.TextScale = 50
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.FontScale == 0.5)
+		assert(vars.Modules.FrameAuras.TargetFocus.FontScale == 0.5, "clamped to the slider's floor")
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons.FontScale == 0.5)
+	end)
+
+	fw.it("leaves a row that was never sized unsized when the global was never moved", function()
+		local vars = VarsWithGlobal(1.0)
+
+		vars.Modules.FrameAuras.Buffs.TextScale = nil
+		vars.Modules.PersonalAuras.Groups[1].Icons.TextScale = nil
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.FontScale == nil, "1.0 is not a change to carry over")
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons.FontScale == nil,
+			"and a setting never written stays that way, so a later default can still reach it")
+		assert(vars.Modules.Alerts.FontScale == 1.0, "but the copy still has to be made")
+	end)
+
+	fw.it("moves a stored profile too", function()
+		local vars = VarsWithGlobal(1.25)
+
+		vars.Profiles = { Arena = VarsWithGlobal(0.75) }
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+
+		local arena = vars.Profiles.Arena
+
+		assert(arena.FontScale == nil, "a snapshot switched back in would undo the step")
+		assert(arena.Modules.Trinkets.FontScale == 0.75)
+		assert(arena.Modules.FrameAuras.Buffs.FontScale == 0.75)
+	end)
+
+	fw.it("reaches a blob holding none of the tables it writes into", function()
+		-- A player who never opened Frame Auras, Personal Auras or the Important Auras tabs has
+		-- nothing saved for any of them.
+		local vars = { Version = 78, FontScale = 1.25, Modules = {} }
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.Alerts.FontScale == 1.25)
+		assert(vars.Modules.ImportantAuras.Default.FontScale == 1.25,
+			"the instance table has to be made rather than skipped")
+		assert(vars.Modules.ImportantAuras.Raid.FontScale == 1.25)
+		assert(vars.Modules.CrowdControl.Default.FontScale == 1.25)
+		assert(vars.Modules.FrameAuras == nil,
+			"and the conversion writes nothing where there was nothing")
+		assert(vars.FontScale == nil)
+		assert(vars.Version == 79)
+	end)
+
+	fw.it("leaves a half-written module table where the rest of it is missing", function()
+		local vars = {
+			Version = 78,
+			FontScale = 1.25,
+			Modules = {
+				FrameAuras = { Buffs = { TextScale = 100 } },
+				PersonalAuras = {},
+				ImportantAuras = { Raid = { IconSpacing = 4 } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion79(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.FontScale == 1.25)
+		assert(vars.Modules.FrameAuras.Debuffs == nil, "a row never saved stays unsaved")
+		assert(vars.Modules.ImportantAuras.Raid.IconSpacing == 4, "the instance it had is kept")
+		assert(vars.Modules.ImportantAuras.Raid.FontScale == 1.25)
+		assert(vars.Modules.ImportantAuras.Default.FontScale == 1.25, "and the one it lacked is made")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = VarsWithGlobal(1.25)
+
+		vars.Version = 77
+
+		assert(migrator:UpgradeToVersion79(vars) == false, "wrong version must be rejected")
+		assert(vars.FontScale == 1.25, "and must move nothing")
+		assert(vars.Version == 77)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = VarsWithGlobal(1.25)
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 79, "the shipped version has to be past this step")
+		assert(db.Modules.Alerts.FontScale == 1.25, "the login path has to reach step 79")
 	end)
 end)

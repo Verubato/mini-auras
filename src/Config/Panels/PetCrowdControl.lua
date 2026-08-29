@@ -219,6 +219,25 @@ local function BuildPetInstance(panel, options)
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
+	local fontScale = helpers:BuildClampedSlider({
+		Parent = parent,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = dbDefaults.Modules.PetCrowdControl.FontScale,
+		Fallback = dbDefaults.Modules.PetCrowdControl.FontScale,
+		Float = true,
+		Width = sliderWidth,
+		Target = options,
+		Key = "FontScale",
+		SettingsKey = moduleName.PetCrowdControl,
+	})
+
+	fontScale.Slider:SetPoint("LEFT", iconSpacing.Slider, "RIGHT", horizontalSpacing, 0)
+	fontScale.Slider:SetPoint("TOP", iconSpacing.Slider, "TOP", 0, 0)
+
 	local offsetX = helpers:BuildOffsetSliders({
 		Parent = parent,
 		Offset = options.Offset,

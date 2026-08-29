@@ -81,7 +81,7 @@ local function AddIcon(duration, icon)
 		ReverseCooldown = iconOptions.ReverseCooldown or false,
 		Glow = iconOptions.Glow or false,
 		Color = moduleUtil:GetIconColor(iconOptions),
-		FontScale = db.FontScale,
+		FontScale = db.Modules.EnemyKickTracker.FontScale,
 	})
 
 	local timer = not testModeActive and C_Timer.NewTimer(duration, function()

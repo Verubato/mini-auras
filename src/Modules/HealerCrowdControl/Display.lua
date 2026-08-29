@@ -135,7 +135,7 @@ end
 ---@param options table
 ---@return AuraDisplayStyle
 local function BuildStyle(options)
-	local style = auraContainerDisplay:BuildStandardStyle(options.Icons)
+	local style = auraContainerDisplay:BuildStandardStyle(options.Icons, options.FontScale)
 
 	-- The display only ever holds CC, and most of that is physical: without this a stun gets the
 	-- tinted glow but no ring, which reads as the border being broken.
@@ -556,7 +556,7 @@ function M:RefreshTestFrame()
 			ColorByDispelType = options.Icons.ColorByDispelType,
 			-- The live buttons draw border and glow together, so the preview does too.
 			Border = true,
-			FontScale = db.FontScale,
+			FontScale = options.FontScale,
 			ShowTooltips = options.ShowTooltips ~= false,
 			Stagger = true,
 		})

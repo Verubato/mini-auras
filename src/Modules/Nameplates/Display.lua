@@ -410,7 +410,7 @@ end
 ---Fills the shared style scratch from a bar's options.
 ---@return AuraDisplayStyle
 local function BarStyle(barOptions)
-	local style = auraContainerDisplay:BuildStandardStyle(barOptions.Icons)
+	local style = auraContainerDisplay:BuildStandardStyle(barOptions.Icons, db.Modules.Nameplates.FontScale)
 	-- Nameplates keep the colour choice in ColorMode, which the standard reader doesn't know. Any
 	-- mode but None wants the paint code's coloured path, whether the tints come from the game's
 	-- palette or from BarCategoryColors.
@@ -917,7 +917,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 	local iconsReverse = barOptions.Icons.ReverseCooldown
 	local mode = M:ResolveColorMode(barOptions.Icons)
 	local showTooltips = barOptions.ShowTooltips ~= false
-	local fontScale = db.FontScale
+	local fontScale = db.Modules.Nameplates.FontScale
 	local slot = 0
 
 	-- The category entries point at the shared tint tables, so this is what puts the picked
@@ -1171,7 +1171,7 @@ function M:UpdateKick(data)
 				layerScratch.Glow = barOptions.Icons.Glow
 				layerScratch.ReverseCooldown = barOptions.Icons.ReverseCooldown
 				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
-				layerScratch.FontScale = db.FontScale
+				layerScratch.FontScale = db.Modules.Nameplates.FontScale
 				layerScratch.Color = self:ResolveColorMode(barOptions.Icons) ~= COLOR_MODE_NONE
 					and kickEntry.Color or nil
 				-- The aura buttons beside this icon draw border and glow together when coloured,

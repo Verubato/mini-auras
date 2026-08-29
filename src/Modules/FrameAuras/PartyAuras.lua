@@ -75,7 +75,7 @@ local FALLBACK_ICON_SIZE = 14
 local DEFAULT_MAX_ICONS = { Buffs = 6, Debuffs = 2 }
 local DEFAULT_PER_ROW = 3
 local DEFAULT_SIZE_PERCENT = 35
-local DEFAULT_TEXT_SCALE = 100
+local DEFAULT_FONT_SCALE = 1.0
 -- An icon sized off a party frame is about eighteen pixels, where the shared ratio leaves a count
 -- of six points.
 local STACK_COEFFICIENT = 0.4
@@ -467,13 +467,13 @@ local function PreviewLeadsWithCrowdControl(side)
 	return options ~= nil and options.ShowCrowdControl == true
 end
 
----What one row scales its text by, as a percentage of the size it would take anyway.
+---What one row multiplies its text size by.
 ---@param side "Buffs"|"Debuffs"
 ---@return number
-local function TextScale(side)
+local function FontScale(side)
 	local options = SideOptions(side)
 
-	return tonumber(options and options.TextScale) or DEFAULT_TEXT_SCALE
+	return tonumber(options and options.FontScale) or DEFAULT_FONT_SCALE
 end
 
 ---Whether one row puts the stack count where the countdown goes.
@@ -549,9 +549,7 @@ local function BuildStyle(side)
 	style.ReverseCooldown = true
 	-- Only ever adds to the global Disable Numbers switch, which the display resolves for itself.
 	style.HideNumbers = HidesNumbers(side)
-	-- On top of the global scale rather than instead of it, so a row left at 100% keeps following
-	-- whatever the player picked in Miscellaneous.
-	style.FontScale = (style.FontScale or 1) * TextScale(side) / 100
+	style.FontScale = FontScale(side)
 	style.CenterStacks = CentersStacks(side)
 
 	if side == "Buffs" then
@@ -835,7 +833,6 @@ local function ApplyTestSide(entry, side)
 	-- row of one container has to reproduce a slot at a time.
 	container:SetLeadScale(PreviewLeadsWithCrowdControl(side) and LEAD_SIZE_SCALE or nil)
 
-	local db = mini:GetSavedVars()
 	local list, leading = TestSpellList(side)
 	-- The stand-ins have to fold this in themselves, where a live button gets it from the display.
 	local centersStacks = CentersStacks(side)
@@ -847,7 +844,7 @@ local function ApplyTestSide(entry, side)
 		-- however this is set.
 		ColorByDispelType = PreviewLeadsWithCrowdControl(side) and CrowdControlDispelColors(),
 		CenterStackText = centersStacks and PREVIEW_STACK_COUNT or nil,
-		FontScale = (db and db.FontScale or 1) * TextScale(side) / 100,
+		FontScale = FontScale(side),
 		Stagger = true,
 		Count = count,
 		Repeat = true,

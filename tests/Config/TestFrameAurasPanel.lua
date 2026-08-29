@@ -373,7 +373,7 @@ fw.describe("Frame Auras page - the icon size sliders", function()
 	end)
 end)
 
-fw.describe("Frame Auras page - the text size sliders", function()
+fw.describe("Frame Auras page - the font scale sliders", function()
 	fw.it("gives each aura row a slider of its own over the same range", function()
 		local addon = Load()
 
@@ -386,18 +386,19 @@ fw.describe("Frame Auras page - the text size sliders", function()
 		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
 
 		for _, row in ipairs(rows) do
-			local slider = SliderOnTabWith(addon, row.Tab, 200)
+			local slider = SliderOnTabWith(addon, row.Tab, 2)
 
-			fw.not_nil(slider, row.Part .. " offers a text size slider")
+			fw.not_nil(slider, row.Part .. " offers a font scale slider")
 
 			local low = slider:GetMinMaxValues()
 
-			fw.eq(low, 50, row.Part .. " scales its text down to half")
-			fw.eq(frameAuras[row.Part].TextScale, 100, row.Part .. " ships at the plain size")
+			fw.eq(low, 0.5, row.Part .. " scales its text down to half")
+			fw.eq(frameAuras[row.Part].FontScale, 1.0, row.Part .. " ships at the plain size")
 
-			slider:GetScript("OnValueChanged")(slider, 150, true)
+			-- Dragged to a step off the whole numbers, which an integer clamp would round away.
+			slider:GetScript("OnValueChanged")(slider, 1.45, true)
 
-			fw.eq(frameAuras[row.Part].TextScale, 150,
+			fw.eq(frameAuras[row.Part].FontScale, 1.45,
 				row.Part .. " takes what the slider was dragged to")
 		end
 	end)

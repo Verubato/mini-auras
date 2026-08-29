@@ -326,6 +326,8 @@ function M:SetSlot(slotIndex, options)
 	end
 
 	local wasUsed = slot.IsUsed
+	-- Both texts are sized in the layout, which a slot already in use would not otherwise run.
+	local rescale = slot.FontScale ~= options.FontScale
 	local color = options.Color
 
 	slot.IsUsed = true
@@ -374,7 +376,7 @@ function M:SetSlot(slotIndex, options)
 		slot.Time:SetText("")
 	end
 
-	if not wasUsed then
+	if not wasUsed or rescale then
 		ApplyLayout(self)
 	end
 

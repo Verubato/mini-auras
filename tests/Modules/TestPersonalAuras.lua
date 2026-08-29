@@ -121,7 +121,7 @@ fw.describe("PersonalAuras - group defaults", function()
 		assert(group.Unit == "player", "pointed at the player by default")
 		assert(type(group.Spells) == "table" and #group.Spells == 0, "no spells yet")
 		assert(group.Icons.Size > 0, "an icon size")
-		assert(group.Icons.TextScale == 100, "text left at whatever the global font scale says")
+		assert(group.Icons.FontScale == 1.0, "text left at the size the icon would draw it anyway")
 		assert(group.Icons.ReverseCooldown, "the swipe fills up, which reads as time running out")
 		assert(group.Enabled, "switched on")
 		assert(group.Position.Y > 0, "placed above the middle of the screen, not on top of it")
@@ -135,7 +135,7 @@ fw.describe("PersonalAuras - group defaults", function()
 
 	fw.it("clamps values a hand-edited or imported group got wrong", function()
 		local group = groups:Normalise({
-			Icons = { Size = -5, Spacing = 1e6, TextScale = 1e6 },
+			Icons = { Size = -5, Spacing = 1e6, FontScale = 1e6 },
 			Grow = "SIDEWAYS",
 			Unit = "vehicle",
 			AuraType = "SOMETHING",
@@ -143,7 +143,7 @@ fw.describe("PersonalAuras - group defaults", function()
 
 		assert(group.Icons.Size >= groups.MinIconSize, "the icon size is floored")
 		assert(group.Icons.Spacing <= 50, "the spacing is capped")
-		assert(group.Icons.TextScale == groups.MaxTextScale, "the text scale is capped")
+		assert(group.Icons.FontScale == groups.MaxFontScale, "the font scale is capped")
 		assert(group.Grow == "CENTER", "an unknown grow direction falls back")
 		assert(group.Unit == "player", "an unsupported unit falls back")
 		assert(group.AuraType == "HELPFUL", "an unknown aura type falls back")
@@ -1127,6 +1127,29 @@ fw.describe("PersonalAuras - options page preview", function()
 			"and the preview follows the switch, like the live bars do")
 
 		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("resizes a previewed bar's text when the font scale moves under it", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { Display = "BAR" } })
+
+		group.Icons.FontScale = 1.0
+		display:SetTestMode(true)
+		module:Refresh()
+
+		local slot = display:GetStates()[group.Id].Screen.Test.Slots[1]
+
+		group.Icons.FontScale = 2.0
+		module:Refresh()
+
+		assert(slot.Name._fontScale == 2.0,
+			"the name was sized at " .. tostring(slot.Name._fontScale))
+		assert(slot.Time._fontScale == 2.0,
+			"the countdown was sized at " .. tostring(slot.Time._fontScale))
+
+		display:SetTestMode(false)
+		ClearGroups()
 	end)
 
 	fw.it("skips a group with nothing to draw", function()

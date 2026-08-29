@@ -3,6 +3,11 @@
 ## Unreleased
 
 - Scale with Nameplate now also scales personal aura groups anchored to a nameplate.
+- Moved Font Scale off the Miscellaneous tab and onto each module's own page, so one module's countdown text can be sized without moving every other module with it.
+- Added a Font Scale slider to the frame auras target and focus rows, and an icon text scale slider to the healer CC icons.
+- Renamed Text Size (%) to Font Scale on the frame aura rows and the personal aura groups, and widened every Font Scale slider to 0.5-2.0. Sizes saved as a percentage carry over.
+- Crowd control now keeps its font scale per instance tab, alongside its other per-tab settings.
+- Fixed the preview bars of a personal aura group keeping their old text size when the font scale was dragged.
 
 ## 5.29.0
 

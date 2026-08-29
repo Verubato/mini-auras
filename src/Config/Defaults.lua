@@ -3,7 +3,7 @@ local _, addon = ...
 
 ---@class Db
 local dbDefaults = {
-	Version = 78,
+	Version = 79,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -15,7 +15,6 @@ local dbDefaults = {
 	Pending = {},
 	NotifiedChanges = true,
 	GlowType = "Slot Glow",
-	FontScale = 1.0,
 	-- Font face for every module's text, by LibSharedMedia name. False leaves each piece of text in
 	-- whatever face the game hands it, which is not one face.
 	Font = false,
@@ -69,6 +68,7 @@ local dbDefaults = {
 				},
 				Grow = "RIGHT",
 				IconSpacing = 2,
+				FontScale = 1.0,
 
 				Icons = {
 					Size = 32,
@@ -95,6 +95,7 @@ local dbDefaults = {
 				},
 				Grow = "CENTER",
 				IconSpacing = 2,
+				FontScale = 1.0,
 
 				Icons = {
 					Size = 20,
@@ -133,6 +134,7 @@ local dbDefaults = {
 			},
 
 			IconSpacing = 2,
+			FontScale = 1.0,
 
 			Icons = {
 				Size = 20,
@@ -173,6 +175,7 @@ local dbDefaults = {
 			},
 
 			IconSpacing = 2,
+			FontScale = 1.0,
 
 			Icons = {
 				Enabled = true,
@@ -201,6 +204,7 @@ local dbDefaults = {
 			},
 
 			ReverseCooldown = true,
+			FontScale = 1.0,
 			-- Which of the unflagged buffs the player wants on their own portrait, under every
 			-- flagged category. Buffs only: 12.1 drops a spell id map for harmful auras on a unit
 			-- you can assist, and the layer would then match every debuff on you.
@@ -221,6 +225,7 @@ local dbDefaults = {
 			SplitBars = false,
 			-- Pixel padding between the alerts bar icons.
 			IconSpacing = 4,
+			FontScale = 1.0,
 			-- Direction the alert bars extend as icons appear. CENTER splits the row either side of
 			-- the anchor and applies to the arena tokens only.
 			Grow = "CENTER",
@@ -336,6 +341,7 @@ local dbDefaults = {
 			-- Anchor icons to UnitFrame.HealthBarsContainer rather than the nameplate frame, so
 			-- they follow an addon that resizes plates by shrinking that container.
 			AnchorToHealthBar = false,
+			FontScale = 1.0,
 
 			-- Category tints for every bar that colours by category. Module wide rather than per
 			-- bar, since a category should read the same on whichever bar it lands.
@@ -467,6 +473,7 @@ local dbDefaults = {
 			},
 
 			IconSpacing = 2,
+			FontScale = 1.0,
 
 			Icons = {
 				Size = 50,
@@ -502,6 +509,7 @@ local dbDefaults = {
 
 			Grow = "DOWN",
 			BarSpacing = 2,
+			FontScale = 1.0,
 			-- Unlocked by default because the rows are their own preview.
 			Locked = false,
 			-- Enough to read a pull's worth of interrupts without becoming a wall of them.
@@ -544,6 +552,8 @@ local dbDefaults = {
 				-- one from, so the colour is the user's choice.
 				Color = { R = 1, G = 1, B = 1, A = 1 },
 			},
+
+			FontScale = 1.0,
 
 			Font = {
 				File = "GameFontHighlightSmall",
@@ -588,6 +598,7 @@ local dbDefaults = {
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
 				IconSpacing = 2,
+				FontScale = 1.0,
 				Icons = {
 					Size = 20,
 					SizeIsPercent = false,
@@ -610,6 +621,7 @@ local dbDefaults = {
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
 				IconSpacing = 2,
+				FontScale = 1.0,
 				Icons = {
 					Size = 20,
 					SizeIsPercent = false,
@@ -665,8 +677,7 @@ local dbDefaults = {
 				-- fixed in the tracked data.
 				PandemicGlow = true,
 				PandemicColor = { R = 0.1, G = 0.9, B = 0.3 },
-				-- A percentage of the size the row would draw its text at anyway.
-				TextScale = 100,
+				FontScale = 1.0,
 				CenterStacks = false,
 			},
 
@@ -687,7 +698,7 @@ local dbDefaults = {
 				-- Blizzard's own, which draws a plain icon.
 				ColorByDispelType = true,
 				EnableNumbers = false,
-				TextScale = 100,
+				FontScale = 1.0,
 				CenterStacks = false,
 				-- No "Mine" switch on this side. Everything landing on a group member came from
 				-- somebody else, so filtering to your own would only ever empty the row.
@@ -711,6 +722,7 @@ local dbDefaults = {
 				Size = 22,
 				MaxIcons = 6,
 				PerRow = 6,
+				FontScale = 1.0,
 				-- On, like the group buff row: a friendly target's buffs are worth narrowing to the
 				-- tracked list. It only bites there either way, since a spell-id map is identity
 				-- gated and the engine skips it for a helpful aura on a unit you cannot assist.

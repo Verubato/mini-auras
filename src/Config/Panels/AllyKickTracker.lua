@@ -184,5 +184,23 @@ function M:Build(panel, options)
 	maxBarsSlider.Slider:SetPoint("LEFT", spacingSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	maxBarsSlider.Slider:SetPoint("TOP", spacingSlider.Slider, "TOP", 0, 0)
 
+	local fontScaleSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = dbDefaults.Modules.AllyKickTracker.FontScale,
+		Fallback = dbDefaults.Modules.AllyKickTracker.FontScale,
+		Float = true,
+		Width = sliderWidth,
+		Target = options,
+		Key = "FontScale",
+		SettingsKey = moduleName.AllyKickTracker,
+	})
+
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", spacingSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	M.Panel = panel
 end

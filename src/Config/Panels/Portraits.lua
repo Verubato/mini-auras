@@ -7,6 +7,7 @@ local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local auraCategoryIds = addon.Core.AuraCategoryIds
 local moduleName = addon.Utils.ModuleName
+local dbDefaults = addon.Config.Defaults
 
 -- Two columns of spell rows, matching the raid frame aura lists. A row is nowhere near as wide
 -- as the page, and one column would scroll far sooner than it needs to.
@@ -75,13 +76,34 @@ function M:Build(panel)
 	reverseSweepChk:SetPoint("TOP", enabled, "TOP", 0, 0)
 	reverseSweepChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 
+	local fontScaleSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = dbDefaults.Modules.Portrait.FontScale,
+		Fallback = dbDefaults.Modules.Portrait.FontScale,
+		Float = true,
+		Width = checkColumnWidth * 2,
+		Target = db.Modules.Portrait,
+		Key = "FontScale",
+		SettingsKey = moduleName.Portrait,
+	})
+
+	-- On the switch row, dropped by one gap so the slider's own label and value box have room
+	-- above them.
+	fontScaleSlider.Slider:SetPoint("TOP", reverseSweepChk, "TOP", 0, -verticalSpacing)
+	fontScaleSlider.Slider:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+
 	local customDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Extra buffs"],
 	})
 	customDivider:SetPoint("LEFT", panel, "LEFT")
 	customDivider:SetPoint("RIGHT", panel, "RIGHT")
-	customDivider:SetPoint("TOP", enabled, "BOTTOM", 0, -verticalSpacing)
+	customDivider:SetPoint("TOP", fontScaleSlider.Slider, "BOTTOM", 0, -verticalSpacing)
 
 	local customLines = mini:TextBlock({
 		Parent = panel,

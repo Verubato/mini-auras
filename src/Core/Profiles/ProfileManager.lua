@@ -12,7 +12,6 @@ addon.Core.ProfileManager = M
 -- Exposed so Migrator.lua (loaded after this file) can reference it.
 M.PayloadKeys = {
 	"GlowType",
-	"FontScale",
 	"ConfigureBlizzardNameplates",
 	"DisableSwipe",
 	"DisableNumbers",

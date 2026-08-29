@@ -399,6 +399,24 @@ local function BuildSettingsTab(parent, options)
 	})
 
 	PlaceSwatch(importantSwatch, 2)
+
+	local fontScale = helpers:BuildClampedSlider({
+		Parent = parent,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = dbDefaults.Modules.Nameplates.FontScale,
+		Fallback = dbDefaults.Modules.Nameplates.FontScale,
+		Float = true,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Target = options,
+		Key = "FontScale",
+		SettingsKey = moduleName.Nameplates,
+	})
+
+	fontScale.Slider:SetPoint("TOPLEFT", ccSwatch, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 end
 
 ---@param parent table

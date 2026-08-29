@@ -130,11 +130,8 @@ end)
 ---@return AuraDisplayStyle
 local function BuildStyle(group)
 	local icons = group.Icons
-	local style = auraContainerDisplay:BuildStandardStyle(icons)
+	local style = auraContainerDisplay:BuildStandardStyle(icons, icons.FontScale)
 
-	-- On top of the global scale rather than instead of it, so a group set to 100% keeps following
-	-- whatever the user picked in Miscellaneous.
-	style.FontScale = (style.FontScale or 1) * (icons.TextScale or 100) / 100
 	style.Border = icons.Border
 	-- The same colour drives the glow, the border and a bar's fill, so one swatch covers a group
 	-- whichever shape it draws.
@@ -684,7 +681,7 @@ local function RenderTestIcons(state, entry)
 	local textColor = group.Icons.ColorText
 		and moduleUtil:FillColor(textColorScratch, group.Icons.TextColor, DEFAULT_TEXT_COLOR)
 		or nil
-	local fontScale = (db.FontScale or 1) * (group.Icons.TextScale or 100) / 100
+	local fontScale = group.Icons.FontScale
 	local nextSlot
 
 	if groups:TracksSpells(group) then

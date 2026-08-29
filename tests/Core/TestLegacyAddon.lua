@@ -123,7 +123,7 @@ fw.describe("LegacyAddon - offering the import that first-time setup missed", fu
 
 	fw.it("stays quiet when nothing was missed", function()
 		SetInstalledNotLoaded(true)
-		_G.MiniCCDB = { FontScale = 1.42 }
+		_G.MiniCCDB = { MillisecondsThreshold = 4.2 }
 
 		FreshLegacyAddon():OfferMissedImport({ MissedLegacyImport = false })
 
@@ -142,7 +142,7 @@ fw.describe("LegacyAddon - offering the import that first-time setup missed", fu
 
 	fw.it("offers the import when the legacy table finally shows up", function()
 		SetInstalledNotLoaded(true)
-		_G.MiniCCDB = { FontScale = 1.42 }
+		_G.MiniCCDB = { MillisecondsThreshold = 4.2 }
 
 		local db = { MissedLegacyImport = true }
 
@@ -158,7 +158,7 @@ fw.describe("LegacyAddon - offering the import that first-time setup missed", fu
 		local before = _G.MiniAurasDB
 		popup.OnAccept()
 
-		assert(_G.MiniAurasDB.FontScale == 1.42, "the old settings came across")
+		assert(_G.MiniAurasDB.MillisecondsThreshold == 4.2, "the old settings came across")
 		assert(_G.MiniAurasDB ~= _G.MiniCCDB, "as a copy, so a rollback still finds the original")
 		assert(reloads == 1, "and the UI reloaded")
 

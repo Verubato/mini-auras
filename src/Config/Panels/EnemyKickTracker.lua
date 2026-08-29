@@ -158,5 +158,23 @@ function M:Build(panel)
 	iconSpacingSlider.Slider:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	iconSpacingSlider.Slider:SetPoint("TOP", iconSizeSlider.Slider, "TOP", 0, 0)
 
+	local fontScaleSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Font Scale"],
+		Tooltip = L["Scales this module's countdown text, leaving the icon size alone."],
+		Min = 0.5,
+		Max = 2.0,
+		Step = 0.05,
+		Default = dbDefaults.Modules.EnemyKickTracker.FontScale,
+		Fallback = dbDefaults.Modules.EnemyKickTracker.FontScale,
+		Float = true,
+		Width = sliderWidth,
+		Target = db.Modules.EnemyKickTracker,
+		Key = "FontScale",
+		SettingsKey = moduleName.EnemyKickTracker,
+	})
+
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	M.Panel = panel
 end
