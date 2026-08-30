@@ -1,16 +1,15 @@
 # Changelog
 
-## Unreleased
+## 5.30.0
 
 - Scale with Nameplate now also scales personal aura groups anchored to a nameplate.
-- Moved Font Scale off the Miscellaneous tab and onto each module's own page, so one module's countdown text can be sized without moving every other module with it.
-- Added a Font Scale slider to the frame auras target and focus rows, and an icon text scale slider to the healer CC icons.
-- Renamed Text Size (%) to Font Scale on the frame aura rows and the personal aura groups, and widened every Font Scale slider to 0.5-2.0. Sizes saved as a percentage carry over.
-- Crowd control now keeps its font scale per instance tab, alongside its other per-tab settings.
-- Fixed the preview bars of a personal aura group keeping their old text size when the font scale was dragged.
-- Added a Custom icon switch to the personal aura groups, drawing the group's own icon on every aura in place of each spell's artwork.
-- Added Goremaw's Bite to the enemy debuff announcements, spoken as just "Goremaw".
-- Fixed frame auras still showing crowd control in the boss and role auras at the head of the debuff row when Show Crowd Control was switched off.
+- Each module now has a separate font scale option and the misc tab global font scale option has been removed.
+- Added a Custom Icon switch to the personal aura groups to show your selected display icon instead of the spell icon.
+- Added a Debug Mode switch to the Miscellaneous tab, which prints extra messages in chat to help track down problems.
+- Added the evoker Dream Breath echo copy to frame auras, listed as Echo Breath.
+- Added Guardian of Ancient Kings to the paladin defensive auras, on by default.
+- Added Goremaw's Bite to the enemy debuff announcements.
+- Fixed frame auras still showing crowd control when the option is disabled.
 
 ## 5.29.0
 

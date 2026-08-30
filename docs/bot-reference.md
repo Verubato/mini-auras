@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.29.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.30.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -697,9 +697,11 @@ upward.
 Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is
 ordered by the game itself, because an aura's spell id is secret and nothing can reorder a group
 once it has rendered. The game's own boss and role auras lead the row, drawn a quarter larger than
-the rest of it and capped at two icons on their own budget. There is no switch for it: a debuff
-like Unstable Affliction has to be seen before anything else on the frame. Crowd control, when it
-is switched on, follows it.
+the rest of it and capped at two icons on their own budget. There is no switch to hold the group
+itself back: a debuff like Unstable Affliction has to be seen before anything else on the frame.
+Crowd control is the one thing the **Crowd control** switch reaches there too: with the switch off, a
+boss or role flagged crowd control debuff is kept off the row like any other, and with it on the
+switch also opens a group of its own behind the lead group.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3), font scale 0.5-2.0 (default 1.0).
@@ -707,8 +709,9 @@ is switched on, follows it.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
 - **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,
-  drawn a quarter larger than the rest of the row and capped at two icons on its own budget. Off by
-  default for the same reason as the two on the Buffs tab.
+  drawn a quarter larger than the rest of the row and capped at two icons on its own budget, and lets
+  a crowd control debuff into the boss and role group ahead of it. Off by default for the same reason
+  as the two on the Buffs tab.
 - **Dispel colours** (on) - rings that crowd control group in the game's colour for its dispel
   type. The debuffs behind it draw a plain icon like Blizzard's own, whatever this is set to.
 - **Show numbers** (off) - as on the Buffs tab.
@@ -886,6 +889,7 @@ Enable in (defaults): all five on (World, Arena, Battlegrounds, Dungeons, Raid).
 | Ignore Friendly Pets | on | no auras on friendly pet nameplates |
 | Scale with Nameplate | on | icons follow the plate's scale, including personal aura groups anchored to a nameplate; keep on if the target plate is a different size (for example via BBP) |
 | Anchor to Health Bar | off | anchor icons to the plate's health bar instead of the plate frame; turn on if another addon (for example BetterBlizzPlates) changes plate width or height |
+| Configure Blizzard Nameplates | on | disables Blizzard's own CC display and BigDebuffs on nameplates while MiniAuras nameplates are in use, so the same auras are not drawn twice; stored globally rather than per module, and carried in the profile |
 | Important colour | red (1, 0.2, 0.2) | tint for important icons on every bar whose Icon colours is Dispel colours or Custom |
 | Defensive colour | green (0.2, 1, 0.2) | the same for defensive icons |
 | Font Scale | 1.0 | 0.5-2.0, step 0.05; sizes the countdown text on all four bars |
@@ -939,7 +943,7 @@ control, so the bars stay right. What it does not do is keep the alert sounds an
 which are matched by spell alone and would announce whatever landed on the player driving. Those
 go quiet for as long as the mind control lasts and come back on their own when it ends.
 
-Related global option: **Configure Blizzard Nameplates** (Misc, on by default) disables
+Related global option: **Configure Blizzard Nameplates** (Nameplates > Settings, on by default) disables
 Blizzard's own CC display and BigDebuffs on nameplates while MiniAuras nameplates are in use,
 so the same auras are not drawn twice.
 
@@ -1165,7 +1169,6 @@ and Debug Mode are part of the profile.
 | Setting | Values / range | Default |
 |---|---|---|
 | Language override | Auto (client language) or a shipped locale | Auto; changing prompts a UI reload |
-| Configure Blizzard Nameplates | on/off | on (disables Blizzard's CC and BigDebuffs on nameplates when MiniAuras nameplates are used) |
 | Disable Swipe | on/off | off |
 | Disable Numbers | on/off (since 5.23.0) | off (drops the countdown text on every aura icon; the swipe stays) |
 | Show Test Labels | on/off (since 5.24.0) | on (names each module above its test icons; turn it off when the names crowd each other) |
@@ -1197,8 +1200,8 @@ Sidebar: Other > Profiles.
 - **Active Profile** dropdown plus **New**, **Rename**, **Clone**, **Delete** (confirmed;
   the last remaining profile cannot be deleted), **Reset** (resets the active profile to
   factory defaults, confirmed), and **Import/Export**.
-- A profile contains: all module settings plus the Misc options Glow Type, Font,
-  Configure Blizzard Nameplates, Disable Swipe, Disable Numbers, Zoom Icons, Colour Countdown,
+- A profile contains: all module settings plus Configure Blizzard Nameplates and the Misc
+  options Glow Type, Font, Disable Swipe, Disable Numbers, Zoom Icons, Colour Countdown,
   Countdown Colours and Fade With Parent. Not in the profile: Language override, Milliseconds
   Threshold, Show Test Labels, Debug Mode, and the Auto-Switch rules.
 - **Import/Export**: export produces a string starting with `!MiniAuras:1!` (deflated CBOR,

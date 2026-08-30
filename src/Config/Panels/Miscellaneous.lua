@@ -7,8 +7,6 @@ local horizontalSpacing = mini.HorizontalSpacing
 local helpers = addon.Config.PanelHelpers
 local dbDefaults = addon.Config.Defaults
 local fonts = addon.Core.Fonts
-local config = addon.Config
-local moduleName = addon.Utils.ModuleName
 local moduleUtil = addon.Utils.ModuleUtil
 ---@class MiscellaneousConfig
 local M = {}
@@ -98,25 +96,6 @@ function M:Build(panel)
 	behaviourDivider:SetPoint("RIGHT", panel, "RIGHT")
 	behaviourDivider:SetPoint("TOP", languageDropdown, "BOTTOM", 0, -verticalSpacing)
 
-	local configureBlizzardNameplatesChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Configure Blizzard Nameplates"],
-		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."],
-		GetValue = function()
-			if db.ConfigureBlizzardNameplates == nil then
-				return true
-			end
-			return db.ConfigureBlizzardNameplates
-		end,
-		SetValue = function(value)
-			db.ConfigureBlizzardNameplates = value
-			-- Only the Nameplates module reads this, so the one scoped refresh on this page.
-			config:Apply(moduleName.Nameplates)
-		end,
-	})
-
-	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
 	local showTestLabelsChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Show Test Labels"],
@@ -137,8 +116,7 @@ function M:Build(panel)
 		end,
 	})
 
-	showTestLabelsChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
-	showTestLabelsChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
+	showTestLabelsChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local debugModeChk = mini:Checkbox({
 		Parent = panel,
@@ -153,7 +131,8 @@ function M:Build(panel)
 		end,
 	})
 
-	debugModeChk:SetPoint("TOPLEFT", configureBlizzardNameplatesChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	debugModeChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
+	debugModeChk:SetPoint("TOP", showTestLabelsChk, "TOP", 0, 0)
 
 	local iconsDivider = mini:Divider({
 		Parent = panel,

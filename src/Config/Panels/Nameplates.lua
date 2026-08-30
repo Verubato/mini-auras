@@ -270,7 +270,9 @@ end
 
 ---@param parent table
 ---@param options NameplateModuleOptions
-local function BuildSettingsTab(parent, options)
+---@param db table Account-wide saved vars, for the one setting on this tab that isn't scoped
+---to the module.
+local function BuildSettingsTab(parent, options, db)
 	-- Shared 5-column checkbox grid so checkbox rows align across pages. These labels are
 	-- long in several locales (ruRU "Ignore Enemy Pets" needs ~220px), so the checkboxes
 	-- sit two grid columns apart in a 2x2 block instead of one per column.
@@ -336,14 +338,38 @@ local function BuildSettingsTab(parent, options)
 	anchorToHealthBarChk:SetPoint("TOP", scaleWithNameplateChk, "TOP", 0, 0)
 	anchorToHealthBarChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 2, 0)
 
-	-- The category tints, on a row of their own below the checkbox pairs. Module wide rather than
-	-- per bar: a category should read the same colour wherever it lands, and the bar tabs only
-	-- choose between these and the game's dispel palette.
+	local configureBlizzardNameplatesChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Configure Blizzard Nameplates"],
+		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."],
+		GetValue = function()
+			if db.ConfigureBlizzardNameplates == nil then
+				return true
+			end
+			return db.ConfigureBlizzardNameplates
+		end,
+		SetValue = function(value)
+			db.ConfigureBlizzardNameplates = value
+			config:Apply(moduleName.Nameplates)
+		end,
+	})
+	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", scaleWithNameplateChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local appearanceDivider = mini:Divider({
+		Parent = parent,
+		Text = L["Appearance"],
+	})
+	appearanceDivider:SetPoint("LEFT", parent, "LEFT")
+	appearanceDivider:SetPoint("RIGHT", parent, "RIGHT")
+	appearanceDivider:SetPoint("TOP", configureBlizzardNameplatesChk, "BOTTOM", 0, -verticalSpacing)
+
+	-- The category tints are module wide rather than per bar, since a category should read the
+	-- same colour wherever it lands.
 	---@param swatch table
 	---@param column number Grid column the swatch starts at.
 	local function PlaceSwatch(swatch, column)
 		swatch:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * column, 0)
-		swatch:SetPoint("TOP", scaleWithNameplateChk, "BOTTOM", 0, -verticalSpacing)
+		swatch:SetPoint("TOP", appearanceDivider, "BOTTOM", 0, -verticalSpacing)
 	end
 
 	local ccSwatch = mini:ColorSwatch({
@@ -445,7 +471,8 @@ function M:Build(parent, options)
 	local enabledEverywhere = helpers:BuildEnableRow(parent, enabledDivider,
 		db.Modules.Nameplates.Enabled, nil, moduleName.Nameplates)
 
-	local subPanelHeight = 285
+	-- The tab does not scroll, so this has to track the height of everything on it.
+	local subPanelHeight = 369
 
 	local tabContainer = CreateFrame("Frame", nil, parent)
 	tabContainer:SetPoint("TOPLEFT",  enabledEverywhere, "BOTTOMLEFT", 0, -verticalSpacing)
@@ -469,7 +496,7 @@ function M:Build(parent, options)
 
 	local plateDefaults = dbDefaults.Modules.Nameplates
 
-	BuildSettingsTab(tabCtrl:GetContent("settings"), options)
+	BuildSettingsTab(tabCtrl:GetContent("settings"), options, db)
 	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1, plateDefaults.Enemy.Bar1)
 	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2, plateDefaults.Enemy.Bar2)
 	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1, plateDefaults.Friendly.Bar1)
