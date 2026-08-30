@@ -192,7 +192,7 @@ function M:Slider(options)
 		GUI.ConfigureNumericBox(box, options.Min < 0)
 	end
 
-	box:SetPoint("CENTER", slider, "CENTER", 0, 30)
+	box:SetPoint("CENTER", slider, "CENTER", 0, M.SliderChipOverhang)
 	box:SetFontObject("GameFontWhite")
 	box:SetSize(50, 20)
 	box:SetAutoFocus(false)

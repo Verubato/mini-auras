@@ -9,6 +9,9 @@ local M = {
 	Version = VERSION,
 	VerticalSpacing = 16,
 	HorizontalSpacing = 20,
+	-- A slider's value chip floats this far above the track, outside the frame's own rect, so
+	-- anything placed under a slider has to clear it.
+	SliderChipOverhang = 30,
 	TextMaxWidth = 600,
 	-- Widgets use stock Blizzard art unless an addon opts into the accented restyle with
 	-- M:SetCustomStyling(true). Individual widgets can override either way via

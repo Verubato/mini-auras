@@ -151,7 +151,7 @@ function M:ColorSwatch(options)
 
 	btn:SetScript("OnEnter", function(btnSelf)
 		GameTooltip:SetOwner(btnSelf, "ANCHOR_RIGHT")
-		GameTooltip:SetText(options.LabelText or L["Color"], 1, 0.82, 0)
+		GameTooltip:SetText(options.TooltipTitle or options.LabelText or L["Color"], 1, 0.82, 0)
 		GameTooltip:AddLine(options.Tooltip or L["Click to change the color."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
@@ -172,6 +172,7 @@ end
 ---@class ColorSwatchOptions
 ---@field Parent table
 ---@field LabelText string?
+---@field TooltipTitle string? tooltip heading for a caller that draws its own label
 ---@field Tooltip string?
 ---@field Size number? default 22
 ---@field HasOpacity boolean? default true; when false, alpha is forced to 1

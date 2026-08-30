@@ -2,6 +2,10 @@ local addonName, addon = ...
 local M = addon.Framework
 local L = M.L
 
+-- Keeps the two buttons reading as one pair rather than two controls that happen to be near
+-- each other.
+local TEST_BUTTON_GAP = 6
+
 -- How the blurb follows the title for each supported title anchor. A centred header wants a
 -- centred, auto-width blurb, not the left-justified fixed-width block TextLine gives by default.
 local ALIGNMENTS = {
@@ -115,6 +119,32 @@ function M:PanelHeader(options)
 		})
 	end
 
+	local test
+
+	if options.Test then
+		if type(options.Test) ~= "table" or not options.Test.OnClick then
+			error("PanelHeader - Test must be a table holding at least OnClick.")
+		end
+
+		if align.Point == "TOPRIGHT" then
+			error("PanelHeader - Test would sit on top of a TOPRIGHT title.")
+		end
+
+		test = M:Button({
+			Parent = options.Parent,
+			Text = options.Test.Text or L["Test"],
+			Width = options.Test.Width or 70,
+			Height = options.Test.Height or 22,
+			OnClick = options.Test.OnClick,
+		})
+
+		if reset then
+			test:SetPoint("RIGHT", reset, "LEFT", -TEST_BUTTON_GAP, 0)
+		else
+			test:SetPoint("TOPRIGHT", options.Parent, "TOPRIGHT", -M.HorizontalSpacing, options.Y or -M.VerticalSpacing)
+		end
+	end
+
 	local anchor = description or titleText
 	local divider
 
@@ -137,6 +167,7 @@ function M:PanelHeader(options)
 		Description = description,
 		Divider = divider,
 		Reset = reset,
+		Test = test,
 		-- Whatever the caller should anchor the first control below.
 		Anchor = anchor,
 	}
@@ -153,6 +184,7 @@ end
 ---@field Divider boolean|string? section rule under the blurb; a string sets its label
 ---@field DividerGap number? space between the blurb and the rule, default VerticalSpacing
 ---@field Reset PanelHeaderReset? adds the reset-to-defaults button in the panel's top right
+---@field Test PanelHeaderTest? adds a test button left of the reset button
 ---@field Point string? TOPLEFT (default), TOP or TOPRIGHT; the blurb follows the same alignment
 ---@field X number? title offset from the parent's top left, default 0
 ---@field Y number? default -VerticalSpacing
@@ -166,9 +198,16 @@ end
 ---@field Height number?
 ---@field X number? offset from the panel's top right, default -HorizontalSpacing
 
+---@class PanelHeaderTest
+---@field OnClick fun()
+---@field Text string? the button label, defaults to "Test"
+---@field Width number?
+---@field Height number?
+
 ---@class PanelHeaderReturn
 ---@field Title table
 ---@field Description table? nil when neither Description nor Lines was given
 ---@field Divider table? nil unless Divider was asked for
 ---@field Reset table? nil unless Reset was asked for
+---@field Test table? nil unless Test was asked for
 ---@field Anchor table the region to anchor the first control beneath
