@@ -59,9 +59,10 @@ function M:PanelHeader(options)
 		error("PanelHeader - Point must be TOPLEFT, TOP or TOPRIGHT.")
 	end
 
+	local titleY = options.Y or -M.VerticalSpacing
 	local titleText = options.Parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	titleText:SetText(title)
-	titleText:SetPoint(align.Point, options.Parent, align.Point, options.X or 0, options.Y or -M.VerticalSpacing)
+	titleText:SetPoint(align.Point, options.Parent, align.Point, options.X or 0, titleY)
 
 	local gap = options.Gap or 8
 	local description
@@ -90,10 +91,6 @@ function M:PanelHeader(options)
 		end
 	end
 
-	if description then
-		description:SetPoint(align.Point, titleText, align.Relative, 0, -gap)
-	end
-
 	local reset
 
 	if options.Reset then
@@ -114,8 +111,7 @@ function M:PanelHeader(options)
 			Width = options.Reset.Width,
 			Height = options.Reset.Height,
 			OnAccept = options.Reset.OnAccept,
-			X = options.Reset.X,
-			Y = options.Y or -M.VerticalSpacing,
+			NoAnchor = true,
 		})
 	end
 
@@ -137,12 +133,42 @@ function M:PanelHeader(options)
 			Height = options.Test.Height or 22,
 			OnClick = options.Test.OnClick,
 		})
+	end
 
+	local titleHeight = titleText:GetStringHeight() or 0
+
+	-- A string reports no height until it has measured, and a zero here would hang half a button
+	-- above the title.
+	if titleHeight <= 0 then
+		titleHeight = select(2, titleText:GetFont()) or 0
+	end
+
+	-- A button stands taller than the title, so the half that hangs below has to be given back to
+	-- whatever comes next.
+	local titleCentreY = titleY - titleHeight / 2
+	local clearance = 0
+
+	local function CentreOnTitle(button, x)
+		button:SetPoint("RIGHT", options.Parent, "TOPRIGHT", x, titleCentreY)
+		clearance = math.max(clearance, (button:GetHeight() - titleHeight) / 2)
+	end
+
+	if reset then
+		CentreOnTitle(reset, options.Reset.X or -M.HorizontalSpacing)
+	end
+
+	if test then
 		if reset then
 			test:SetPoint("RIGHT", reset, "LEFT", -TEST_BUTTON_GAP, 0)
+			clearance = math.max(clearance, (test:GetHeight() - titleHeight) / 2)
 		else
-			test:SetPoint("TOPRIGHT", options.Parent, "TOPRIGHT", -M.HorizontalSpacing, options.Y or -M.VerticalSpacing)
+			CentreOnTitle(test, -M.HorizontalSpacing)
 		end
+	end
+
+	if description then
+		description:SetPoint(align.Point, titleText, align.Relative, 0, -gap - clearance)
+		clearance = 0
 	end
 
 	local anchor = description or titleText
@@ -157,7 +183,7 @@ function M:PanelHeader(options)
 		local text = type(options.Divider) == "string" and options.Divider or L["Settings"]
 
 		divider = M:Divider({ Parent = options.Parent, Text = text })
-		divider:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -(options.DividerGap or M.VerticalSpacing))
+		divider:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -(options.DividerGap or M.VerticalSpacing) - clearance)
 		divider:SetPoint("RIGHT", options.Parent, "RIGHT", 0, 0)
 		anchor = divider
 	end
@@ -180,9 +206,9 @@ end
 ---@field Description string? single-line blurb under the title
 ---@field Lines string[]? multi-line blurb; takes precedence over Description
 ---@field Width number? wrap width for the blurb, defaults to TextMaxWidth
----@field Gap number? space between title and blurb, default 8
+---@field Gap number? space below the title before the blurb, default 8; a button's overhang is added
 ---@field Divider boolean|string? section rule under the blurb; a string sets its label
----@field DividerGap number? space between the blurb and the rule, default VerticalSpacing
+---@field DividerGap number? space above the rule, default VerticalSpacing; a button's overhang is added when there is no blurb
 ---@field Reset PanelHeaderReset? adds the reset-to-defaults button in the panel's top right
 ---@field Test PanelHeaderTest? adds a test button left of the reset button
 ---@field Point string? TOPLEFT (default), TOP or TOPRIGHT; the blurb follows the same alignment
