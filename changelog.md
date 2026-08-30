@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.30.1
+
+- UI improvements.
+- Fixed tracking for Incarnation: Chosen of Elune and Celestial Alignment.
+
 ## 5.30.0
 
 - Scale with Nameplate now also scales personal aura groups anchored to a nameplate.
