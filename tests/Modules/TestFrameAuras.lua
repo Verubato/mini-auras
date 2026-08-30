@@ -3664,3 +3664,257 @@ fw.describe("Frame Auras - the class buffs the mark reads", function()
 		end
 	end)
 end)
+
+local classBuff = env.addon.Modules.FrameAuras.ClassBuff
+-- A unit token the client hands over secret, which is a string the addon may pass back to the
+-- engine but never read for itself.
+local SECRET_UNIT = wow.markSecret("raid99")
+
+---A value the client hands over where a frame belongs. Reading anything off one aborts the whole
+---handler, so a guard that lets one through shows up here as an error rather than a wrong answer.
+---@return table
+local function SecretFrame()
+	return wow.markSecret(setmetatable({}, {
+		__index = function()
+			error("read a value the client keeps secret")
+		end,
+	}))
+end
+
+fw.describe("Frame Auras - the rows when the client will not answer about a frame", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.TargetFocus.Enabled = false
+		options.ClassBuff.Enabled = false
+		module:Refresh()
+	end)
+
+	fw.it("keeps a built row tracking while the client answers secretly about its unit", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewRaidFrame(35)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the frame got a buff row")
+		local realExists = _G.UnitExists
+		local secret = wow.markSecret({})
+
+		local ok, err = pcall(function()
+			assert(row._enabled == true, "the client is weighing auras against it to begin with")
+
+			-- A loading screen, where the client answers about units secretly. A row switched off
+			-- on that stops tracking a member who never went anywhere.
+			_G.UnitExists = function()
+				return secret
+			end
+
+			partyAuras:Refresh()
+
+			assert(row._enabled == true, "an unreadable answer must not switch the row off")
+
+			_G.UnitExists = function()
+				return false
+			end
+
+			partyAuras:Refresh()
+
+			assert(row._enabled == false, "an outright no does switch it off")
+		end)
+
+		_G.UnitExists = realExists
+		DropRaidFrame(35)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(ok, err)
+	end)
+
+	fw.it("builds nothing for a frame whose unit the client keeps secret", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewRaidFrame(36)
+
+		-- Every token exists in this env, so the secret guard is the only thing that can stop the build.
+		frame.unit = SECRET_UNIT
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local skipped = ContainersOn(frame)
+
+		frame.unit = "raid36"
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local built = ContainersOn(frame)
+
+		DropRaidFrame(36)
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(skipped == 0, "a token nobody may read is no unit to build for, got " .. skipped)
+		assert(built > 0, "and the pass after it builds what was skipped, got " .. built)
+	end)
+
+	fw.it("turns away a frame the client hands the row hooks secret", function()
+		local hooks = PartyHooks()
+
+		options.Buffs.Enabled = true
+		partyAuras:Refresh()
+
+		local ok = pcall(hooks.OnSetUnit, SecretFrame())
+
+		options.Buffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(ok, "the hook read a frame it was never allowed to touch")
+	end)
+end)
+
+fw.describe("Frame Auras - the target row when the client will not say what the target is", function()
+	fw.before_each(function()
+		module:StopTesting()
+		targetAuras.Available = true
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.ClassBuff.Enabled = false
+		options.TargetFocus.Enabled = true
+		options.TargetFocus.MyDebuffs = true
+		env.enemies.target = nil
+
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("narrows the debuff row by the caster on a target the player cannot help", function()
+		env.enemies.target = true
+		module:Refresh()
+
+		local debuffs = assert(DebuffContainer(targetFrame), "the target frame got a debuff row")
+		local filters = debuffs._groups[TARGET_DEBUFF_GROUP].candidateFilters
+
+		env.enemies.target = nil
+
+		assert(filters and filters.isFromPlayerOrPlayerPet == true,
+			"the my-debuffs switch bites on a unit the player cannot help")
+	end)
+
+	fw.it("narrows it by nothing at all when the client answers secretly", function()
+		local realCanAssist = _G.UnitCanAssist
+		-- An arena keeps this secret for the whole match, and a row that read it would take the
+		-- handler drawing it down with it.
+		local secret = wow.markSecret({})
+
+		_G.UnitCanAssist = function()
+			return secret
+		end
+
+		local ok, err = pcall(function()
+			module:Refresh()
+
+			local debuffs = assert(DebuffContainer(targetFrame), "the target frame got a debuff row")
+
+			assert(debuffs._groups[TARGET_DEBUFF_GROUP].candidateFilters == nil,
+				"an unreadable answer is not a no, so the caster switch stays out of it")
+		end)
+
+		_G.UnitCanAssist = realCanAssist
+		options.TargetFocus.Enabled = false
+		module:Refresh()
+
+		assert(ok, err)
+	end)
+end)
+
+targetAuras.Available = TARGET_ROWS_SHIPPED
+
+-- A raid frame of its own, because a frame that has been marked before keeps its mark for the
+-- session and a fresh mark could not be told from that one.
+local secretMarkFrame = NewRaidFrame(40)
+
+fw.describe("Frame Auras - the class buff mark when the client will not answer", function()
+	fw.before_each(function()
+		module:StopTesting()
+
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.TargetFocus.Enabled = false
+		options.ClassBuff.Enabled = true
+		options.ClassBuff.InstancesOnly = true
+
+		wow.setUnitClass("player", MARK_CLASS)
+		acm.restricted = false
+		_G.UnitIsDeadOrGhost = nil
+		buffed[MARK_UNIT] = nil
+		secretMarkFrame.unit = MARK_UNIT
+		MoveTo("party")
+
+		module:Refresh()
+	end)
+
+	fw.it("marks a member the client answers plainly about", function()
+		assert(Marked(secretMarkFrame), "the frame this section marks against does get a mark")
+	end)
+
+	fw.it("marks nothing on a frame whose unit the client keeps secret", function()
+		-- Every token exists in this env, so the secret guard is the only thing that can stop the mark.
+		secretMarkFrame.unit = SECRET_UNIT
+
+		classBuff:Refresh()
+
+		local marked = Marked(secretMarkFrame)
+
+		secretMarkFrame.unit = MARK_UNIT
+
+		assert(not marked, "a token nobody may read is no member to remind")
+	end)
+
+	fw.it("marks nobody while the client will only say secretly that a member is there", function()
+		local realUnitExists = _G.UnitExists
+		local realIsSecret = _G.issecretvalue
+		local armed = false
+
+		_G.UnitExists = function(unit)
+			armed = true
+			return realUnitExists(unit)
+		end
+
+		-- Consumed by the first secrecy check after a UnitExists call, so only the answer that
+		-- call gave counts as secret and not some other true elsewhere in the refresh.
+		_G.issecretvalue = function(value)
+			if armed and value == true then
+				armed = false
+				return true
+			end
+
+			return realIsSecret(value)
+		end
+
+		local ok, err = pcall(function()
+			classBuff:Refresh()
+
+			assert(not Marked(secretMarkFrame), "an unreadable roster is nobody to remind")
+		end)
+
+		_G.UnitExists = realUnitExists
+		_G.issecretvalue = realIsSecret
+
+		assert(ok, err)
+	end)
+
+	fw.it("turns away a frame the client hands the mark's hooks secret", function()
+		-- The mark installs its hooks after the rows do and the environment only remembers the
+		-- last set, so this is the mark's own.
+		local hooks = assert(env.unitFrameHooks, "the mark installed no frame hooks")
+
+		assert(hooks ~= PartyHooks(), "the rows' hooks would prove nothing about the mark's")
+		assert(pcall(hooks.OnSetUnit, SecretFrame()),
+			"the hook read a frame it was never allowed to touch")
+	end)
+end)
+
+DropRaidFrame(40)

@@ -41,6 +41,8 @@ local testFiles = {
     "tests/Core/TestPool.lua",
     "tests/Core/TestUUFFrames.lua",
     "tests/Core/TestPositionEditor.lua",
+    "tests/Core/TestPixels.lua",
+    "tests/Core/TestIconSlotAlpha.lua",
 
     "tests/Utils/TestUtils.lua",
 
@@ -83,6 +85,7 @@ local testFiles = {
 
     -- Whole addon, loaded from the TOC into the shared mocked client. Last, because the shared
     -- mock replaces the WoW globals the narrower helpers above install.
+    "tests/TestAddonEvents.lua",
     "tests/TestHousing.lua",
     "tests/TestSmoke.lua",
 }

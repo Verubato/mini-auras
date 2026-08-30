@@ -166,3 +166,86 @@ fw.describe("Pool - RefreshFree", function()
 		assert(workerMock.ActiveCount() == 0, "nothing to sweep, nothing scheduled")
 	end)
 end)
+
+fw.describe("Pool - reuse under pressure", function()
+	fw.before_each(workerMock.Reset)
+
+	---@param instance Pool
+	---@param count number
+	---@return table[] taken In the order the pool handed them over.
+	local function AcquireMany(instance, count)
+		local taken = {}
+
+		for index = 1, count do
+			taken[index] = instance:Acquire()
+		end
+
+		return taken
+	end
+
+	---@param items table[]
+	---@return boolean
+	local function AllDistinct(items)
+		local seen = {}
+
+		for _, item in ipairs(items) do
+			if seen[item] then
+				return false
+			end
+
+			seen[item] = true
+		end
+
+		return true
+	end
+
+	fw.it("builds on the spot once the free list runs dry", function()
+		local instance = PoolWithParked(3)
+		local taken = AcquireMany(instance, 5)
+
+		assert(AllDistinct(taken), "a burst past the free list handed one item out twice")
+		assert(#instance.Free == 0, "nothing is left parked, got " .. #instance.Free)
+		assert(instance.Created == 5, "the two extras count as builds, got " .. instance.Created)
+	end)
+
+	fw.it("takes the whole set back and hands it out again without building", function()
+		local instance = PoolWithParked(3)
+		local taken = AcquireMany(instance, 5)
+
+		for _, item in ipairs(taken) do
+			instance:Release(item)
+		end
+
+		assert(#instance.Free == 5, "every released item is parked, got " .. #instance.Free)
+
+		local again = AcquireMany(instance, 5)
+
+		assert(AllDistinct(again), "the second round handed one item out twice")
+		assert(instance.Created == 5, "the second round built nothing, got " .. instance.Created)
+	end)
+
+	fw.it("never hands a live item to a second caller", function()
+		local instance = PoolWithParked(2)
+		local first = instance:Acquire()
+
+		instance:Release(first)
+
+		assert(instance:Acquire() == first, "the parked item comes back")
+		assert(instance:Acquire() ~= first, "and not again while somebody is holding it")
+	end)
+
+	fw.it("takes a matched item off the free list, so a repeat match builds instead", function()
+		local instance = PoolWithParked(2)
+		local function MatchAny()
+			return true
+		end
+
+		local first = instance:AcquireMatching(MatchAny)
+		local second = instance:AcquireMatching(MatchAny)
+		local third = instance:AcquireMatching(MatchAny)
+
+		assert(first ~= second, "two matching acquires must not share one item")
+		assert(third ~= first and third ~= second, "an empty free list builds rather than repeats")
+		assert(instance.Created == 3, "one build once the parked pair ran out, got " .. instance.Created)
+	end)
+end)
