@@ -1,9 +1,27 @@
-local _, addon = ...
+local addonName, addon = ...
 local M = addon.Framework
 local GUI = M.GUI
 local L = M.L
-local dialog
-local confirm
+
+-- Every addon embeds its own copy of the framework, and the first one to register would
+-- otherwise decide this entry's wording for all the rest.
+local CONFIRM_POPUP = addonName .. "_MINIFRAMEWORK_CONFIRM"
+
+StaticPopupDialogs[CONFIRM_POPUP] = {
+	-- The caller's wording arrives as an argument, so a per cent sign in it cannot be read as a
+	-- format specifier.
+	text = "%s",
+	button2 = CANCEL or L["Cancel"],
+	-- The client reads the entry at click time, so a later call would overwrite a callback left
+	-- on it.
+	OnAccept = function(_, data)
+		data.OnAccept()
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	showAlert = true,
+}
 
 local BACKDROP = {
 	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -14,11 +32,11 @@ local BACKDROP = {
 	insets = { left = 4, right = 4, top = 4, bottom = 4 },
 }
 
----The chrome both dialogs share: a draggable dark panel with a gold title over a rule, and a
----wrapping message below it. The caller adds its own buttons.
-local function BuildDialogFrame(width, height)
+local dialog
+
+---A draggable dark panel with a gold title over a rule, and a wrapping message below it.
+local function BuildDialogFrame()
 	local frame = CreateFrame("Frame", nil, UIParent, GUI.BackdropTemplate)
-	frame:SetSize(width, height)
 	frame:SetFrameStrata("DIALOG")
 	frame:SetClampedToScreen(true)
 	frame:SetMovable(true)
@@ -54,7 +72,7 @@ local function GetOrCreateDialog()
 		return dialog
 	end
 
-	dialog = BuildDialogFrame(360, 140)
+	dialog = BuildDialogFrame()
 	dialog.Title:SetText(L["Notification"])
 
 	dialog.CloseButton = M:Button({
@@ -68,46 +86,6 @@ local function GetOrCreateDialog()
 	dialog.CloseButton:SetPoint("BOTTOM", 0, 12)
 
 	return dialog
-end
-
-local function GetOrCreateConfirm()
-	if confirm then
-		return confirm
-	end
-
-	confirm = BuildDialogFrame(380, 150)
-
-	confirm.AcceptButton = M:Button({
-		Parent = confirm,
-		Width = 110,
-		-- The dialog is chrome with no Blizzard equivalent, so it stays styled even in the addons
-		-- that hold stock art for the buttons on their settings panel.
-		CustomStyling = true,
-		Danger = true,
-		OnClick = function()
-			local accept = confirm.OnAccept
-
-			confirm:Hide()
-
-			if accept then
-				accept()
-			end
-		end,
-	})
-	confirm.AcceptButton:SetPoint("BOTTOMRIGHT", confirm, "BOTTOM", -6, 12)
-
-	confirm.CancelButton = M:Button({
-		Parent = confirm,
-		Text = CANCEL or L["Cancel"],
-		Width = 110,
-		CustomStyling = true,
-		OnClick = function()
-			confirm:Hide()
-		end,
-	})
-	confirm.CancelButton:SetPoint("BOTTOMLEFT", confirm, "BOTTOM", 6, 12)
-
-	return confirm
 end
 
 ---Shows the shared notification dialog, sized to fit the message.
@@ -149,8 +127,7 @@ function M:HideDialog()
 	end
 end
 
----Asks the user to confirm before something irreversible happens. The dialog closes before
----OnAccept runs, so the callback is free to open a window of its own.
+---Asks the user to confirm before something irreversible happens.
 ---@param options ConfirmOptions
 function M:ShowConfirm(options)
 	if not options then
@@ -161,32 +138,14 @@ function M:ShowConfirm(options)
 		error("ShowConfirm - invalid options.")
 	end
 
-	local dlg = GetOrCreateConfirm()
+	StaticPopupDialogs[CONFIRM_POPUP].button1 = options.AcceptText or (YES or L["Yes"])
 
-	local width = options.Width or 380
-	dlg:SetWidth(width)
-
-	dlg.Title:SetText(options.Title or L["Confirm"])
-	dlg.Text:SetText(options.Text)
-	dlg.Text:SetWordWrap(true)
-	dlg.AcceptButton:SetText(options.AcceptText or (YES or L["Yes"]))
-	dlg.OnAccept = options.OnAccept
-
-	local textHeight = dlg.Text:GetStringHeight()
-	local paddingTop = 60
-	local paddingBottom = 50
-
-	dlg:SetHeight(textHeight + paddingTop + paddingBottom)
-	dlg:ClearAllPoints()
-	dlg:SetPoint("CENTER", UIParent, "CENTER")
-	dlg:Show()
+	StaticPopup_Show(CONFIRM_POPUP, options.Text, nil, { OnAccept = options.OnAccept })
 end
 
----Hides the shared confirmation dialog, if one has been created.
+---Hides the confirmation prompt, if one is up.
 function M:HideConfirm()
-	if confirm then
-		confirm:Hide()
-	end
+	StaticPopup_Hide(CONFIRM_POPUP)
 end
 
 ---@class DialogOptions
@@ -195,8 +154,6 @@ end
 ---@field Width number?
 
 ---@class ConfirmOptions
----@field Title string?
 ---@field Text string
 ---@field AcceptText string? defaults to the client's own "Yes"
 ---@field OnAccept fun()
----@field Width number?

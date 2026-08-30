@@ -24,7 +24,6 @@ function M:ResetButton(options)
 		Danger = true,
 		OnClick = function()
 			M:ShowConfirm({
-				Title = options.ConfirmTitle or L["Reset to Defaults"],
 				Text = options.ConfirmText or L["Reset every setting back to its default? This cannot be undone."],
 				AcceptText = options.AcceptText or L["Reset"],
 				OnAccept = function()
@@ -48,7 +47,6 @@ end
 ---@field Parent table
 ---@field OnAccept fun() applies the defaults, called only after the user confirms
 ---@field Text string? the button label, defaults to "Reset to Defaults"
----@field ConfirmTitle string?
 ---@field ConfirmText string?
 ---@field AcceptText string?
 ---@field Width number?

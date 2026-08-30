@@ -105,7 +105,6 @@ function M:PanelHeader(options)
 		reset = M:ResetButton({
 			Parent = options.Parent,
 			Text = options.Reset.Text,
-			ConfirmTitle = options.Reset.ConfirmTitle,
 			ConfirmText = options.Reset.ConfirmText,
 			AcceptText = options.Reset.AcceptText,
 			Width = options.Reset.Width,
@@ -161,7 +160,6 @@ end
 ---@class PanelHeaderReset
 ---@field OnAccept fun() applies the defaults, called only after the user confirms
 ---@field Text string?
----@field ConfirmTitle string?
 ---@field ConfirmText string?
 ---@field AcceptText string?
 ---@field Width number?
