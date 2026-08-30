@@ -6,8 +6,8 @@ local dialog
 local confirm
 
 local BACKDROP = {
-	bgFile = "Interface\Tooltips\UI-Tooltip-Background",
-	edgeFile = "Interface\Tooltips\UI-Tooltip-Border",
+	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
 	tile = true,
 	tileSize = 16,
 	edgeSize = 16,
