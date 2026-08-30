@@ -73,6 +73,7 @@ local testFiles = {
     "tests/Config/TestAlertsPanel.lua",
     "tests/Config/TestPersonalAurasPanel.lua",
     "tests/Config/TestPortraitsPanel.lua",
+    "tests/Config/TestTexturePicker.lua",
     "tests/Config/TestFrameAurasPanel.lua",
     "tests/Config/TestImportantAurasPanel.lua",
     "tests/Config/TestMiscellaneousPanel.lua",

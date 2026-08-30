@@ -29,6 +29,10 @@ local BOX_WIDTH = 320
 -- The art is drawn over a black background because that is what it was made for. A lit cell would
 -- show every overlay as a grey box.
 local CELL_BACKGROUND = { 0.04, 0.04, 0.05 }
+-- Sits outside the background, so it never lands on the art.
+local SELECTION_BORDER_PADDING = 2
+local SELECTION_BORDER_THICKNESS = 2
+local SELECTION_COLOR = { 1, 0.82, 0 }
 
 local window
 local buttons = {}
@@ -120,6 +124,52 @@ local function Choose(asset)
 	window:Hide()
 end
 
+---Outlines a swatch so the selected texture's art stays readable.
+---@param button table
+---@param background table
+---@return table border with SetShown(shown) toggling all four edges together
+local function CreateSelectionBorder(button, background)
+	local edges = {}
+
+	local function Edge(pointA, pointB, offsetA, offsetB, width, height)
+		-- The bottom edge reaches into the caption, which draws on ARTWORK and has to stay on top.
+		local edge = button:CreateTexture(nil, "BORDER")
+		edge:SetColorTexture(SELECTION_COLOR[1], SELECTION_COLOR[2], SELECTION_COLOR[3], 1)
+		edge:SetPoint(pointA, background, pointA, offsetA[1], offsetA[2])
+		edge:SetPoint(pointB, background, pointB, offsetB[1], offsetB[2])
+
+		if width then
+			edge:SetWidth(width)
+		end
+
+		if height then
+			edge:SetHeight(height)
+		end
+
+		edges[#edges + 1] = edge
+	end
+
+	local pad = SELECTION_BORDER_PADDING
+	local thick = SELECTION_BORDER_THICKNESS
+
+	Edge("TOPLEFT", "TOPRIGHT", { -pad, pad }, { pad, pad }, nil, thick)
+	Edge("BOTTOMLEFT", "BOTTOMRIGHT", { -pad, -pad }, { pad, -pad }, nil, thick)
+	Edge("TOPLEFT", "BOTTOMLEFT", { -pad, pad }, { -pad, -pad }, thick, nil)
+	Edge("TOPRIGHT", "BOTTOMRIGHT", { pad, pad }, { pad, -pad }, thick, nil)
+
+	local border = { Edges = edges }
+
+	function border:SetShown(isShown)
+		for _, edge in ipairs(edges) do
+			edge:SetShown(isShown)
+		end
+	end
+
+	border:SetShown(false)
+
+	return border
+end
+
 ---@param parent table
 ---@param index number
 ---@return table
@@ -150,12 +200,7 @@ local function CreateTextureButton(parent, index)
 	highlight:SetAllPoints(background)
 	highlight:SetColorTexture(1, 1, 1, 0.15)
 
-	button.Selected = button:CreateTexture(nil, "OVERLAY")
-	button.Selected:SetPoint("TOPLEFT", background, "TOPLEFT", -2, 2)
-	button.Selected:SetPoint("BOTTOMRIGHT", background, "BOTTOMRIGHT", 2, -2)
-	button.Selected:SetColorTexture(1, 0.82, 0, 0.9)
-	button.Selected:SetDrawLayer("BACKGROUND")
-	button.Selected:Hide()
+	button.Selected = CreateSelectionBorder(button, background)
 
 	button:SetScript("OnClick", function(self)
 		if self.Value then
