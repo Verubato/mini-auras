@@ -28,6 +28,7 @@
   <Script file="GUI\RedirectPanel.lua"/>
   <Script file="GUI\Divider.lua"/>
   <Script file="GUI\Button.lua"/>
+  <Script file="GUI\ResetButton.lua"/>
   <Script file="GUI\ColorSwatch.lua"/>
   <Script file="GUI\EditBox.lua"/>
   <Script file="GUI\Dropdown.lua"/>
