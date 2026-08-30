@@ -5,6 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 4
+local SOUND_DROPDOWN_WIDTH = 200
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
@@ -371,7 +372,7 @@ local function BuildSoundsTab(parent, options)
 		Parent = parent,
 		RefreshOn = parent,
 		Media = sounds,
-		Width = 200,
+		Width = SOUND_DROPDOWN_WIDTH,
 		GetValue = function()
 			return sounds:Normalise(options.Sound.Important.File)
 		end,
@@ -382,8 +383,9 @@ local function BuildSoundsTab(parent, options)
 		end,
 	})
 
-	soundImportantDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
-	soundImportantDropdown:SetPoint("TOP", soundImportantChk, "TOP", 0, -4)
+	-- One anchor point per control. A toggle and a dropdown are different heights, so a shared
+	-- centre is what puts a row on one line.
+	soundImportantDropdown:SetPoint("LEFT", soundImportantChk, "LEFT", columnWidth, 0)
 
 	local soundDefensiveChk = mini:Checkbox({
 		Parent = parent,
@@ -401,14 +403,15 @@ local function BuildSoundsTab(parent, options)
 		end,
 	})
 
-	soundDefensiveChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
-	soundDefensiveChk:SetPoint("TOP", soundImportantChk, "TOP", 0, 0)
+	-- Measured off the dropdown, which is taller than the toggle beside it, so the next row
+	-- clears the whole of the row above whatever height the template gives it.
+	soundDefensiveChk:SetPoint("TOPLEFT", soundImportantDropdown, "BOTTOMLEFT", -columnWidth, -verticalSpacing)
 
 	local soundDefensiveDropdown = helpers:BuildMediaDropdown({
 		Parent = parent,
 		RefreshOn = parent,
 		Media = sounds,
-		Width = 200,
+		Width = SOUND_DROPDOWN_WIDTH,
 		GetValue = function()
 			return sounds:Normalise(options.Sound.Defensive.File)
 		end,
@@ -419,8 +422,7 @@ local function BuildSoundsTab(parent, options)
 		end,
 	})
 
-	soundDefensiveDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
-	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
+	soundDefensiveDropdown:SetPoint("LEFT", soundDefensiveChk, "LEFT", columnWidth, 0)
 
 	-- One channel for both categories, like the TTS tab: the alerts are one page of sounds, so
 	-- they all come out of the same output. Previews with the important sound, since that is the
@@ -428,7 +430,6 @@ local function BuildSoundsTab(parent, options)
 	local channelDropdown = mini:Dropdown({
 		Parent = parent,
 		LabelText = L["Channel"],
-		Width = 200,
 		Items = sounds:GetChannels(),
 		GetText = ChannelText,
 		GetValue = function()
@@ -440,8 +441,12 @@ local function BuildSoundsTab(parent, options)
 			config:Apply(moduleName.Alerts)
 		end,
 	})
-	channelDropdown.Label:SetPoint("LEFT", parent, "LEFT", 0, 0)
-	channelDropdown.Label:SetPoint("TOP", soundImportantDropdown, "BOTTOM", 0, -verticalSpacing)
+
+	-- The Width option shrinks around the label, so this needs the plain width the two
+	-- dropdowns above it have.
+	channelDropdown:SetWidth(SOUND_DROPDOWN_WIDTH)
+	channelDropdown.Label:SetPoint("TOPLEFT", soundDefensiveDropdown, "BOTTOMLEFT", -columnWidth, -verticalSpacing)
+	channelDropdown:SetPoint("LEFT", channelDropdown.Label, "LEFT", columnWidth, 0)
 end
 
 ---@param parent table
