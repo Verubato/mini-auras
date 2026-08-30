@@ -232,7 +232,7 @@ function M:Dropdown(options)
 			ddSelf:SetText(GetText(options.GetValue()))
 		end
 
-		if GUI.IsStyled(options) then
+		if GUI.IsStyled(options, "Dropdown") then
 			StyleModernFace(dd)
 		end
 

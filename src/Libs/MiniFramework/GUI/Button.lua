@@ -22,7 +22,7 @@ function M:Button(options)
 	end
 
 	-- Stock art matches the Add/Reset buttons addons create directly alongside these.
-	if not GUI.IsStyled(options) then
+	if not GUI.IsStyled(options, "Button") then
 		local stock = CreateFrame("Button", nil, options.Parent, "UIPanelButtonTemplate")
 		stock:SetSize(options.Width or 100, options.Height or 22)
 		stock:SetText(options.Text or "")

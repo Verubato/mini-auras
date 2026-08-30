@@ -25,6 +25,7 @@
   <Script file="GUI\TextBlock.lua"/>
   <Script file="GUI\TextBlockSegmented.lua"/>
   <Script file="GUI\PanelHeader.lua"/>
+  <Script file="GUI\RedirectPanel.lua"/>
   <Script file="GUI\Divider.lua"/>
   <Script file="GUI\Button.lua"/>
   <Script file="GUI\ColorSwatch.lua"/>

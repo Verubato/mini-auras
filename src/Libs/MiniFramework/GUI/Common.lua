@@ -13,6 +13,16 @@ local SHAPE_HEIGHT = 30
 local PILL_CAP = 15
 local ROUNDED_CAP = 8
 
+-- Widget kinds that can be held back from the framework-wide styling flag.
+local STYLE_KINDS = {
+	Button = true,
+	Checkbox = true,
+	Divider = true,
+	Dropdown = true,
+	EditBox = true,
+	Slider = true,
+}
+
 -- The only keys M:SetPalette will accept. GUI holds compat helpers too, so overriding by
 -- truthiness alone would let a caller replace a function with a color table.
 local PALETTE_KEYS = {
@@ -134,11 +144,19 @@ function GUI.RoundedField(frame, height, layer)
 end
 
 ---Whether a widget should draw the accented restyle rather than stock Blizzard art.
----A per-widget CustomStyling wins over the framework-wide default, including when false.
+---A per-widget CustomStyling wins over everything, including when false. Failing that, a
+---kind turned off through SetCustomStyling beats the framework-wide default.
+---@param kind string? the widget's name, matched against the overrides table
 ---@return boolean
-function GUI.IsStyled(options)
+function GUI.IsStyled(options, kind)
 	if options and options.CustomStyling ~= nil then
 		return options.CustomStyling and true or false
+	end
+
+	local override = kind and M.CustomStylingOverrides[kind]
+
+	if override ~= nil then
+		return override
 	end
 
 	return M.CustomStyling and true or false
@@ -236,8 +254,24 @@ end
 
 ---Turns the accented restyle on or off for every widget this addon creates.
 ---Call before building any widgets.
-function M:SetCustomStyling(enabled)
+---@param overrides table<string, boolean>? holds single kinds back, e.g. { Button = false }
+function M:SetCustomStyling(enabled, overrides)
 	M.CustomStyling = enabled and true or false
+
+	local resolved = {}
+
+	if overrides then
+		for kind, value in pairs(overrides) do
+			-- An explicit whitelist, so a typo errors rather than silently doing nothing.
+			if not STYLE_KINDS[kind] then
+				error("SetCustomStyling - unknown widget kind: " .. tostring(kind))
+			end
+
+			resolved[kind] = value and true or false
+		end
+	end
+
+	M.CustomStylingOverrides = resolved
 end
 
 ---Overrides one or more palette colors so an addon can rebrand the config UI.

@@ -15,6 +15,9 @@ local M = {
 	-- options.CustomStyling. Chrome with no Blizzard equivalent - tabs, the standalone
 	-- window, the dialog - is always styled.
 	CustomStyling = false,
+	-- A panel inside Blizzard's settings screen turns Button off here, because a styled
+	-- button clashes with the stock art around it.
+	CustomStylingOverrides = {},
 }
 
 addon.Framework = M

@@ -18,7 +18,7 @@ function M:Divider(options)
 	local line = GUI.DividerLine
 	local gold = GUI.DividerGold
 
-	local styled = GUI.IsStyled(options)
+	local styled = GUI.IsStyled(options, "Divider")
 
 	local container = CreateFrame("Frame", nil, options.Parent)
 	container:SetHeight(26)

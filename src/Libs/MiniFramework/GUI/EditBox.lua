@@ -65,7 +65,7 @@ function M:EditBox(options)
 	else
 		box = CreateFrame("EditBox", nil, options.Parent, "InputBoxTemplate")
 
-		if GUI.IsStyled(options) then
+		if GUI.IsStyled(options, "EditBox") then
 			M:FlattenEditBox(box)
 		end
 	end

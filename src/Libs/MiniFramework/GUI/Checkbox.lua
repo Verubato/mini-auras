@@ -243,7 +243,7 @@ function M:Checkbox(options)
 
 	local checkbox
 
-	if GUI.IsStyled(options) then
+	if GUI.IsStyled(options, "Checkbox") then
 		checkbox = BuildToggle(options)
 	else
 		checkbox = BuildStockCheckbox(options)

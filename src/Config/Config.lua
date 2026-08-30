@@ -12,22 +12,6 @@ local M = addon.Config
 
 local NAV_ICON_BASE = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Nav\\"
 
--- The framework palette is private to the GUI widgets, so the window title's accent is
--- repeated here.
-local PANEL_ACCENT = { r = 0.90, g = 0.20, b = 0.20 }
-local PANEL_CONTENT_WIDTH = 460
-local PANEL_TEXT_WIDTH = 400
-local PANEL_RULE_HALF_WIDTH = 110
-
----Rescales a font string, keeping the font object's face and flags.
-local function SetFontSize(fontString, size)
-	local path, _, flags = fontString:GetFont()
-
-	if path then
-		fontString:SetFont(path, size, flags)
-	end
-end
-
 ---Opens the options window, or says why it cannot. Building the window asks the client for
 ---keyboard propagation, which combat refuses, so the first open has to wait for the fight to end.
 ---@param toggle boolean? True to close the window again when it is already open.
@@ -52,79 +36,36 @@ end
 ---Builds the centred splash shown under Interface > AddOns: name, version and a button
 ---through to the standalone window, which is where the real configuration lives.
 local function BuildRedirectPanel(panel, version)
-	local content = CreateFrame("Frame", nil, panel)
-	content:SetSize(PANEL_CONTENT_WIDTH, 200)
-	content:SetPoint("TOP", panel, "TOP", 0, -90)
+	mini:RedirectPanel({
+		Parent = panel,
+		Version = version,
+		Message = L["Use /miniauras, /minia, or /cc to open the MiniAuras config window."],
+		ButtonText = L["Open Settings"],
+		OnClick = function()
+			-- Scheduling the hide for a window that never opened would empty the screen the moment
+			-- the fight ended.
+			if not OpenWindow() then
+				return
+			end
 
-	local title = content:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-	title:SetPoint("TOP", content, "TOP", 0, 0)
-	title:SetText(addonName)
-	title:SetTextColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 1)
-	SetFontSize(title, 32)
+			-- Blizzard's settings window opened this one, so it closes on the way out. HideUIPanel is
+			-- protected, so in combat the close waits for the fight to end.
+			local settingsFrame = SettingsPanel or InterfaceOptionsFrame
+			if settingsFrame and HideUIPanel then
+				local function HideSettings()
+					if settingsFrame:IsShown() then
+						HideUIPanel(settingsFrame)
+					end
+				end
 
-	local versionLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-	versionLabel:SetPoint("TOP", title, "BOTTOM", 0, -4)
-	versionLabel:SetText(version or "")
-	versionLabel:SetTextColor(0.62, 0.60, 0.58, 1)
-
-	-- Thin rule under the wordmark, brightest in the middle and fading out at both ends.
-	-- Two halves because a single texture can only gradient in one direction. Alpha is baked
-	-- into the gradient colours, since SetGradient replaces vertex alpha and SetAlpha cannot dim it.
-	local ruleLeft = content:CreateTexture(nil, "ARTWORK")
-	ruleLeft:SetSize(PANEL_RULE_HALF_WIDTH, 1)
-	ruleLeft:SetPoint("TOPRIGHT", versionLabel, "BOTTOM", 0, -14)
-	ruleLeft:SetColorTexture(1, 1, 1, 1)
-	ruleLeft:SetGradient("HORIZONTAL",
-		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0),
-		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0.7))
-
-	local ruleRight = content:CreateTexture(nil, "ARTWORK")
-	ruleRight:SetSize(PANEL_RULE_HALF_WIDTH, 1)
-	ruleRight:SetPoint("TOPLEFT", versionLabel, "BOTTOM", 0, -14)
-	ruleRight:SetColorTexture(1, 1, 1, 1)
-	ruleRight:SetGradient("HORIZONTAL",
-		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0.7),
-		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0))
-
-	local message = content:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	-- BOTTOMLEFT of the right half is where the two rules join, i.e. the horizontal centre.
-	message:SetPoint("TOP", ruleRight, "BOTTOMLEFT", 0, -18)
-	message:SetWidth(PANEL_TEXT_WIDTH)
-	message:SetJustifyH("CENTER")
-	message:SetText(L["Use /miniauras, /minia, or /cc to open the MiniAuras config window."])
-
-	local button = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-	button:SetSize(240, 32)
-	button:SetPoint("TOP", message, "BOTTOM", 0, -20)
-	button:SetText(L["Open Settings"])
-	-- GameFontNormalMed3 is 14pt.
-	-- A raw SetFont path drops the per-locale glyph fallbacks and boxes Cyrillic text.
-	button:SetNormalFontObject(GameFontNormalMed3)
-	button:SetHighlightFontObject(GameFontHighlightMedium)
-	button:SetScript("OnClick", function()
-		-- Scheduling the hide for a window that never opened would empty the screen the moment
-		-- the fight ended.
-		if not OpenWindow() then
-			return
-		end
-
-		-- Blizzard's settings window opened this one, so it closes on the way out. HideUIPanel is
-		-- protected, so in combat the close waits for the fight to end.
-		local settingsFrame = SettingsPanel or InterfaceOptionsFrame
-		if settingsFrame and HideUIPanel then
-			local function HideSettings()
-				if settingsFrame:IsShown() then
-					HideUIPanel(settingsFrame)
+				if InCombatLockdown() then
+					mini:RunWhenCombatEnds(HideSettings, "MiniAuras_HideSettingsPanel")
+				else
+					HideSettings()
 				end
 			end
-
-			if InCombatLockdown() then
-				mini:RunWhenCombatEnds(HideSettings, "MiniAuras_HideSettingsPanel")
-			else
-				HideSettings()
-			end
-		end
-	end)
+		end,
+	})
 end
 
 ---Says once that a look change cannot land yet. While the client is hiding aura data a button

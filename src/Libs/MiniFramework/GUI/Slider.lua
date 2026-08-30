@@ -86,7 +86,7 @@ function M:Slider(options)
 	slider:SetHeight(20)
 	slider:SetWidth(options.Width or 400)
 
-	local styled = GUI.IsStyled(options)
+	local styled = GUI.IsStyled(options, "Slider")
 
 	if styled then
 		-- Flat restyle: drop the template's ornate rail for a thin track with a crimson fill
