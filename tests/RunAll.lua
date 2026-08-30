@@ -78,6 +78,7 @@ local testFiles = {
     "tests/Config/TestMiscellaneousPanel.lua",
     "tests/Config/TestNameplatesPanel.lua",
     "tests/Config/TestPanelRefresh.lua",
+    "tests/Config/TestLabelColours.lua",
 
     -- Whole addon, loaded from the TOC into the shared mocked client. Last, because the shared
     -- mock replaces the WoW globals the narrower helpers above install.

@@ -145,7 +145,7 @@ local function GetOrCreateImportWindow()
 	title:SetText(L["Import/Export Auras"])
 	title:SetTextColor(1, 0.82, 0)
 
-	local exportLabel = win:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local exportLabel = win:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	exportLabel:SetPoint("TOPLEFT", win, "TOPLEFT", 16, -42)
 	exportLabel:SetText(L["Export"])
 
@@ -159,7 +159,7 @@ local function GetOrCreateImportWindow()
 	exportBox:SetScript("OnEscapePressed", function() win:Hide() end)
 	exportBox:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
 
-	local importLabel = win:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local importLabel = win:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	importLabel:SetPoint("TOPLEFT", exportBox, "BOTTOMLEFT", 0, -18)
 	importLabel:SetText(L["Import"])
 

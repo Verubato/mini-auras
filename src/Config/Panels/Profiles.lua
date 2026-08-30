@@ -145,7 +145,7 @@ local function GetOrCreateProfileIOWindow()
 	divider1:SetPoint("TOPRIGHT", win, "TOPRIGHT", -8, -28)
 	divider1:SetColorTexture(1, 1, 1, 0.15)
 
-	local exportLabel = win:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local exportLabel = win:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	exportLabel:SetPoint("TOPLEFT", win, "TOPLEFT", 16, -42)
 	exportLabel:SetText(L["Export Profile"])
 
@@ -165,7 +165,7 @@ local function GetOrCreateProfileIOWindow()
 	divider2:SetPoint("TOPRIGHT", exportBox, "BOTTOMRIGHT", 0, -12)
 	divider2:SetColorTexture(1, 1, 1, 0.15)
 
-	local importSectionLabel = win:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local importSectionLabel = win:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	importSectionLabel:SetPoint("TOPLEFT", divider2, "BOTTOMLEFT", 0, -12)
 	importSectionLabel:SetText(L["Import Profile"])
 

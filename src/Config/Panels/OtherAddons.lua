@@ -115,7 +115,7 @@ local function BuildAddonCard(parent, def, cardWidth)
 	iconTex:SetPoint("LEFT", card, "LEFT", CARD_PAD, 0)
 	iconTex:SetTexture(ICON_BASE .. def.Name)
 
-	local nameLabel = card:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local nameLabel = card:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	nameLabel:SetPoint("LEFT",  iconTex, "RIGHT", CARD_PAD,  8)
 	nameLabel:SetPoint("RIGHT", card,    "RIGHT", -CARD_PAD, 0)
 	nameLabel:SetJustifyH("LEFT")
