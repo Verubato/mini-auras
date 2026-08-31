@@ -4,7 +4,9 @@
 --     capture nested tables at Build time and must stay valid),
 --   * profile data survives Migrator soft resets (opaque-cache round-trip),
 --   * every payload key is healable from dbDefaults (FillDefaults),
---   * lifecycle operations (create/delete/rename/auto-switch) keep the db consistent.
+--   * lifecycle operations (create/delete/rename/auto-switch) keep the db consistent,
+--   * resetting the active profile touches only that profile's payload, leaving every other
+--     profile, db.Modules' table identity, and everything outside PayloadKeys untouched.
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -277,5 +279,85 @@ fw.describe("ProfileManager - Migrator interop", function()
 		assert(#profileManager:GetProfileNames() == profileCountBefore, "no profiles lost")
 		assert(healed.ActiveProfile == "PvPSpec", "active selection survived")
 		assert(healed.AutoSwitch["Tester-TestRealm"][263] == "PvPSpec", "auto-switch rules survived")
+	end)
+end)
+
+fw.describe("ProfileManager - ResetCurrentProfileToDefaults", function()
+	-- The first case runs the one reset. The rest inspect what it left behind.
+	local profilesRef, modulesRef, iconsRef, namesBefore
+
+	fw.it("leaves other profiles' stored payloads untouched, nested tables included", function()
+		profileManager:SwitchProfile("Default")
+		profileManager:CreateProfile("ResetSiblingA", nil)
+		profileManager:CreateProfile("ResetSiblingB", nil)
+
+		-- Default is diverged and left inactive, so a reset that wrote the slot the defaults name
+		-- rather than the active one shows up here.
+		profileManager:SwitchProfile("Default")
+		db.GlowType = "Static Pixel Border"
+		db.Modules.CrowdControl.Default.Icons.Size = 99
+
+		profileManager:SwitchProfile("ResetSiblingB")
+		db.GlowType = "Static Pixel Border"
+		db.Modules.CrowdControl.Default.Icons.Size = 55
+
+		profileManager:SwitchProfile("ResetSiblingA")
+		db.GlowType = "Static Pixel Border"
+		db.IconZoom = false
+		db.Modules.CrowdControl.Default.Icons.Size = 77
+		profileManager:SetAutoSwitchRule(999, "ResetSiblingB")
+		db.MillisecondsThreshold = 42
+
+		profilesRef = db.Profiles
+		modulesRef = db.Modules
+		iconsRef = db.Modules.CrowdControl.Default.Icons
+		namesBefore = profileManager:GetProfileNames()
+
+		profileManager:ResetCurrentProfileToDefaults()
+
+		assert(db.Profiles.Default.GlowType == "Static Pixel Border", "the inactive default slot is untouched")
+		assert(db.Profiles.Default.Modules.CrowdControl.Default.Icons.Size == 99, "including its nested values")
+		assert(db.Profiles.ResetSiblingB.GlowType == "Static Pixel Border", "sibling B top-level value untouched")
+		assert(db.Profiles.ResetSiblingB.Modules.CrowdControl.Default.Icons.Size == 55, "sibling B nested value untouched")
+	end)
+
+	fw.it("restores the active profile's payload to factory defaults", function()
+		assert(db.GlowType == "Slot Glow", "GlowType back to default")
+		assert(db.IconZoom == true, "IconZoom back to default")
+		assert(db.Modules.CrowdControl.Default.Icons.Size == 32, "nested module default restored")
+	end)
+
+	fw.it("writes the restored payload through to the active profile's stored slot", function()
+		assert(db.Profiles.ResetSiblingA.GlowType == "Slot Glow", "the reset reached the stored slot")
+		assert(db.Profiles.ResetSiblingA.Modules.CrowdControl.Default.Icons.Size == 32,
+			"including its nested values")
+	end)
+
+	fw.it("does not replace or empty db.Profiles, and leaves the profile set and active selection unchanged", function()
+		assert(db.Profiles == profilesRef, "db.Profiles table identity preserved")
+		local namesAfter = profileManager:GetProfileNames()
+		assert(#namesAfter == #namesBefore, "same number of profiles")
+		for i, name in ipairs(namesBefore) do
+			assert(namesAfter[i] == name, "profile name set unchanged: " .. name)
+		end
+		assert(db.ActiveProfile == "ResetSiblingA", "active profile selection unchanged")
+	end)
+
+	fw.it("leaves auto-switch rules in place", function()
+		assert(profileManager:GetAutoSwitchRule(999) == "ResetSiblingB", "auto-switch rule survived the reset")
+	end)
+
+	fw.it("leaves non-payload top-level keys in place", function()
+		assert(db.MillisecondsThreshold == 42, "a key outside PayloadKeys survived the reset")
+	end)
+
+	fw.it("preserves db.Modules table identity, and the identity of tables nested inside it", function()
+		assert(db.Modules == modulesRef, "db.Modules identity preserved")
+		assert(db.Modules.CrowdControl.Default.Icons == iconsRef, "nested Icons table identity preserved")
+
+		profileManager:SwitchProfile("Default")
+		profileManager:DeleteProfile("ResetSiblingA")
+		profileManager:DeleteProfile("ResetSiblingB")
+		db.MillisecondsThreshold = 5
 	end)
 end)
