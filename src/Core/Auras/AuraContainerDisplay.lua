@@ -2463,8 +2463,8 @@ end
 ---overriding the display-wide Style.ColorByDispelType so one row can colour a single category.
 ---Unset follows the display. Changed after creation with SetGroupColorByDispelTypes.
 ---@field BorderWithoutDispelType boolean? Whether this group rings an aura with no dispel type at
----all, overriding the display-wide Style.BorderWithoutDispelType so one row can ring only the
----categories that carry a real type. Unset follows the display. Fixed at creation.
+---all, overriding the display-wide Style.BorderWithoutDispelType. No module sets it today, since
+---every row that rings at all rings a typeless aura. Unset follows the display. Fixed at creation.
 ---@field GlowColor number[]? {r, g, b} tint for this group's glow and border, so one container can
 ---colour its categories differently. A tinted group opts out of dispel-type colouring, which has
 ---nothing to say about a buff. Changed after creation with SetGroupGlowColors.

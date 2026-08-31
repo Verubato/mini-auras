@@ -1338,7 +1338,7 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 		options.Debuffs.ColorByDispelType = true
-		options.Debuffs.MaxIcons = 5
+		options.Debuffs.MaxIcons = 6
 
 		module:StartTesting()
 
@@ -1351,6 +1351,7 @@ fw.describe("Frame Auras - test mode", function()
 
 		-- The loop below compares against the map itself, so the types it holds are pinned here or a
 		-- wrong one would render consistently and pass.
+		assert(dispelColors[115804] == none, "Mortal Wounds carries no dispel type at all")
 		assert(dispelColors[34914] == _G.DEBUFF_TYPE_MAGIC_COLOR, "Vampiric Touch is Magic")
 		assert(dispelColors[589] == _G.DEBUFF_TYPE_MAGIC_COLOR, "Shadow Word: Pain is Magic")
 		assert(dispelColors[980] == _G.DEBUFF_TYPE_CURSE_COLOR, "Agony is Curse")
@@ -1554,8 +1555,8 @@ fw.describe("Frame Auras - test mode", function()
 
 		local row = assert(fills[1], "the debuff row previews something").Spells
 
-		-- Vampiric Touch, Shadow Word: Pain, Agony, Corruption.
-		AssertOrder(row, { 34914, 589, 980, 146739 })
+		-- Mortal Wounds, Vampiric Touch, Shadow Word: Pain, Agony, Corruption.
+		AssertOrder(row, { 115804, 34914, 589, 980, 146739 })
 
 		options.Debuffs.Enabled = false
 	end)
@@ -2502,7 +2503,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		DropRaidFrame(39)
 	end)
 
-	fw.it("rings the crowd control lead regardless of type, and the rest of the row only where an aura has one", function()
+	fw.it("rings every group on the row whether or not the debuff carries a dispel type", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 		options.Debuffs.ColorByDispelType = true
@@ -2530,10 +2531,10 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 
 		assert(ccRegistered[2].showWithoutDispelType == true,
 			"a physical stun still gets a ring, having no dispel type to be coloured by")
-		assert(roleRegistered[2].showWithoutDispelType == false,
-			"while a role or boss debuff with no dispel type takes no ring")
-		assert(plainRegistered[2].showWithoutDispelType == false,
-			"same for a plain debuff, so nothing draws the 'None' palette colour on it")
+		assert(roleRegistered[2].showWithoutDispelType == true,
+			"and so does a boss or role debuff the game gives no type")
+		assert(plainRegistered[2].showWithoutDispelType == true,
+			"and a plain one, which is where a stun outside the crowd control group lands")
 
 		options.Debuffs.ShowCrowdControl = false
 		DropRaidFrame(37)

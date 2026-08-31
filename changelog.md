@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Frame auras dispel colours now ring every debuff on the row, including the ones the game gives no dispel type, such as physical stuns, which take the game's untyped red.
+
 ## 5.32.0
 
 - The frame auras Dispellable switch is now two switches, Dispellable by me and Dispellable by raid, and the raid one shows every debuff somebody in the group can take off.

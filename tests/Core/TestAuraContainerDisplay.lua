@@ -475,9 +475,9 @@ fw.describe("AuraContainerDisplay - dispel-type registrations", function()
 		assert(countCalls(instance, "ClearDispelTypeTextures") > clears, "registrations cleared")
 	end)
 
-	fw.it("rings the crowd control lead whatever an aura's type is, and only real types behind it", function()
-		-- Mirrors the frame aura debuff row: crowd control keeps the display-wide typeless ring,
-		-- while the role and plain groups behind it opt out so a typeless debuff stays unringed.
+	fw.it("lets one group ring an aura with no dispel type while another on the row leaves it bare", function()
+		-- A group's own answer wins over the display-wide one, so one group can ring a typeless aura
+		-- while another on the same row leaves it bare.
 		local instance = display:New(_G.UIParent, "target", {
 			{ Key = "role", FilterString = "HARMFUL", MaxIcons = 3, ColorByDispelType = true, BorderWithoutDispelType = false },
 			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 3, ColorByDispelType = true },

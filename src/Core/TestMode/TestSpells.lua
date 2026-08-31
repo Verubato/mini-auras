@@ -79,17 +79,18 @@ M.FrameAuras = {
 		139,    -- Renew
 		61295,  -- Riptide
 	},
-	Debuffs = { 34914, 589, 980, 146739 }, -- Vampiric Touch, Shadow Word: Pain, Agony, Corruption
+	-- Mortal Wounds leads because the preview draws only the row's budget, which starts at two.
+	Debuffs = { 115804, 34914, 589, 980, 146739 }, -- Mortal Wounds, Vampiric Touch, Shadow Word: Pain, Agony, Corruption
 	---Border tints for the debuffs above, keyed by spell id like Nameplates.DispelColors.
 	DispelColors = {
+		[115804] = DEBUFF_TYPE_NONE_COLOR, -- Mortal Wounds
 		[34914] = DEBUFF_TYPE_MAGIC_COLOR, -- Vampiric Touch
 		[589] = DEBUFF_TYPE_MAGIC_COLOR,   -- Shadow Word: Pain
 		[980] = DEBUFF_TYPE_CURSE_COLOR,   -- Agony
 		[146739] = DEBUFF_TYPE_MAGIC_COLOR, -- Corruption
 	},
 	-- One stand-in per flagged category, drawn only while the row is letting that category in.
-	-- The stun carries a tint because crowd control rings a typeless aura live, unlike the debuffs above.
-	-- A physical stun shows its ring only while the switch is on.
+	-- The stun carries a tint because the debuff row rings a typeless aura live.
 	CrowdControl = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }, -- Kidney Shot
 	Important = 31884,   -- Avenging Wrath
 	Defensive = 33206,   -- Pain Suppression

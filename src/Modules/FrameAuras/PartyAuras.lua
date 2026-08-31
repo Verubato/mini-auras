@@ -606,8 +606,8 @@ local function BuildStyle(side)
 		style.PandemicColor = moduleUtil:GetColorRGB(options.PandemicColor)
 	end
 
-	-- Most crowd control is physical, which the engine gives no dispel type, so without this the
-	-- stun leading the row would draw no ring.
+	-- A physical debuff carries no dispel type, so without this a stun would go unringed wherever
+	-- on the row it landed.
 	style.BorderWithoutDispelType = side == "Debuffs"
 
 	return style
@@ -696,9 +696,6 @@ local function RoleGroup()
 		CandidateFilters = role,
 		SizeScale = LEAD_SIZE_SCALE,
 		LayoutIndex = DEBUFF_ROLE_INDEX,
-		-- Unlike crowd control, most of these carry a real dispel type, so a typeless one goes
-		-- unringed.
-		BorderWithoutDispelType = false,
 	}
 end
 
@@ -725,7 +722,6 @@ local function BuildDebuffs(frame, unit)
 		MaxIcons = MaxIcons("Debuffs"),
 		CandidateFilters = rest,
 		LayoutIndex = DEBUFF_PLAIN_INDEX,
-		BorderWithoutDispelType = false,
 	}
 
 	local display = auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
