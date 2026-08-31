@@ -234,7 +234,8 @@ local function BuildStyle()
 	style.StackCoefficient = STACK_COEFFICIENT
 	style.ReverseCooldown = true
 
-	-- No dispel-type colouring. These stand in for Blizzard's own rows, which draw a plain icon.
+	-- No dispel-type colouring. Unlike the party and raid debuff row, this row carries no switch
+	-- for it.
 	return style
 end
 

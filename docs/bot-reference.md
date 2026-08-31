@@ -712,8 +712,9 @@ switch also opens a group of its own behind the lead group.
   drawn a quarter larger than the rest of the row and capped at two icons on its own budget, and lets
   a crowd control debuff into the boss and role group ahead of it. Off by default for the same reason
   as the two on the Buffs tab.
-- **Dispel colours** (on) - rings that crowd control group in the game's colour for its dispel
-  type. The debuffs behind it draw a plain icon like Blizzard's own, whatever this is set to.
+- **Dispel colours** (on) - rings every group on the row in the game's colour for its dispel
+  type. Crowd control rings whether or not the debuff carries one. The boss and role group ahead
+  of it, and the plain debuffs behind, ring only the ones that do.
 - **Show numbers** (off) - as on the Buffs tab.
 - **Centre stacks** (off) - as on the Buffs tab.
 
@@ -1446,8 +1447,9 @@ inside an arena at all.
 colour setting asks for it: **Colours** for Important Auras, and on Nameplates an **Icon colours**
 of Dispel colours or Custom for the bar in question, not None. On Alerts it also needs **Class
 colours** off, since that tints by the owner's class instead. CC icons ignore the pair either
-way and take the game's dispel type colour. Neither swatch reaches the Frame Auras rows: the crowd
-control leading the debuff row takes the game's dispel colour and everything behind it draws plain.
+way and take the game's dispel type colour. Neither swatch reaches the Frame Auras rows: their own
+Dispel colours switch rings every group on the debuff row, crowd control whatever its type and the
+rest of it only where a debuff carries a real one.
 
 **"A spell shows on nameplates or portraits but not on group frames."** Expected. Nameplates
 and portraits show whatever the game flags; group frames can only show spells on their

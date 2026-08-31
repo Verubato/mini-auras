@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Frame auras dispel colours now ring the boss, role, and plain debuffs as well as crowd control. Only crowd control rings a debuff the game gives no dispel type.
+- Fixed icons not drawing when the game hands their transparency over as a protected value.
+
 ## 5.30.1
 
 - UI improvements.

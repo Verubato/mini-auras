@@ -214,6 +214,8 @@ function M.build()
 	_G.Enum.UnitAuraSortRule = { Default = 0, Unsorted = 1 }
 	_G.Enum.UnitAuraSortDirection = { Normal = 0, Reverse = 1 }
 	_G.DEBUFF_TYPE_NONE_COLOR = { r = 0.8, g = 0, b = 0 }
+	_G.DEBUFF_TYPE_MAGIC_COLOR = { r = 0.2, g = 0.6, b = 1 }
+	_G.DEBUFF_TYPE_CURSE_COLOR = { r = 0.6, g = 0, b = 1 }
 	_G.RAID_CLASS_COLORS = {
 		MAGE = { r = 0.41, g = 0.8, b = 0.94 },
 		ROGUE = { r = 1, g = 0.96, b = 0.41 },

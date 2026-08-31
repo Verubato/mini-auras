@@ -61,7 +61,8 @@ M.Nameplates = {
 }
 
 ---The party and raid frame rows, and the target and focus rows, whose plain icons take bare spell
----ids. Only the crowd control leading the debuff row is coloured, so only it is a tinted entry.
+---ids. A bare id can't carry a dispel tint itself, so Debuffs' entries take theirs from the
+---sibling DispelColors map, read only by the row with a switch for it.
 -- The frame aura rows can each let a flagged category back in, and the preview has to show that:
 -- a row with crowd control switched on wants a stun in it, and the same row with it off wants
 -- something ordinary in that slot instead. So the plain spells and the category stand-ins are
@@ -79,8 +80,15 @@ M.FrameAuras = {
 		61295,  -- Riptide
 	},
 	Debuffs = { 34914, 589, 980, 146739 }, -- Vampiric Touch, Shadow Word: Pain, Agony, Corruption
+	---Border tints for the debuffs above, keyed by spell id like Nameplates.DispelColors.
+	DispelColors = {
+		[34914] = DEBUFF_TYPE_MAGIC_COLOR, -- Vampiric Touch
+		[589] = DEBUFF_TYPE_MAGIC_COLOR,   -- Shadow Word: Pain
+		[980] = DEBUFF_TYPE_CURSE_COLOR,   -- Agony
+		[146739] = DEBUFF_TYPE_MAGIC_COLOR, -- Corruption
+	},
 	-- One stand-in per flagged category, drawn only while the row is letting that category in.
-	-- The stun carries its tint because the live row colours that group by dispel type.
+	-- The stun carries a tint because crowd control rings a typeless aura live, unlike the debuffs above.
 	-- A physical stun shows its ring only while the switch is on.
 	CrowdControl = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }, -- Kidney Shot
 	Important = 31884,   -- Avenging Wrath
@@ -132,7 +140,8 @@ M.KickSpecIds = {
 ---@param options table Styling and limits:
 --- ReverseCooldown/HideIcon/HideSwipe/HideNumbers/ShowNumbers/Glow/FontScale passed through
 --- to SetSlot;
---- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead;
+--- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead, or
+--- with DispelColors[spellId] for a bare id;
 --- TextColor tints the countdown and any stand-in count, replacing the global colour-by-time
 --- while it is set;
 --- CenterStackText puts that text centred on each icon in place of the countdown (the icon
@@ -189,8 +198,12 @@ function M:FillContainer(container, spells, startSlot, options)
 			end
 
 			local color = options.Color
-			if not color and options.ColorByDispelType and type(spell) == "table" then
-				color = spell.DispelColor
+			if not color and options.ColorByDispelType then
+				if type(spell) == "table" then
+					color = spell.DispelColor
+				elseif options.DispelColors then
+					color = options.DispelColors[spellId]
+				end
 			end
 
 			container:SetSlot(slot, {

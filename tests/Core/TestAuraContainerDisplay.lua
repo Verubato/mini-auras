@@ -474,6 +474,49 @@ fw.describe("AuraContainerDisplay - dispel-type registrations", function()
 		instance:SetStyle({ ColorByDispelType = false, Glow = true })
 		assert(countCalls(instance, "ClearDispelTypeTextures") > clears, "registrations cleared")
 	end)
+
+	fw.it("rings the crowd control lead whatever an aura's type is, and only real types behind it", function()
+		-- Mirrors the frame aura debuff row: crowd control keeps the display-wide typeless ring,
+		-- while the role and plain groups behind it opt out so a typeless debuff stays unringed.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "role", FilterString = "HARMFUL", MaxIcons = 3, ColorByDispelType = true, BorderWithoutDispelType = false },
+			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 3, ColorByDispelType = true },
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3, ColorByDispelType = true, BorderWithoutDispelType = false },
+		}, 30, 2, "Test", { Style = { Glow = false, BorderWithoutDispelType = true } })
+
+		local function registration(groupKey)
+			local button = instance.Frame:GetAuraGroupFrame(groupKey, 1)
+			return button._lastArgs.AddDispelTypeTexture[2]
+		end
+
+		assert(registration("cc").showWithoutDispelType == true,
+			"crowd control rings a typeless aura, since the game gives it no type of its own")
+		assert(registration("role").showWithoutDispelType == false,
+			"a role or boss debuff with no dispel type takes no ring")
+		assert(registration("plain").showWithoutDispelType == false,
+			"same for the plain group behind it")
+	end)
+
+	fw.it("holds the glow to the same typeless rule as the border", function()
+		-- The glow registers after the borders, so a button's last registration is its glow.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "role", FilterString = "HARMFUL", MaxIcons = 3, ColorByDispelType = true, BorderWithoutDispelType = false },
+			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 3, ColorByDispelType = true },
+		}, 30, 2, "Test", { Style = { Glow = true, BorderWithoutDispelType = true } })
+
+		local function glowRegistration(groupKey)
+			local button = instance.Frame:GetAuraGroupFrame(groupKey, 1)
+			local args = button._lastArgs.AddDispelTypeTexture
+			assert(args[1] == instance.ButtonWidgets[button].Glow.Texture,
+				"the last registration is the glow rather than an edge of the border")
+			return args[2]
+		end
+
+		assert(glowRegistration("cc").showWithoutDispelType == true,
+			"crowd control lights up a typeless aura the way its border rings one")
+		assert(glowRegistration("role").showWithoutDispelType == false,
+			"while a group ringing only real types does not")
+	end)
 end)
 
 fw.describe("AuraContainerDisplay - glow lifecycle", function()
@@ -581,26 +624,60 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		assert((ccButton._calls.AddDispelTypeTexture or 0) > 0, "the cc group is handed to the engine")
 		assert((plainButton._calls.AddDispelTypeTexture or 0) == 0, "the row behind it is not")
 
-		-- The ring has rounded inner corners, and the whole row follows one icon shape rather than
-		-- carrying two side by side.
-		assert(instance.ButtonWidgets[plainButton].CornersRounded == true,
-			"the row's icons are trimmed to the shape the ring leaves")
+		-- The debuffs behind the ringed icon wear nothing, so trimming those would round a corner
+		-- for no art at all.
+		assert(instance.ButtonWidgets[ccButton].CornersRounded == true,
+			"the ringed icon is trimmed to the shape the ring leaves")
+		assert(instance.ButtonWidgets[plainButton].CornersRounded == false,
+			"while the row behind it keeps its square corners")
 
 		local registered = ccButton._calls.AddDispelTypeTexture
 
-		instance:SetGroupColorByDispelType("cc", false)
+		instance:SetGroupColorByDispelTypes({ "cc" }, false)
 
 		assert(instance.ButtonWidgets[ccButton].BorderTextures[1]._shown == false,
 			"switching it off takes the ring back off the icon")
 		assert(ccButton._calls.AddDispelTypeTexture == registered, "and registers nothing more")
+		assert(instance.ButtonWidgets[ccButton].CornersRounded == false,
+			"and that icon has its square corners back")
+
+		-- Ticking the option is the sequence a user actually hits, with the row already on screen.
+		instance:SetGroupColorByDispelTypes({ "cc" }, true)
+
+		assert(instance.ButtonWidgets[ccButton].CornersRounded == true, "ticking it rounds that icon")
 		assert(instance.ButtonWidgets[plainButton].CornersRounded == false,
-			"and the row has its square corners back")
+			"and leaves the row behind it square")
 
 		-- A key the display has no group for is ordinary, since callers push the switch at every
 		-- row they might be drawing.
 		acm.notifications = {}
-		instance:SetGroupColorByDispelType("nosuchgroup", true)
+		instance:SetGroupColorByDispelTypes({ "nosuchgroup" }, true)
 		assert(#acm.notifications == 0, "a key the display has no group for is not a misuse")
+
+		-- A row moves every group on it in one call, so the batch has to reach a group the
+		-- display-wide switch left off.
+		instance:SetGroupColorByDispelTypes({ "cc", "plain" }, true)
+		assert((plainButton._calls.AddDispelTypeTexture or 0) > 0,
+			"the group behind it is handed to the engine too")
+	end)
+
+	fw.it("a group's own glow rounds every icon on the row", function()
+		-- The overlay is padding around the icon rather than a ring on it, so a row that lights up
+		-- the buffs worth purging would otherwise put two icon shapes side by side.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "purge", FilterString = "HELPFUL|RAID_PLAYER_DISPELLABLE", MaxIcons = 3, Glow = true },
+			{ Key = "plain", FilterString = "HELPFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { Style = { Glow = false, ColorByDispelType = false } })
+
+		local plainButton = instance.Frame:GetAuraGroupFrame("plain", 1)
+
+		assert(instance.ButtonWidgets[plainButton].CornersRounded == true,
+			"the whole row follows the glowing group's shape")
+
+		instance:SetGroupGlow("purge", false)
+
+		assert(instance.ButtonWidgets[plainButton].CornersRounded == false,
+			"and squares back up once nothing on it glows")
 	end)
 
 	fw.it("SetGroupGlowColors recolours a display that already exists", function()

@@ -52,8 +52,7 @@ function M:GlowWanted(instance, widgets)
 end
 
 ---Whether this button's border takes the engine's dispel palette. A group's own answer wins over
----the display-wide switch, so a row can colour the crowd control leading it and leave the plain
----debuffs behind it alone.
+---the display-wide switch, so one group in a row can colour differently from the rest of it.
 ---@param instance AuraContainerDisplay
 ---@param widgets table
 ---@return boolean
@@ -65,6 +64,21 @@ function M:DispelColorWanted(instance, widgets)
 	end
 
 	return instance.Style.ColorByDispelType == true
+end
+
+---Whether this button rings even without a dispel type, tinted with the engine's "None" palette
+---colour.
+---@param instance AuraContainerDisplay
+---@param widgets table
+---@return boolean
+function M:BorderWithoutDispelTypeWanted(instance, widgets)
+	local group = widgets.Group
+
+	if group and group.BorderWithoutDispelType ~= nil then
+		return group.BorderWithoutDispelType == true
+	end
+
+	return instance.Style.BorderWithoutDispelType == true
 end
 
 ---The tint a button's border, glow and bar fill take. The group's own colour wins over the
@@ -108,9 +122,9 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	local colored = M:DispelColorWanted(instance, widgets)
 	local wantBorder = colored and borders ~= nil and not tinted
 	-- Whether the border also shows on auras with no dispel type, tinted with the "None" palette
-	-- colour. It is opt-in per display because on a generic debuff display it would ring every
+	-- colour. It is opt-in per group or display because on a generic debuff row it would ring every
 	-- physical debuff.
-	local wantTypelessBorder = wantBorder and style.BorderWithoutDispelType == true
+	local wantTypelessBorder = wantBorder and M:BorderWithoutDispelTypeWanted(instance, widgets)
 	local wantGlowTint = wantBorder and M:GlowWanted(instance, widgets) and widgets.Glow ~= nil
 	-- A tinted group draws the border the dispel registration would have drawn, in its own colour,
 	-- so switching the colours on never costs those icons their ring.
@@ -160,12 +174,12 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	end
 
 	if wantGlowTint then
-		-- showWithoutDispelType keeps the glow on physical CC, tinted with the "None" palette colour.
+		-- The glow follows the border, so a group ringing only real types never lights a typeless aura.
 		button:AddDispelTypeTexture(widgets.Glow.Texture, {
 			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
 			showWhenHarmful = true,
 			showWhenHelpful = true,
-			showWithoutDispelType = true,
+			showWithoutDispelType = wantTypelessBorder,
 		})
 	elseif widgets.Glow then
 		-- Restore the glow's own colour, and show it so the engine's last hidden state cannot

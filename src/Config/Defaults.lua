@@ -697,8 +697,7 @@ local dbDefaults = {
 				ShortOnly = true,
 				-- Same again: crowd control has its own row on the Important Auras page.
 				ShowCrowdControl = false,
-				-- Only the crowd control group takes it. Every other debuff on the row stands in for
-				-- Blizzard's own, which draws a plain icon.
+				-- Only crowd control rings a debuff the game gives no dispel type.
 				ColorByDispelType = true,
 				EnableNumbers = false,
 				FontScale = 1.0,

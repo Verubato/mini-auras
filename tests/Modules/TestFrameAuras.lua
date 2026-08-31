@@ -1334,25 +1334,41 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.ShowCrowdControl = false
 	end)
 
-	fw.it("rings the stun leading the debuff preview while the dispel colours are on", function()
+	fw.it("rings each stand-in on the debuff preview with its own dispel colour", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 		options.Debuffs.ColorByDispelType = true
+		options.Debuffs.MaxIcons = 5
 
 		module:StartTesting()
 
 		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
-		local border = row.Slots[1].Container.Border
-		local tint = _G.DEBUFF_TYPE_NONE_COLOR
+		local debuffs = testSpells.FrameAuras.Debuffs
+		local dispelColors = testSpells.FrameAuras.DispelColors
+		local none = _G.DEBUFF_TYPE_NONE_COLOR
+		local stun = row.Slots[1].Container.Border
+		local stunTint = stun._lastArgs.SetVertexColor
 
-		assert(border._shown, "the stand-in is ringed the way the live icon is")
+		-- The loop below compares against the map itself, so the types it holds are pinned here or a
+		-- wrong one would render consistently and pass.
+		assert(dispelColors[34914] == _G.DEBUFF_TYPE_MAGIC_COLOR, "Vampiric Touch is Magic")
+		assert(dispelColors[589] == _G.DEBUFF_TYPE_MAGIC_COLOR, "Shadow Word: Pain is Magic")
+		assert(dispelColors[980] == _G.DEBUFF_TYPE_CURSE_COLOR, "Agony is Curse")
+		assert(dispelColors[146739] == _G.DEBUFF_TYPE_MAGIC_COLOR, "Corruption is Magic")
 
-		local color = border._lastArgs.SetVertexColor
-
-		assert(color[1] == tint.r and color[2] == tint.g and color[3] == tint.b,
+		assert(stun._shown, "the stun leading the row is still ringed")
+		assert(stunTint[1] == none.r and stunTint[2] == none.g and stunTint[3] == none.b,
 			"in the colour the game gives a stun, which carries no dispel type")
-		assert(row.Slots[2].Container.Border._shown == false,
-			"while the debuffs behind it are drawn plain")
+
+		for index, spellId in ipairs(debuffs) do
+			local border = row.Slots[index + 1].Container.Border
+			local expected = dispelColors[spellId]
+			local color = border._lastArgs.SetVertexColor
+
+			assert(border._shown, "debuff " .. spellId .. " is ringed too, not left plain behind the stun")
+			assert(color[1] == expected.r and color[2] == expected.g and color[3] == expected.b,
+				"debuff " .. spellId .. " takes its own dispel colour")
+		end
 
 		module:StopTesting()
 		ResetFills()
@@ -1361,11 +1377,58 @@ fw.describe("Frame Auras - test mode", function()
 
 		local plain = assert(RowOn(memberFrame), "the frame still gets a preview row")
 
-		assert(plain.Slots[1].Container.Border._shown == false,
-			"and switching the colours off takes the ring off the preview too")
+		for index = 1, #debuffs + 1 do
+			assert(plain.Slots[index].Container.Border._shown == false,
+				"and switching the colours off takes every ring off the preview")
+		end
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.ColorByDispelType = true
+		options.Debuffs.ShowCrowdControl = false
+		module:StartTesting()
+
+		local withoutCC = assert(RowOn(memberFrame), "the row still previews without crowd control leading")
+
+		for index, spellId in ipairs(debuffs) do
+			local border = withoutCC.Slots[index].Container.Border
+			local expected = dispelColors[spellId]
+			local color = border._lastArgs.SetVertexColor
+
+			assert(border._shown, "debuff " .. spellId .. " still rings without crowd control at the head")
+			assert(color[1] == expected.r and color[2] == expected.g and color[3] == expected.b,
+				"and keeps its own colour, which used to depend on crowd control leading the row")
+		end
 
 		options.Debuffs.ShowCrowdControl = false
 		options.Debuffs.ColorByDispelType = true
+		options.Debuffs.MaxIcons = 3
+	end)
+
+	fw.it("rounds the debuff preview's corners while the ring is on it", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ColorByDispelType = true
+
+		module:StartTesting()
+
+		local ringed = assert(RowOn(memberFrame), "the frame gets a preview row")
+
+		assert(ringed.Slots[1].Container.CornersRounded == true,
+			"the ringed stand-in is trimmed the way the live button is")
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.ColorByDispelType = false
+		module:StartTesting()
+
+		local square = assert(RowOn(memberFrame), "the frame still gets a preview row")
+
+		assert(square.Slots[1].Container.CornersRounded == false,
+			"and the corners go back to square with no ring to fit")
+
+		module:StopTesting()
+		options.Debuffs.ColorByDispelType = true
+		options.Debuffs.Enabled = false
 	end)
 
 	fw.it("draws the stun leading the debuff preview a quarter again the size of the rest", function()
@@ -2409,7 +2472,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		DropRaidFrame(35)
 	end)
 
-	fw.it("rings the head of the row in the dispel colours, and nothing behind it", function()
+	fw.it("rings the crowd control lead regardless of type, and the rest of the row only where an aura has one", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 		options.Debuffs.ColorByDispelType = true
@@ -2421,17 +2484,26 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 
 		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
 		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the group")
-		local plain = row._groups[DEBUFF_GROUP]
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the role group always builds")
+		local plain = assert(row._groups[DEBUFF_GROUP], "and the plain group behind it")
 
 		assert((cc.buttons[1]._calls.AddDispelTypeTexture or 0) > 0,
 			"the crowd control border is handed to the engine, which is the only thing that knows the type")
-		assert((plain.buttons[1]._calls.AddDispelTypeTexture or 0) == 0,
-			"while the debuffs behind it stand in for Blizzard's own row and stay plain")
+		assert((role.buttons[1]._calls.AddDispelTypeTexture or 0) > 0,
+			"the row's one switch reaches the boss and role group too")
+		assert((plain.buttons[1]._calls.AddDispelTypeTexture or 0) > 0,
+			"and the plain group behind it")
 
-		local registered = cc.buttons[1]._lastArgs.AddDispelTypeTexture
+		local ccRegistered = cc.buttons[1]._lastArgs.AddDispelTypeTexture
+		local roleRegistered = role.buttons[1]._lastArgs.AddDispelTypeTexture
+		local plainRegistered = plain.buttons[1]._lastArgs.AddDispelTypeTexture
 
-		assert(registered[2].showWithoutDispelType == true,
-			"and a physical stun still gets a ring, having no dispel type to be coloured by")
+		assert(ccRegistered[2].showWithoutDispelType == true,
+			"a physical stun still gets a ring, having no dispel type to be coloured by")
+		assert(roleRegistered[2].showWithoutDispelType == false,
+			"while a role or boss debuff with no dispel type takes no ring")
+		assert(plainRegistered[2].showWithoutDispelType == false,
+			"same for a plain debuff, so nothing draws the 'None' palette colour on it")
 
 		options.Debuffs.ShowCrowdControl = false
 		DropRaidFrame(37)

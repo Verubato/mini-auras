@@ -426,10 +426,10 @@ local function RoleIcons()
 	return math.min(MaxIcons("Debuffs"), MAX_ROLE_ICONS)
 end
 
----Whether the crowd control at the head of the debuff row is ringed in the game's dispel colours.
----Only that group asks.
+---Whether the debuff row is ringed in the game's dispel colours. The one switch on the row governs
+---all three of its groups.
 ---@return boolean
-local function CrowdControlDispelColors()
+local function DebuffDispelColors()
 	local options = SideOptions("Debuffs")
 
 	return options ~= nil and options.ColorByDispelType == true
@@ -658,6 +658,9 @@ local function RoleGroup()
 		CandidateFilters = role,
 		SizeScale = LEAD_SIZE_SCALE,
 		LayoutIndex = DEBUFF_ROLE_INDEX,
+		-- Unlike crowd control, most of these carry a real dispel type, so a typeless one goes
+		-- unringed.
+		BorderWithoutDispelType = false,
 	}
 end
 
@@ -684,6 +687,7 @@ local function BuildDebuffs(frame, unit)
 		MaxIcons = MaxIcons("Debuffs"),
 		CandidateFilters = rest,
 		LayoutIndex = DEBUFF_PLAIN_INDEX,
+		BorderWithoutDispelType = false,
 	}
 
 	local display = auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
@@ -849,9 +853,11 @@ local function ApplyTestSide(entry, side)
 		ReverseCooldown = true,
 		HideNumbers = HidesNumbers(side) or centersStacks,
 		Glow = false,
-		-- Only the crowd control stand-in carries a tint, so the plain spells behind it stay bare
-		-- however this is set.
-		ColorByDispelType = PreviewLeadsWithCrowdControl(side) and CrowdControlDispelColors(),
+		-- Buffs carries no switch for this, and the debuff row's own reaches every stand-in on it.
+		ColorByDispelType = side == "Debuffs" and DebuffDispelColors(),
+		DispelColors = side == "Debuffs" and testSpells.FrameAuras.DispelColors or nil,
+		-- The live buttons round their corners under the ring, so the stand-ins do too.
+		Border = side == "Debuffs" and DebuffDispelColors() or nil,
 		CenterStackText = centersStacks and PREVIEW_STACK_COUNT or nil,
 		FontScale = FontScale(side),
 		Stagger = true,
@@ -955,7 +961,7 @@ local function ApplySettings(entry)
 
 		-- A display already built keeps the group it was created with, so the switch only reaches
 		-- the row it is on this way.
-		entry.Debuffs:SetGroupColorByDispelType(DEBUFF_CROWD_CONTROL_GROUP, CrowdControlDispelColors())
+		entry.Debuffs:SetGroupColorByDispelTypes(DEBUFF_GROUP_KEYS, DebuffDispelColors())
 
 		-- The boss and role flag is what keeps the leading group apart from the two behind it.
 		local role, rest = DebuffCandidates()

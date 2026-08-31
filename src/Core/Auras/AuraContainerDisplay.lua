@@ -222,21 +222,21 @@ local function StoreGroupColor(instance, groupKey, color)
 	return true
 end
 
----Whether any group asks for artwork that rings its icons, which is what the icon corners follow.
+---Whether any group glows, which rounds every icon on the row.
 ---Kept on the instance because it is read per button on every restyle, and it only moves when a
 ---group does.
 ---@param instance AuraContainerDisplay
-local function StoreGroupRinged(instance)
+local function StoreGroupGlow(instance)
 	local any = false
 
 	for _, group in ipairs(instance.Groups) do
-		if group.Glow == true or group.ColorByDispelType == true then
+		if group.Glow == true then
 			any = true
 			break
 		end
 	end
 
-	instance.GroupRinged = any
+	instance.GroupGlow = any
 end
 
 local function NextFrameName(frameType)
@@ -915,17 +915,14 @@ local function StyleGlow(instance, button, widgets, size)
 		glow:Hide()
 	end
 
-	-- Every overlay in the catalog has rounded inner corners, and so does the border ring, so the
-	-- icon takes the same shape while any of them is showing. A square icon under a rounded ring
-	-- leaves its corners poking out.
-	-- The dispel ring counts as a border here, since every display that asks for one also asks for
-	-- it on auras with no dispel type, so the ring is always there.
+	-- Every overlay in the catalog has rounded inner corners, and so does the ring border, so an
+	-- icon under either takes the same shape rather than poking its corners out past the art.
+	-- A group's own glow counts for the whole display, or a row would carry two icon shapes side
+	-- by side.
 	-- Displays that brought their own mask keep it, and a bar's leading icon is square against the
 	-- fill by design.
-	-- A group's own glow or dispel ring counts for the whole display rather than its own buttons,
-	-- or a row would carry two icon shapes side by side.
-	local ringed = style.Glow == true or instance.GroupRinged == true
-		or style.Border == true or style.ColorByDispelType == true
+	local ringed = style.Glow == true or instance.GroupGlow == true
+		or style.Border == true or auraButtonPaint:DispelColorWanted(instance, widgets)
 	local rounded = ringed and not widgets.Bar
 	if widgets.CornersRounded ~= rounded and widgets.Icon and not instance.IconMask then
 		widgets.CornersRounded = rounded
@@ -1695,7 +1692,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 		or InitializeButton
 
 	instance.Initialize = initialize
-	StoreGroupRinged(instance)
+	StoreGroupGlow(instance)
 
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
@@ -1766,7 +1763,7 @@ function M:AddPendingGroup(group)
 
 	self.Groups[index] = group
 	self.GroupsByKey[group.Key] = group
-	StoreGroupRinged(self)
+	StoreGroupGlow(self)
 
 	-- A group drawn larger than the display widens where a line wraps, and nothing else on the
 	-- path that adds one re-applies that.
@@ -2074,25 +2071,29 @@ function M:SetGroupGlow(groupKey, enabled)
 	end
 
 	group.Glow = enabled
-	StoreGroupRinged(self)
+	StoreGroupGlow(self)
 	self:RestyleButtons()
 end
 
----Turns one group's dispel-type colouring on or off after the display exists, so a row can colour
----the crowd control leading it while the debuffs behind it stay plain. Nil hands the group back to
----the display-wide switch.
----@param groupKey string
+---Turns dispel-type colouring on or off for the named groups, restyling once rather than once per
+---group. Nil hands a group back to the display-wide switch.
+---@param groupKeys string[]
 ---@param enabled boolean?
-function M:SetGroupColorByDispelType(groupKey, enabled)
-	local group = self.GroupsByKey[groupKey]
+function M:SetGroupColorByDispelTypes(groupKeys, enabled)
+	local changed = false
 
-	if not group or group.ColorByDispelType == enabled then
-		return
+	for _, groupKey in ipairs(groupKeys) do
+		local group = self.GroupsByKey[groupKey]
+
+		if group and group.ColorByDispelType ~= enabled then
+			group.ColorByDispelType = enabled
+			changed = true
+		end
 	end
 
-	group.ColorByDispelType = enabled
-	StoreGroupRinged(self)
-	self:RestyleButtons()
+	if changed then
+		self:RestyleButtons()
+	end
 end
 
 ---A group's current icon budget, for callers that only want to act when it actually moves.
@@ -2380,8 +2381,8 @@ end
 ---@field ShowMilliseconds boolean?
 ---@field ColorByDispelType boolean?
 ---@field BorderWithoutDispelType boolean? Keep the dispel-coloured border on auras with no dispel
----type, tinted with the "None" palette colour like the glow. For displays whose untinted groups
----only ever hold CC, where a stun should ring the same as a polymorph.
+---type, tinted with the "None" palette colour like the glow. A group's own answer overrides this.
+---See AuraDisplayGroupSpec.BorderWithoutDispelType.
 ---@field Glow boolean?
 ---@field FontScale number?
 ---@field ShowTooltips boolean?
@@ -2459,7 +2460,10 @@ end
 ---creation, since a region can only be added as a button is built.
 ---@field ColorByDispelType boolean? Whether this group's borders take the engine's dispel palette,
 ---overriding the display-wide Style.ColorByDispelType so one row can colour a single category.
----Unset follows the display. Changed after creation with SetGroupColorByDispelType.
+---Unset follows the display. Changed after creation with SetGroupColorByDispelTypes.
+---@field BorderWithoutDispelType boolean? Whether this group rings an aura with no dispel type at
+---all, overriding the display-wide Style.BorderWithoutDispelType so one row can ring only the
+---categories that carry a real type. Unset follows the display. Fixed at creation.
 ---@field GlowColor number[]? {r, g, b} tint for this group's glow and border, so one container can
 ---colour its categories differently. A tinted group opts out of dispel-type colouring, which has
 ---nothing to say about a buff. Changed after creation with SetGroupGlowColors.
@@ -2519,6 +2523,7 @@ end
 ---@field PendingSpacing number Spacing the buttons will carry once a deferred restyle lifts.
 ---@field Groups AuraDisplayGroupSpec[]
 ---@field GroupsByKey table<string, AuraDisplayGroupSpec>
+---@field GroupGlow boolean Whether any group glows, which rounds every icon on the row.
 ---@field Grow string
 ---@field Style AuraDisplayStyle
 ---@field Buttons table[]
