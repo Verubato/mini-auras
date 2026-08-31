@@ -63,11 +63,10 @@ function M:CleanTable(target, template, cleanValues, recurse)
 	for key, value in pairs(target) do
 		local templateValue = template[key]
 
-		-- Remove unknown keys or keys with wrong types when cleanValues is true
 		if cleanValues and templateValue == nil then
 			target[key] = nil
 		elseif cleanValues and type(value) == "table" and type(templateValue) ~= "table" then
-			-- type mismatch: reset this key to default
+			-- A stored table cannot merge into a scalar default, so it goes back to that default.
 			target[key] = templateValue
 		elseif recurse and type(value) == "table" and type(templateValue) == "table" and next(templateValue) ~= nil then
 			-- Recursively clean nested tables

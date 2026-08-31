@@ -1,10 +1,16 @@
 local addonName, addon = ...
 local M = addon.Framework
 
-local function NilKeys(target)
+local function NilKeys(target, template)
 	for k, v in pairs(target) do
-		if type(v) == "table" then
-			NilKeys(v)
+		local templateValue = template and template[k]
+
+		if type(v) == "table" and type(templateValue) == "table" then
+			-- An empty template says the user authors this table, so a reset leaves what they wrote.
+			if next(templateValue) ~= nil then
+				-- Closures elsewhere hold references into these tables, so the instance stays.
+				NilKeys(v, templateValue)
+			end
 		else
 			target[k] = nil
 		end
@@ -47,9 +53,9 @@ function M:ResetSavedVars(defaults)
 	local name = addonName .. "DB"
 	local vars = _G[name] or {}
 
-	-- don't create a new table because we're referencing that in the addon
-	-- instead clear the existing keys and return the same instance (if one existed to begin with)
-	NilKeys(vars)
+	_G[name] = vars
+
+	NilKeys(vars, defaults)
 
 	if defaults then
 		return M:CopyTable(defaults, vars)
