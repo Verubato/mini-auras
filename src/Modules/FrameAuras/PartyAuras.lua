@@ -49,7 +49,7 @@ local DEBUFF_CROWD_CONTROL_INDEX = 2
 local DEBUFF_PLAIN_INDEX = 3
 -- What the front of the debuff row is drawn at, as a share of the rest of it. A stun or a boss and
 -- role debuff on a party member is worth more than the debuff beside it.
-local LEAD_SIZE_SCALE = 1.25
+local LEAD_SIZE_SCALE = 1.4
 -- The most icons the head of the row holds. Its own cap rather than the row's, because two stuns
 -- at once on one member is already unusual.
 local MAX_CROWD_CONTROL_ICONS = 2

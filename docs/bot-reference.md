@@ -696,7 +696,7 @@ end, because flipping it makes the client rebuild the raid frames.
 upward.
 Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is
 ordered by the game itself, because an aura's spell id is secret and nothing can reorder a group
-once it has rendered. The game's own boss and role auras lead the row, drawn a quarter larger than
+once it has rendered. The game's own boss and role auras lead the row, drawn 40% larger than
 the rest of it and capped at two icons on their own budget. There is no switch to hold the group
 itself back: a debuff like Unstable Affliction has to be seen before anything else on the frame.
 Crowd control is the one thing the **Crowd control** switch reaches there too: with the switch off, a
@@ -710,7 +710,7 @@ switch also opens a group of its own behind the lead group.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
 - **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,
-  drawn a quarter larger than the rest of the row and capped at two icons on its own budget, and lets
+  drawn 40% larger than the rest of the row and capped at two icons on its own budget, and lets
   a crowd control debuff into the boss and role group ahead of it. Off by default for the same reason
   as the two on the Buffs tab.
 - **Dispel colours** (on) - rings every group on the row in the game's colour for its dispel
@@ -754,7 +754,7 @@ held back: it is only given a budget while the unit is visible, because out of s
 stops weighing the crowd control token and the group would fill with unrelated debuffs.
 
 **Test mode.** The Test button previews all three parts at once. The preview follows the category
-switches: turning crowd control on puts a stun at the head of the debuff row, drawn a quarter larger
+switches: turning crowd control on puts a stun at the head of the debuff row, drawn 40% larger
 and ringed the way the live one would be, and turning it off takes it back out, so each switch
 visibly does something. On 12.1 an aura container is
 engine-driven and cannot be handed fake auras, so the preview is a separate row of stand-in icons

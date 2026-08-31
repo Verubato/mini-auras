@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Crowd control and boss debuffs at the head of the frame aura debuff row are now drawn 40% larger, up from 25%.
 - The frame auras Dispellable switch no longer hides crowd control debuffs your own spec cannot dispel.
 
 ## 5.31.0

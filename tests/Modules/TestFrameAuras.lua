@@ -188,7 +188,7 @@ local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
 local DEBUFF_ROLE_GROUP = "FrameDebuffsRole"
 -- What the front of the row is drawn at, as a share of the rest of it.
-local LEAD_SCALE = 1.25
+local LEAD_SCALE = 1.4
 -- The cap each of the two groups at the front of the row carries, whatever the row's own budget
 -- is.
 local LEAD_MAX_ICONS = 2
@@ -1431,7 +1431,7 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.Enabled = false
 	end)
 
-	fw.it("draws the stun leading the debuff preview a quarter again the size of the rest", function()
+	fw.it("draws the stun leading the debuff preview 40% larger than the rest", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 
@@ -2305,7 +2305,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		DropRaidFrame(31)
 	end)
 
-	fw.it("leads the row with a group of its own, a quarter again the size of the rest", function()
+	fw.it("leads the row with a group of its own, drawn 40% larger than the rest", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 
@@ -2337,7 +2337,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		DropRaidFrame(32)
 	end)
 
-	fw.it("carries its own budget, so the line the row wraps at still holds what the player asked for", function()
+	fw.it("widens the line by exactly what its scaled groups claim, role and crowd control both", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 		-- A row wide enough and deep enough for the scaled group to buy a whole extra icon, which
@@ -2356,14 +2356,19 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		assert(cc.maxFrameCount == LEAD_MAX_ICONS,
 			"the group takes its own cap, not the row's, got " .. tostring(cc.maxFrameCount))
 
-		-- What a row of plain icons alone would wrap at. The scaled group adds to it, and the whole
-		-- point of the cap is how much.
+		-- What a row of plain icons alone would wrap at.
 		local size = row._groups[DEBUFF_GROUP].layout.elementHeight
 		local plain = options.Debuffs.PerRow * (size + ICON_SPACING)
+		-- The role group leads the row too, at the same scale and the same cap, so the row carries
+		-- two claims rather than one.
+		local scaledGroups = 2
+		local claimed = scaledGroups * math.min(LEAD_MAX_ICONS, options.Debuffs.PerRow) * size * (LEAD_SCALE - 1)
 
-		assert(row._flowMaxLineSize > plain, "the larger icons widen the line they wrap at")
-		assert(row._flowMaxLineSize < plain + size + ICON_SPACING,
-			"but never by a whole icon and its gap, or a full line takes one more than the player asked for, got "
+		assert(math.floor(row._flowMaxLineSize / (size + ICON_SPACING)) == options.Debuffs.PerRow + 1,
+			"the widened line now takes one more icon than PerRow asked for, which is the cost of the larger lead icons, got "
+				.. tostring(row._flowMaxLineSize))
+		assert(math.abs((row._flowMaxLineSize - plain) - claimed) < 0.01,
+			"the widening is what the scaled groups claim, not a cap held under it, got "
 				.. tostring(row._flowMaxLineSize - plain))
 
 		options.Debuffs.ShowCrowdControl = false

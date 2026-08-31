@@ -1484,7 +1484,8 @@ local function LineSize(instance)
 	end
 
 	-- Every scaled icon a group can land on one line counts, or a full line wraps one icon early.
-	-- The premium stays under an icon and its gap, so a line that was full still takes no more.
+	-- Two scaled groups push the premium past a plain icon and its gap, so a full line takes one
+	-- more than PerLine asked for.
 	return perLine * size + perLine * instance.Spacing + premium
 end
 

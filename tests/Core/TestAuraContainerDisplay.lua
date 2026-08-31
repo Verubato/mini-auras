@@ -106,7 +106,7 @@ fw.describe("AuraContainerDisplay - creation", function()
 	end)
 
 	-- The cap is a width, and a scaled group's icons are wider than the count they are measured as.
-	fw.it("widens the wrap cap for a scaled group, so a line still holds what it was asked for", function()
+	fw.it("widens the wrap cap for a single scaled group, so a line still holds what it was asked for", function()
 		local plainOnly = display:New(_G.UIParent, "target", {
 			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
 		}, 30, 2, "Test", { PerLine = 3 })
