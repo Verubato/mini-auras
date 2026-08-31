@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.32.0
+
+- The frame auras Dispellable switch is now two switches, Dispellable by me and Dispellable by raid, and the raid one shows every debuff somebody in the group can take off.
+
 ## 5.31.1
 
 - Crowd control and boss debuffs at the head of the frame aura debuff row are now drawn 40% larger, up from 25%.
