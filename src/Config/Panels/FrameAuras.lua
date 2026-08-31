@@ -106,9 +106,12 @@ end
 ---@param key string
 ---@param label string
 ---@param tooltip string
+---@param excludes string? A key on the same table this one clears when it turns on.
 ---@return table
-local function Checkbox(parent, options, key, label, tooltip)
-	return mini:Checkbox({
+local function Checkbox(parent, options, key, label, tooltip, excludes)
+	local checkbox
+
+	checkbox = mini:Checkbox({
 		Parent = parent,
 		LabelText = label,
 		Tooltip = tooltip,
@@ -117,9 +120,22 @@ local function Checkbox(parent, options, key, label, tooltip)
 		end,
 		SetValue = function(value)
 			options[key] = value == true
+
+			if options[key] and excludes then
+				options[excludes] = false
+			end
+
 			config:Apply(moduleName.FrameAuras)
+
+			-- The paired switch, if this row wired one on, paints from the same table but has no
+			-- way to notice this one wrote to it.
+			if checkbox.__pairedControl then
+				checkbox.__pairedControl.MiniRefresh()
+			end
 		end,
 	})
+
+	return checkbox
 end
 
 ---@param parent table
@@ -156,9 +172,12 @@ end
 ---
 ---The grid is a fixed width rather than one column per switch, so a tab carrying three of them
 ---lines up with the tabs carrying four instead of spreading to fill the page.
+---
+---A spec's Excludes names another key on the row that switching this one on clears, and the two
+---controls repaint each other so the one just cleared shows off too.
 ---@param parent table
 ---@param options table
----@param specs { Key: string, Label: string, Tooltip: string }[]
+---@param specs { Key: string, Label: string, Tooltip: string, Excludes: string? }[]
 ---@param anchor table? Frame the row hangs below; nil pins it to the page's top left.
 ---@return table first The leftmost switch, which is what the section below anchors to.
 local function CheckboxRow(parent, options, specs, anchor)
@@ -169,9 +188,11 @@ local function CheckboxRow(parent, options, specs, anchor)
 	-- placed instead would put that control under whichever column the row happened to end in.
 	local bottomLeftIndex = 1 + SWITCH_COLUMNS * math.floor((#specs - 1) / SWITCH_COLUMNS)
 	local bottomLeft
+	local byKey = {}
 
 	for index, spec in ipairs(specs) do
-		local checkbox = Checkbox(parent, options, spec.Key, spec.Label, spec.Tooltip)
+		local checkbox = Checkbox(parent, options, spec.Key, spec.Label, spec.Tooltip, spec.Excludes)
+		byKey[spec.Key] = checkbox
 		-- Past the grid's width the row wraps rather than squeezing another column in, so the
 		-- switches on a longer tab still line up with the ones on a shorter one.
 		local column = (index - 1) % SWITCH_COLUMNS
@@ -192,6 +213,13 @@ local function CheckboxRow(parent, options, specs, anchor)
 
 		if index == bottomLeftIndex then
 			bottomLeft = checkbox
+		end
+	end
+
+	-- Wired after the loop, since an Excludes spec can name a key built later in the same row.
+	for _, spec in ipairs(specs) do
+		if spec.Excludes and byKey[spec.Excludes] then
+			byKey[spec.Key].__pairedControl = byKey[spec.Excludes]
 		end
 	end
 
@@ -604,9 +632,16 @@ local function BuildDebuffs(content, options)
 			Tooltip = L["Replaces Blizzard's debuffs on the party and raid frames with these ones."],
 		},
 		{
-			Key = "Dispellable",
-			Label = L["Dispellable"],
+			Key = "DispellableByMe",
+			Label = L["Dispellable by me"],
 			Tooltip = L["Shows only the debuffs your own spec can dispel."],
+			Excludes = "DispellableByRaid",
+		},
+		{
+			Key = "DispellableByRaid",
+			Label = L["Dispellable by raid"],
+			Tooltip = L["Shows only the debuffs somebody in the group can dispel."],
+			Excludes = "DispellableByMe",
 		},
 		{
 			Key = "ShortOnly",

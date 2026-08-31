@@ -705,8 +705,13 @@ switch also opens a group of its own behind the lead group.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3), font scale 0.5-2.0 (default 1.0).
-- **Dispellable** (on) - only the debuffs your own spec can dispel. The crowd control group behind
-  the lead group is exempt, since a spec's inability to dispel a stun is not a reason to hide it.
+- **Dispellable by me** (on) and **Dispellable by raid** (off) - only the debuffs your own spec, or
+  respectively somebody in the group, can dispel. Mutually exclusive in the config UI: ticking one
+  clears the other, and switching the active one off leaves both off rather than turning the other
+  on, which is the state where neither narrows the row. A hand-edited save or an imported profile
+  can still carry both true; the raid half, being the superset, is the one that then narrows the
+  row. Either switch exempts the crowd control group behind the lead group, since a spec's
+  inability to dispel a stun is not a reason to hide it.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
 - **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,
@@ -722,9 +727,9 @@ switch also opens a group of its own behind the lead group.
 **Font Scale** on either tab scales that row's countdown and stack count, and the target and focus
 rows carry the same slider on their own tab once that part is switched on.
 
-The two narrowing switches are about the row rather than a category of it, so a stun the player
-cannot dispel is dropped exactly as a debuff would be. The boss and role partition at the head of
-the row always narrows it, whatever those two switches are set to.
+The Under 1min switch is about the row rather than a category of it, so a stun that has run past
+a minute is dropped exactly as a debuff would be. The boss and role partition at the head of the
+row always narrows it, whatever that switch is set to.
 
 **Missing Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
 class brings (Mark of the Wild, Blessing of the Bronze, Arcane Intellect, Power Word: Fortitude,

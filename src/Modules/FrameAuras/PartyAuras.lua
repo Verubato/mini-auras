@@ -38,6 +38,8 @@ local DEBUFF_FILTER = "HARMFUL"
 local EXCLUDE_IMPORTANT = "|!IMPORTANT"
 local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
+-- Narrows to what anybody in the group can take off.
+local REQUIRE_DISPELLABLE = "|DISPELLABLE"
 -- The plain group never draws crowd control, whatever the switch says.
 local DEBUFF_PLAIN_FILTER = DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
 local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
@@ -337,6 +339,15 @@ local function BuffCandidates()
 	return pandemicCandidates, plainCandidates
 end
 
+---Whether the raid half of the dispellable switch is on. It covers the "by me" half, which goes
+---quiet while it is.
+---@return boolean
+local function DispellableByRaidOn()
+	local options = SideOptions("Debuffs")
+
+	return options ~= nil and options.DispellableByRaid == true
+end
+
 ---The debuff filters, built the same way and for the same reason.
 ---
 ---The boss and role partition is made here rather than in a filter string, because the game
@@ -355,7 +366,7 @@ local function DebuffCandidates()
 
 	local options = SideOptions("Debuffs") or {}
 	local maxDuration = options.ShortOnly == true and SHORT_AURA_SECONDS or nil
-	local dispellable = options.Dispellable == true and DispelType() or nil
+	local dispellable = options.DispellableByMe == true and not DispellableByRaidOn() and DispelType() or nil
 
 	roleDebuffCandidates = {
 		maxDuration = maxDuration,
@@ -381,7 +392,7 @@ end
 local function ClassifiesDebuffs()
 	local options = SideOptions("Debuffs")
 
-	return options ~= nil and options.Dispellable == true and DispelType() ~= nil
+	return options ~= nil and options.DispellableByMe == true and not DispellableByRaidOn() and DispelType() ~= nil
 end
 
 ---@param side "Buffs"|"Debuffs"
@@ -414,16 +425,35 @@ local function CrowdControlIcons()
 	return math.min(MaxIcons("Debuffs"), MAX_CROWD_CONTROL_ICONS)
 end
 
----The boss and role group's filter, which closes to crowd control when that switch is off.
+---The boss and role group's filter. It closes to crowd control when the Crowd control switch is
+---off, and narrows to what the raid can dispel when the Dispellable by raid switch is on.
 ---@return string
 local function RoleFilter()
 	local options = SideOptions("Debuffs")
+	local filter = DEBUFF_FILTER
 
-	if options ~= nil and options.ShowCrowdControl == true then
-		return DEBUFF_FILTER
+	if options == nil or options.ShowCrowdControl ~= true then
+		filter = filter .. EXCLUDE_CROWD_CONTROL
 	end
 
-	return DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
+	if DispellableByRaidOn() then
+		filter = filter .. REQUIRE_DISPELLABLE
+	end
+
+	return filter
+end
+
+---The plain group's filter, which narrows to what the raid can dispel the same way the role
+---group's does.
+---@return string
+local function PlainFilter()
+	local filter = DEBUFF_PLAIN_FILTER
+
+	if DispellableByRaidOn() then
+		filter = filter .. REQUIRE_DISPELLABLE
+	end
+
+	return filter
 end
 
 ---How many icons the boss and role group at the head of the row may draw. Never gated on a
@@ -691,7 +721,7 @@ local function BuildDebuffs(frame, unit)
 
 	groups[#groups + 1] = {
 		Key = DEBUFF_GROUP,
-		FilterString = DEBUFF_PLAIN_FILTER,
+		FilterString = PlainFilter(),
 		MaxIcons = MaxIcons("Debuffs"),
 		CandidateFilters = rest,
 		LayoutIndex = DEBUFF_PLAIN_INDEX,
@@ -981,6 +1011,7 @@ local function ApplySettings(entry)
 			entry.Debuffs:SetCandidateFilters(DEBUFF_CROWD_CONTROL_GROUP, crowdControl)
 		end
 
+		entry.Debuffs:SetFilterString(DEBUFF_GROUP, PlainFilter())
 		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, rest)
 	end
 end

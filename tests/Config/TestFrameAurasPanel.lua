@@ -131,10 +131,10 @@ fw.describe("Frame Auras page - the countdown numbers on each row", function()
 
 		addon.Config:EnsureWindow()
 
-		-- Mine belongs to the buff tab and Dispellable to the debuff tab, so each names the tab
-		-- its switch has to be sitting on.
+		-- Mine belongs to the buff tab and Dispellable by me to the debuff tab, so each names the
+		-- tab its switch has to be sitting on.
 		local buffs = SwitchOnTabWith(addon, addon.L["Show numbers"], addon.L["Mine"])
-		local debuffs = SwitchOnTabWith(addon, addon.L["Show numbers"], addon.L["Dispellable"])
+		local debuffs = SwitchOnTabWith(addon, addon.L["Show numbers"], addon.L["Dispellable by me"])
 
 		fw.not_nil(buffs, "the buff tab offers the numbers switch")
 		fw.not_nil(debuffs, "and so does the debuff tab")
@@ -351,7 +351,7 @@ fw.describe("Frame Auras page - the icon size sliders", function()
 		-- Each row's tab is named by a switch only it carries, since all three sliders share a label.
 		local rows = {
 			{ Tab = addon.L["Mine"], Part = "Buffs" },
-			{ Tab = addon.L["Dispellable"], Part = "Debuffs" },
+			{ Tab = addon.L["Dispellable by me"], Part = "Debuffs" },
 			{ Tab = addon.L["Instances only"], Part = "ClassBuff" },
 		}
 		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
@@ -381,7 +381,7 @@ fw.describe("Frame Auras page - the font scale sliders", function()
 
 		local rows = {
 			{ Tab = addon.L["Mine"], Part = "Buffs" },
-			{ Tab = addon.L["Dispellable"], Part = "Debuffs" },
+			{ Tab = addon.L["Dispellable by me"], Part = "Debuffs" },
 		}
 		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
 
@@ -411,7 +411,7 @@ fw.describe("Frame Auras page - centring the stack count", function()
 		addon.Config:EnsureWindow()
 
 		local buffs = SwitchOnTabWith(addon, addon.L["Centre stacks"], addon.L["Mine"])
-		local debuffs = SwitchOnTabWith(addon, addon.L["Centre stacks"], addon.L["Dispellable"])
+		local debuffs = SwitchOnTabWith(addon, addon.L["Centre stacks"], addon.L["Dispellable by me"])
 
 		fw.not_nil(buffs, "the buff tab offers the switch")
 		fw.not_nil(debuffs, "and so does the debuff tab")
@@ -430,5 +430,85 @@ fw.describe("Frame Auras page - centring the stack count", function()
 		debuffs:GetScript("OnClick")(debuffs)
 
 		assert(frameAuras.Debuffs.CenterStacks == true, "the debuff tab's switch writes the debuff row")
+	end)
+end)
+
+fw.describe("Frame Auras page - the dispellable by me and by raid switches", function()
+	fw.it("ticking by raid while by me is on clears by me and repaints its switch", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local byMe = SwitchFor(addon, addon.L["Dispellable by me"])
+		local byRaid = SwitchFor(addon, addon.L["Dispellable by raid"])
+
+		fw.not_nil(byMe, "the debuff row offers dispellable by me")
+		fw.not_nil(byRaid, "and dispellable by raid")
+
+		local options = addon.Framework:GetSavedVars().Modules.FrameAuras.Debuffs
+
+		assert(options.DispellableByMe == true, "by me ships on")
+		assert(options.DispellableByRaid == false, "by raid ships off")
+
+		byRaid:GetScript("OnClick")(byRaid)
+
+		assert(options.DispellableByRaid == true, "the click turns by raid on")
+		assert(options.DispellableByMe == false, "and clears by me")
+		assert(byMe:GetChecked() == false, "by me's own switch repaints unchecked")
+	end)
+
+	fw.it("ticking by me while by raid is on clears by raid and repaints its switch", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local byMe = SwitchFor(addon, addon.L["Dispellable by me"])
+		local byRaid = SwitchFor(addon, addon.L["Dispellable by raid"])
+		local options = addon.Framework:GetSavedVars().Modules.FrameAuras.Debuffs
+
+		byRaid:GetScript("OnClick")(byRaid)
+
+		assert(options.DispellableByRaid == true and options.DispellableByMe == false,
+			"by raid is on, which is where this test starts")
+
+		byMe:GetScript("OnClick")(byMe)
+
+		assert(options.DispellableByMe == true, "the click turns by me on")
+		assert(options.DispellableByRaid == false, "and clears by raid")
+		assert(byRaid:GetChecked() == false, "by raid's own switch repaints unchecked")
+	end)
+
+	fw.it("leaves both off when the active one is unticked, rather than turning the other on", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local byMe = SwitchFor(addon, addon.L["Dispellable by me"])
+		local byRaid = SwitchFor(addon, addon.L["Dispellable by raid"])
+		local options = addon.Framework:GetSavedVars().Modules.FrameAuras.Debuffs
+
+		assert(options.DispellableByMe == true, "by me ships on")
+
+		byMe:GetScript("OnClick")(byMe)
+
+		assert(options.DispellableByMe == false, "the click turns by me off")
+		assert(options.DispellableByRaid == false, "and by raid stays off rather than taking over")
+		assert(byRaid:GetChecked() == false, "so its switch paints unchecked too")
+	end)
+
+	fw.it("leaves a switch with no Excludes behaving exactly as before", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local switch = SwitchOnTabWith(addon, addon.L["Under 1min"], addon.L["Dispellable by me"])
+		local options = addon.Framework:GetSavedVars().Modules.FrameAuras.Debuffs
+
+		assert(options.ShortOnly == true, "it ships on")
+
+		switch:GetScript("OnClick")(switch)
+
+		assert(options.ShortOnly == false, "and the switch turns it off")
+		assert(options.DispellableByMe == true, "without touching a switch it isn't paired with")
 	end)
 end)

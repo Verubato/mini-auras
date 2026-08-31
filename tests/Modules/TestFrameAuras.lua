@@ -1995,7 +1995,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
 		options.Debuffs.ShortOnly = false
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		partyAuras:Refresh()
 	end)
 
@@ -2042,7 +2042,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 	fw.it("asks for the dispel classification when the player wants only what they can take off", function()
 		options.Debuffs.Enabled = true
-		options.Debuffs.Dispellable = true
+		options.Debuffs.DispellableByMe = true
 
 		local fresh = NewRaidFrame(23)
 
@@ -2056,7 +2056,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 			"the engine's own dispel classification is what it filters on")
 		AssertRestHalf(filters)
 
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		DropRaidFrame(23)
 	end)
 
@@ -2085,7 +2085,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 	fw.it("asks for the dispel classification out of the box, which is what the row ships doing", function()
 		options.Debuffs.Enabled = true
 		-- Back to the shipped answer, which the before_each clears for the tests around this one.
-		options.Debuffs.Dispellable = dbDefaults.Modules.FrameAuras.Debuffs.Dispellable
+		options.Debuffs.DispellableByMe = dbDefaults.Modules.FrameAuras.Debuffs.DispellableByMe
 
 		local fresh = NewRaidFrame(28)
 
@@ -2100,7 +2100,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 			"dispel classification out of the box, got " .. tostring(filters.processedAuraType))
 		AssertRestHalf(filters)
 
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		DropRaidFrame(28)
 	end)
 end)
@@ -2282,7 +2282,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
 		options.Debuffs.ShortOnly = false
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		options.Debuffs.ShowCrowdControl = false
 		partyAuras:Refresh()
 	end)
@@ -2480,7 +2480,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 	fw.it("never narrows crowd control by the dispellable switch, unlike the rest of the row", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
-		options.Debuffs.Dispellable = true
+		options.Debuffs.DispellableByMe = true
 
 		local fresh = NewRaidFrame(39)
 
@@ -2498,7 +2498,7 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 			"while the plain group behind it still narrows by it")
 
 		options.Debuffs.ShowCrowdControl = false
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		DropRaidFrame(39)
 	end)
 
@@ -2582,7 +2582,7 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
 		options.Debuffs.ShortOnly = false
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		options.Debuffs.ShowCrowdControl = false
 		partyAuras:Refresh()
 	end)
@@ -2723,7 +2723,7 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 	fw.it("narrows by whatever the rest of the row is narrowed by, on both halves of the partition", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShortOnly = true
-		options.Debuffs.Dispellable = true
+		options.Debuffs.DispellableByMe = true
 
 		local fresh = NewRaidFrame(14)
 
@@ -2742,7 +2742,7 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		assert(roleFilters.isBossOrRoleAura == true, "without losing the partition")
 
 		options.Debuffs.ShortOnly = false
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		DropRaidFrame(14)
 	end)
 
@@ -2821,7 +2821,7 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
 		options.Debuffs.ShortOnly = false
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		options.Debuffs.ShowCrowdControl = false
 		partyAuras:Refresh()
 	end)
@@ -2845,7 +2845,7 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 
 	fw.it("asks the engine to classify every aura while the dispellable switch wants it", function()
 		options.Debuffs.Enabled = true
-		options.Debuffs.Dispellable = true
+		options.Debuffs.DispellableByMe = true
 
 		local fresh = NewRaidFrame(18)
 
@@ -2857,7 +2857,7 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 		assert(row._processingPolicy == PROCESS_AURA_POLICY,
 			"the switch filters on what that pass writes, got " .. tostring(row._processingPolicy))
 
-		options.Debuffs.Dispellable = false
+		options.Debuffs.DispellableByMe = false
 		DropRaidFrame(18)
 	end)
 
@@ -2905,6 +2905,107 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 
 		options.Debuffs.MaxIcons = dbDefaults.Modules.FrameAuras.Debuffs.MaxIcons
 		DropRaidFrame(24)
+	end)
+end)
+
+---Whether a filter string carries a token, exactly, and not as a stray substring of a longer or
+---negated one. The engine sorts a filter string's tokens alphabetically before it ever reaches a
+---container, so the token this looks for can land anywhere in it.
+---@param filterString string
+---@param token string
+---@return boolean
+local function HasFilterToken(filterString, token)
+	return ("|" .. filterString .. "|"):find("|" .. token .. "|", 1, true) ~= nil
+end
+
+fw.describe("Frame Auras - the raid half of the dispellable switch", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.DispellableByMe = false
+		options.Debuffs.DispellableByRaid = false
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+	end)
+
+	fw.it("narrows the role and plain groups by what the raid can dispel, and leaves crowd control alone", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.DispellableByRaid = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(4)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+		local plain = assert(row._groups[DEBUFF_GROUP], "and the plain group behind it")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "and the crowd control group")
+
+		assert(HasFilterToken(role.filterString, "DISPELLABLE"),
+			"the role group narrows to what the raid can dispel, got " .. tostring(role.filterString))
+		assert(HasFilterToken(plain.filterString, "DISPELLABLE"),
+			"and so does the plain group behind it, got " .. tostring(plain.filterString))
+		assert(not HasFilterToken(cc.filterString, "DISPELLABLE"),
+			"a spec's inability to dispel a stun is not a reason to hide it, got " .. tostring(cc.filterString))
+
+		options.Debuffs.DispellableByRaid = false
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(4)
+	end)
+
+	fw.it("stops narrowing per aura once the raid half carries it, whatever the by-me half says", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.DispellableByMe = true
+		options.Debuffs.DispellableByRaid = true
+
+		local fresh = NewRaidFrame(5)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
+		local plain = assert(row._groups[DEBUFF_GROUP], "and the plain group behind it")
+
+		assert(role.candidateFilters and role.candidateFilters.processedAuraType == nil,
+			"the raid filter component narrows the row now, not the per-aura classification")
+		assert(plain.candidateFilters and plain.candidateFilters.processedAuraType == nil,
+			"same for the plain group behind it")
+		assert(row._processingPolicy == NO_PROCESS_POLICY,
+			"and nothing asks the engine to classify an aura nobody reads a classification for, got "
+				.. tostring(row._processingPolicy))
+
+		options.Debuffs.DispellableByMe = false
+		options.Debuffs.DispellableByRaid = false
+		DropRaidFrame(5)
+	end)
+
+	fw.it("republishes the plain group's filter when the switch flips on a row already built", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(6)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local plain = assert(row._groups[DEBUFF_GROUP], "the row carries the plain group")
+
+		assert(not HasFilterToken(plain.filterString, "DISPELLABLE"), "it starts with the switch off")
+
+		options.Debuffs.DispellableByRaid = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(HasFilterToken(plain.filterString, "DISPELLABLE"),
+			"the switch going on republishes the same group's filter, got " .. tostring(plain.filterString))
+
+		options.Debuffs.DispellableByRaid = false
+		DropRaidFrame(6)
 	end)
 end)
 

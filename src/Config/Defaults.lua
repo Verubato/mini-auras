@@ -3,7 +3,7 @@ local _, addon = ...
 
 ---@class Db
 local dbDefaults = {
-	Version = 79,
+	Version = 80,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -691,7 +691,10 @@ local dbDefaults = {
 				MaxIcons = 2,
 				PerRow = 3,
 				-- On, because a debuff you can cleanse is the one worth acting on first.
-				Dispellable = true,
+				DispellableByMe = true,
+				-- Off, because Dispellable by me already narrows the row, and this only widens it
+				-- back out.
+				DispellableByRaid = false,
 				-- On, because the debuffs that sit on a member all fight crowd out the one worth
 				-- reacting to.
 				ShortOnly = true,

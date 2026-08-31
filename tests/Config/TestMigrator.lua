@@ -2135,3 +2135,66 @@ fw.describe("Migrator - the v79 per-module font scale", function()
 		assert(db.Modules.Alerts.FontScale == 1.25, "the login path has to reach step 79")
 	end)
 end)
+
+fw.describe("Migrator - the v80 dispellable split", function()
+	fw.it("renames the debuff row's Dispellable switch to DispellableByMe", function()
+		local vars = {
+			Version = 79,
+			Modules = { FrameAuras = { Debuffs = { Dispellable = false, ShortOnly = true } } },
+			Profiles = { Other = { Modules = { FrameAuras = { Debuffs = { Dispellable = true } } } } },
+		}
+
+		assert(migrator:UpgradeToVersion80(vars) == true)
+		assert(vars.Modules.FrameAuras.Debuffs.DispellableByMe == false, "the value moves across intact")
+		assert(vars.Modules.FrameAuras.Debuffs.Dispellable == nil, "and the old key is gone")
+		assert(vars.Modules.FrameAuras.Debuffs.ShortOnly == true, "the rest of the table is untouched")
+		assert(vars.Profiles.Other.Modules.FrameAuras.Debuffs.DispellableByMe == true, "profiles move too")
+		assert(vars.Profiles.Other.Modules.FrameAuras.Debuffs.Dispellable == nil, "and their old key goes too")
+		assert(vars.Version == 80)
+	end)
+
+	fw.it("keeps the value already under the new key", function()
+		local vars = {
+			Version = 79,
+			Modules = { FrameAuras = { Debuffs = { Dispellable = false, DispellableByMe = true } } },
+		}
+
+		assert(migrator:UpgradeToVersion80(vars) == true)
+		assert(vars.Modules.FrameAuras.Debuffs.DispellableByMe == true, "the newer value wins")
+		assert(vars.Modules.FrameAuras.Debuffs.Dispellable == nil, "and the stale one is dropped")
+	end)
+
+	fw.it("leaves a profile that never had a debuff table alone", function()
+		local vars = {
+			Version = 79,
+			Modules = { FrameAuras = { Debuffs = { Dispellable = true } } },
+			Profiles = { Other = { Modules = {} } },
+		}
+
+		assert(migrator:UpgradeToVersion80(vars) == true)
+		assert(vars.Profiles.Other.Modules.FrameAuras == nil, "no table is built for a profile that never touched it")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = {
+			Version = 78,
+			Modules = { FrameAuras = { Debuffs = { Dispellable = true } } },
+		}
+
+		assert(migrator:UpgradeToVersion80(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.FrameAuras.Debuffs.Dispellable == true, "and must move nothing")
+		assert(vars.Version == 78)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 79,
+			Modules = { FrameAuras = { Debuffs = { Dispellable = false } } },
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 80, "the shipped version has to be past this step")
+		assert(db.Modules.FrameAuras.Debuffs.DispellableByMe == false, "the login path has to reach step 80")
+	end)
+end)
