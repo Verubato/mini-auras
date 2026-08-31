@@ -705,7 +705,8 @@ switch also opens a group of its own behind the lead group.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3), font scale 0.5-2.0 (default 1.0).
-- **Dispellable** (on) - only the debuffs your own spec can dispel.
+- **Dispellable** (on) - only the debuffs your own spec can dispel. The crowd control group behind
+  the lead group is exempt, since a spec's inability to dispel a stun is not a reason to hide it.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
 - **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,

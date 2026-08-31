@@ -130,6 +130,7 @@ local pandemicCandidates
 local plainCandidates
 local roleDebuffCandidates
 local restDebuffCandidates
+local crowdControlDebuffCandidates
 local eventsFrame
 ---@type EventGate?
 local rosterGate
@@ -336,17 +337,20 @@ local function BuffCandidates()
 	return pandemicCandidates, plainCandidates
 end
 
----The debuff filters, built the same way and for the same reason. The two switches on the page
----narrow both sets, since they are about the row rather than about a category of it.
+---The debuff filters, built the same way and for the same reason.
 ---
 ---The boss and role partition is made here rather than in a filter string, because the game
 ---answers isBossOrRoleAura on the aura itself and nothing negates that in a string. It is always
----set, so neither set can come back nil.
+---set, so none of them can come back nil.
+---
+---Crowd control gets its own table with no dispel-type filter at all, because a spec's inability
+---to dispel a stun is not a reason to hide it.
 ---@return table role Feeds the group leading the row.
----@return table rest Shared by the crowd control and plain groups behind it.
+---@return table rest Feeds the plain group behind crowd control.
+---@return table crowdControl Feeds the crowd control group.
 local function DebuffCandidates()
 	if roleDebuffCandidates then
-		return roleDebuffCandidates, restDebuffCandidates
+		return roleDebuffCandidates, restDebuffCandidates, crowdControlDebuffCandidates
 	end
 
 	local options = SideOptions("Debuffs") or {}
@@ -363,8 +367,12 @@ local function DebuffCandidates()
 		processedAuraType = dispellable,
 		isBossOrRoleAura = false,
 	}
+	crowdControlDebuffCandidates = {
+		maxDuration = maxDuration,
+		isBossOrRoleAura = false,
+	}
 
-	return roleDebuffCandidates, restDebuffCandidates
+	return roleDebuffCandidates, restDebuffCandidates, crowdControlDebuffCandidates
 end
 
 ---Whether the debuff displays have to classify each aura for the dispellable filter. Asking for a
@@ -634,13 +642,13 @@ end
 ---stamps its own state on the spec it is handed and keeps the reference.
 ---@return AuraDisplayGroupSpec
 local function CrowdControlGroup()
-	local _, rest = DebuffCandidates()
+	local _, _, crowdControl = DebuffCandidates()
 
 	return {
 		Key = DEBUFF_CROWD_CONTROL_GROUP,
 		FilterString = DEBUFF_CROWD_CONTROL_FILTER,
 		MaxIcons = CrowdControlIcons(),
-		CandidateFilters = rest,
+		CandidateFilters = crowdControl,
 		SizeScale = LEAD_SIZE_SCALE,
 		LayoutIndex = DEBUFF_CROWD_CONTROL_INDEX,
 	}
@@ -964,13 +972,13 @@ local function ApplySettings(entry)
 		entry.Debuffs:SetGroupColorByDispelTypes(DEBUFF_GROUP_KEYS, DebuffDispelColors())
 
 		-- The boss and role flag is what keeps the leading group apart from the two behind it.
-		local role, rest = DebuffCandidates()
+		local role, rest, crowdControl = DebuffCandidates()
 
 		entry.Debuffs:SetFilterString(DEBUFF_ROLE_GROUP, RoleFilter())
 		entry.Debuffs:SetCandidateFilters(DEBUFF_ROLE_GROUP, role)
 
 		if entry.Debuffs:HasGroup(DEBUFF_CROWD_CONTROL_GROUP) then
-			entry.Debuffs:SetCandidateFilters(DEBUFF_CROWD_CONTROL_GROUP, rest)
+			entry.Debuffs:SetCandidateFilters(DEBUFF_CROWD_CONTROL_GROUP, crowdControl)
 		end
 
 		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, rest)
@@ -1319,6 +1327,7 @@ function M:Refresh()
 	plainCandidates = nil
 	roleDebuffCandidates = nil
 	restDebuffCandidates = nil
+	crowdControlDebuffCandidates = nil
 
 	if AnySideActive() then
 		InstallHooks()

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The frame auras Dispellable switch no longer hides crowd control debuffs your own spec cannot dispel.
+
 ## 5.31.0
 
 - Fixed regular debuffs not getting dispel border.

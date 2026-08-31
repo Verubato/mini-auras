@@ -2465,11 +2465,36 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the group")
 
 		assert(cc.candidateFilters and cc.candidateFilters.maxDuration == 60,
-			"the two switches on the page are about the row, not about one category of it")
+			"the duration bound is about the row, not about one category of it")
 
 		options.Debuffs.ShowCrowdControl = false
 		options.Debuffs.ShortOnly = false
 		DropRaidFrame(35)
+	end)
+
+	fw.it("never narrows crowd control by the dispellable switch, unlike the rest of the row", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.Dispellable = true
+
+		local fresh = NewRaidFrame(39)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "the switch built the group")
+		local plain = assert(row._groups[DEBUFF_GROUP], "and the plain group behind it")
+
+		assert(cc.candidateFilters and cc.candidateFilters.processedAuraType == nil,
+			"a spec's inability to dispel a stun is not a reason to hide it, got "
+				.. tostring(cc.candidateFilters and cc.candidateFilters.processedAuraType))
+		assert(plain.candidateFilters and plain.candidateFilters.processedAuraType == DISPEL_TYPE,
+			"while the plain group behind it still narrows by it")
+
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.Dispellable = false
+		DropRaidFrame(39)
 	end)
 
 	fw.it("rings the crowd control lead regardless of type, and the rest of the row only where an aura has one", function()
