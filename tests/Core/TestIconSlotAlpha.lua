@@ -73,8 +73,22 @@ fw.describe("IconSlotContainer - the alpha a slot is given", function()
 
 		local setter, value = Only(calls)
 
-		-- The type check is what routes this, so a secret lands here the same way a table would.
+		-- The secret guard is checked before the type check, so a secret never reaches type().
 		assert(setter == "SetAlphaFromBoolean", "reading it to pick a number would abort the handler")
+		assert(value == secret, "and it reaches the client untouched")
+	end)
+
+	fw.it("routes a secret number through the boolean setter, not SetAlpha", function()
+		local container, calls = BuiltSlot()
+		local secret = wow.markSecret(211)
+
+		container:SetSlot(1, { Texture = ICON, Alpha = secret })
+
+		local setter, value = Only(calls)
+
+		-- A secret number would pass the live client's type() check and land in SetAlpha,
+		-- which the client refuses. The secret guard must catch it first.
+		assert(setter == "SetAlphaFromBoolean", "a secret number must not reach SetAlpha, got " .. setter)
 		assert(value == secret, "and it reaches the client untouched")
 	end)
 

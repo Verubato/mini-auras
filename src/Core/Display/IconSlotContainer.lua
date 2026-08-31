@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local mini = addon.Framework
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local Masque = LibStub and LibStub("Masque", true)
 local changeStamp = addon.Utils.ChangeStamp
@@ -317,7 +318,7 @@ local function EnsureExtraLayer(slot, layerIndex, iconSize)
 end
 
 local function ApplyAlpha(target, alpha)
-	if type(alpha) == "number" then
+	if not mini:IsSecret(alpha) and type(alpha) == "number" then
 		target:SetAlpha(alpha)
 	else
 		target:SetAlphaFromBoolean(alpha)
