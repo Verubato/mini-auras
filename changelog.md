@@ -1,11 +1,10 @@
 # Changelog
 
-## Unreleased
+## 5.33.0
 
-- Personal aura groups can now be pointed at Friendly Focus and Enemy Focus, which work like the target choices but follow your focus.
-- The frame auras buff row, debuff row, and missing buff mark can each be moved now, with their own anchor point, grow direction, and X and Y offsets.
-- The frame auras buff and debuff rows now carry an Icon Padding slider, 0 to 5, for the gap between one icon and the next.
-- Frame auras dispel colours now ring every debuff on the row, including the ones the game gives no dispel type, such as physical stuns, which take the game's untyped red.
+- Added focus unit to personal auras.
+- Added position (anchor, x/y pos) to frame auras.
+- Fixed missing dispel border on some CC/debuff spells.
 
 ## 5.32.0
 
