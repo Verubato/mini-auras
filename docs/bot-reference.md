@@ -363,18 +363,20 @@ the old Precognition module's settings is frozen at what that release shipped.
   - **Arena Frames** - one copy per enemy arena frame. Debuffs only.
   - **Friendly Target** / **Enemy Target** - your target; only shows while the target is on
     that side. Screen-anchored.
+  - **Friendly Focus** / **Enemy Focus** - your focus; only shows while the focus is on that
+    side. Screen-anchored.
   - **Friendly Nameplates** / **Enemy Nameplates** - one copy on every matching nameplate.
     These copies follow the plate's scale while the Nameplates option Scale with Nameplate is
     on. Every other unit choice always draws at absolute pixel size.
-  - (Groups saved with the older units target/focus/targettarget/nameplate are migrated to the
-    matching target or nameplate choice; focus no longer exists as a choice.)
+  - (Groups saved with the older unit focus are migrated to the matching focus choice; target,
+    targettarget, and nameplate still migrate to the matching target or nameplate choice.)
 - **Display**: **Icons**, **Bars**, **Texture**, **Text only** or **Sound only**. First on the row,
   because it decides what the rest of the row may offer (see Sound only below). The first four are
   the drawn shapes; see the Appearance and Layout tabs.
 - **Aura Type**: **Buff** or **Debuff**. The dropdown is hidden when the unit allows only one
-  type, and for a Sound only group, which does not care. Target and nameplate units allow only
-  the type matching their side (buffs on friendly, debuffs on enemy); Arena Frames allows only
-  debuffs.
+  type, and for a Sound only group, which does not care. Target, focus, and nameplate units
+  allow only the type matching their side (buffs on friendly, debuffs on enemy); Arena Frames
+  allows only debuffs.
 - **Type**: **Spell IDs** or **Aura filters** (the two tracking modes). Hidden for a Sound only
   group, which is always Spell IDs.
 - **Show when**: **Always** (the default), **In combat** or **Out of combat**. On a row of its own
@@ -390,7 +392,7 @@ assistable), and the editor says so in red: "Debuffs cannot be tracked on yourse
 pet." / "Debuffs cannot be tracked on group members." Switching to Aura filters mode makes
 debuffs on those units legal, because filter strings apply regardless of side. Yellow
 caveats: "Buffs are only shown while the unit is friendly." / "Debuffs are only shown while
-the unit is hostile." for the target and nameplate choices.
+the unit is hostile." for the target, focus, and nameplate choices.
 
 **Spells listed in red** (since 5.13.0). A tracked spell whose own aura lands on the other
 side to the group's Aura Type is drawn red in the spell list, with a line under it saying
@@ -594,8 +596,8 @@ For a **Sound only** group this tab is the whole feature. Such a group needs spe
 least one sound to do anything; with neither it simply does nothing, and the editor says
 nothing about it (an unfinished group is not a misconfigured one). Sound only groups on the
 **Raid Frames** unit follow the roster rather than the frames on screen, so they work with the
-party frames hidden and cover you as well as your group; the target and nameplate choices
-still only fire while the unit is on the side the choice names.
+party frames hidden and cover you as well as your group; the target, focus, and nameplate
+choices still only fire while the unit is on the side the choice names.
 
 ### Limits
 

@@ -95,6 +95,10 @@ local function UnitLabel(unit)
 		return L["Friendly Target"]
 	elseif unit == "targetenemy" then
 		return L["Enemy Target"]
+	elseif unit == "focusfriendly" then
+		return L["Friendly Focus"]
+	elseif unit == "focusenemy" then
+		return L["Enemy Focus"]
 	elseif unit == "nameplatefriendly" then
 		return L["Friendly Nameplates"]
 	elseif unit == "nameplateenemy" then

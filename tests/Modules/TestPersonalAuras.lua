@@ -458,6 +458,14 @@ fw.describe("PersonalAuras - what a group is allowed to track", function()
 		assert(not groups:SupportsAuraType("nameplateenemy", "HELPFUL"), "and not buffs")
 	end)
 
+	fw.it("offers one aura type per side of the focus, same as the target", function()
+		assert(groups:SupportsAuraType("focusfriendly", "HELPFUL"), "buffs on a friendly focus")
+		assert(not groups:SupportsAuraType("focusfriendly", "HARMFUL"), "but not debuffs")
+		assert(groups:SupportsAuraType("focusenemy", "HARMFUL"), "debuffs on an enemy focus")
+		assert(not groups:SupportsAuraType("focusenemy", "HELPFUL"), "but not buffs")
+		assert(not groups:IsNameplateUnit("focusenemy"), "and a focus is not a plate")
+	end)
+
 	fw.it("corrects an aura type the chosen side cannot carry", function()
 		local group = groups:Normalise({ Unit = "targetenemy", AuraType = "HELPFUL" })
 
@@ -580,6 +588,8 @@ fw.describe("PersonalAuras - what a group is allowed to track", function()
 	fw.it("hands back the real token behind a choice", function()
 		assert(groups:GetToken(groups:Normalise({ Unit = "targetenemy" })) == "target",
 			"both target sides watch the target")
+		assert(groups:GetToken(groups:Normalise({ Unit = "focusenemy" })) == "focus",
+			"both focus sides watch the focus")
 		assert(groups:GetToken(groups:Normalise({ Unit = "player" })) == "player", "self is the player")
 		assert(groups:GetToken(groups:Normalise({ Unit = "nameplateenemy" })) == nil,
 			"a plate group has no single token")
@@ -594,8 +604,26 @@ fw.describe("PersonalAuras - what a group is allowed to track", function()
 			== "HELPFUL_FRIENDLY_ONLY", "a friendly target has to actually be friendly")
 		assert(groups:GetWarning(groups:Normalise({ Unit = "targetenemy" }))
 			== "HARMFUL_HOSTILE_ONLY", "and an enemy target hostile")
+		assert(groups:GetWarning(groups:Normalise({ Unit = "focusfriendly" }))
+			== "HELPFUL_FRIENDLY_ONLY", "and a friendly focus the same reason")
+		assert(groups:GetWarning(groups:Normalise({ Unit = "focusenemy" }))
+			== "HARMFUL_HOSTILE_ONLY", "and an enemy focus hostile")
 		assert(groups:GetWarning(groups:Normalise({ Unit = "player" })) == nil,
 			"you are always there, so there is nothing to say")
+	end)
+
+	fw.it("lists both focus units in the dropdown", function()
+		local found = { Friendly = false, Enemy = false }
+
+		for _, unit in ipairs(groups.Units) do
+			if unit == "focusfriendly" then
+				found.Friendly = true
+			elseif unit == "focusenemy" then
+				found.Enemy = true
+			end
+		end
+
+		assert(found.Friendly and found.Enemy, "both focus units are offered")
 	end)
 end)
 
@@ -694,13 +722,18 @@ fw.describe("PersonalAuras - units saved before the split", function()
 			== "nameplatefriendly", "and buffs go to the friendly side")
 	end)
 
-	fw.it("moves the two removed units onto the target", function()
-		-- Focus and the target's target are gone. Pointing them at the target keeps the group
-		-- working on something rather than silently disabling it.
-		assert(groups:Normalise({ Unit = "focus", AuraType = "HARMFUL" }).Unit == "targetenemy",
-			"focus becomes the target")
+	fw.it("sends an old focus group to the side matching its aura type", function()
+		assert(groups:Normalise({ Unit = "focus", AuraType = "HELPFUL" }).Unit == "focusfriendly",
+			"a buff group becomes a friendly focus group")
+		assert(groups:Normalise({ Unit = "focus", AuraType = "HARMFUL" }).Unit == "focusenemy",
+			"and a debuff group an enemy focus group")
+	end)
+
+	fw.it("moves the target's target onto the target", function()
+		-- The target's target has no home of its own, so pointing it at the target keeps the
+		-- group working on something rather than silently disabling it.
 		assert(groups:Normalise({ Unit = "targettarget" }).Unit == "targetfriendly",
-			"and so does the target's target")
+			"the target's target becomes a friendly target group")
 	end)
 end)
 
@@ -949,6 +982,28 @@ fw.describe("PersonalAuras - screen anchored displays", function()
 
 		assert(Budget(container, "helpful") == groups.MaxIcons,
 			"and runs again once the unit is visible")
+	end)
+
+	fw.it("re-budgets a focus group off the focus changing", function()
+		ClearGroups()
+		AddGroup({ Unit = "focusfriendly", Spells = { ICE_BLOCK }, Caster = groups.Caster.Mine })
+		env.enemies.focus = nil
+		env.phased.focus = true
+		module:Refresh()
+
+		local container = ContainerFor("focus")
+
+		assert(Budget(container, "helpful") == 0, "an unattributable focus shows nothing")
+
+		local frame = acm.lastFrameForEvent("PLAYER_FOCUS_CHANGED")
+
+		assert(frame, "the module listens for the focus changing")
+
+		env.phased.focus = nil
+		frame:TriggerEvent("PLAYER_FOCUS_CHANGED")
+
+		assert(Budget(container, "helpful") == groups.MaxIcons,
+			"and the swap alone brings the group back")
 	end)
 
 	fw.it("shows nothing for a group with no spells", function()

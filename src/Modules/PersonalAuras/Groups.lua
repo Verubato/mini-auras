@@ -128,6 +128,8 @@ local HEALER_UNIT = "healer"
 local OTHER_DPS_UNIT = "otherdps"
 local TARGET_FRIENDLY = "targetfriendly"
 local TARGET_ENEMY = "targetenemy"
+local FOCUS_FRIENDLY = "focusfriendly"
+local FOCUS_ENEMY = "focusenemy"
 local NAMEPLATE_FRIENDLY = "nameplatefriendly"
 local NAMEPLATE_ENEMY = "nameplateenemy"
 local UNIT_FRAMES_UNIT = "unitframes"
@@ -145,6 +147,8 @@ local UNIT_INFO = {
 	[OTHER_DPS_UNIT] = { Role = "DAMAGER", SkipSelf = true, Friendly = true, Helpful = true },
 	[TARGET_FRIENDLY] = { Token = "target", Friendly = true, Helpful = true },
 	[TARGET_ENEMY] = { Token = "target", Friendly = false, Harmful = true },
+	[FOCUS_FRIENDLY] = { Token = "focus", Friendly = true, Helpful = true },
+	[FOCUS_ENEMY] = { Token = "focus", Friendly = false, Harmful = true },
 	[NAMEPLATE_FRIENDLY] = { Plates = true, Friendly = true, Helpful = true },
 	[NAMEPLATE_ENEMY] = { Plates = true, Friendly = false, Harmful = true },
 	-- Group members are always assistable, so the harmful side is only reachable by filter.
@@ -166,13 +170,13 @@ for _, strata in ipairs(STRATA_OPTIONS) do
 	STRATA_VALID[strata] = true
 end
 
--- What a unit saved before the split becomes. Focus and the target's target are gone, so they
--- fall back to the target itself rather than quietly disabling the group.
-local RENAMED_UNITS = {
-	target = true,
-	focus = true,
-	targettarget = true,
-	nameplate = true,
+-- What a unit the picker no longer offers becomes. Kept as a table so Normalise reads one
+-- upvalue rather than four, against Lua's ceiling of 60.
+local RENAMED_PAIRS = {
+	target = { Friendly = TARGET_FRIENDLY, Enemy = TARGET_ENEMY },
+	focus = { Friendly = FOCUS_FRIENDLY, Enemy = FOCUS_ENEMY },
+	targettarget = { Friendly = TARGET_FRIENDLY, Enemy = TARGET_ENEMY },
+	nameplate = { Friendly = NAMEPLATE_FRIENDLY, Enemy = NAMEPLATE_ENEMY },
 }
 -- A sound file name when the group should stay silent.
 local NO_SOUND = ""
@@ -193,7 +197,8 @@ local spellAuraTypes = {}
 -- choices cover them by hanging a copy off each member's or opponent's frame instead.
 local UNITS = {
 	SELF_UNIT, PET_UNIT, TANK_UNIT, HEALER_UNIT, OTHER_DPS_UNIT, UNIT_FRAMES_UNIT,
-	TARGET_FRIENDLY, TARGET_ENEMY, NAMEPLATE_FRIENDLY, NAMEPLATE_ENEMY, ARENA_FRAMES_UNIT,
+	TARGET_FRIENDLY, TARGET_ENEMY, FOCUS_FRIENDLY, FOCUS_ENEMY, NAMEPLATE_FRIENDLY,
+	NAMEPLATE_ENEMY, ARENA_FRAMES_UNIT,
 }
 -- Units that are always assistable, so a harmful group on them could never filter by spell id.
 local ALWAYS_FRIENDLY = { [SELF_UNIT] = true, [PET_UNIT] = true, [UNIT_FRAMES_UNIT] = true }
@@ -375,16 +380,12 @@ function M:Normalise(group)
 
 	local unit = group.Unit ~= nil and tostring(group.Unit) or nil
 
-	if RENAMED_UNITS[unit] then
-		-- Saved before target and nameplates were split by reaction. Which side it becomes is
-		-- the aura type it was already set to, so the group keeps showing what it showed.
-		local harmful = group.AuraType == HARMFUL
+	local pair = RENAMED_PAIRS[unit]
 
-		if unit == "nameplate" then
-			unit = harmful and NAMEPLATE_ENEMY or NAMEPLATE_FRIENDLY
-		else
-			unit = harmful and TARGET_ENEMY or TARGET_FRIENDLY
-		end
+	if pair then
+		-- Which side it becomes is the aura type it was already set to, so the group keeps
+		-- showing what it showed.
+		unit = group.AuraType == HARMFUL and pair.Enemy or pair.Friendly
 	end
 
 	if not UNIT_INFO[unit] then
