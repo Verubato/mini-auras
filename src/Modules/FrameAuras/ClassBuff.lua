@@ -12,7 +12,7 @@ local moduleUtil = addon.Utils.ModuleUtil
 -- Marks a party or raid frame whose member is missing the group buff the player's class brings.
 -- The mark is the buff's own icon drained of colour, so it reads as absent.
 
-local FALLBACK_ICON_SIZE = 14
+local FALLBACK_ICON_SIZE = 30
 -- Trims the silver frame baked into the spell art, so the icon reaches the mark's own edge.
 local ICON_CROP = 0.08
 local DEFAULT_SIZE_PERCENT = 35

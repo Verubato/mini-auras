@@ -198,7 +198,7 @@ local ICON_SPACING = 1
 local MIN_PADDING = 0
 local MAX_PADDING = 5
 -- What an icon falls back to only when its frame has never once been measured successfully.
-local FALLBACK_ICON_SIZE = 14
+local FALLBACK_ICON_SIZE = 30
 
 local function ResetSpells()
 	options.Spells.Disabled = {}
@@ -986,6 +986,129 @@ fw.describe("Frame Auras - the icon size measured off the frame", function()
 			fresh.GetHeight = realGetHeight
 		end
 
+		_G.UIParent:SetSize(screenWidth, screenHeight)
+		DropRaidFrame(39)
+
+		assert(ok, err)
+	end)
+
+	fw.it("takes the real height at the moment the walker declares the first group, not when the display was built", function()
+		local screenWidth, screenHeight = _G.UIParent:GetWidth(), _G.UIParent:GetHeight()
+		local fresh, realGetHeight
+
+		_G.UIParent:SetSize(1920, 1080)
+
+		local ok, err = pcall(function()
+			fresh = NewRaidFrame(39)
+			realGetHeight = fresh.GetHeight
+			fresh.GetHeight = function() return 0 end
+
+			partyAuras:Refresh()
+
+			-- The frame settles between the build and the walker reaching it, the way a reload
+			-- settles a frame after the module has already built its display.
+			fresh.GetHeight = realGetHeight
+			fresh:SetSize(100, 200)
+
+			acm.tickAll(400)
+
+			local row = assert(GroupRowOn(fresh, PARTY_BUFF_GROUP), "the frame got a buff row")
+			local measured = row._groups[PARTY_BUFF_GROUP].layout.elementHeight
+
+			assert(measured ~= FALLBACK_ICON_SIZE and measured > 0,
+				"measured off the real height at declare time, got " .. tostring(measured))
+		end)
+
+		if realGetHeight then
+			fresh.GetHeight = realGetHeight
+		end
+
+		_G.UIParent:SetSize(screenWidth, screenHeight)
+		DropRaidFrame(39)
+
+		assert(ok, err)
+	end)
+
+	fw.it("lands the real height at declare time even while aura styling is restricted, since the display has no buttons yet", function()
+		local screenWidth, screenHeight = _G.UIParent:GetWidth(), _G.UIParent:GetHeight()
+		local fresh, realGetHeight
+
+		_G.UIParent:SetSize(1920, 1080)
+		acm.restricted = true
+
+		local ok, err = pcall(function()
+			fresh = NewRaidFrame(39)
+			realGetHeight = fresh.GetHeight
+			fresh.GetHeight = function() return 0 end
+
+			partyAuras:Refresh()
+
+			fresh.GetHeight = realGetHeight
+			fresh:SetSize(100, 200)
+
+			acm.tickAll(400)
+
+			local row = assert(GroupRowOn(fresh, PARTY_BUFF_GROUP), "the frame got a buff row")
+			local measured = row._groups[PARTY_BUFF_GROUP].layout.elementHeight
+
+			assert(measured ~= FALLBACK_ICON_SIZE and measured > 0,
+				"measured off the real height at declare time, got " .. tostring(measured))
+		end)
+
+		acm.restricted = false
+
+		if realGetHeight then
+			fresh.GetHeight = realGetHeight
+		end
+
+		_G.UIParent:SetSize(screenWidth, screenHeight)
+		DropRaidFrame(39)
+
+		assert(ok, err)
+	end)
+
+	fw.it("does not resize buttons already built when a later group is declared while restricted", function()
+		local screenWidth, screenHeight = _G.UIParent:GetWidth(), _G.UIParent:GetHeight()
+
+		options.Debuffs.Enabled = true
+
+		_G.UIParent:SetSize(1920, 1080)
+
+		local fresh = NewRaidFrame(39)
+		fresh:SetSize(100, 200)
+
+		acm.restricted = true
+
+		local resized = false
+
+		-- Fires the moment the role group's own buttons are already built, which is the earliest
+		-- point a resize squeezed in between two groups can be tested against.
+		acm.onAddAuraGroup = function(_, groupKey)
+			if groupKey == DEBUFF_ROLE_GROUP and not resized then
+				resized = true
+				fresh:SetSize(100, 2000)
+			end
+		end
+
+		local ok, err = pcall(function()
+			partyAuras:Refresh()
+			acm.tickAll(400)
+
+			local row = assert(GroupRowOn(fresh, DEBUFF_ROLE_GROUP), "the frame got a debuff row")
+			local display = assert(DisplayBehind(row), "and its display")
+			local plain = assert(row._groups[DEBUFF_GROUP], "and the plain group behind it")
+
+			assert(plain.layout.elementHeight == display.Size,
+				"the plain group's buttons carry the size the row was already built at, got "
+				.. tostring(plain.layout.elementHeight) .. " vs " .. tostring(display.Size))
+			assert(display.PendingSize > display.Size,
+				"the re-measure after the resize still reached the display, only withheld from its "
+				.. "buttons, got pending " .. tostring(display.PendingSize) .. " vs committed "
+				.. tostring(display.Size))
+		end)
+
+		acm.onAddAuraGroup = nil
+		acm.restricted = false
 		_G.UIParent:SetSize(screenWidth, screenHeight)
 		DropRaidFrame(39)
 

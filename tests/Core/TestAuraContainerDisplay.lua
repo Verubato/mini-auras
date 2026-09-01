@@ -343,10 +343,9 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 		assert(instance.Frame._groups.cc.layout.elementWidth == startSize + 20, "size applied")
 	end)
 
-	-- The line cap is a pixel width worked out from the size the buttons carry, so it only means
-	-- what it says when the two agree. The engine creates a deferred group's buttons through
-	-- initializeFrame, which the restyle gate never reaches.
-	fw.it("a button the engine builds while restricted still matches the line cap, both before and after the restyle catches up", function()
+	-- A deferred group's buttons are built through initializeFrame, which the restyle gate never
+	-- reaches, so the size and the cap have to be right before that group is declared.
+	fw.it("a button the engine builds while restricted already matches the corrected line cap", function()
 		local perLine, spacing = 3, 2
 		local instance = display:New(_G.UIParent, "target", {
 			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
@@ -361,27 +360,48 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 
 			acm.restricted = true
 			instance:ApplyConfig(50, spacing, {})
-			assert(instance.RestylePending, "precondition: the size change is deferred")
+			assert(instance.RestylePending, "precondition: still pending, so a later full restyle still runs")
+			assert(instance.Frame._flowMaxLineSize == perLine * 50 + perLine * spacing,
+				"the cap must already match the corrected size before the group is even declared, got "
+				.. tostring(instance.Frame._flowMaxLineSize))
 
 			assert(instance:AddNextGroup(), "the engine declared the group and built its buttons")
 
 			local group = instance.Frame._groups.plain
 			-- Read off the field rather than asked: GetHeight is itself refused on a button while
 			-- restricted, same as any other call on one.
-			assert(group.buttons[1]._height == 30,
-				"a button built while restricted must still carry the old size, got "
+			assert(group.buttons[1]._height == 50,
+				"a button the engine builds after the size commits must carry the corrected size, got "
 				.. tostring(group.buttons[1]._height))
-			assert(instance.Frame._flowMaxLineSize == perLine * 30 + perLine * spacing,
-				"and the cap must still agree with that old size while the restyle is deferred, got "
-				.. tostring(instance.Frame._flowMaxLineSize))
 
 			acm.restricted = false
 			instance:RestyleButtons()
 
-			assert(group.buttons[1]:GetHeight() == 50, "the button moves to the new size once the restyle runs")
+			assert(group.buttons[1]:GetHeight() == 50, "the eventual restyle leaves the size unchanged")
 			assert(instance.Frame._flowMaxLineSize == perLine * 50 + perLine * spacing,
-				"and the cap moves to it together, matching the formula again, got "
-				.. tostring(instance.Frame._flowMaxLineSize))
+				"and the cap unchanged with it, got " .. tostring(instance.Frame._flowMaxLineSize))
+		end)
+
+		acm.restricted = false
+		instance:RestyleButtons()
+
+		assert(ok, err)
+	end)
+
+	-- A deferred display with no buttons yet has nothing to keep in step, so the size may as well
+	-- commit straight away. Every button the engine builds afterwards then reads the right size off
+	-- StyleButton instead of whatever the display was declared with.
+	fw.it("a restricted display with no buttons yet commits a size change immediately", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { DeferGroups = true })
+
+		local ok, err = pcall(function()
+			acm.restricted = true
+			instance:ApplyConfig(50, 2, {})
+
+			assert(instance.Size == 50, "size commits with no buttons to keep in step")
+			assert(instance.RestylePending, "still pending, so the full restyle runs once the restriction lifts")
 		end)
 
 		acm.restricted = false

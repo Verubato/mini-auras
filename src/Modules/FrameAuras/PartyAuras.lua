@@ -95,7 +95,8 @@ local MAX_PADDING = 5
 -- Icons take a share of the frame's height rather than a fixed size, because a raid profile and a
 -- party profile size their frames very differently. This is what one falls back to when the client
 -- has never once said how tall the frame is.
-local FALLBACK_ICON_SIZE = 14
+-- Erring large, because a row that is too big is something the player can see and correct.
+local FALLBACK_ICON_SIZE = 30
 -- The shipped budgets a profile written before a key existed falls back to. Spelled out rather
 -- than read off the defaults table, which loads after the modules do.
 local DEFAULT_MAX_ICONS = { Buffs = 6, Debuffs = 2 }
@@ -151,6 +152,9 @@ local watchers = {}
 -- Last size each side measured on each frame, so a frame the client can't measure right now keeps
 -- the size it actually has instead of jumping to the fallback.
 local lastIconSize = setmetatable({}, { __mode = "k" })
+-- Frame and side each display was built for, so the walker can re-measure right before it declares
+-- a group rather than trust what New saw.
+local groupSource = setmetatable({}, { __mode = "k" })
 -- The filters the displays currently hold, one set between them all. The engine keeps the
 -- reference it is handed, and handing the same one back costs nothing.
 local pandemicCandidates
@@ -691,6 +695,14 @@ end
 ---@param display AuraContainerDisplay
 ---@return SweepVerdict?
 local function DeclareNextGroup(display)
+	local source = groupSource[display]
+
+	if source then
+		-- The frame is usually not laid out when the display is built, and a button is born at
+		-- whatever size the display carries now.
+		display:SetIconSize(IconSize(source.Frame, source.Side))
+	end
+
 	if display:AddNextGroup() and display:HasPendingGroups() then
 		return sweep.Verdict.Unfinished
 	end
@@ -729,7 +741,7 @@ local function BuildBuffs(frame, unit)
 		Pandemic = false,
 	}
 
-	return auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Buffs"), Padding("Buffs"), MASQUE_GROUP, {
+	local display = auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Buffs"), Padding("Buffs"), MASQUE_GROUP, {
 		Style = BuildStyle("Buffs"),
 		MasqueGroup = MASQUE_GROUP,
 		Pandemic = true,
@@ -739,6 +751,10 @@ local function BuildBuffs(frame, unit)
 		-- on the spot.
 		DeferGroups = true,
 	})
+
+	groupSource[display] = { Frame = frame, Side = "Buffs" }
+
+	return display
 end
 
 ---The crowd control group at the head of the debuff row. Built fresh each time because a display
@@ -803,6 +819,8 @@ local function BuildDebuffs(frame, unit)
 		PerLine = PerRow("Debuffs"),
 		DeferGroups = true,
 	})
+
+	groupSource[display] = { Frame = frame, Side = "Debuffs" }
 
 	local sort = DebuffSort()
 

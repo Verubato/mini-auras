@@ -2319,6 +2319,14 @@ end
 ---otherwise never be touched again.
 function M:RestyleButtons()
 	if wowEx:IsAuraStylingRestricted() then
+		-- Held back only to keep buttons already built in step with a layout they have not taken.
+		-- The ones the engine builds next are then born the right size.
+		if #self.Buttons == 0 then
+			self.Size = self.PendingSize
+			self.Spacing = self.PendingSpacing
+			ApplyGroupLayout(self)
+		end
+
 		SetRestylePending(self, true)
 		return
 	end
