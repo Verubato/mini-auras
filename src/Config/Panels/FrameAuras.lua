@@ -15,6 +15,9 @@ local targetAuras = addon.Modules.FrameAuras.TargetAuras
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 2
+-- The two aura tabs carry a third control on their second slider row. That one row is laid on a
+-- grid of its own because the page has no height left for another line.
+local TRIPLE_COLUMNS = 3
 -- Every tab's row of switches is laid on the same grid, whether it fills it or not, so a switch
 -- sits in the same place from one tab to the next. Four is the widest row any of them carries.
 local SWITCH_COLUMNS = 4
@@ -51,12 +54,14 @@ local BOUNDS = {
 		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
+		Padding = { Min = 0, Max = 5 },
 		FontScale = { Min = 0.5, Max = 2.0, Step = 0.05 },
 	},
 	Debuffs = {
 		Size = { Min = 15, Max = 50 },
 		MaxIcons = { Min = 1, Max = 9 },
 		PerRow = { Min = 1, Max = 6 },
+		Padding = { Min = 0, Max = 5 },
 		FontScale = { Min = 0.5, Max = 2.0, Step = 0.05 },
 	},
 	ClassBuff = {
@@ -89,6 +94,8 @@ local OFFSET_RANGE = 50
 
 local columnWidth
 local controlWidth
+local tripleColumnWidth
+local tripleControlWidth
 -- The grid the switch rows are laid on, which the glow colour follows so it lines up with the
 -- switch above it rather than sitting half a page out.
 local switchColumnWidth
@@ -161,8 +168,9 @@ end
 ---@param key string
 ---@param label string
 ---@param tooltip string
+---@param width number? Overrides the page's own column width, for a row laid on a finer grid.
 ---@return SliderReturn
-local function Slider(parent, options, part, key, label, tooltip)
+local function Slider(parent, options, part, key, label, tooltip, width)
 	local range = BOUNDS[part][key]
 
 	return helpers:BuildClampedSlider({
@@ -175,7 +183,7 @@ local function Slider(parent, options, part, key, label, tooltip)
 		-- A fractional step has to clamp without rounding.
 		Float = range.Step ~= nil and range.Step < 1,
 		Default = dbDefaults.Modules.FrameAuras[part][key],
-		Width = controlWidth,
+		Width = width or controlWidth,
 		Target = options,
 		Key = key,
 		SettingsKey = moduleName.FrameAuras,
@@ -632,12 +640,16 @@ local function BuildBuffs(content, options)
 	maxIcons.Slider:SetPoint("TOPLEFT", size.Slider, "TOPLEFT", columnWidth, 0)
 
 	local perRow = Slider(content, options, "Buffs", "PerRow", L["Icons per row"],
-		L["How many icons fit on one row before the next one starts."])
+		L["How many icons fit on one row before the next one starts."], tripleControlWidth)
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
 
+	local padding = Slider(content, options, "Buffs", "Padding", L["Icon Padding"],
+		L["Space between icons."], tripleControlWidth)
+	padding.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", tripleColumnWidth, 0)
+
 	local fontScale = Slider(content, options, "Buffs", "FontScale", L["Font Scale"],
-		L["Scales this row's countdown and stack count text."])
-	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
+		L["Scales this row's countdown and stack count text."], tripleControlWidth)
+	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", tripleColumnWidth * 2, 0)
 
 	local placement = PlacementRow(content, options, perRow.Slider, true)
 
@@ -753,12 +765,16 @@ local function BuildDebuffs(content, options)
 	maxIcons.Slider:SetPoint("TOPLEFT", size.Slider, "TOPLEFT", columnWidth, 0)
 
 	local perRow = Slider(content, options, "Debuffs", "PerRow", L["Icons per row"],
-		L["How many icons fit on one row before the next one starts."])
+		L["How many icons fit on one row before the next one starts."], tripleControlWidth)
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
 
+	local padding = Slider(content, options, "Debuffs", "Padding", L["Icon Padding"],
+		L["Space between icons."], tripleControlWidth)
+	padding.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", tripleColumnWidth, 0)
+
 	local fontScale = Slider(content, options, "Debuffs", "FontScale", L["Font Scale"],
-		L["Scales this row's countdown and stack count text."])
-	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
+		L["Scales this row's countdown and stack count text."], tripleControlWidth)
+	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", tripleColumnWidth * 2, 0)
 
 	PlacementRow(content, options, perRow.Slider, true)
 end
@@ -897,6 +913,8 @@ end
 function M:Build(panel)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	controlWidth = columnWidth - horizontalSpacing
+	tripleColumnWidth = mini:ColumnWidth(TRIPLE_COLUMNS, 0, 0)
+	tripleControlWidth = tripleColumnWidth - horizontalSpacing
 	switchColumnWidth = mini:ColumnWidth(SWITCH_COLUMNS, 0, 0)
 
 	local db = mini:GetSavedVars()

@@ -3,6 +3,7 @@
 ## Unreleased
 
 - The frame auras buff row, debuff row, and missing buff mark can each be moved now, with their own anchor point, grow direction, and X and Y offsets.
+- The frame auras buff and debuff rows now carry an Icon Padding slider, 0 to 5, for the gap between one icon and the next.
 - Frame auras dispel colours now ring every debuff on the row, including the ones the game gives no dispel type, such as physical stuns, which take the game's untyped red.
 
 ## 5.32.0

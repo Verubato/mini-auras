@@ -153,9 +153,9 @@ other.
 
 Unless a module's table below says otherwise: Icon Size slider 10-100 px, Icon Padding
 (spacing) 0-20 px default 2, Offset X/Y sliders -250 to 250 default 0. Frame Auras is the
-exception on the offsets: its sliders run -50 to 50, because a compact unit frame is small
-enough that a wider range would only ever throw the row off the frame it belongs to. Frame-attached
-displays with a **Relative size** checkbox size icons as a percentage of the unit frame's
+exception on both: its offsets run -50 to 50, and the padding on its two aura rows 0-5
+default 1, because a compact unit frame is small enough that a wider range would only ever
+throw the row off the frame it belongs to. Frame-attached displays with a **Relative size** checkbox size icons as a percentage of the unit frame's
 height instead of pixels (Icon Size (%) slider, 25-100). Most displays also share: Glow
 icons, Reverse swipe (reverses the cooldown swipe animation), Show tooltips (spell tooltip on
 hover), a Font Scale slider (0.5-2.0, step 0.05, default 1.0) for that module's countdown text,
@@ -684,7 +684,7 @@ turned Blizzard's buffs off themselves never gets them handed back. The write wa
 end, because flipping it makes the client rebuild the raid frames.
 
 - Icon size 15-50 (percent of the frame's own height, default 35), max icons 1-9 (default 6),
-  icons per row 1-6 (default 3), font scale 0.5-2.0 (default 1.0).
+  icons per row 1-6 (default 3), icon padding 0-5 (default 1), font scale 0.5-2.0 (default 1.0).
 - **Filtered** (on) - show only the spells ticked on the Spells tab. Off shows every buff that gets
   past the other filters.
 - **Mine** (on) - only the buffs you cast yourself.
@@ -715,7 +715,7 @@ boss or role flagged crowd control debuff is kept off the row like any other, an
 switch also opens a group of its own behind the lead group.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
-  row 1-6 (default 3), font scale 0.5-2.0 (default 1.0).
+  row 1-6 (default 3), icon padding 0-5 (default 1), font scale 0.5-2.0 (default 1.0).
 - **Dispellable by me** (on) and **Dispellable by raid** (off) - only the debuffs your own spec, or
   respectively somebody in the group, can dispel. Mutually exclusive in the config UI: ticking one
   clears the other, and switching the active one off leaves both off rather than turning the other

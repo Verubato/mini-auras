@@ -88,7 +88,10 @@ local GROW_DIRECTIONS = {
 	LEFT_UP = true,
 	RIGHT_UP = true,
 }
-local ICON_SPACING = 1
+-- The gap a profile written before the slider existed falls back to.
+local DEFAULT_PADDING = 1
+local MIN_PADDING = 0
+local MAX_PADDING = 5
 -- Icons take a share of the frame's height rather than a fixed size, because a raid profile and a
 -- party profile size their frames very differently. This is what one falls back to when the client
 -- has never once said how tall the frame is.
@@ -524,6 +527,21 @@ local function PerRow(side)
 	return tonumber(options and options.PerRow) or DEFAULT_PER_ROW
 end
 
+---The gap one row leaves between one icon and the next. An imported or hand-edited profile can
+---hold anything, and a gap wider than the frame would push the row off it.
+---@param side "Buffs"|"Debuffs"
+---@return number
+local function Padding(side)
+	local options = SideOptions(side)
+	local padding = tonumber(options and options.Padding)
+
+	if not padding then
+		return DEFAULT_PADDING
+	end
+
+	return math.min(math.max(padding, MIN_PADDING), MAX_PADDING)
+end
+
 ---The point of the frame one row hangs off. The same point is used on both sides of the anchor,
 ---so a corner holds the row inside the frame rather than half over its edge.
 ---@param side "Buffs"|"Debuffs"
@@ -711,7 +729,7 @@ local function BuildBuffs(frame, unit)
 		Pandemic = false,
 	}
 
-	return auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Buffs"), ICON_SPACING, MASQUE_GROUP, {
+	return auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Buffs"), Padding("Buffs"), MASQUE_GROUP, {
 		Style = BuildStyle("Buffs"),
 		MasqueGroup = MASQUE_GROUP,
 		Pandemic = true,
@@ -779,7 +797,7 @@ local function BuildDebuffs(frame, unit)
 		LayoutIndex = DEBUFF_PLAIN_INDEX,
 	}
 
-	local display = auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
+	local display = auraContainerDisplay:New(frame, unit or "none", groups, IconSize(frame, "Debuffs"), Padding("Debuffs"), MASQUE_GROUP, {
 		Style = BuildStyle("Debuffs"),
 		MasqueGroup = MASQUE_GROUP,
 		PerLine = PerRow("Debuffs"),
@@ -906,7 +924,7 @@ local function EnsureTestContainer(entry, side)
 			entry.Frame,
 			TestIconCount(side),
 			IconSize(entry.Frame, side),
-			ICON_SPACING,
+			Padding(side),
 			MASQUE_GROUP,
 			nil,
 			MASQUE_GROUP
@@ -941,6 +959,9 @@ local function ApplyTestSide(entry, side)
 	local count = TestIconCount(side)
 
 	container:SetIconSize(IconSize(frame, side))
+	-- A container built on an earlier pass keeps the gap it was made with, so the slider only
+	-- reaches an existing preview through here.
+	container:SetSpacing(Padding(side))
 	container:SetCount(count)
 	-- Which way a wrapped line stacks, the same answer the live row's flow layout gets.
 	container:SetGrowUp(flow.Vertical == "Up")
@@ -1005,7 +1026,7 @@ end
 ---@param groupKeys string[]
 local function ApplySide(display, frame, side, groupKeys)
 	display:SetPerLine(PerRow(side))
-	display:ApplyConfig(IconSize(frame, side), ICON_SPACING, BuildStyle(side))
+	display:ApplyConfig(IconSize(frame, side), Padding(side), BuildStyle(side))
 
 	for _, key in ipairs(groupKeys) do
 		if display:HasGroup(key) then

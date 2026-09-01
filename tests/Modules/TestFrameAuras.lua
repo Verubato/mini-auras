@@ -192,8 +192,11 @@ local LEAD_SCALE = 1.4
 -- The cap each of the two groups at the front of the row carries, whatever the row's own budget
 -- is.
 local LEAD_MAX_ICONS = 2
--- The gap the rows leave between one icon and the next.
+-- The gap the rows ship with between one icon and the next, and the ends of the range the slider
+-- behind it offers.
 local ICON_SPACING = 1
+local MIN_PADDING = 0
+local MAX_PADDING = 5
 -- What an icon falls back to only when its frame has never once been measured successfully.
 local FALLBACK_ICON_SIZE = 14
 
@@ -2521,6 +2524,145 @@ fw.describe("Frame Auras - the font scale and the stack count on each row", func
 		options.Buffs.EnableNumbers = false
 		options.Buffs.FontScale = 1
 		options.Buffs.CenterStacks = false
+	end)
+end)
+
+fw.describe("Frame Auras - the gap between one icon and the next", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Buffs.Padding = ICON_SPACING
+		options.Debuffs.Padding = ICON_SPACING
+		ResetFills()
+		partyAuras:Refresh()
+	end)
+
+	fw.it("ships at the gap the rows were drawn with before the slider existed", function()
+		local shipped = dbDefaults.Modules.FrameAuras
+
+		fw.eq(shipped.Buffs.Padding, ICON_SPACING, "the buff row ships at the old gap")
+		fw.eq(shipped.Debuffs.Padding, ICON_SPACING, "and so does the debuff row")
+
+		options.Buffs.Enabled = true
+
+		local fresh = NewRaidFrame(31)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
+			"the frame got a buff row")
+
+		fw.eq(display.Spacing, ICON_SPACING, "and the row is built with it")
+
+		DropRaidFrame(31)
+	end)
+
+	fw.it("carries a changed gap into a row already on screen", function()
+		options.Buffs.Enabled = true
+
+		local fresh = NewRaidFrame(32)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
+			"the frame got a buff row")
+
+		-- Dragging the slider while the options window is open reaches a display already on
+		-- screen, not a freshly built one.
+		options.Buffs.Padding = 4
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		fw.eq(display.Spacing, 4, "the display it already had picked the new gap up")
+
+		DropRaidFrame(32)
+	end)
+
+	fw.it("spaces each row by its own setting", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+		options.Buffs.Padding = MAX_PADDING
+		options.Debuffs.Padding = MIN_PADDING
+
+		local fresh = NewRaidFrame(33)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)), "the frame got a buff row")
+		local debuffs = assert(DisplayBehind(GroupRowOn(fresh, DEBUFF_GROUP)), "and a debuff row")
+
+		fw.eq(buffs.Spacing, MAX_PADDING, "the top of the range on the row set that way")
+		fw.eq(debuffs.Spacing, MIN_PADDING, "and no gap at all on the row set the other")
+
+		DropRaidFrame(33)
+	end)
+
+	fw.it("holds a hand-edited profile inside the range the slider offers", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Padding = 99
+
+		local fresh = NewRaidFrame(34)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
+			"the frame got a buff row")
+
+		fw.eq(display.Spacing, MAX_PADDING, "a gap past the top of the range comes back to it")
+
+		options.Buffs.Padding = -8
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		fw.eq(display.Spacing, MIN_PADDING, "and a negative one comes back to the bottom")
+
+		DropRaidFrame(34)
+	end)
+
+	fw.it("falls back to the shipped gap for a value that is not a number", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Padding = "wide"
+
+		local fresh = NewRaidFrame(35)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
+			"the frame got a buff row")
+
+		fw.eq(display.Spacing, ICON_SPACING, "the row draws at the gap it ships with")
+
+		DropRaidFrame(35)
+	end)
+
+	fw.it("spaces the preview exactly as the live row is spaced", function()
+		options.Buffs.Enabled = true
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+
+		fw.eq(row.Spacing, ICON_SPACING, "the preview starts at the row's own gap")
+
+		-- The container is built once and kept, so a slider the player drags afterwards only
+		-- reaches it through the refresh rather than through a fresh build.
+		module:StopTesting()
+		ResetFills()
+		options.Buffs.Padding = MAX_PADDING
+		module:StartTesting()
+
+		local again = assert(RowOn(memberFrame), "the preview row is still there")
+
+		assert(again == row, "and it is the container the first pass built")
+		fw.eq(again.Spacing, MAX_PADDING, "which now leaves the wider gap the row does")
+
+		module:StopTesting()
 	end)
 end)
 

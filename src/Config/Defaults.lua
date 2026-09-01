@@ -3,7 +3,7 @@ local _, addon = ...
 
 ---@class Db
 local dbDefaults = {
-	Version = 81,
+	Version = 82,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -664,6 +664,7 @@ local dbDefaults = {
 				Size = 35,
 				MaxIcons = 6,
 				PerRow = 3,
+				Padding = 1,
 				-- The corner Blizzard drew its own buff row in, with the offsets holding the icons
 				-- far enough in to clear the frame's own edge.
 				Anchor = "BOTTOMRIGHT",
@@ -696,6 +697,7 @@ local dbDefaults = {
 				Size = 35,
 				MaxIcons = 2,
 				PerRow = 3,
+				Padding = 1,
 				-- The other bottom corner, so the two rows never meet.
 				Anchor = "BOTTOMLEFT",
 				Grow = "RIGHT_UP",

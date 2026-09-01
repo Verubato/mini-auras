@@ -11,6 +11,12 @@ local REJUVENATION = 774
 local GERMINATION = 155777
 -- The only negative slider range on the page, which is what tells the offset pair from the rest.
 local OFFSET_RANGE = 50
+-- The top of the padding range, which is what tells that slider from the others on its row.
+local PADDING_MAX = 5
+-- The tops of the two sliders sharing the padding's row, and of the one on the row above it.
+local PER_ROW_MAX = 6
+local FONT_SCALE_MAX = 2
+local SIZE_MAX = 50
 
 ---@return table addon
 local function Load()
@@ -528,6 +534,82 @@ fw.describe("Frame Auras page - the font scale sliders", function()
 			fw.eq(frameAuras[row.Part].FontScale, 1.45,
 				row.Part .. " takes what the slider was dragged to")
 		end
+	end)
+end)
+
+fw.describe("Frame Auras page - the icon padding sliders", function()
+	fw.it("gives each aura row a gap slider of its own over the same range", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local rows = {
+			{ Tab = addon.L["Mine"], Part = "Buffs" },
+			{ Tab = addon.L["Dispellable by me"], Part = "Debuffs" },
+		}
+		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
+
+		for _, row in ipairs(rows) do
+			local slider = SliderOnTabWith(addon, row.Tab, PADDING_MAX)
+
+			fw.not_nil(slider, row.Part .. " offers a padding slider")
+
+			local low, high = slider:GetMinMaxValues()
+
+			fw.eq(low, 0, row.Part .. " reaches down to no gap at all")
+			fw.eq(high, PADDING_MAX, row.Part .. " stops at five pixels")
+			fw.eq(frameAuras[row.Part].Padding, 1, row.Part .. " ships at the gap it always drew with")
+
+			slider:GetScript("OnValueChanged")(slider, PADDING_MAX, true)
+
+			fw.eq(frameAuras[row.Part].Padding, PADDING_MAX,
+				row.Part .. " takes the widest gap it offers")
+
+			slider:GetScript("OnValueChanged")(slider, 0, true)
+
+			fw.eq(frameAuras[row.Part].Padding, 0, row.Part .. " takes no gap at all unclamped")
+		end
+	end)
+
+	fw.it("leaves the mark that has nothing to space without one", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		fw.is_nil(SliderOnTabWith(addon, addon.L["Instances only"], PADDING_MAX),
+			"one mark per frame has no gap to set")
+	end)
+
+	fw.it("lays its own row on thirds of the page and leaves the rest on halves", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local size = SliderOnTabWith(addon, addon.L["Mine"], SIZE_MAX)
+		local perRow = SliderOnTabWith(addon, addon.L["Mine"], PER_ROW_MAX)
+		local padding = SliderOnTabWith(addon, addon.L["Mine"], PADDING_MAX)
+		local fontScale = SliderOnTabWith(addon, addon.L["Mine"], FONT_SCALE_MAX)
+
+		fw.not_nil(size, "the row above the padding is there")
+		fw.not_nil(perRow, "and all three on the padding's own row")
+		fw.not_nil(padding, "the padding")
+		fw.not_nil(fontScale, "the font scale")
+
+		fw.eq(padding:GetWidth(), perRow:GetWidth(), "the three share one width")
+		fw.eq(fontScale:GetWidth(), perRow:GetWidth(), "the font scale included")
+		assert(perRow:GetWidth() < size:GetWidth(),
+			"which is narrower than the pair above them, got " .. perRow:GetWidth()
+			.. " against " .. size:GetWidth())
+
+		local _, _, _, paddingX = padding:GetPoint(1)
+		local _, _, _, fontX = fontScale:GetPoint(1)
+
+		-- The widths above hold even with the columns laid on the old half-page pitch, which walks
+		-- the third one off the edge, so the step is what says the row was really re-gridded.
+		fw.eq(fontX, paddingX * 2, "stepped evenly across the three")
+		assert(paddingX * 2 + fontScale:GetWidth() <= addon.Framework.ContentWidth,
+			"the last column stays on the page, got "
+			.. (paddingX * 2 + fontScale:GetWidth()))
 	end)
 end)
 

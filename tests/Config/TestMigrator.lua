@@ -2307,3 +2307,101 @@ fw.describe("Migrator - the v81 frame aura placement keys", function()
 			"the login path has to reach step 81")
 	end)
 end)
+
+fw.describe("Migrator - the v82 frame aura padding key", function()
+	fw.it("seeds the gap the rows were already drawn with", function()
+		local vars = {
+			Version = 81,
+			Modules = {
+				FrameAuras = {
+					Buffs = { Size = 35 },
+					Debuffs = {},
+					ClassBuff = {},
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion82(vars) == true)
+
+		local frameAuras = vars.Modules.FrameAuras
+
+		assert(frameAuras.Buffs.Padding == 1, "the buff row keeps the gap it drew with")
+		assert(frameAuras.Debuffs.Padding == 1, "and so does the debuff row")
+		assert(frameAuras.Buffs.Size == 35, "the rest of the table is untouched")
+		assert(frameAuras.ClassBuff.Padding == nil, "one mark per frame has nothing to space")
+		assert(vars.Version == 82)
+	end)
+
+	fw.it("seeds every stored profile too", function()
+		local vars = {
+			Version = 81,
+			Modules = { FrameAuras = { Buffs = {}, Debuffs = {} } },
+			Profiles = {
+				Other = { Modules = { FrameAuras = { Buffs = {}, Debuffs = {} } } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion82(vars) == true)
+
+		local stored = vars.Profiles.Other.Modules.FrameAuras
+
+		-- A switch writes the snapshot back over the live db key by key, so a profile without this
+		-- would nil it out and leave the slider bound to a table nothing reads.
+		assert(stored.Buffs.Padding == 1, "the buff row")
+		assert(stored.Debuffs.Padding == 1, "the debuff row")
+	end)
+
+	fw.it("leaves a gap the player already set alone", function()
+		local vars = {
+			Version = 81,
+			Modules = { FrameAuras = { Buffs = { Padding = 4 }, Debuffs = { Padding = 0 } } },
+		}
+
+		assert(migrator:UpgradeToVersion82(vars) == true)
+
+		local frameAuras = vars.Modules.FrameAuras
+
+		assert(frameAuras.Buffs.Padding == 4, "what was already there wins")
+		assert(frameAuras.Debuffs.Padding == 0, "a gap of none included")
+	end)
+
+	fw.it("leaves a profile that never had a frame auras table alone", function()
+		local vars = {
+			Version = 81,
+			Modules = { FrameAuras = { Buffs = {} } },
+			Profiles = { Other = { Modules = {} } },
+		}
+
+		assert(migrator:UpgradeToVersion82(vars) == true)
+		assert(vars.Profiles.Other.Modules.FrameAuras == nil, "no table is built for a profile that never touched it")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = {
+			Version = 80,
+			Modules = { FrameAuras = { Buffs = {} } },
+		}
+
+		assert(migrator:UpgradeToVersion82(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.FrameAuras.Buffs.Padding == nil, "and must seed nothing")
+		assert(vars.Version == 80)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 81,
+			Modules = { FrameAuras = { Buffs = {}, Debuffs = {} } },
+			Profiles = {
+				Other = { Modules = { FrameAuras = { Buffs = {}, Debuffs = {} } } },
+			},
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 82, "the shipped version has to be past this step")
+		-- The live db takes this off the defaults whatever happens, so a stored profile is the
+		-- only place the step itself shows.
+		assert(db.Profiles.Other.Modules.FrameAuras.Buffs.Padding == 1,
+			"the login path has to reach step 82")
+	end)
+end)

@@ -30,6 +30,7 @@ M.migrator = {
 	"src/Config/Migrations/V79.lua",
 	"src/Config/Migrations/V80.lua",
 	"src/Config/Migrations/V81.lua",
+	"src/Config/Migrations/V82.lua",
 }
 
 function M.load(files, addon)
