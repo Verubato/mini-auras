@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 5.33.3
 
-- The dispel border around aura icons is drawn from smoother art, so it no longer looks pixelated.
+- Higher quality border texture, thanks to Mo for providing this.
 
 ## 5.33.2
 

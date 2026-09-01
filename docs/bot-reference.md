@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.33.2. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.33.3. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -200,6 +200,9 @@ category on or off, applies in combat as normal.
   Nameplates, CC auras with no dispel type (stuns, disarms) keep the border too, coloured to
   match their glow, instead of showing glow only (since 5.10.2). Party and raid frame CC icons
   do the same (since 5.12.2), on the live icons and the previews.
+- The ring those colours are painted onto is the addon's own art since 5.33.3, redrawn from the
+  client's debuff overlay so it reads smooth at icon sizes instead of pixelated. There is
+  nothing to configure about it.
 - **A single CC colour** (CC, Pet CC, since 5.19.0): one swatch, applied to crowd control icons
   while Dispel colours is off. With dispel colours on, the game's colour for the aura's school
   wins instead.
