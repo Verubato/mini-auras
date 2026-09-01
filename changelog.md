@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.33.2
+
+- Fixed ADDON_ACTION_BLOCKED from aura sounds in m+ and raids.
+
 ## 5.33.1
 
 - Fixed frame aura buff and debuff icons getting stuck at the wrong size, most noticeable after reloading the UI in an arena.

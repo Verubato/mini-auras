@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.33.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.33.2. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -265,7 +265,9 @@ that was uninstalled, it falls back to Sonar. A media addon that loads *after* M
 waited for instead: the aura stays silent for a second or so rather than firing the fallback,
 then registers with the right file. Alert sounds play the default until that addon arrives and
 then switch to the file it brought. Sound settings have an output channel dropdown: Master,
-Sound Effects (SFX), Music, Ambience, or Dialog, default Master.
+Sound Effects (SFX), Music, Ambience, or Dialog, default Master. Aura sounds work in the open
+world, battlegrounds, and arenas only. The game blocks the registration call in instanced PvE,
+so nothing sounds in dungeons, raids, delves, or scenarios.
 
 ### Countdown text
 
