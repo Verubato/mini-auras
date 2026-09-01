@@ -86,6 +86,8 @@ L:RegisterLocale("itIT", function() return {
 	["Extra buffs"] = "Potenziamenti aggiuntivi",
 	["Buffs ticked here are shown on your own portrait."] = "I potenziamenti spuntati qui vengono mostrati sul tuo ritratto.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Questi sono i potenziamenti che il gioco non contrassegna e che quindi non compaiono mai altrimenti.",
+	["Anchor"] = "Ancoraggio",
+	["Which point of the unit frame this is pinned to."] = "Il punto del riquadro dell'unità a cui questo è ancorato.",
 	["Grow"] = "Cresci",
 	["Due to technical limitations we can't get centre aligned perfectly."] = "Per limiti tecnici non è possibile centrare in modo perfetto.",
 	["Strata"] = "Livello",

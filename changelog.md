@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The frame auras buff row, debuff row, and missing buff mark can each be moved now, with their own anchor point, grow direction, and X and Y offsets.
 - Frame auras dispel colours now ring every debuff on the row, including the ones the game gives no dispel type, such as physical stuns, which take the game's untyped red.
 
 ## 5.32.0

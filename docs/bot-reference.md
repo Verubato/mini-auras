@@ -135,16 +135,26 @@ other.
   personal aura groups) have a saved screen position and can be dragged while test mode is on
   (Ally Kicks instead uses its Lock position toggle; a selected personal aura group can be
   dragged without test mode).
-- **Frame-attached displays** (CC, Pet CC, Important Auras, Nameplate bars, Trinkets,
-  frame/nameplate/arena-anchored personal aura groups) have an X/Y offset from the frame they
-  hang off plus a **Grow** direction. Grow options vary by module:
+- **Frame-attached displays** (CC, Pet CC, Important Auras, Frame Auras, Nameplate bars,
+  Trinkets, frame/nameplate/arena-anchored personal aura groups) have an X/Y offset from the
+  frame they hang off plus a **Grow** direction. Grow options vary by module:
   LEFT/RIGHT/CENTER/DOWN/UP for most frame-attached ones, LEFT/RIGHT/CENTER for nameplates,
-  DOWN/UP for Ally Kicks, LEFT/RIGHT/CENTER for Alerts.
+  DOWN/UP for Ally Kicks, LEFT/RIGHT/CENTER for Alerts, LEFT/RIGHT/CENTER/LEFT_UP/RIGHT_UP for
+  Frame Auras. Frame Auras offers no vertical grow: those wrap sideways on the live row and the
+  preview cannot draw that, so the two would disagree the moment the icons filled a line.
+- **Anchor** is a Frame Auras control and nothing else has one. It names which of the nine points
+  of the unit frame the display hangs off (TOPLEFT, TOP, TOPRIGHT, LEFT, CENTER, RIGHT,
+  BOTTOMLEFT, BOTTOM, BOTTOMRIGHT), and every other module pins its display to a corner the code
+  chooses. A display sitting on one of the three bottom points is raised clear of the frame's
+  power bar on top of its own Offset Y, which is why moving it up to a top point drops that
+  lift rather than keeping it.
 
 ### Common icon options and ranges
 
 Unless a module's table below says otherwise: Icon Size slider 10-100 px, Icon Padding
-(spacing) 0-20 px default 2, Offset X/Y sliders -250 to 250 default 0. Frame-attached
+(spacing) 0-20 px default 2, Offset X/Y sliders -250 to 250 default 0. Frame Auras is the
+exception on the offsets: its sliders run -50 to 50, because a compact unit frame is small
+enough that a wider range would only ever throw the row off the frame it belongs to. Frame-attached
 displays with a **Relative size** checkbox size icons as a percentage of the unit frame's
 height instead of pixels (Icon Size (%) slider, 25-100). Most displays also share: Glow
 icons, Reverse swipe (reverses the cooldown swipe animation), Show tooltips (spell tooltip on
@@ -664,8 +674,9 @@ everywhere. Four sub-tabs. The first three each carry their own switch, and **al
 A fourth part, the target and focus rows, is built but held back and has no sub-tab: it needs the
 icon cap to sit on the aura container rather than on each group inside it, which arrives in 12.1.5.
 
-**Buffs sub-tab.** Replaces the buff row on the party and raid frames, in the bottom right corner
-growing left and wrapping upward. Blizzard's **compact** frames only, since those are the ones the
+**Buffs sub-tab.** Replaces the buff row on the party and raid frames, shipping in the bottom right
+corner growing left and wrapping upward. The Anchor, Grow, and Offset X/Y controls move it
+anywhere on the frame. Blizzard's **compact** frames only, since those are the ones the
 cvar below controls; a player on the standard (non-compact) party frames sees no change here, and
 none at all if DandersFrames has replaced the compact frames outright. Switching it on remembers the `raidFramesDisplayBuffs` cvar and sets it to 0;
 switching it off puts the remembered value back. The cvar is only written when the switch actually moves, so a player who
@@ -692,8 +703,8 @@ end, because flipping it makes the client rebuild the raid frames.
   its refresh window opens. Which spells carry it is fixed (Lifebloom), not a per-spell setting: the
   reveal is registered on a button when the engine builds it.
 
-**Debuffs sub-tab.** Replaces the debuff row, in the bottom left corner growing right and wrapping
-upward.
+**Debuffs sub-tab.** Replaces the debuff row, shipping in the bottom left corner growing right and
+wrapping upward, and carrying the same Anchor, Grow, and Offset X/Y controls as the buff row.
 Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is
 ordered by the game itself, because an aura's spell id is secret and nothing can reorder a group
 once it has rendered. The game's own boss and role auras lead the row, drawn 40% larger than
@@ -733,15 +744,15 @@ row always narrows it, whatever that switch is set to.
 
 **Missing Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
 class brings (Mark of the Wild, Blessing of the Bronze, Arcane Intellect, Power Word: Fortitude,
-Skyfury, and Battle Shout). The mark is the buff's own icon, drained of colour, in the frame's top
-right corner. Unlike the two rows above it, this also reaches the standard party frames, since it
-adds a mark rather than replacing anything. A class that brings no group buff sees a line saying so
-and nothing to configure.
+Skyfury, and Battle Shout). The mark is the buff's own icon, drained of colour, shipping in the
+frame's top right corner. Unlike the two rows above it, this also reaches the standard party
+frames, since it adds a mark rather than replacing anything. A class that brings no group buff
+sees a line saying so and nothing to configure.
 
 - **Instances only** (on) - only marks a frame inside an instance, where a missing group buff costs
   something. A house counts as the open world.
-- Icon size 15-50 (percent of the frame's height, default 35). The corner is fixed, like the corners
-  the buff and debuff rows take.
+- Icon size 15-50 (percent of the frame's height, default 35), plus the same Anchor and Offset X/Y
+  controls the two rows carry. No Grow: one mark per frame has nothing to run in.
 
 The held-back target and focus part has icon size 12-40 px (default 22), max icons 1-12 (default
 6), icons per row 1-12 (default 6), and font scale 0.5-2.0 (default 1.0).

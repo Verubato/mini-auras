@@ -70,6 +70,23 @@ local BOUNDS = {
 	},
 }
 
+-- The nine points a row can be pinned to, in reading order.
+local ANCHOR_OPTIONS = {
+	"TOPLEFT", "TOP", "TOPRIGHT",
+	"LEFT", "CENTER", "RIGHT",
+	"BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT",
+}
+-- No vertical grow. The live row would fill down its column where the preview fills across.
+local GROW_OPTIONS = {
+	"LEFT",
+	"RIGHT",
+	"CENTER",
+	"LEFT_UP",
+	"RIGHT_UP",
+}
+-- A compact unit frame is small enough that a wider range would only ever throw the row off it.
+local OFFSET_RANGE = 50
+
 local columnWidth
 local controlWidth
 -- The grid the switch rows are laid on, which the glow colour follows so it lines up with the
@@ -163,6 +180,59 @@ local function Slider(parent, options, part, key, label, tooltip)
 		Key = key,
 		SettingsKey = moduleName.FrameAuras,
 	})
+end
+
+---Lays the placement controls across one row of the switch grid.
+---@param parent table
+---@param options table
+---@param below table The control the row hangs under.
+---@param withGrow boolean Off for a display of one icon, which has nothing to grow.
+---@return table anchorDropdown What the section below hangs off.
+local function PlacementRow(parent, options, below, withGrow)
+	local width = switchColumnWidth - horizontalSpacing
+
+	local anchorDdl = helpers:BuildLabelledDropdown({
+		Parent = parent,
+		LabelText = L["Anchor"],
+		Tooltip = L["Which point of the unit frame this is pinned to."],
+		Items = ANCHOR_OPTIONS,
+		Target = options,
+		Key = "Anchor",
+		Width = width,
+		SettingsKey = moduleName.FrameAuras,
+	})
+
+	anchorDdl.Label:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+
+	local offsetColumn = 1
+
+	if withGrow then
+		local growDdl = helpers:BuildGrowDropdown({
+			Parent = parent,
+			Items = GROW_OPTIONS,
+			Target = options,
+			Key = "Grow",
+			Width = width,
+			SettingsKey = moduleName.FrameAuras,
+		})
+
+		growDdl.Label:SetPoint("TOPLEFT", anchorDdl.Label, "TOPLEFT", switchColumnWidth, 0)
+		offsetColumn = 2
+	end
+
+	local offsetX = helpers:BuildOffsetSliders({
+		Parent = parent,
+		Offset = options.Offset,
+		Width = width,
+		Range = OFFSET_RANGE,
+		SettingsKey = moduleName.FrameAuras,
+	})
+
+	-- A dropdown and a slider both sit the same distance under their own label, so lining the two
+	-- up puts every label on the row at one height.
+	offsetX.Slider:SetPoint("TOPLEFT", anchorDdl, "TOPLEFT", switchColumnWidth * offsetColumn, 0)
+
+	return anchorDdl
 end
 
 ---Lays a set of switches across one row, each in its own column of the shared grid. Every tab
@@ -569,7 +639,9 @@ local function BuildBuffs(content, options)
 		L["Scales this row's countdown and stack count text."])
 	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
 
-	local glow = Divider(content, L["Refresh window"], perRow.Slider)
+	local placement = PlacementRow(content, options, perRow.Slider, true)
+
+	local glow = Divider(content, L["Refresh window"], placement)
 
 	local pandemic = Checkbox(content, options, "PandemicGlow", L["Pandemic glow"],
 		L["Lights a heal-over-time up as its refresh window opens, so a refresh lands on time rather than early."])
@@ -687,6 +759,8 @@ local function BuildDebuffs(content, options)
 	local fontScale = Slider(content, options, "Debuffs", "FontScale", L["Font Scale"],
 		L["Scales this row's countdown and stack count text."])
 	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", columnWidth, 0)
+
+	PlacementRow(content, options, perRow.Slider, true)
 end
 
 ---The name of the buff the player brings, for a page that can then say which one it means.
@@ -727,12 +801,11 @@ local function BuildClassBuff(content, options)
 		},
 	}, blurb)
 
-	-- The corner the mark sits in is fixed. It stands in for something Blizzard would have drawn
-	-- itself, so where it goes is the frame's answer rather than the player's, exactly like the
-	-- buff and debuff rows on the other two tabs.
 	local size = Slider(content, options, "ClassBuff", "Size", L["Icon size"],
 		L["Icon height as a percentage of the unit frame's own height."])
 	size.Slider:SetPoint("TOPLEFT", top, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
+
+	PlacementRow(content, options, size.Slider, false)
 end
 
 ---@param content table

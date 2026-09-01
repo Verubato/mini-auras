@@ -1100,6 +1100,261 @@ fw.describe("Frame Auras - clearing the raid frame power bar", function()
 	end)
 end)
 
+local PLACED_SIDES = { "Buffs", "Debuffs" }
+
+---Puts both rows back on the placement the addon ships, so a test that moves one cannot leave it
+---moved for the sections after it.
+local function ResetPlacement()
+	for _, side in ipairs(PLACED_SIDES) do
+		local shipped = dbDefaults.Modules.FrameAuras[side]
+
+		options[side].Anchor = shipped.Anchor
+		options[side].Grow = shipped.Grow
+		options[side].Offset.X = shipped.Offset.X
+		options[side].Offset.Y = shipped.Offset.Y
+	end
+end
+
+fw.describe("Frame Auras - where the player puts each row", function()
+	fw.before_each(function()
+		module:StopTesting()
+
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		ResetPlacement()
+		ResetFills()
+		partyAuras:Refresh()
+	end)
+
+	fw.it("ships the corners Blizzard drew its own rows in", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local frame = NewRaidFrame(11)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the buff row was built")
+		local debuffs = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
+		local point, _, relativePoint, x, y = buffs:GetPoint(1)
+
+		assert(point == "BOTTOMRIGHT" and relativePoint == "BOTTOMRIGHT",
+			"the buff row takes the bottom right, got " .. tostring(point) .. " on " .. tostring(relativePoint))
+		assert(x == -2 and y == 2, "held in off the frame's own edge, got " .. x .. ", " .. y)
+		assert(buffs._flowAnchorPoint == "BOTTOMRIGHT",
+			"and wraps its second line upwards, got " .. tostring(buffs._flowAnchorPoint))
+
+		point, _, relativePoint, x, y = debuffs:GetPoint(1)
+
+		assert(point == "BOTTOMLEFT" and relativePoint == "BOTTOMLEFT",
+			"the debuff row takes the other bottom corner, got " .. tostring(point))
+		assert(x == 2 and y == 2, "held in off that edge, got " .. x .. ", " .. y)
+		assert(debuffs._flowAnchorPoint == "BOTTOMLEFT",
+			"and wraps upwards too, got " .. tostring(debuffs._flowAnchorPoint))
+
+		DropRaidFrame(11)
+	end)
+
+	fw.it("pins a row to the point and the offset the settings name", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Anchor = "TOPLEFT"
+		options.Buffs.Offset.X = 7
+		options.Buffs.Offset.Y = -9
+
+		local frame = NewRaidFrame(12)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the buff row was built")
+		local point, _, relativePoint, x, y = row:GetPoint(1)
+
+		assert(point == "TOPLEFT" and relativePoint == "TOPLEFT",
+			"the row moved to the corner asked for, got " .. tostring(point))
+		assert(x == 7 and y == -9, "at the offset asked for, got " .. x .. ", " .. y)
+
+		DropRaidFrame(12)
+	end)
+
+	fw.it("runs a row the way its grow says", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.Grow = "LEFT_UP"
+
+		local frame = NewRaidFrame(13)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
+
+		assert(row._flowAnchorPoint == "BOTTOMRIGHT",
+			"the row fills the other way now, got " .. tostring(row._flowAnchorPoint))
+
+		DropRaidFrame(13)
+	end)
+
+	fw.it("stands the preview exactly where the live row goes", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Anchor = "TOP"
+		options.Buffs.Offset.X = 3
+		options.Buffs.Offset.Y = -4
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local live = assert(GroupRowOn(memberFrame, PARTY_BUFF_GROUP), "the live row was built")
+		local livePoint, _, liveRelative, liveX, liveY = live:GetPoint(1)
+
+		-- Pinned before the two are compared, or a preview and a live row both stuck on the
+		-- shipped corner would agree and say nothing.
+		assert(livePoint == "TOP" and liveRelative == "TOP",
+			"the live row took the point asked for, got " .. tostring(livePoint))
+		assert(liveX == 3 and liveY == -4,
+			"at the offset asked for, got " .. tostring(liveX) .. ", " .. tostring(liveY))
+
+		module:StartTesting()
+
+		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local point, _, relativePoint, x, y = preview.Frame:GetPoint(1)
+
+		assert(point == livePoint and relativePoint == liveRelative,
+			"the preview takes the live row's corner, got " .. tostring(point))
+		assert(x == liveX and y == liveY,
+			"and its offset, got " .. tostring(x) .. ", " .. tostring(y))
+
+		module:StopTesting()
+	end)
+
+	fw.it("stands the debuff preview where the debuff row is set to go", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.Anchor = "RIGHT"
+		options.Debuffs.Offset.X = -6
+		options.Debuffs.Offset.Y = 5
+
+		module:StartTesting()
+
+		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local point, _, relativePoint, x, y = preview.Frame:GetPoint(1)
+
+		assert(point == "RIGHT" and relativePoint == "RIGHT",
+			"the preview took the point asked for, got " .. tostring(point))
+		assert(x == -6 and y == 5, "at the offset asked for, got " .. x .. ", " .. y)
+
+		module:StopTesting()
+	end)
+
+	fw.it("leaves a row away from the bottom edge clear of the power bar rule", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Anchor = "TOPRIGHT"
+		options.Buffs.Offset.X = -2
+		options.Buffs.Offset.Y = -2
+
+		local frame = NewRaidFrame(14)
+
+		-- The lift exists to clear the bar at the bottom of the frame, and this row is nowhere
+		-- near it.
+		frame.powerBarUsedHeight = 8
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the buff row was built")
+		local point, _, _, x, y = row:GetPoint(1)
+
+		assert(point == "TOPRIGHT", "the row stayed at the top, got " .. tostring(point))
+		assert(x == -2 and y == -2, "with nothing added for the bar, got " .. x .. ", " .. y)
+
+		DropRaidFrame(14)
+	end)
+
+	fw.it("leaves the preview clear of it too", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Anchor = "CENTER"
+		options.Buffs.Offset.X = 0
+		options.Buffs.Offset.Y = 0
+
+		memberFrame.powerBarUsedHeight = 8
+
+		module:StartTesting()
+
+		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local point, _, _, x, y = preview.Frame:GetPoint(1)
+
+		-- The party frame is shared with every section after this one, so the field comes off
+		-- before anything can fail.
+		memberFrame.powerBarUsedHeight = nil
+		module:StopTesting()
+
+		assert(point == "CENTER", "the preview stayed centred, got " .. tostring(point))
+		assert(x == 0 and y == 0, "with nothing added for the bar, got " .. x .. ", " .. y)
+	end)
+
+	fw.it("falls back to the shipped corner for a point the client would refuse", function()
+		options.Buffs.Enabled = true
+		-- What an imported or hand-edited profile can carry. Handed straight to SetPoint it
+		-- throws, and the module is out for the session.
+		options.Buffs.Anchor = "MIDDLE"
+
+		local frame = NewRaidFrame(15)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the buff row was built")
+		local point = row:GetPoint(1)
+
+		assert(point == "BOTTOMRIGHT", "the row goes back to what it ships in, got " .. tostring(point))
+
+		DropRaidFrame(15)
+	end)
+
+	fw.it("falls back to the shipped grow for a vertical one the preview cannot draw", function()
+		options.Debuffs.Enabled = true
+		-- A real GrowAnchors key, so nothing throws. It runs the live row down a column while the
+		-- preview fills across, which is why the page stopped offering it.
+		options.Debuffs.Grow = "UP"
+
+		local frame = NewRaidFrame(16)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
+
+		assert(row._flowAnchorPoint == "BOTTOMLEFT",
+			"the row goes back to the grow it ships with, got " .. tostring(row._flowAnchorPoint))
+
+		DropRaidFrame(16)
+	end)
+
+	fw.it("wraps the preview the way the grow says", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Grow = "RIGHT"
+
+		module:StartTesting()
+
+		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
+
+		assert(preview.GrowDown == true and preview.GrowUp == false,
+			"a row that runs rightwards drops its second line, got up " .. tostring(preview.GrowUp))
+
+		module:StopTesting()
+
+		options.Buffs.Grow = "RIGHT_UP"
+		module:StartTesting()
+
+		preview = assert(RowOn(memberFrame), "the party frame got a preview row again")
+
+		assert(preview.GrowUp == true and preview.GrowDown == false,
+			"a corner grow stacks it upwards, got down " .. tostring(preview.GrowDown))
+
+		module:StopTesting()
+	end)
+end)
+
+ResetPlacement()
+
 fw.describe("Frame Auras - test mode", function()
 	fw.before_each(function()
 		module:StopTesting()
@@ -3840,6 +4095,146 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 		assert(not Marked(markFrame), "a group buff is not what a corpse is short of")
 	end)
 end)
+
+local SHIPPED_MARK = dbDefaults.Modules.FrameAuras.ClassBuff
+
+---Puts the mark back on the placement the addon ships, for the same reason ResetPlacement does it
+---for the rows.
+local function ResetMarkPlacement()
+	options.ClassBuff.Anchor = SHIPPED_MARK.Anchor
+	options.ClassBuff.Offset.X = SHIPPED_MARK.Offset.X
+	options.ClassBuff.Offset.Y = SHIPPED_MARK.Offset.Y
+end
+
+fw.describe("Frame Auras - where the player puts the missing buff mark", function()
+	fw.before_each(function()
+		module:StopTesting()
+
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.TargetFocus.Enabled = false
+		options.ClassBuff.Enabled = true
+		-- The mark has to be up for there to be anything to place, and where the player is
+		-- standing is not what this section is about.
+		options.ClassBuff.InstancesOnly = false
+		ResetMarkPlacement()
+
+		wow.setUnitClass("player", MARK_CLASS)
+		buffed[MARK_UNIT] = nil
+		acm.restricted = false
+		_G.UnitIsDeadOrGhost = nil
+
+		module:Refresh()
+	end)
+
+	fw.it("ships in the corner Blizzard leaves free", function()
+		local mark = assert(MarkOn(markFrame), "the frame was marked")
+		local point, _, relativePoint, x, y = mark:GetPoint(1)
+
+		assert(point == "TOPRIGHT" and relativePoint == "TOPRIGHT",
+			"the mark takes the top right, got " .. tostring(point))
+		assert(x == -2 and y == -2, "held in off the frame's own edge, got " .. x .. ", " .. y)
+	end)
+
+	fw.it("moves the mark to the point and the offset the settings name", function()
+		options.ClassBuff.Anchor = "BOTTOMLEFT"
+		options.ClassBuff.Offset.X = 5
+		options.ClassBuff.Offset.Y = 6
+
+		module:Refresh()
+
+		local mark = assert(MarkOn(markFrame), "the frame was marked")
+		local point, _, relativePoint, x, y = mark:GetPoint(1)
+
+		assert(point == "BOTTOMLEFT" and relativePoint == "BOTTOMLEFT",
+			"the mark moved to the corner asked for, got " .. tostring(point))
+		assert(x == 5 and y == 6, "at the offset asked for, got " .. x .. ", " .. y)
+	end)
+
+	fw.it("puts the mark back where the settings say on the next pass", function()
+		options.ClassBuff.Anchor = "CENTER"
+		options.ClassBuff.Offset.X = 0
+		options.ClassBuff.Offset.Y = 0
+
+		module:Refresh()
+
+		local mark = assert(MarkOn(markFrame), "the frame was marked")
+
+		assert(mark:GetNumPoints() == 1, "one anchor, not the old corner left under the new one")
+
+		ResetMarkPlacement()
+		module:Refresh()
+
+		local point = mark:GetPoint(1)
+
+		assert(point == SHIPPED_MARK.Anchor, "and it goes back, got " .. tostring(point))
+	end)
+
+	fw.it("lifts a mark in a bottom corner clear of the power bar", function()
+		options.ClassBuff.Anchor = "BOTTOMLEFT"
+		options.ClassBuff.Offset.X = 2
+		options.ClassBuff.Offset.Y = 2
+
+		-- What the client writes on a frame it has just laid a power bar out on.
+		markFrame.powerBarUsedHeight = 8
+
+		module:Refresh()
+
+		local mark = assert(MarkOn(markFrame), "the frame was marked")
+		local point, _, _, x, y = mark:GetPoint(1)
+
+		markFrame.powerBarUsedHeight = nil
+
+		assert(point == "BOTTOMLEFT", "the mark took the corner asked for, got " .. tostring(point))
+		assert(x == 2 and y == 10, "sitting above the bar, got " .. x .. ", " .. y)
+	end)
+
+	fw.it("leaves a mark away from the bottom edge where the player put it", function()
+		markFrame.powerBarUsedHeight = 8
+
+		module:Refresh()
+
+		local mark = assert(MarkOn(markFrame), "the frame was marked")
+		local _, _, _, x, y = mark:GetPoint(1)
+
+		markFrame.powerBarUsedHeight = nil
+
+		assert(x == -2 and y == -2, "the top right corner never meets the bar, got " .. x .. ", " .. y)
+	end)
+
+	fw.it("stands the preview mark where the settings say", function()
+		options.ClassBuff.Anchor = "BOTTOM"
+		options.ClassBuff.Offset.X = 0
+		options.ClassBuff.Offset.Y = 3
+		markFrame.powerBarUsedHeight = 8
+
+		module:StartTesting()
+
+		local mark = assert(MarkOn(markFrame), "the preview marked the frame")
+		local point, _, relativePoint, x, y = mark:GetPoint(1)
+
+		markFrame.powerBarUsedHeight = nil
+		module:StopTesting()
+
+		assert(point == "BOTTOM" and relativePoint == "BOTTOM",
+			"the preview mark took the point asked for, got " .. tostring(point))
+		assert(x == 0 and y == 11, "rising clear of the bar, got " .. x .. ", " .. y)
+	end)
+
+	fw.it("falls back to the shipped corner for a point the client would refuse", function()
+		-- An imported or hand-edited profile can carry anything, and SetPoint throws on it.
+		options.ClassBuff.Anchor = "MIDDLE"
+
+		module:Refresh()
+
+		local mark = assert(MarkOn(markFrame), "the frame was marked")
+		local point = mark:GetPoint(1)
+
+		assert(point == "TOPRIGHT", "the mark goes back to what it ships in, got " .. tostring(point))
+	end)
+end)
+
+ResetMarkPlacement()
 
 DropRaidFrame(40)
 

@@ -2198,3 +2198,112 @@ fw.describe("Migrator - the v80 dispellable split", function()
 		assert(db.Modules.FrameAuras.Debuffs.DispellableByMe == false, "the login path has to reach step 80")
 	end)
 end)
+
+fw.describe("Migrator - the v81 frame aura placement keys", function()
+	fw.it("seeds the corner each part already sat in", function()
+		local vars = {
+			Version = 80,
+			Modules = {
+				FrameAuras = {
+					Buffs = { Size = 35 },
+					Debuffs = {},
+					ClassBuff = {},
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion81(vars) == true)
+
+		local frameAuras = vars.Modules.FrameAuras
+
+		assert(frameAuras.Buffs.Anchor == "BOTTOMRIGHT" and frameAuras.Buffs.Grow == "LEFT_UP",
+			"the buff row keeps the corner it drew in")
+		assert(frameAuras.Buffs.Offset.X == -2 and frameAuras.Buffs.Offset.Y == 2, "and its inset")
+		assert(frameAuras.Buffs.Size == 35, "the rest of the table is untouched")
+		assert(frameAuras.Debuffs.Anchor == "BOTTOMLEFT" and frameAuras.Debuffs.Grow == "RIGHT_UP",
+			"the debuff row keeps the other corner")
+		assert(frameAuras.Debuffs.Offset.X == 2 and frameAuras.Debuffs.Offset.Y == 2, "and its inset")
+		assert(frameAuras.ClassBuff.Anchor == "TOPRIGHT", "the mark keeps the corner it sat in")
+		assert(frameAuras.ClassBuff.Offset.X == -2 and frameAuras.ClassBuff.Offset.Y == -2, "and its inset")
+		assert(frameAuras.ClassBuff.Grow == nil, "one mark per frame has nothing to grow")
+		assert(vars.Version == 81)
+	end)
+
+	fw.it("seeds every stored profile too", function()
+		local vars = {
+			Version = 80,
+			Modules = { FrameAuras = { Buffs = {}, Debuffs = {}, ClassBuff = {} } },
+			Profiles = {
+				Other = { Modules = { FrameAuras = { Buffs = {}, Debuffs = {}, ClassBuff = {} } } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion81(vars) == true)
+
+		local stored = vars.Profiles.Other.Modules.FrameAuras
+
+		-- A switch writes the snapshot back over the live db, so a profile without these keys would
+		-- nil them out and leave the offset sliders bound to a table nothing reads.
+		assert(stored.Buffs.Anchor == "BOTTOMRIGHT" and stored.Buffs.Offset.Y == 2, "the buff row")
+		assert(stored.Debuffs.Grow == "RIGHT_UP" and stored.Debuffs.Offset.X == 2, "the debuff row")
+		assert(stored.ClassBuff.Anchor == "TOPRIGHT" and stored.ClassBuff.Offset.Y == -2, "the mark")
+	end)
+
+	fw.it("leaves a placement the player already moved alone", function()
+		local vars = {
+			Version = 80,
+			Modules = {
+				FrameAuras = {
+					Buffs = { Anchor = "TOP", Grow = "RIGHT", Offset = { X = 9, Y = -9 } },
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion81(vars) == true)
+
+		local buffs = vars.Modules.FrameAuras.Buffs
+
+		assert(buffs.Anchor == "TOP" and buffs.Grow == "RIGHT", "what was already there wins")
+		assert(buffs.Offset.X == 9 and buffs.Offset.Y == -9, "offsets included")
+	end)
+
+	fw.it("leaves a profile that never had a frame auras table alone", function()
+		local vars = {
+			Version = 80,
+			Modules = { FrameAuras = { Buffs = {} } },
+			Profiles = { Other = { Modules = {} } },
+		}
+
+		assert(migrator:UpgradeToVersion81(vars) == true)
+		assert(vars.Profiles.Other.Modules.FrameAuras == nil, "no table is built for a profile that never touched it")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = {
+			Version = 79,
+			Modules = { FrameAuras = { Buffs = {} } },
+		}
+
+		assert(migrator:UpgradeToVersion81(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.FrameAuras.Buffs.Anchor == nil, "and must seed nothing")
+		assert(vars.Version == 79)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 80,
+			Modules = { FrameAuras = { Buffs = {}, Debuffs = {}, ClassBuff = {} } },
+			Profiles = {
+				Other = { Modules = { FrameAuras = { Buffs = {}, Debuffs = {}, ClassBuff = {} } } },
+			},
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 81, "the shipped version has to be past this step")
+		-- The live db takes these off the defaults whatever happens, so a stored profile is the
+		-- only place the step itself shows.
+		assert(db.Profiles.Other.Modules.FrameAuras.Buffs.Anchor == "BOTTOMRIGHT",
+			"the login path has to reach step 81")
+	end)
+end)

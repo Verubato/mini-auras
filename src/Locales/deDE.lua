@@ -86,6 +86,8 @@ L:RegisterLocale("deDE", function() return {
 	["Extra buffs"] = "Zusätzliche Stärkungszauber",
 	["Buffs ticked here are shown on your own portrait."] = "Hier angehakte Stärkungszauber werden auf deinem eigenen Porträt angezeigt.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Dies sind die Stärkungszauber, die das Spiel nicht kennzeichnet und die deshalb sonst nie erscheinen.",
+	["Anchor"] = "Anker",
+	["Which point of the unit frame this is pinned to."] = "An welchem Punkt des Einheitenfensters dies verankert ist.",
 	["Grow"] = "Wachsen",
 	["Due to technical limitations we can't get centre aligned perfectly."] = "Aus technischen Gründen lässt sich die Mitte nicht genau treffen.",
 	["Strata"] = "Ebene",

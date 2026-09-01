@@ -86,6 +86,8 @@ L:RegisterLocale("ptBR", function() return {
 	["Extra buffs"] = "Bônus adicionais",
 	["Buffs ticked here are shown on your own portrait."] = "Os bônus marcados aqui aparecem no seu próprio retrato.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Estes são os bônus que o jogo não marca, que por isso nunca aparecem de outra forma.",
+	["Anchor"] = "Âncora",
+	["Which point of the unit frame this is pinned to."] = "O ponto do quadro da unidade ao qual isto está ancorado.",
 	["Grow"] = "Crescer",
 	["Due to technical limitations we can't get centre aligned perfectly."] = "Por limitações técnicas, não é possível centralizar com perfeição.",
 	["Strata"] = "Camada",

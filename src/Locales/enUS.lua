@@ -87,6 +87,8 @@ L:SetDefaultStrings({
 	["Extra buffs"] = "Extra buffs",
 	["Buffs ticked here are shown on your own portrait."] = "Buffs ticked here are shown on your own portrait.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "These are the buffs the game does not flag, which is why they never show otherwise.",
+	["Anchor"] = "Anchor",
+	["Which point of the unit frame this is pinned to."] = "Which point of the unit frame this is pinned to.",
 	["Grow"] = "Grow",
 	["Due to technical limitations we can't get centre aligned perfectly."] = "Due to technical limitations we can't get centre aligned perfectly.",
 	["Strata"] = "Strata",

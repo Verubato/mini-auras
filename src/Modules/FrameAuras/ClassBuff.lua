@@ -16,10 +16,24 @@ local FALLBACK_ICON_SIZE = 14
 -- Trims the silver frame baked into the spell art, so the icon reaches the mark's own edge.
 local ICON_CROP = 0.08
 local DEFAULT_SIZE_PERCENT = 35
--- Top right is the one Blizzard leaves free on a compact frame.
-local ANCHOR = "TOPRIGHT"
-local OFFSET_X = -2
-local OFFSET_Y = -2
+-- Where the mark sits when a profile has never held a placement of its own. Top right is the
+-- corner Blizzard leaves free on a compact frame.
+local DEFAULT_ANCHOR = "TOPRIGHT"
+local DEFAULT_OFFSET_X = -2
+local DEFAULT_OFFSET_Y = -2
+-- The points the mark may hang off. An imported or hand-edited profile can hold anything, and a
+-- point the client does not know throws out of SetPoint and takes the module down with it.
+local ANCHOR_POINTS = {
+	TOPLEFT = true,
+	TOP = true,
+	TOPRIGHT = true,
+	LEFT = true,
+	CENTER = true,
+	RIGHT = true,
+	BOTTOMLEFT = true,
+	BOTTOM = true,
+	BOTTOMRIGHT = true,
+}
 
 addon.Modules.FrameAuras = addon.Modules.FrameAuras or {}
 
@@ -236,6 +250,19 @@ local function EnsureMark(frame)
 	return mark
 end
 
+---How far a mark hanging off a given point has to rise to clear the power bar. The client writes
+---the height on each compact frame as it lays one out, and only a bottom point sits in that space.
+---@param frame table
+---@param point string
+---@return number
+local function PowerBarLift(frame, point)
+	if not point:find("BOTTOM") then
+		return 0
+	end
+
+	return pixels:Number(frame.powerBarUsedHeight) or 0
+end
+
 ---@param mark table
 ---@param frame table
 local function Place(mark, frame)
@@ -253,9 +280,15 @@ local function Place(mark, frame)
 		size = lastIconSize[frame] or FALLBACK_ICON_SIZE
 	end
 
+	local anchor = ANCHOR_POINTS[options.Anchor] and options.Anchor or DEFAULT_ANCHOR
+	local offset = options.Offset
+	local offsetX = tonumber(offset and offset.X) or DEFAULT_OFFSET_X
+	local offsetY = tonumber(offset and offset.Y) or DEFAULT_OFFSET_Y
+
 	mark:SetSize(size, size)
 	mark:ClearAllPoints()
-	mark:SetPoint(ANCHOR, frame, ANCHOR, OFFSET_X, OFFSET_Y)
+	-- The same point on both sides, so a corner holds the mark inside the frame.
+	mark:SetPoint(anchor, frame, anchor, offsetX, offsetY + PowerBarLift(frame, anchor))
 end
 
 ---@param frame table

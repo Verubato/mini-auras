@@ -9,6 +9,8 @@ local WowMock = require("WowMock")
 -- addon renames because the client calls it the same thing as the spell it copies.
 local REJUVENATION = 774
 local GERMINATION = 155777
+-- The only negative slider range on the page, which is what tells the offset pair from the rest.
+local OFFSET_RANGE = 50
 
 ---@return table addon
 local function Load()
@@ -102,6 +104,131 @@ local function SliderOnTabWith(addon, tabLabel, top)
 
 	return nil
 end
+
+---The dropdown under a caption on one tab of the frame auras page. The builder hangs the caption
+---off the control, which is the only thing telling one tab's dropdowns apart.
+---@param addon table
+---@param labelText string
+---@param tabLabel string A label carried by one tab and no other.
+---@return table?
+local function DropdownOnTabWith(addon, labelText, tabLabel)
+	local sibling = SwitchFor(addon, tabLabel)
+
+	fw.not_nil(sibling, "the page offers " .. tabLabel .. ", which names the tab")
+
+	for _, frame in ipairs(WowMock.Frames) do
+		local label = frame.Label
+
+		if label and label.GetText and label:GetText() == labelText
+			and frame:GetParent() == sibling:GetParent()
+		then
+			return frame
+		end
+	end
+
+	return nil
+end
+
+---The offset sliders on one tab, found by the range nothing else on the page uses.
+---@param addon table
+---@param tabLabel string A label carried by one tab and no other.
+---@return table[]
+local function OffsetSlidersOnTabWith(addon, tabLabel)
+	local sibling = SwitchFor(addon, tabLabel)
+
+	fw.not_nil(sibling, "the page offers " .. tabLabel .. ", which names the tab")
+
+	local found = {}
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.GetMinMaxValues and frame:GetParent() == sibling:GetParent() then
+			local low, high = frame:GetMinMaxValues()
+
+			if low == -OFFSET_RANGE and high == OFFSET_RANGE then
+				found[#found + 1] = frame
+			end
+		end
+	end
+
+	return found
+end
+
+---What a dropdown offers, collected by running its own menu generator against a stand-in that
+---records each row. The mock throws the real menu away as soon as it is built.
+---@param dropdown table
+---@return string[]
+local function ItemsIn(dropdown)
+	local found = {}
+	local description = {}
+
+	function description.CreateRadio(_, text)
+		found[#found + 1] = text
+
+		return description
+	end
+
+	function description.SetGridMode() end
+
+	function description.SetScrollMode() end
+
+	dropdown.__menuGenerator(dropdown, description)
+
+	return found
+end
+
+fw.describe("Frame Auras page - moving a row off the corner it ships in", function()
+	fw.it("offers the anchor, the grow, and the offset pair on both aura rows", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local tabs = { addon.L["Mine"], addon.L["Dispellable by me"] }
+
+		for _, tabLabel in ipairs(tabs) do
+			fw.not_nil(DropdownOnTabWith(addon, addon.L["Anchor"], tabLabel),
+				"the row named by " .. tabLabel .. " offers an anchor")
+			fw.not_nil(DropdownOnTabWith(addon, addon.L["Grow"], tabLabel),
+				"and a grow direction")
+			fw.eq(#OffsetSlidersOnTabWith(addon, tabLabel), 2, "and both offsets")
+		end
+	end)
+
+	fw.it("gives the missing buff mark everything but a grow", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local tabLabel = addon.L["Instances only"]
+
+		fw.not_nil(DropdownOnTabWith(addon, addon.L["Anchor"], tabLabel),
+			"the mark can be moved off its corner too")
+		fw.eq(#OffsetSlidersOnTabWith(addon, tabLabel), 2, "with both offsets")
+		fw.is_nil(DropdownOnTabWith(addon, addon.L["Grow"], tabLabel),
+			"one mark per frame has no direction to run in")
+	end)
+
+	fw.it("offers no vertical grow, which the preview cannot draw", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local grow = DropdownOnTabWith(addon, addon.L["Grow"], addon.L["Mine"])
+
+		fw.not_nil(grow, "the buff row offers a grow direction")
+
+		local items = ItemsIn(grow)
+
+		-- Counted first, because a generator that stopped handing rows back would leave the loop
+		-- below with nothing to walk and the test passing on an empty list.
+		fw.eq(#items, 5, "the five the preview can draw")
+
+		for _, item in ipairs(items) do
+			assert(item ~= "UP" and item ~= "DOWN",
+				"a vertical grow fills the live row down its column and the preview across, so "
+				.. item .. " must not be on offer")
+		end
+	end)
+end)
 
 fw.describe("Frame Auras page - the debuff row's switches", function()
 	fw.it("offers the dispel colours, and writes them where the row reads them", function()

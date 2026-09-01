@@ -86,6 +86,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Extra buffs"] = "Дополнительные эффекты",
 	["Buffs ticked here are shown on your own portrait."] = "Отмеченные здесь положительные эффекты показываются на вашем портрете.",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "Это положительные эффекты, которые игра не помечает, поэтому иначе они никогда не показываются.",
+	["Anchor"] = "Привязка",
+	["Which point of the unit frame this is pinned to."] = "Точка рамки юнита, к которой это привязано.",
 	["Grow"] = "Рост",
 	["Due to technical limitations we can't get centre aligned perfectly."] = "Из-за технических ограничений точное центрирование невозможно.",
 	["Strata"] = "Слой",

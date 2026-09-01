@@ -60,11 +60,33 @@ local MAX_ROLE_ICONS = 2
 -- What "under a minute" means to the engine: a bound on an aura's whole duration rather than on
 -- what is left of it. Any value at all also drops the auras that never run out.
 local SHORT_AURA_SECONDS = 60
--- Where each row sits. The offsets hold the row far enough in to clear the frame's own edge, and
--- the grow wraps a second line upwards, away from the frame below this one.
-local PLACEMENT = {
-	Buffs = { Point = "BOTTOMRIGHT", Grow = "LEFT_UP", OffsetX = -2, OffsetY = 2 },
-	Debuffs = { Point = "BOTTOMLEFT", Grow = "RIGHT_UP", OffsetX = 2, OffsetY = 2 },
+-- Where each row sits when a profile has never held a placement of its own. Spelled out rather
+-- than read off the defaults table, which loads after the modules do.
+local DEFAULT_PLACEMENT = {
+	Buffs = { Anchor = "BOTTOMRIGHT", Grow = "LEFT_UP", Offset = { X = -2, Y = 2 } },
+	Debuffs = { Anchor = "BOTTOMLEFT", Grow = "RIGHT_UP", Offset = { X = 2, Y = 2 } },
+}
+-- The points a row may hang off. An imported or hand-edited profile can hold anything, and a
+-- point the client does not know throws out of SetPoint and takes the module down with it.
+local ANCHOR_POINTS = {
+	TOPLEFT = true,
+	TOP = true,
+	TOPRIGHT = true,
+	LEFT = true,
+	CENTER = true,
+	RIGHT = true,
+	BOTTOMLEFT = true,
+	BOTTOM = true,
+	BOTTOMRIGHT = true,
+}
+-- UP and DOWN are left out on purpose. They run the live row down a column, which the preview row
+-- draws across instead, so a profile holding one would preview somewhere it will not appear.
+local GROW_DIRECTIONS = {
+	LEFT = true,
+	RIGHT = true,
+	CENTER = true,
+	LEFT_UP = true,
+	RIGHT_UP = true,
 }
 local ICON_SPACING = 1
 -- Icons take a share of the frame's height rather than a fixed size, because a raid profile and a
@@ -502,6 +524,39 @@ local function PerRow(side)
 	return tonumber(options and options.PerRow) or DEFAULT_PER_ROW
 end
 
+---The point of the frame one row hangs off. The same point is used on both sides of the anchor,
+---so a corner holds the row inside the frame rather than half over its edge.
+---@param side "Buffs"|"Debuffs"
+---@return string
+local function AnchorPoint(side)
+	local options = SideOptions(side)
+	local anchor = options and options.Anchor
+
+	return ANCHOR_POINTS[anchor] and anchor or DEFAULT_PLACEMENT[side].Anchor
+end
+
+---Which way one row runs, and which way a wrapped line stacks.
+---@param side "Buffs"|"Debuffs"
+---@return string
+local function Grow(side)
+	local options = SideOptions(side)
+	local grow = options and options.Grow
+
+	return GROW_DIRECTIONS[grow] and grow or DEFAULT_PLACEMENT[side].Grow
+end
+
+---How far one row sits off the point it hangs from.
+---@param side "Buffs"|"Debuffs"
+---@return number x
+---@return number y
+local function Offset(side)
+	local options = SideOptions(side)
+	local offset = options and options.Offset
+	local shipped = DEFAULT_PLACEMENT[side].Offset
+
+	return tonumber(offset and offset.X) or shipped.X, tonumber(offset and offset.Y) or shipped.Y
+end
+
 ---Whether the preview row leads with a crowd control stand-in. What draws that icon and what
 ---sizes it both ask this, so the two cannot drift apart.
 ---@param side "Buffs"|"Debuffs"
@@ -783,6 +838,19 @@ local function PowerBarInset(frame)
 	return pixels:Number(frame.powerBarUsedHeight) or 0
 end
 
+---How far a row hanging off a given point has to rise to clear the power bar. Only a bottom point
+---sits in the space the bar takes, so every other one is left where the player put it.
+---@param frame table
+---@param point string
+---@return number
+local function PowerBarLift(frame, point)
+	if not point:find("BOTTOM") then
+		return 0
+	end
+
+	return PowerBarInset(frame)
+end
+
 ---Pins one side's row into its corner of the frame, and puts it over the frame's own artwork.
 ---Parented to the frame, so the row fades and hides with the unit frame the way Blizzard's own row
 ---did.
@@ -790,10 +858,11 @@ end
 ---@param frame table
 ---@param side "Buffs"|"Debuffs"
 local function AnchorSide(display, frame, side)
-	local place = PLACEMENT[side]
 	local containerFrame = display.Frame
+	local point = AnchorPoint(side)
+	local offsetX, offsetY = Offset(side)
 
-	display:SetGrow(place.Grow)
+	display:SetGrow(Grow(side))
 
 	-- Scales with the frame, unlike the free-standing displays elsewhere. At any UI scale but 1, a
 	-- row that ignored it would take the wrong fraction of the frame and its corner inset would not
@@ -810,7 +879,7 @@ local function AnchorSide(display, frame, side)
 	end
 
 	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY + PowerBarInset(frame))
+	containerFrame:SetPoint(point, frame, point, offsetX, offsetY + PowerBarLift(frame, point))
 end
 
 ---@param container IconSlotContainer?
@@ -842,9 +911,6 @@ local function EnsureTestContainer(entry, side)
 			nil,
 			MASQUE_GROUP
 		)
-		-- Both rows are anchored in a bottom corner, so a wrapped line goes up rather than over
-		-- the frame below this one.
-		container:SetGrowUp(true)
 		entry[field] = container
 	end
 
@@ -867,15 +933,21 @@ local function ApplyTestSide(entry, side)
 	container = EnsureTestContainer(entry, side)
 
 	local frame = entry.Frame
-	local place = PLACEMENT[side]
+	local grow = Grow(side)
+	local flow = growAnchors:GetFlow(grow)
+	local point = AnchorPoint(side)
+	local offsetX, offsetY = Offset(side)
 	local containerFrame = container.Frame
 	local count = TestIconCount(side)
 
 	container:SetIconSize(IconSize(frame, side))
 	container:SetCount(count)
+	-- Which way a wrapped line stacks, the same answer the live row's flow layout gets.
+	container:SetGrowUp(flow.Vertical == "Up")
+	container:SetGrowDown(flow.Vertical ~= "Up")
 	-- The grid sizes the row to its full column width, so a budget that never reaches one line
 	-- would leave the frame wider than the icons in it.
-	container:SetColumns(math.min(PerRow(side), count), growAnchors:FillsLeftward(place.Grow))
+	container:SetColumns(math.min(PerRow(side), count), growAnchors:FillsLeftward(grow))
 	-- The live row hands crowd control its own group so it can be drawn larger, which a preview
 	-- row of one container has to reproduce a slot at a time.
 	container:SetLeadScale(PreviewLeadsWithCrowdControl(side) and LEAD_SIZE_SCALE or nil)
@@ -915,7 +987,7 @@ local function ApplyTestSide(entry, side)
 	end
 
 	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY + PowerBarInset(frame))
+	containerFrame:SetPoint(point, frame, point, offsetX, offsetY + PowerBarLift(frame, point))
 	containerFrame:Show()
 end
 

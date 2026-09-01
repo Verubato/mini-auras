@@ -86,6 +86,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Extra buffs"] = "額外增益",
 	["Buffs ticked here are shown on your own portrait."] = "此處勾選的增益會顯示在你自己的頭像上。",
 	["These are the buffs the game does not flag, which is why they never show otherwise."] = "這些是遊戲未標記的增益，正因如此它們平時從不顯示。",
+	["Anchor"] = "錨點",
+	["Which point of the unit frame this is pinned to."] = "此元素固定到單位框體的哪個位置。",
 	["Grow"] = "增長",
 	["Due to technical limitations we can't get centre aligned perfectly."] = "受技術限制，無法做到完全置中。",
 	["Strata"] = "層級",

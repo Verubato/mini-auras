@@ -3,7 +3,7 @@ local _, addon = ...
 
 ---@class Db
 local dbDefaults = {
-	Version = 80,
+	Version = 81,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -664,6 +664,12 @@ local dbDefaults = {
 				Size = 35,
 				MaxIcons = 6,
 				PerRow = 3,
+				-- The corner Blizzard drew its own buff row in, with the offsets holding the icons
+				-- far enough in to clear the frame's own edge.
+				Anchor = "BOTTOMRIGHT",
+				-- Wraps a second line upwards, away from the frame below this one.
+				Grow = "LEFT_UP",
+				Offset = { X = -2, Y = 2 },
 				-- Both on, because the tracked spell list is a list of things you cast. Without them
 				-- the row fills with everyone's raid buffs.
 				Filtered = true,
@@ -690,6 +696,10 @@ local dbDefaults = {
 				Size = 35,
 				MaxIcons = 2,
 				PerRow = 3,
+				-- The other bottom corner, so the two rows never meet.
+				Anchor = "BOTTOMLEFT",
+				Grow = "RIGHT_UP",
+				Offset = { X = 2, Y = 2 },
 				-- On, because a debuff you can cleanse is the one worth acting on first.
 				DispellableByMe = true,
 				-- Off, because Dispellable by me already narrows the row, and this only widens it
@@ -715,9 +725,11 @@ local dbDefaults = {
 				-- A group buff nobody cast in the open world costs nothing, so the mark waits for a
 				-- place with a pull in it.
 				InstancesOnly = true,
-				-- Only the size. Which corner the mark sits in is the frame's answer rather than the
-				-- player's, like the corners the buff and debuff rows take.
 				Size = 35,
+				-- Top right is the corner Blizzard leaves free on a compact frame.
+				Anchor = "TOPRIGHT",
+				Offset = { X = -2, Y = -2 },
+				-- No grow direction, because one mark per frame has nothing to grow.
 			},
 
 			---@class FrameAurasTargetOptions
