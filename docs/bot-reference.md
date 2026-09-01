@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.33.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.33.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -176,6 +176,10 @@ within a second of the restriction lifting, and since 5.19.0 the addon says so o
 "Icon size and style changes will apply when combat ends." It is said once per fight, not once
 per slider step, and test mode is exempt because it draws its own icons and shows the change
 immediately.
+
+A row that has no icons yet is the exception, since there is nothing on it to restyle. It takes a
+new size straight away even while auras are secret, which is what lets a frame aura row built
+during a reload in an arena come out the right size instead of waiting for the match to end.
 
 Everything else, budgets, colours, positions, growth direction, and switching a module or a
 category on or off, applies in combat as normal.

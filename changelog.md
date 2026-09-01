@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.33.1
 
 - Fixed frame aura buff and debuff icons getting stuck at the wrong size, most noticeable after reloading the UI in an arena.
 
