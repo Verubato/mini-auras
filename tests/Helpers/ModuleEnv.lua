@@ -310,7 +310,6 @@ function M.build()
 	-- The real resolver. With no LibSharedMedia in the mock it falls back to the bundled files,
 	-- which is the path a client without a media addon takes anyway.
 	loadFile("src/Core/Audio/Sounds.lua")
-	loadFile("src/Core/Audio/AuraSounds.lua")
 	addonFiles.load(addonFiles.migrator, addon)
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
 
@@ -324,6 +323,8 @@ function M.build()
 	loadFile("src/Utils/WoWEx.lua")
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
+	-- AuraSounds reads the instance type from ModuleUtil, as the TOC has it.
+	loadFile("src/Core/Audio/AuraSounds.lua")
 	-- Stubbed, because the real one builds GUI widgets this env does not load. What it does with
 	-- a drop is covered in TestPositionEditor.
 	addon.Core.PositionEditor = {

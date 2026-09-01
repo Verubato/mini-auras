@@ -1,5 +1,5 @@
--- The shared wrapper around C_UnitAuras.AddAuraSound and RemoveAuraSound. Those calls are known to
--- throw, so a throw that escaped would take out whatever module refreshes after the one that hit it.
+-- The shared wrapper around C_UnitAuras.AddAuraSound and RemoveAuraSound. AddAuraSound answers a
+-- refusal with no handle, and the engine will not take one at all inside a dungeon or a raid.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
@@ -54,7 +54,8 @@ local function SpellSet(count)
 end
 
 ---Runs body with the real C_UnitAuras call handed to it, and puts that call back whether body
----finished or not. The body installs whatever stand-in it wants.
+---finished or not. The body installs whatever stand-in it wants. Only the removal wrapper still
+---catches a throw, so only a removal stand-in may raise one.
 ---@param name string
 ---@param body fun(real: function): any
 ---@return any
@@ -69,12 +70,12 @@ local function Standing(name, body)
 	return result
 end
 
-fw.describe("AuraSounds - a registration the engine throws on", function()
+fw.describe("AuraSounds - a registration the engine will not take", function()
 	fw.it("registers the rest of the set", function()
 		local ids = Standing("AddAuraSound", function(realAdd)
 			_G.C_UnitAuras.AddAuraSound = function(trigger, info)
 				if info.spellID == FIRST then
-					error("blocked")
+					return nil
 				end
 
 				return realAdd(trigger, info)
@@ -84,16 +85,16 @@ fw.describe("AuraSounds - a registration the engine throws on", function()
 		end)
 
 		assert(#ids == 1, "only the id the engine took is appended, got " .. #ids)
-		assert(env.auraSounds[ids[1]].SpellId == SECOND, "and it is the one that did not throw")
+		assert(env.auraSounds[ids[1]].SpellId == SECOND, "and it is the one it did take")
 
 		auraSounds:RemoveSet(ids)
 	end)
 
-	fw.it("names the spell, the unit and what was thrown", function()
+	fw.it("names the spell, the unit and the channel", function()
 		local said = Printed(function()
 			local ids = Standing("AddAuraSound", function()
 				_G.C_UnitAuras.AddAuraSound = function()
-					error("blocked")
+					return nil
 				end
 
 				return auraSounds:RegisterSet(nil, "party1", { [FIRST] = true }, FILE, "SFX")
@@ -105,8 +106,7 @@ fw.describe("AuraSounds - a registration the engine throws on", function()
 		assert(#said == 1, "one message, got " .. #said .. ": " .. table.concat(said, " | "))
 		assert(said[1]:find(tostring(FIRST), 1, true), "the spell it was for")
 		assert(said[1]:find("party1", 1, true), "the unit it was for")
-		assert(said[1]:find("SFX", 1, true), "the channel it was for")
-		assert(said[1]:find("blocked", 1, true), "and what the engine threw")
+		assert(said[1]:find("SFX", 1, true), "and the channel it was for")
 	end)
 
 	fw.it("reports a mapped registration the same way", function()
@@ -125,11 +125,10 @@ fw.describe("AuraSounds - a registration the engine throws on", function()
 		assert(#said == 1, "one message, got " .. #said .. ": " .. table.concat(said, " | "))
 		assert(said[1]:find(tostring(SECOND), 1, true), "the spell it was for")
 		assert(said[1]:find("party2", 1, true), "the unit it was for")
-		assert(said[1]:find("Voices\\Clip.ogg", 1, true), "the file the mapping picked")
-		assert(said[1]:find("no handle", 1, true), "and that the engine simply gave nothing back")
+		assert(said[1]:find("Voices\\Clip.ogg", 1, true), "and the file the mapping picked")
 	end)
 
-	fw.it("reports a registration with no spell id rather than throwing itself", function()
+	fw.it("reports a registration with no spell id", function()
 		local said = Printed(function()
 			Standing("AddAuraSound", function()
 				_G.C_UnitAuras.AddAuraSound = function()
@@ -149,7 +148,7 @@ fw.describe("AuraSounds - a registration the engine throws on", function()
 		local said = Printed(function()
 			local ids = Standing("AddAuraSound", function()
 				_G.C_UnitAuras.AddAuraSound = function()
-					error("blocked")
+					return nil
 				end
 
 				local held = auraSounds:RegisterSet(nil, "player", { [FIRST] = true }, FILE, "Master")
@@ -171,7 +170,7 @@ fw.describe("AuraSounds - a registration the engine throws on", function()
 
 		local ids = Standing("AddAuraSound", function()
 			_G.C_UnitAuras.AddAuraSound = function()
-				error("blocked")
+				return nil
 			end
 
 			return auraSounds:RegisterSet(nil, "player", { [FIRST] = true }, FILE, "Master")
@@ -245,7 +244,7 @@ fw.describe("AuraSounds - the ceiling on what one session says", function()
 	local function Flood()
 		local ids = Standing("AddAuraSound", function()
 			_G.C_UnitAuras.AddAuraSound = function()
-				error("blocked")
+				return nil
 			end
 
 			return auraSounds:RegisterSet(nil, "player", SpellSet(30), FILE, "Master")
@@ -260,7 +259,8 @@ fw.describe("AuraSounds - the ceiling on what one session says", function()
 		assert(#said == 11, "ten failures and one summary, got " .. #said)
 
 		for index = 1, 10 do
-			assert(said[index]:find("blocked", 1, true), "line " .. index .. " says what was thrown")
+			assert(said[index]:find("Sound registration failed", 1, true),
+				"line " .. index .. " names a failed registration")
 		end
 
 		assert(said[11]:find("No more sound failures", 1, true), "and the last one is the summary: " .. said[11])
@@ -270,7 +270,7 @@ fw.describe("AuraSounds - the ceiling on what one session says", function()
 		local said = Printed(function()
 			Standing("AddAuraSound", function()
 				_G.C_UnitAuras.AddAuraSound = function()
-					error("blocked")
+					return nil
 				end
 
 				local held = auraSounds:RegisterSet(nil, "player", SpellSet(10), FILE, "Master")
@@ -295,5 +295,76 @@ fw.describe("AuraSounds - the ceiling on what one session says", function()
 
 		assert(#first == 11, "the first run stops at eleven lines, got " .. #first)
 		assert(#second == 11, "and the clear gives the next run its lines back, got " .. #second)
+	end)
+end)
+
+fw.describe("AuraSounds - where the engine takes a registration", function()
+	---Moves the player to a kind of place and stales the snapshot the gate reads off.
+	---@param instanceType string
+	local function Zone(instanceType)
+		env.inInstance = instanceType ~= "none"
+		env.instanceType = instanceType
+		env.invalidateWorldState()
+	end
+
+	---Registers one spell in the place named and hands back what the engine was asked for.
+	---@param instanceType string
+	---@return number handles
+	---@return number calls
+	local function RegisterIn(instanceType)
+		Zone(instanceType)
+
+		local before = env.auraSoundAdds
+		local ids = auraSounds:RegisterSet(nil, "player", { [FIRST] = true }, FILE, "Master")
+		local handles, calls = #ids, env.auraSoundAdds - before
+
+		auraSounds:RemoveSet(ids)
+		Zone("none")
+
+		return handles, calls
+	end
+
+	fw.it("registers in the open world, a battleground and an arena", function()
+		for _, place in ipairs({ "none", "pvp", "arena" }) do
+			local handles, calls = RegisterIn(place)
+
+			assert(handles == 1, "one handle in " .. place .. ", got " .. handles)
+			assert(calls == 1, "one engine call in " .. place .. ", got " .. calls)
+		end
+	end)
+
+	fw.it("asks the engine for nothing in a dungeon or a raid", function()
+		for _, place in ipairs({ "party", "raid" }) do
+			local handles, calls = RegisterIn(place)
+
+			assert(handles == 0, "no handle in " .. place .. ", got " .. handles)
+			assert(calls == 0, "and no engine call in " .. place .. ", got " .. calls)
+		end
+	end)
+
+	fw.it("skips a kind of place the allow-list has never met", function()
+		local handles, calls = RegisterIn("scenario")
+
+		assert(handles == 0, "no handle, got " .. handles)
+		assert(calls == 0, "and no engine call, got " .. calls)
+	end)
+
+	-- Through Add rather than RegisterSet, so the gate staying ahead of the reporting is what
+	-- the assertion rests on.
+	fw.it("says nothing about a registration it never made", function()
+		local said = Printed(function()
+			Zone("raid")
+
+			auraSounds:Add(Enum.UnitAuraSoundTrigger.Added, {
+				unitToken = "player",
+				spellID = FIRST,
+				soundFileName = FILE,
+				outputChannel = "Master",
+			})
+
+			Zone("none")
+		end)
+
+		assert(#said == 0, "nothing printed, got " .. table.concat(said, " | "))
 	end)
 end)

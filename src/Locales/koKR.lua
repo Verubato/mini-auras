@@ -138,11 +138,10 @@ L:RegisterLocale("koKR", function() return {
 	["Please paste a profile string to import."] = "가져올 프로필 문자열을 붙여넣으세요.",
 	["Profile imported successfully."] = "프로필을 성공적으로 가져왔습니다.",
 	["Profile string is corrupted."] = "프로필 문자열이 손상되었습니다.",
-	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "소리 등록에 실패했습니다. 주문 %s, 대상 %s, 시점 %s, 파일 %s, 채널 %s. %s",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s."] = "소리 등록에 실패했습니다. 주문 %s, 대상 %s, 시점 %s, 파일 %s, 채널 %s.",
 	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "소리 등록이 제한 %d에 도달했습니다. 대기 중인 그룹 소리: %d개.",
 	["Sound removal failed. Handle %s. %s"] = "사운드 제거에 실패했습니다. 핸들 %s. %s",
 	["This profile was exported by a newer version of the addon."] = "이 프로필은 더 새로운 버전의 애드온에서 내보냈습니다.",
-	["the game returned no handle"] = "게임이 핸들을 반환하지 않았습니다",
 
 	-- Profiles tab
 	["Active Profile"] = "현재 프로필",

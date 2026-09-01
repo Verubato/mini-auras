@@ -138,11 +138,10 @@ L:RegisterLocale("ruRU", function() return {
 	["Please paste a profile string to import."] = "Пожалуйста, вставьте строку профиля для импорта.",
 	["Profile imported successfully."] = "Профиль успешно импортирован.",
 	["Profile string is corrupted."] = "Строка профиля повреждена.",
-	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Не удалось зарегистрировать звук. Заклинание %s, юнит %s, триггер %s, файл %s, канал %s. %s",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s."] = "Не удалось зарегистрировать звук. Заклинание %s, юнит %s, триггер %s, файл %s, канал %s.",
 	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "Регистрация звуков достигла предела в %d. Звуков групп в очереди: %d.",
 	["Sound removal failed. Handle %s. %s"] = "Не удалось удалить звук. Дескриптор %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Этот профиль был экспортирован более новой версией аддона.",
-	["the game returned no handle"] = "игра не вернула дескриптор",
 
 	-- Profiles tab
 	["Active Profile"] = "Активный профиль",

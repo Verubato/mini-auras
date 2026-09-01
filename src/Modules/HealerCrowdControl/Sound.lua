@@ -72,6 +72,9 @@ local function RegisterAuraSounds(activePool)
 	local options = db.Modules.HealerCrowdControl
 	local enabled = options.Sound.Enabled
 		and moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
+		-- ClearAuraSounds drops the handles, so the warm check misses and leaving an instance
+		-- registers every healer again.
+		and auraSounds:CanRegister()
 		and next(activePool) ~= nil
 
 	if not enabled then

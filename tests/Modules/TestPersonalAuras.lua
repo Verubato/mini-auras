@@ -2962,20 +2962,18 @@ fw.describe("PersonalAuras - reconciling the sound registrations", function()
 		assert(not kept, "and the handle taken out on the old file went back")
 	end)
 
-	fw.it("treats a throw from the engine as a refusal", function()
+	fw.it("keeps a key whose every id the engine turned down", function()
 		ClearGroups()
 		sound:Clear()
 
-		local requests = { RefusedRequest("gThrow") }
+		local requests = { RefusedRequest("gRefusedAll") }
 		local realAdd = _G.C_UnitAuras.AddAuraSound
 
 		_G.C_UnitAuras.AddAuraSound = function()
-			error("blocked")
+			return nil
 		end
 
-		local applied = pcall(function()
-			sound:Apply(requests)
-		end)
+		sound:Apply(requests)
 
 		_G.C_UnitAuras.AddAuraSound = realAdd
 
@@ -2991,8 +2989,7 @@ fw.describe("PersonalAuras - reconciling the sound registrations", function()
 
 		sound:Clear()
 
-		assert(applied, "the throw does not escape Apply")
-		assert(none == 0, "and nothing was registered")
+		assert(none == 0, "nothing was registered")
 		assert(recovered == 2, "the key registers once the engine answers again")
 	end)
 
@@ -3070,13 +3067,13 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		return said
 	end
 
-	---Makes every registration throw for the length of body.
+	---Makes every registration a refusal for the length of body.
 	---@param body function
-	local function Throwing(body)
+	local function Refusing(body)
 		local realAdd = _G.C_UnitAuras.AddAuraSound
 
 		_G.C_UnitAuras.AddAuraSound = function()
-			error("blocked")
+			return nil
 		end
 
 		local ok, err = pcall(body)
@@ -3086,14 +3083,14 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		assert(ok, err)
 	end
 
-	fw.it("names a throwing registration once, however many passes it takes", function()
+	fw.it("names a refused registration once, however many passes it takes", function()
 		ClearGroups()
 		sound:Clear()
 
 		local requests = { RefusedRequest("gSaid") }
 
 		local said = Printed(function()
-			Throwing(function()
+			Refusing(function()
 				sound:Apply(requests)
 				sound:Apply(requests)
 			end)
@@ -3102,13 +3099,12 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		sound:Clear()
 
 		assert(#said == 2, "one message per spell id, got " .. #said .. ": " .. table.concat(said, " | "))
-		assert(said[1]:find("blocked", 1, true), "the message carries what the engine threw")
-		assert(said[1]:find(tostring(ICE_BLOCK), 1, true), "and the spell it was for")
+		assert(said[1]:find(tostring(ICE_BLOCK), 1, true), "the message carries the spell it was for")
 		assert(said[1]:find("player", 1, true), "and the unit it was for")
 		assert(said[2]:find(tostring(POLYMORPH), 1, true), "the second names the other spell")
 	end)
 
-	fw.it("tells a refusal apart from a throw", function()
+	fw.it("reports only the id the engine turned down", function()
 		ClearGroups()
 		sound:Clear()
 
@@ -3123,8 +3119,7 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		sound:Clear()
 
 		assert(#said == 1, "only the refused id is reported, got " .. #said)
-		assert(said[1]:find("no handle", 1, true), "and says the engine gave nothing back")
-		assert(not said[1]:find("blocked", 1, true), "with no error text, because there was none")
+		assert(said[1]:find(tostring(POLYMORPH), 1, true), "and it names that id: " .. said[1])
 	end)
 
 	fw.it("says nothing when the engine takes every id", function()
@@ -3154,7 +3149,7 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		sound:Clear()
 		wipe(env.notifications)
 
-		Throwing(function()
+		Refusing(function()
 			sound:Apply({ RefusedRequest("gOff") })
 		end)
 
@@ -3174,7 +3169,7 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		local requests = { RefusedRequest("gAgain") }
 
 		local first = Printed(function()
-			Throwing(function()
+			Refusing(function()
 				sound:Apply(requests)
 			end)
 		end)
@@ -3182,7 +3177,7 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		sound:Clear()
 
 		local afterClear = Printed(function()
-			Throwing(function()
+			Refusing(function()
 				sound:Apply(requests)
 			end)
 		end)
@@ -3198,7 +3193,7 @@ fw.describe("PersonalAuras - reporting a sound the engine would not take", funct
 		sound:Clear()
 
 		local said = Printed(function()
-			Throwing(function()
+			Refusing(function()
 				-- The route the alert and healer CC modules take. The personal aura below is the
 				-- same spell on the player, which is the failure we would be chasing.
 				auraSounds:RemoveSet(

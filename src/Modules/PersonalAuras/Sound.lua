@@ -246,6 +246,12 @@ end
 ---request reads the same as last time keeps the handles it already has.
 ---@param requests PersonalAuraSoundRequest[]
 function M:Apply(requests)
+	-- Nothing may be held where the engine refuses registrations, so the sweep below forgets
+	-- every key.
+	if not auraSounds:CanRegister() then
+		requests = EMPTY
+	end
+
 	wipe(wantedKeys)
 	wipe(requestKeys)
 	wipe(resolvedFiles)

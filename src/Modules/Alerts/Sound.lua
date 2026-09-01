@@ -124,6 +124,7 @@ function M:RefreshAllySounds(force)
 	local tts = db.Modules.Alerts.TTS
 	local enabled = (tts and tts.EnemyDebuff and tts.EnemyDebuff.Enabled) or false
 	local active = enabled and moduleUtil:IsModuleEnabled(moduleName.Alerts) and not paused
+		and auraSounds:CanRegister()
 	local voicePack = active and ttsPacks:Resolve(tts and tts.VoicePack) or false
 	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
 	local channel = active and ((tts and tts.Channel) or "Master") or false
@@ -188,7 +189,7 @@ function M:RegisterToken(unitToken)
 	if alertSoundsByToken[unitToken] then
 		return
 	end
-	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
+	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) or not auraSounds:CanRegister() then
 		return
 	end
 	local sound = db.Modules.Alerts.Sound
@@ -278,6 +279,8 @@ function M:Refresh(activeTokens)
 	local active = (importantEnabled or defensiveEnabled or importantTts or defensiveTts)
 		and moduleUtil:IsModuleEnabled(moduleName.Alerts)
 		and not paused
+		-- Part of the stamp, so leaving an instance moves it and every token registers again.
+		and auraSounds:CanRegister()
 	-- Only part of the stamp while something plays the clips; the pack is irrelevant otherwise.
 	-- The path goes in alongside the name because an addon registering a pack later changes where
 	-- the same saved name reads its clips from.

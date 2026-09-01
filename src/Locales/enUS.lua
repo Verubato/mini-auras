@@ -139,11 +139,10 @@ L:SetDefaultStrings({
 	["Please paste a profile string to import."] = "Please paste a profile string to import.",
 	["Profile imported successfully."] = "Profile imported successfully.",
 	["Profile string is corrupted."] = "Profile string is corrupted.",
-	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s."] = "Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s.",
 	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "Sound registration hit its limit of %d. Group sounds still waiting: %d.",
 	["Sound removal failed. Handle %s. %s"] = "Sound removal failed. Handle %s. %s",
 	["This profile was exported by a newer version of the addon."] = "This profile was exported by a newer version of the addon.",
-	["the game returned no handle"] = "the game returned no handle",
 
 	-- Profiles tab
 	["Active Profile"] = "Active Profile",

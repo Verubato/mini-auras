@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local debugOptions = addon.Core.DebugOptions
+local moduleUtil = addon.Utils.ModuleUtil
 
 -- Shared plumbing for engine-side aura sounds (C_UnitAuras.AddAuraSound): on 12.1 the addon cannot
 -- see auras appear, but the engine can play a sound when a spell it knows lands on a unit it knows.
@@ -10,6 +11,13 @@ local debugOptions = addon.Core.DebugOptions
 -- Failure lines one session may print. An engine that has stopped taking anything makes every
 -- spell id its own failure, and the set registered per unit runs to a thousand ids.
 local MAX_FAILURE_LINES = 10
+-- Where the engine takes a registration, as ModuleUtil names the place. An allow-list, so a kind
+-- of place nobody has thought of costs a sound rather than the blocked call this gate exists for.
+local REGISTERABLE_PLACES = {
+	none = true,
+	pvp = true,
+	arena = true,
+}
 
 -- Reused UnitAuraSoundInfo for registrations; AddAuraSound reads it synchronously.
 local infoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
@@ -70,14 +78,26 @@ function M:ResetDebugLog()
 	printedFailures = 0
 end
 
----Registers one sound with the engine, which is reported to throw now and again with no cause found.
+---Whether the engine will take a registration where the player is standing. AddAuraSound is
+---blocked in dungeons and raids, where the call raises a blocked action instead of failing.
+---@return boolean
+function M:CanRegister()
+	return REGISTERABLE_PLACES[moduleUtil:InstanceType()] == true
+end
+
+---Registers one sound with the engine.
 ---@param trigger number a UnitAuraSoundTrigger value
 ---@param info table UnitAuraSoundInfo
----@return number? handle nil when the engine refused the id or threw
+---@return number? handle nil where the place refuses registrations or the engine took no id
 function M:Add(trigger, info)
-	local ok, handle = pcall(C_UnitAuras.AddAuraSound, trigger, info)
+	-- The backstop for every caller, including the ones that register outside a reconcile pass.
+	if not self:CanRegister() then
+		return nil
+	end
 
-	if ok and handle then
+	local handle = C_UnitAuras.AddAuraSound(trigger, info)
+
+	if handle then
 		return handle
 	end
 
@@ -86,19 +106,17 @@ function M:Add(trigger, info)
 		return nil
 	end
 
-	local reason = not ok and tostring(handle) or L["the game returned no handle"]
 	local spell = tostring(info.spellID)
 	local unit = tostring(info.unitToken)
 
 	ReportOnce(
-		spell .. "|" .. unit .. "|" .. tostring(trigger) .. "|" .. reason,
-		L["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"],
+		spell .. "|" .. unit .. "|" .. tostring(trigger),
+		L["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s."],
 		spell,
 		unit,
 		tostring(trigger),
 		tostring(info.soundFileName),
-		tostring(info.outputChannel),
-		reason
+		tostring(info.outputChannel)
 	)
 
 	return nil
@@ -132,6 +150,11 @@ end
 function M:RegisterSet(ids, unitToken, spellIds, soundFile, channel, excludedSpellIds)
 	ids = ids or table.remove(idListPool) or {}
 
+	-- Asked here as well as in Add, because the set behind one unit runs to a thousand ids.
+	if not self:CanRegister() then
+		return ids
+	end
+
 	local info = infoScratch
 	info.unitToken = unitToken
 	info.soundFileName = soundFile
@@ -163,6 +186,10 @@ end
 ---@return number[] ids
 function M:RegisterMappedSet(ids, unitToken, filesBySpellId, basePath, channel, excludedSpellIds)
 	ids = ids or table.remove(idListPool) or {}
+
+	if not self:CanRegister() then
+		return ids
+	end
 
 	local info = infoScratch
 	info.unitToken = unitToken

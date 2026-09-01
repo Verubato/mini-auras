@@ -138,11 +138,10 @@ L:RegisterLocale("zhCN", function() return {
 	["Please paste a profile string to import."] = "请粘贴要导入的配置字符串。",
 	["Profile imported successfully."] = "配置导入成功。",
 	["Profile string is corrupted."] = "配置字符串已损坏。",
-	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "声音注册失败。法术 %s，单位 %s，触发 %s，文件 %s，声道 %s。%s",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s."] = "声音注册失败。法术 %s，单位 %s，触发 %s，文件 %s，声道 %s。",
 	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "声音注册达到上限 %d。等待中的分组声音：%d 项。",
 	["Sound removal failed. Handle %s. %s"] = "移除声音失败。句柄 %s。%s",
 	["This profile was exported by a newer version of the addon."] = "该配置由更新版本的插件导出。",
-	["the game returned no handle"] = "游戏没有返回句柄",
 
 	-- Profiles tab
 	["Active Profile"] = "当前配置",

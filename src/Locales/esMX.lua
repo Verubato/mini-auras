@@ -139,11 +139,10 @@ L:RegisterLocale("esMX", function() return {
 	["Please paste a profile string to import."] = "Por favor, pega una cadena de perfil para importar.",
 	["Profile imported successfully."] = "Perfil importado correctamente.",
 	["Profile string is corrupted."] = "La cadena de perfil está corrupta.",
-	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s. %s"] = "Fallo al registrar el sonido. Hechizo %s, unidad %s, disparador %s, archivo %s, canal %s. %s",
+	["Sound registration failed. Spell %s, unit %s, trigger %s, file %s, channel %s."] = "Fallo al registrar el sonido. Hechizo %s, unidad %s, disparador %s, archivo %s, canal %s.",
 	["Sound registration hit its limit of %d. Group sounds still waiting: %d."] = "El registro de sonidos alcanzó su límite de %d. Sonidos de grupo en espera: %d.",
 	["Sound removal failed. Handle %s. %s"] = "No se pudo eliminar el sonido. Identificador %s. %s",
 	["This profile was exported by a newer version of the addon."] = "Este perfil se exportó con una versión más reciente del addon.",
-	["the game returned no handle"] = "el juego no devolvió ningún identificador",
 
 	-- Profiles tab
 	["Active Profile"] = "Perfil activo",

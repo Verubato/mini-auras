@@ -70,6 +70,7 @@ local testFiles = {
     "tests/Modules/TestImportantAurasFilters.lua",
     "tests/Modules/TestImportantAurasZoneGate.lua",
     "tests/Modules/TestPersonalAuras.lua",
+    "tests/Modules/TestAuraSoundZoneGate.lua",
     "tests/Modules/TestFrameAuras.lua",
 
     "tests/Config/TestAlertsPanel.lua",
