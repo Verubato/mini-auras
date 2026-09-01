@@ -7,6 +7,7 @@ local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local glowStyles = addon.Core.GlowStyles
 local barTextures = addon.Core.BarTextures
+local borderTextures = addon.Core.BorderTextures
 local artTextures = addon.Core.ArtTextures
 local outline = addon.Core.Outline
 local auraFilters = addon.Core.AuraFilters
@@ -1235,12 +1236,10 @@ local function InitializeButton(instance, button, group)
 	local borders, glow
 
 	if not instance.Minimal then
-		-- Border sized 1px past the icon, same asset/coords as the legacy border.
 		local border = button:CreateTexture(nil, "OVERLAY")
 		border:SetPoint("TOPLEFT", button, "TOPLEFT", -1, 1)
 		border:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1)
-		border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-		border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
+		borderTextures:ApplyDispel(border)
 		-- Hidden until registered via AddDispelTypeTexture, which takes over its visibility.
 		-- Otherwise it would render uncoloured over every aura icon.
 		border:Hide()

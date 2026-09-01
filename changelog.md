@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The dispel border around aura icons is drawn from smoother art, so it no longer looks pixelated.
+
 ## 5.33.2
 
 - Fixed ADDON_ACTION_BLOCKED from aura sounds in m+ and raids.

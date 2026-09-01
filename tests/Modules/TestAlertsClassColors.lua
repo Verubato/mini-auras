@@ -40,7 +40,7 @@ module:Refresh()
 
 local events = assert(acm.lastFrameForEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS"), "alerts event frame")
 
-local BORDER_ASSET = [[Interface\Buttons\UI-Debuff-Overlays]]
+local BORDER_ASSET = env.addon.Core.BorderTextures:GetDispelAsset()
 -- Spec ids the tests hand out, mapped to classes the mock knows a colour for.
 local ROGUE_SPEC, MAGE_SPEC = 259, 62
 env.specClasses[ROGUE_SPEC] = "ROGUE"

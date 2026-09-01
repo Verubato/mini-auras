@@ -53,6 +53,7 @@ Core\Pooling\Pool.lua
 Core\Display\Pixels.lua
 Core\Display\GrowAnchors.lua
 Core\Display\Media\GlowStyles.lua
+Core\Display\Media\BorderTextures.lua
 Core\Display\Outline.lua
 Core\Display\IconSlotContainer.lua
 Core\Display\Media\BarTextures.lua

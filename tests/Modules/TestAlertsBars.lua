@@ -530,7 +530,7 @@ end)
 -- so moving either has to rebuild the pooled pairs. The ring itself is drawn by the addon here,
 -- because the engine only owns a border it was handed for dispel colouring.
 fw.describe("Alerts 12.1 - the border on the live bars", function()
-	local BORDER_ASSET = [[Interface\Buttons\UI-Debuff-Overlays]]
+	local BORDER_ASSET = env.addon.Core.BorderTextures:GetDispelAsset()
 
 	---The first defensive button on a token's live pair.
 	local function buttonOf(token)

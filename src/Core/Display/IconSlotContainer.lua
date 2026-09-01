@@ -8,6 +8,7 @@ local fontUtil = addon.Utils.FontUtil
 local iconUtil = addon.Utils.IconUtil
 local wowEx = addon.Utils.WoWEx
 local glowStyles = addon.Core.GlowStyles
+local borderTextures = addon.Core.BorderTextures
 
 -- The icon crop (Utils/IconUtil) leaves the artwork reaching the icon's edge, so our own border
 -- sits flush and the swipe covers exactly the visible square. A Masque skin overrides it with its
@@ -249,8 +250,7 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 		border = f:CreateTexture(nil, "OVERLAY")
 		border:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 1)
 		border:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -1)
-		border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-		border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
+		borderTextures:ApplyDispel(border)
 		border:Hide()
 	end
 

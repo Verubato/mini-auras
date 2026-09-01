@@ -674,6 +674,9 @@ function M.build()
 	loadFile("src/Core/Display/GrowAnchors.lua")
 	-- Must precede IconSlotContainer and AuraContainerDisplay: both read the glow catalog at load.
 	loadFile("src/Core/Display/Media/GlowStyles.lua")
+	-- Must precede IconSlotContainer and AuraContainerDisplay: both take the dispel ring from
+	-- the border catalog at load.
+	loadFile("src/Core/Display/Media/BorderTextures.lua")
 	loadFile("src/Core/Display/Outline.lua")
 	loadFile("src/Core/Auras/AuraFilters.lua")
 	loadFile("src/Core/Events/UnitStatePoller.lua")

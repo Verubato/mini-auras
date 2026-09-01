@@ -3,6 +3,7 @@
 -- here.
 
 local fw = require("Framework")
+local sourcePath = require("SourcePath")
 
 local ADDON_NAME = "MiniAuras"
 
@@ -47,16 +48,6 @@ local function MaskingFrame()
 	return frame
 end
 
----The file a shipped texture path names, under src. Everything after the addon folder is kept, so
----a style pointing into a subfolder is checked where it actually lives.
----@param texture string
----@return string?
-local function SourcePath(texture)
-	local within = texture:match("\\AddOns\\[^\\]+\\(.+)$")
-
-	return within and ("src/" .. within:gsub("\\", "/"))
-end
-
 local function ReadPanel()
 	local handle = assert(io.open("src/Config/Panels/Miscellaneous.lua", "r"))
 	local source = handle:read("*a")
@@ -83,7 +74,7 @@ fw.describe("GlowStyles", function()
 
 		glowStyles:SetIconCorners(frame, frame:CreateTexture(), nil, nil, true)
 
-		local path = SourcePath(frame.MaskTexture)
+		local path = sourcePath(frame.MaskTexture)
 		assert(path, "the mask has an unreadable texture path")
 
 		local handle = io.open(path, "rb")
@@ -94,7 +85,7 @@ fw.describe("GlowStyles", function()
 	fw.it("ships the texture file behind every style that names one", function()
 		for name, spec in pairs(glowStyles.Specs) do
 			if spec.Texture then
-				local path = SourcePath(spec.Texture)
+				local path = sourcePath(spec.Texture)
 				assert(path, name .. " has an unreadable texture path")
 				local handle = io.open(path, "rb")
 				assert(handle, name .. " points at a missing file: " .. path)
