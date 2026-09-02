@@ -110,6 +110,10 @@ for _, path in ipairs(testFiles) do
         io.write("  ERROR loading " .. path .. ":\n  " .. tostring(err) .. "\n")
         loadErrors[#loadErrors + 1] = path .. ": " .. tostring(err)
     end
+
+    -- Lua's collector does not keep pace with the mock frames this suite builds, so without
+    -- this a later file's loadfile runs out of memory.
+    collectgarbage("collect")
 end
 
 local fw = require("Framework")
