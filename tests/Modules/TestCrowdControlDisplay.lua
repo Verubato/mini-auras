@@ -18,6 +18,7 @@ env.loadModule("src/Modules/CrowdControl/Module.lua")
 
 local module = env.addon.Modules.CrowdControlModule
 local auraContainerDisplay = env.addon.Core.AuraContainerDisplay
+local iconSlotContainer = env.addon.Core.IconSlotContainer
 local options = db.Modules.CrowdControl.Default
 
 -- Every display the module builds, kept as it is made. The entry holds it privately, and the
@@ -32,6 +33,19 @@ auraContainerDisplay.New = function(self, ...)
 	builtDisplays[#builtDisplays + 1] = display
 
 	return display
+end
+
+-- Every IconSlotContainer the module builds, kept the same way, so a test-mode preview's slots
+-- can be read back without a watchers export.
+local builtContainers = {}
+local realNewContainer = iconSlotContainer.New
+
+iconSlotContainer.New = function(self, ...)
+	local container = realNewContainer(self, ...)
+
+	builtContainers[#builtContainers + 1] = container
+
+	return container
 end
 
 -- The kick icon is a slot on the container rather than a display, so its colour can only be read
@@ -120,6 +134,27 @@ fw.describe("CrowdControl - the icon colours mode", function()
 		assert(display.Style.Border == true, "the flat colour draws its own ring")
 		fw.not_nil(display.Style.GlowColorR, "and its own glow tint")
 		fw.eq(display.Style.GlowColorR, 0.25, "taken from the swatch")
+	end)
+end)
+
+fw.describe("CrowdControl - the test-mode preview's corners", function()
+	fw.it("keeps the preview icons square in None mode", function()
+		-- The reported symptom: glow and dispel colours both off.
+		options.Icons.Glow = false
+		options.Icons.ColorMode = "NONE"
+		module:StartTesting()
+
+		local previewContainer
+		for _, container in ipairs(builtContainers) do
+			if container.Slots[1] and container.Slots[1].Container then
+				previewContainer = container
+			end
+		end
+
+		module:StopTesting()
+
+		local layer = assert(previewContainer, "fixture: test mode filled a container").Slots[1].Container
+		assert(layer.CornersRounded == false, "the None-mode preview should not round its icons")
 	end)
 end)
 

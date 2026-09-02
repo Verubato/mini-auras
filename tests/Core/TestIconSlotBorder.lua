@@ -11,9 +11,18 @@ local borderTextures = env.addon.Core.BorderTextures
 local ICON = 134400
 
 ---@param noBorder boolean?
-local function NewSlot(noBorder)
+---@param slotOptions table? Extra SetSlot fields, layered over the bare texture
+local function NewSlot(noBorder, slotOptions)
 	local container = iconSlotContainer:New(_G.UIParent, 1, 30, 2, "BorderTest", noBorder)
-	container:SetSlot(1, { Texture = ICON })
+	local options = { Texture = ICON }
+
+	if slotOptions then
+		for key, value in pairs(slotOptions) do
+			options[key] = value
+		end
+	end
+
+	container:SetSlot(1, options)
 
 	return container.Slots[1].Container
 end
@@ -28,5 +37,15 @@ fw.describe("IconSlotContainer - the dispel border", function()
 
 	fw.it("leaves a borderless container without one", function()
 		assert(NewSlot(true).Border == nil, "a borderless slot drew one anyway")
+	end)
+
+	fw.it("keeps square corners when Border is asked for but nothing colours it", function()
+		local layer = NewSlot(nil, { Border = true })
+		assert(layer.CornersRounded == false, "a border nobody can see should not round the icon")
+	end)
+
+	fw.it("rounds the corners once a colour draws a ring, Border unasked and glow off", function()
+		local layer = NewSlot(nil, { Color = { r = 1, g = 1, b = 1, a = 1 } })
+		assert(layer.CornersRounded == true, "a drawn border should round the icon even without Border")
 	end)
 end)

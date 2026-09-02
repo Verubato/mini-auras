@@ -575,7 +575,8 @@ end
 ---keeps its square corners.
 ---@param layer table
 ---@param options IconLayerOptions
-local function ApplyIconCorners(layer, options)
+---@param borderVisible boolean Whether the border ring is actually drawn this slot.
+local function ApplyIconCorners(layer, options, borderVisible)
 	-- Portrait icons carry a round mask and a swipe to match; leave both alone.
 	if layer.CustomShape then
 		return
@@ -583,7 +584,7 @@ local function ApplyIconCorners(layer, options)
 
 	-- The border ring has the same rounded inner corners as the overlays, so it rounds the icon
 	-- too. An LCG glow does not, so only the texture-based ones count here.
-	local rounded = (options.Border or (options.Glow and STATIC_GLOW_FIELDS[ResolveGlowType()]))
+	local rounded = (borderVisible or (options.Glow and STATIC_GLOW_FIELDS[ResolveGlowType()]))
 		and true or false
 
 	if layer.CornersRounded == rounded then
@@ -1239,7 +1240,10 @@ function M:SetSlot(slotIndex, options)
 	-- The coloured border normally gives way to an active glow so the two rings do not double up.
 	-- Border forces both, for icons standing in for aura buttons: the engine draws border and glow
 	-- together on those, and a preview rendered here must not look different from live.
-	if options.Color and layer.Border and (options.Border == true or not options.Glow) then
+	local borderVisible = (options.Color and layer.Border and (options.Border == true or not options.Glow))
+		and true or false
+
+	if borderVisible then
 		layer.Border:SetVertexColor(
 			options.Color.r or 1,
 			options.Color.g or 1,
@@ -1261,7 +1265,7 @@ function M:SetSlot(slotIndex, options)
 	fontUtil:UpdateCooldownFontSize(layer.Cooldown, iconSize, nil, layer.Cooldown.FontScale)
 
 	UpdateGlow(layer.Frame, options)
-	ApplyIconCorners(layer, options)
+	ApplyIconCorners(layer, options, borderVisible)
 end
 
 ---@param slotIndex number Slot index
