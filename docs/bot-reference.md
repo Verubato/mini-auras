@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.33.4. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.34.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -186,7 +186,7 @@ category on or off, applies in combat as normal.
 
 ### Colouring rules
 
-- **Dispel colours** (CC, Pet CC, Healer): glow/border coloured by the debuff's dispel type
+- **Dispel colours** (Healer): glow/border coloured by the debuff's dispel type
   (for example blue for magic).
 - **Dispel colours + category tints** (Important Auras, where the switch is called **Colours**, and
   Nameplates, where since 5.19.0 it is the three-way **Icon colours** dropdown): CC icons take
@@ -203,9 +203,13 @@ category on or off, applies in combat as normal.
 - The ring those colours are painted onto is the addon's own art since 5.33.3, redrawn from the
   client's debuff overlay so it reads smooth at icon sizes instead of pixelated. There is
   nothing to configure about it.
-- **A single CC colour** (CC, Pet CC, since 5.19.0): one swatch, applied to crowd control icons
-  while Dispel colours is off. With dispel colours on, the game's colour for the aura's school
-  wins instead.
+- **Icon colours** (CC, Pet CC, since 5.34.0): the same three-way dropdown as Nameplates,
+  replacing the old boolean **Dispel colours** tick. **Dispel colours**, the default, paints
+  each crowd control icon in the game's colour for its dispel type. **Custom** drops the dispel
+  palette and uses a single **CC colour** swatch instead, shown on the page only in this mode.
+  **None** leaves the icons uncoloured, drawing neither the glow tint nor the border ring. A
+  profile saved before 5.34.0 reads back as Dispel colours where the tick was on, and Custom
+  where it was off.
 - **Per-category tints** (Alerts): a colour swatch each for Important and Defensive, with no
   dispel colouring to share the switch with. They colour whichever ring is drawn, so they need
   **Glow icons** or **Show border** on; with both off the two swatches are hidden, having
@@ -1023,7 +1027,7 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 |---|---|---|---|
 | Exclude self | on/off | off | off |
 | Glow icons | on/off | on | on |
-| Dispel colours | on/off | on | on |
+| Icon colours | None / Dispel colours / Custom (since 5.34.0) | Dispel colours | Dispel colours |
 | Reverse swipe | on/off | on | on |
 | Show tooltips | on/off | off | off |
 | Milliseconds | on/off | off | off |
@@ -1034,11 +1038,12 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Font Scale | 0.5-2.0, step 0.05 | 1.0 | 1.0 |
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | RIGHT | CENTER |
 | Offset X / Y | -250..250 | 2 / 0 | 2 / 0 |
-| CC colour | swatch (since 5.19.0) | white | white |
+| CC colour | swatch (since 5.19.0, shown while Icon colours is Custom) | white | white |
 
 **CC colour** sets the glow and border colour for crowd control icons, for players who want
-one colour rather than the game's dispel palette. It applies while **Dispel colours** is off;
-with dispel colours on, the game's own colour for the aura's school wins.
+one colour rather than the game's dispel palette. The swatch is only on the page while
+**Icon colours** is Custom; with Dispel colours picked, the game's own colour for the aura's
+school wins instead, and with None picked there is nothing to colour.
 
 Ordering: CC icons are shown oldest applied first. Sorting happens inside the game's aura
 containers, so there is no option to change it.
@@ -1057,7 +1062,7 @@ One setting group (no raid split):
 |---|---|---|
 | Show on pet unit frame | on/off | off |
 | Glow icons | on/off | on |
-| Dispel colours | on/off | on |
+| Icon colours | None / Dispel colours / Custom (since 5.34.0) | Dispel colours |
 | Reverse swipe | on/off | on |
 | Show tooltips | on/off | off |
 | Relative size / Icon Size (%) | 25-100 % | 50 |
@@ -1478,7 +1483,9 @@ of Dispel colours or Custom for the bar in question, not None. On Alerts it also
 colours** off, since that tints by the owner's class instead. CC icons ignore the pair either
 way and take the game's dispel type colour. Neither swatch reaches the Frame Auras rows: their own
 Dispel colours switch rings every group on the debuff row, and a debuff the game gives no type at
-all is ringed in the untyped red.
+all is ringed in the untyped red. CC and Pet CC have no such pair: their own **CC colour** swatch
+is gated by their own **Icon colours** dropdown instead, and only for Custom, not Dispel colours
+or None.
 
 **"A spell shows on nameplates or portraits but not on group frames."** Expected. Nameplates
 and portraits show whatever the game flags; group frames can only show spells on their

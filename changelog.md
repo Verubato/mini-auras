@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.34.0
+
+- Added option to CC/Pet CC modules to disable the borders.
+
 ## 5.33.4
 
 - Aura sounds now work in m+ and raids, apart from ones first needed during combat.
