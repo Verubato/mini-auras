@@ -3,8 +3,15 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
+local COLOR_MODE = auraContainerDisplay.ColorMode
+local COLOR_MODES = {
+	COLOR_MODE.None,
+	COLOR_MODE.Dispel,
+	COLOR_MODE.Custom,
+}
 -- The text sits behind functions because the locale can change after this file loads, so every
 -- lookup has to happen at build time. Literal keys keep them visible to the locale checker.
 local ENABLE_ROW = {
@@ -40,6 +47,18 @@ local SPELL_ICON_SIZE = 18
 local M = {}
 
 addon.Config.PanelHelpers = M
+
+local function ColorModeText(mode)
+	if mode == COLOR_MODE.Dispel then
+		return L["Dispel colours"]
+	end
+
+	if mode == COLOR_MODE.Custom then
+		return L["Custom"]
+	end
+
+	return L["None"]
+end
 
 ---Builds the five per-context enable checkboxes on one row, on the shared 5-column grid so
 ---checkbox rows line up across pages.
@@ -241,6 +260,18 @@ end
 ---@return table dropdown Carries the label as dropdown.Label.
 function M:BuildGrowDropdown(opts)
 	opts.LabelText = L["Grow"]
+
+	return M:BuildLabelledDropdown(opts)
+end
+
+---The same thing labelled "Icon colours", with the None/Dispel/Custom item list and display text
+---fixed, for the three modules that offer the mode.
+---@param opts LabelledDropdownOptions
+---@return table dropdown Carries the label as dropdown.Label.
+function M:BuildColorModeDropdown(opts)
+	opts.LabelText = L["Icon colours"]
+	opts.Items = COLOR_MODES
+	opts.GetText = ColorModeText
 
 	return M:BuildLabelledDropdown(opts)
 end

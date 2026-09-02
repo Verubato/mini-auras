@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local dbDefaults = addon.Config.Defaults
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local DROPDOWN_WIDTH = 200
 local GROW_OPTIONS = {
 	"LEFT",
@@ -65,23 +66,6 @@ local function BuildPetInstance(panel, options)
 
 	glowChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local dispelColoursChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Dispel colours"],
-		Tooltip = L["Change the colour of the glow/border based on the type of debuff."],
-		GetValue = function()
-			return options.Icons.ColorByDispelType
-		end,
-		SetValue = function(value)
-			options.Icons.ColorByDispelType = value
-			UpdateCcSwatch()
-			config:Apply(moduleName.PetCrowdControl)
-		end,
-	})
-
-	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
-
 	local reverseChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Reverse swipe"],
@@ -95,7 +79,7 @@ local function BuildPetInstance(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
@@ -111,7 +95,7 @@ local function BuildPetInstance(panel, options)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 	showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local size = helpers:BuildSizeControls({
@@ -123,7 +107,7 @@ local function BuildPetInstance(panel, options)
 		SettingsKey = moduleName.PetCrowdControl,
 	})
 
-	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
+	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
 	size.Checkbox:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local includePetFrameChk = mini:Checkbox({
@@ -161,10 +145,9 @@ local function BuildPetInstance(panel, options)
 	ccSwatch:SetPoint("TOP", includePetFrameChk, "TOP", 0,
 		-math.floor((includePetFrameChk:GetHeight() - ccSwatch:GetHeight()) / 2))
 
-	-- The dispel palette wins over this colour, so with it on the swatch has nothing to say and
-	-- goes away rather than sitting there doing nothing.
+	-- The swatch only means anything in Custom mode, so it goes away rather than sitting there doing nothing.
 	function UpdateCcSwatch()
-		local shown = options.Icons.ColorByDispelType ~= true
+		local shown = auraContainerDisplay:ResolveColorMode(options.Icons) == auraContainerDisplay.ColorMode.Custom
 
 		ccSwatch:SetShown(shown)
 		ccSwatch.Label:SetShown(shown)
@@ -184,6 +167,26 @@ local function BuildPetInstance(panel, options)
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", includePetFrameChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+
+	local colorsDdl = helpers:BuildColorModeDropdown({
+		Parent = parent,
+		Tooltip = L["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."],
+		Width = DROPDOWN_WIDTH,
+		Target = options.Icons,
+		Key = "ColorMode",
+		SettingsKey = moduleName.PetCrowdControl,
+		GetValue = function()
+			return auraContainerDisplay:ResolveColorMode(options.Icons)
+		end,
+		SetValue = function(value)
+			options.Icons.ColorMode = value
+			UpdateCcSwatch()
+			config:Apply(moduleName.PetCrowdControl)
+		end,
+	})
+
+	colorsDdl.Label:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
+	colorsDdl.Label:SetPoint("TOP", growDdl.Label, "TOP", 0, 0)
 
 	size.Pixel.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 

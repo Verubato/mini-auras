@@ -9,13 +9,7 @@ local GROW_OPTIONS = {
 	"RIGHT",
 	"CENTER",
 }
-local nameplatesDisplay = addon.Modules.Nameplates.Display
-local COLOR_MODE = nameplatesDisplay.ColorMode
-local COLOR_MODES = {
-	COLOR_MODE.None,
-	COLOR_MODE.Dispel,
-	COLOR_MODE.Custom,
-}
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 4
@@ -28,18 +22,6 @@ local moduleName = addon.Utils.ModuleName
 local M = {}
 
 config.Nameplates = M
-
-local function ColorModeText(mode)
-	if mode == COLOR_MODE.Dispel then
-		return L["Dispel colours"]
-	end
-
-	if mode == COLOR_MODE.Custom then
-		return L["Custom"]
-	end
-
-	return L["None"]
-end
 
 ---@param parent table Tab content frame
 ---@param options NameplateSpellTypeOptions
@@ -222,18 +204,15 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 	-- categories are either uncoloured, on the game's dispel palette, or on the picked tints. The
 	-- three tints themselves live on the Settings tab, since a category should read the same
 	-- colour on whichever bar it lands.
-	local colorsDdl = helpers:BuildLabelledDropdown({
+	local colorsDdl = helpers:BuildColorModeDropdown({
 		Parent = container,
-		LabelText = L["Icon colours"],
 		Tooltip = L["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."],
-		Items = COLOR_MODES,
-		GetText = ColorModeText,
 		Width = DROPDOWN_WIDTH,
 		Target = options.Icons,
 		Key = "ColorMode",
 		SettingsKey = moduleName.Nameplates,
 		GetValue = function()
-			return nameplatesDisplay:ResolveColorMode(options.Icons)
+			return auraContainerDisplay:ResolveColorMode(options.Icons)
 		end,
 	})
 

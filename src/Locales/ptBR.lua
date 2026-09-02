@@ -231,6 +231,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Change the colour of the glow on crowd control spells."] = "Altera a cor do brilho das magias de controle de grupo.",
 	["Icon colours"] = "Cores dos ícones",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colore o brilho e a borda com as cores da aba Configurações. Cores de dissipação dão ao CC as cores de penalidade do jogo, ex.: azul para magia.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "Colore o brilho e a borda com a cor de CC acima. Cores de dissipação dão a eles as cores de penalidade do jogo, ex.: azul para magia. Nenhuma deixa os ícones sem cor.",
 	["None"] = "Nenhuma",
 	["Change the colour of the glow on defensive spells."] = "Altera a cor do brilho das magias defensivas.",
 	["Change the colour of the glow on important spells."] = "Altera a cor do brilho das magias importantes.",

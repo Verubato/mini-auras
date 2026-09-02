@@ -232,6 +232,7 @@ L:RegisterLocale("esMX", function() return {
 	["Change the colour of the glow on crowd control spells."] = "Cambia el color del brillo de los hechizos de control de masas.",
 	["Icon colours"] = "Colores de iconos",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colorea el brillo y el borde con los colores de la pestaña Ajustes. Los colores de disipación dan al CC los colores de penalización del juego, p. ej. azul para magia.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "Colorea el brillo y el borde con el color de CC de arriba. Los colores de disipación les dan en su lugar los colores de penalización del juego, p. ej. azul para magia. Ninguno deja los iconos sin colorear.",
 	["None"] = "Ninguno",
 	["Change the colour of the glow on defensive spells."] = "Cambia el color del brillo de los hechizos defensivos.",
 	["Change the colour of the glow on important spells."] = "Cambia el color del brillo de los hechizos importantes.",

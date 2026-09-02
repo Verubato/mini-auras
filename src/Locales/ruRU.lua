@@ -231,6 +231,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Change the colour of the glow on crowd control spells."] = "Изменяет цвет свечения для заклинаний контроля.",
 	["Icon colours"] = "Цвета значков",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Окрашивает свечение и границу цветами со вкладки Настройки. Цвета рассеивания дают контролю цвета дебаффов из игры, например синий для магии.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "Окрашивает свечение и границу цветом контроля толпы выше. Цвета рассеивания дают им вместо этого цвета дебаффов из игры, например синий для магии. «Нет» оставляет значки без цвета.",
 	["None"] = "Нет",
 	["Change the colour of the glow on defensive spells."] = "Изменяет цвет свечения для защитных заклинаний.",
 	["Change the colour of the glow on important spells."] = "Изменяет цвет свечения для важных заклинаний.",

@@ -231,6 +231,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Change the colour of the glow on crowd control spells."] = "更改控制法術的發光顏色。",
 	["Icon colours"] = "圖示顏色",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "用設定頁籤中的顏色為發光和邊框著色。驅散顏色則讓控制效果使用遊戲的減益顏色，例如魔法為藍色。",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "用上方的控制顏色為發光和邊框著色。驅散顏色則讓它使用遊戲的減益顏色，例如魔法為藍色。無則讓圖示保持無色。",
 	["None"] = "無",
 	["Change the colour of the glow on defensive spells."] = "更改防禦法術的發光顏色。",
 	["Change the colour of the glow on important spells."] = "更改重要法術的發光顏色。",

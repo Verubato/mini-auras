@@ -231,6 +231,7 @@ L:RegisterLocale("deDE", function() return {
 	["Change the colour of the glow on crowd control spells."] = "Ändert die Farbe des Leuchtens bei Kontrollzaubern.",
 	["Icon colours"] = "Symbolfarben",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Färbt Leuchten und Rahmen mit den Farben aus dem Reiter Einstellungen. Dispelfarben geben Kontrolleffekten stattdessen die Debuff-Farben des Spiels, z. B. Blau für Magie.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "Färbt Leuchten und Rahmen mit der obigen CC-Farbe. Dispelfarben geben ihnen stattdessen die Debuff-Farben des Spiels, z. B. Blau für Magie. Keine lässt die Symbole ungefärbt.",
 	["None"] = "Keine",
 	["Change the colour of the glow on defensive spells."] = "Ändert die Farbe des Leuchtens bei Verteidigungszaubern.",
 	["Change the colour of the glow on important spells."] = "Ändert die Farbe des Leuchtens bei wichtigen Zaubern.",

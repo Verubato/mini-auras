@@ -231,6 +231,7 @@ L:RegisterLocale("itIT", function() return {
 	["Change the colour of the glow on crowd control spells."] = "Cambia il colore del bagliore degli incantesimi di controllo.",
 	["Icon colours"] = "Colori icone",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colora bagliore e bordo con i colori della scheda Impostazioni. I colori dissolvimento danno invece al CC i colori di debuff del gioco, es. blu per la magia.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "Colora bagliore e bordo con il colore CC sopra indicato. I colori dissolvimento gli danno invece i colori di debuff del gioco, es. blu per la magia. Nessuno lascia le icone senza colore.",
 	["None"] = "Nessuno",
 	["Change the colour of the glow on defensive spells."] = "Cambia il colore del bagliore degli incantesimi difensivi.",
 	["Change the colour of the glow on important spells."] = "Cambia il colore del bagliore degli incantesimi importanti.",

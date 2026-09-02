@@ -141,6 +141,23 @@ M.__index = M
 
 addon.Core.AuraContainerDisplay = M
 
+-- How a display's icons take their colour, stored on its Icons.ColorMode.
+local COLOR_MODE_NONE = "NONE"
+local COLOR_MODE_DISPEL = "DISPEL"
+local COLOR_MODE_CUSTOM = "CUSTOM"
+
+-- For the options pages and the migrations that fill the field.
+M.ColorMode = { None = COLOR_MODE_NONE, Dispel = COLOR_MODE_DISPEL, Custom = COLOR_MODE_CUSTOM }
+
+---A display's colour mode, with anything unrecognised read as the shipped default.
+---@param iconOptions table An Icons options table.
+---@return string one of M.ColorMode
+function M:ResolveColorMode(iconOptions)
+	local mode = iconOptions.ColorMode
+
+	return (mode == COLOR_MODE_NONE or mode == COLOR_MODE_CUSTOM) and mode or COLOR_MODE_DISPEL
+end
+
 local function GetDb()
 	if not cachedDb then
 		cachedDb = addon.Framework:GetSavedVars()

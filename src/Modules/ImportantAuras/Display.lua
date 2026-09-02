@@ -361,8 +361,9 @@ local function UpdateKickIcon(entry)
 	end
 
 	local kickEntry = options.ShowKicks and kickTracker:GetKick(entry.Unit) or nil
+	local wantsDispelColor = options.Icons.ColorByDispelType == true
 
-	anchoredIcons:RenderKickIcon(entry, options, kickEntry, function()
+	anchoredIcons:RenderKickIcon(entry, options, kickEntry, wantsDispelColor, function()
 		entry.KickTimer = nil
 		UpdateKickIcon(entry)
 	end, options.FontScale)

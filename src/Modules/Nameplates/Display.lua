@@ -25,15 +25,11 @@ addon.Modules.Nameplates.Display = M
 -- One AuraContainer per plate and bar, with a group per category, and an IconSlotContainer
 -- alongside it for the kick icon and the test icons.
 
--- How a bar tints its icons, stored on its Icons.ColorMode. Dispel puts CC and disarm on the
--- game's debuff type palette and Custom puts them on the module's CrowdControlColor. That is the
--- only way the two differ, since defensives and importants take their own tints under both.
-local COLOR_MODE_NONE = "NONE"
-local COLOR_MODE_DISPEL = "DISPEL"
-local COLOR_MODE_CUSTOM = "CUSTOM"
-
--- For the options page and the migration that fills the field.
-M.ColorMode = { None = COLOR_MODE_NONE, Dispel = COLOR_MODE_DISPEL, Custom = COLOR_MODE_CUSTOM }
+-- Custom puts CC and disarm on the module's CrowdControlColor. Defensives and importants take
+-- their own tints under both.
+local COLOR_MODE_NONE = auraContainerDisplay.ColorMode.None
+local COLOR_MODE_DISPEL = auraContainerDisplay.ColorMode.Dispel
+local COLOR_MODE_CUSTOM = auraContainerDisplay.ColorMode.Custom
 
 ---@type Db
 local db
@@ -394,7 +390,7 @@ end
 local function BarCategoryColors(barOptions)
 	RefreshCategoryColors()
 
-	local mode = M:ResolveColorMode(barOptions.Icons)
+	local mode = auraContainerDisplay:ResolveColorMode(barOptions.Icons)
 	local colored = mode ~= COLOR_MODE_NONE
 	local flatCc = mode == COLOR_MODE_CUSTOM and ccColor or nil
 
@@ -414,7 +410,7 @@ local function BarStyle(barOptions)
 	-- Nameplates keep the colour choice in ColorMode, which the standard reader doesn't know. Any
 	-- mode but None wants the paint code's coloured path, whether the tints come from the game's
 	-- palette or from BarCategoryColors.
-	style.ColorByDispelType = M:ResolveColorMode(barOptions.Icons) ~= COLOR_MODE_NONE
+	style.ColorByDispelType = auraContainerDisplay:ResolveColorMode(barOptions.Icons) ~= COLOR_MODE_NONE
 	-- The bars' untinted groups only hold CC and disarm, and most of that is physical: without
 	-- this a stun gets the tinted glow but no ring, which reads as the border being broken.
 	style.BorderWithoutDispelType = true
@@ -915,7 +911,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 
 	local iconsGlow = barOptions.Icons.Glow
 	local iconsReverse = barOptions.Icons.ReverseCooldown
-	local mode = M:ResolveColorMode(barOptions.Icons)
+	local mode = auraContainerDisplay:ResolveColorMode(barOptions.Icons)
 	local showTooltips = barOptions.ShowTooltips ~= false
 	local fontScale = db.Modules.Nameplates.FontScale
 	local slot = 0
@@ -964,16 +960,6 @@ local function ShowDataTestIcons(data, now)
 			moduleUtil:SetTestLabel(data[bar.DataField].Frame, L[barLabels[bar.Key]])
 		end
 	end
-end
-
----A bar's colour mode, with anything unrecognised read as the shipped default. Public so the
----options page reads the same answer the bars do.
----@param iconOptions table A bar's Icons options table.
----@return string one of M.ColorMode
-function M:ResolveColorMode(iconOptions)
-	local mode = iconOptions.ColorMode
-
-	return (mode == COLOR_MODE_NONE or mode == COLOR_MODE_CUSTOM) and mode or COLOR_MODE_DISPEL
 end
 
 ---Which faction's bar options apply to a token. Friendly units can also be enemies in a duel,
@@ -1172,7 +1158,7 @@ function M:UpdateKick(data)
 				layerScratch.ReverseCooldown = barOptions.Icons.ReverseCooldown
 				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
 				layerScratch.FontScale = db.Modules.Nameplates.FontScale
-				layerScratch.Color = self:ResolveColorMode(barOptions.Icons) ~= COLOR_MODE_NONE
+				layerScratch.Color = auraContainerDisplay:ResolveColorMode(barOptions.Icons) ~= COLOR_MODE_NONE
 					and kickEntry.Color or nil
 				-- The aura buttons beside this icon draw border and glow together when coloured,
 				-- so the kick icon does too or it reads as the odd one out in the row.

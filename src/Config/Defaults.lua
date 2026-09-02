@@ -3,7 +3,7 @@ local _, addon = ...
 
 ---@class Db
 local dbDefaults = {
-	Version = 82,
+	Version = 83,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -79,8 +79,8 @@ local dbDefaults = {
 					SizePercent = 80,
 					Glow = true,
 					ReverseCooldown = true,
-					ColorByDispelType = true,
-					-- The one tint every CC icon takes once the dispel palette is switched off.
+					ColorMode = "DISPEL",
+					-- The one tint every CC icon takes in Custom colour mode.
 					Color = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 					Count = 3,
 					ShowMilliseconds = false,
@@ -106,7 +106,7 @@ local dbDefaults = {
 					SizePercent = 50,
 					Glow = true,
 					ReverseCooldown = true,
-					ColorByDispelType = true,
+					ColorMode = "DISPEL",
 					Color = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 					Count = 3,
 					ShowMilliseconds = false,
@@ -146,7 +146,7 @@ local dbDefaults = {
 				Count = 3,
 				Glow = true,
 				ReverseCooldown = true,
-				ColorByDispelType = true,
+				ColorMode = "DISPEL",
 				Color = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 			},
 
@@ -373,7 +373,7 @@ local dbDefaults = {
 						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
-						-- How this bar tints its icons, one of NameplatesDisplay.ColorMode. NONE
+						-- How this bar tints its icons, one of AuraContainerDisplay.ColorMode. NONE
 						-- leaves them untinted, DISPEL puts CC and disarm on the game's debuff
 						-- type palette, CUSTOM puts them on the module's CrowdControlColor.
 						ColorMode = "DISPEL",

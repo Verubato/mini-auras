@@ -231,6 +231,7 @@ L:RegisterLocale("frFR", function() return {
 	["Change the colour of the glow on crowd control spells."] = "Change la couleur de la lueur des sorts de contrôle.",
 	["Icon colours"] = "Couleurs des icônes",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colore la lueur et la bordure avec les couleurs de l'onglet Paramètres. Les couleurs de dissipation donnent plutôt aux contrôles les couleurs de débuff du jeu, p. ex. bleu pour la magie.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "Colore la lueur et la bordure avec la couleur de CC ci-dessus. Les couleurs de dissipation lui donnent plutôt les couleurs de débuff du jeu, p. ex. bleu pour la magie. Aucune laisse les icônes sans couleur.",
 	["None"] = "Aucune",
 	["Change the colour of the glow on defensive spells."] = "Change la couleur de la lueur des sorts défensifs.",
 	["Change the colour of the glow on important spells."] = "Change la couleur de la lueur des sorts importants.",

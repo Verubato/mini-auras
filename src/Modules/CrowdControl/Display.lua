@@ -103,11 +103,11 @@ local function GetOptions()
 	return db.Modules.CrowdControl[GetProfileKey(false)]
 end
 
----The one tint every CC icon takes, or nil while the game's dispel palette is colouring them.
+---The one tint every CC icon takes in Custom colour mode, or nil in Dispel or None.
 ---@param iconOptions table
 ---@return table? Shared, refilled per call.
 local function FlatCcColor(iconOptions)
-	if iconOptions.ColorByDispelType == true then
+	if auraContainerDisplay:ResolveColorMode(iconOptions) ~= auraContainerDisplay.ColorMode.Custom then
 		return nil
 	end
 
@@ -119,6 +119,9 @@ end
 ---@return AuraDisplayStyle
 local function BuildStyle(entryOptions)
 	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons, entryOptions.FontScale)
+	local mode = auraContainerDisplay:ResolveColorMode(entryOptions.Icons)
+
+	style.ColorByDispelType = mode == auraContainerDisplay.ColorMode.Dispel
 
 	-- The display only ever holds CC, and most of that is physical: without this a stun gets the
 	-- tinted glow but no ring, which reads as the border being broken.
@@ -126,7 +129,7 @@ local function BuildStyle(entryOptions)
 	style.ShowTooltips = entryOptions.ShowTooltips ~= false
 
 	-- With the dispel palette off the flat tint takes over the ring and the glow it was colouring,
-	-- so switching palettes recolours the icons rather than stripping them back to bare art.
+	-- so switching modes recolours the icons rather than leaving them on the wrong one.
 	local flat = FlatCcColor(entryOptions.Icons)
 	style.GlowColor = flat
 	style.Border = flat ~= nil
@@ -213,8 +216,9 @@ local function UpdateKickIcon(entry)
 	end
 
 	local kickEntry = not isPet and kickTracker:GetKick(entry.Unit) or nil
+	local wantsDispelColor = auraContainerDisplay:ResolveColorMode(options.Icons) == auraContainerDisplay.ColorMode.Dispel
 
-	anchoredIcons:RenderKickIcon(entry, options, kickEntry, function()
+	anchoredIcons:RenderKickIcon(entry, options, kickEntry, wantsDispelColor, function()
 		entry.KickTimer = nil
 		UpdateKickIcon(entry)
 	end, options.FontScale)
@@ -816,7 +820,7 @@ function M:RefreshTestIcons()
 		else
 			local entryOptions = isPet
 					and (petOptions or {
-						Icons = { ReverseCooldown = false, Glow = false, ColorByDispelType = true },
+						Icons = { ReverseCooldown = false, Glow = false, ColorMode = "DISPEL" },
 						Offset = { X = 0, Y = 0 },
 						Grow = "CENTER",
 					})
@@ -825,7 +829,7 @@ function M:RefreshTestIcons()
 			local nextSlot = testSpellData:FillContainer(container, testSpells, 1, {
 				ReverseCooldown = entryOptions.Icons.ReverseCooldown,
 				Glow = entryOptions.Icons.Glow,
-				ColorByDispelType = entryOptions.Icons.ColorByDispelType,
+				ColorByDispelType = auraContainerDisplay:ResolveColorMode(entryOptions.Icons) == auraContainerDisplay.ColorMode.Dispel,
 				-- Color wins over the palette in FillContainer, and it is nil while the palette
 				-- is on. The live buttons resolve the same way.
 				Color = FlatCcColor(entryOptions.Icons),

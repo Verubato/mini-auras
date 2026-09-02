@@ -232,6 +232,7 @@ L:SetDefaultStrings({
 	["Change the colour of the glow on crowd control spells."] = "Change the colour of the glow on crowd control spells.",
 	["Icon colours"] = "Icon colours",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured.",
 	["None"] = "None",
 	["Change the colour of the glow on defensive spells."] = "Change the colour of the glow on defensive spells.",
 	["Change the colour of the glow on important spells."] = "Change the colour of the glow on important spells.",

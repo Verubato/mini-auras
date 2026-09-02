@@ -2405,3 +2405,92 @@ fw.describe("Migrator - the v82 frame aura padding key", function()
 			"the login path has to reach step 82")
 	end)
 end)
+
+fw.describe("Migrator - the v83 crowd control colour mode", function()
+	fw.it("folds the CC/PetCC colour booleans into one mode across all three sites, profiles included", function()
+		local vars = {
+			Version = 82,
+			Modules = {
+				CrowdControl = {
+					Default = { Icons = { ColorByDispelType = true } },
+					Raid = { Icons = { ColorByDispelType = false } },
+				},
+				PetCrowdControl = { Icons = {} },
+			},
+			Profiles = {
+				Plain = {
+					Modules = {
+						CrowdControl = { Default = { Icons = { ColorByDispelType = false } } },
+					},
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion83(vars) == true)
+
+		local modules = vars.Modules
+		assert(modules.CrowdControl.Default.Icons.ColorMode == "DISPEL", "true becomes the Dispel mode")
+		assert(modules.CrowdControl.Raid.Icons.ColorMode == "CUSTOM", "false becomes the Custom mode")
+		assert(modules.PetCrowdControl.Icons.ColorMode == "DISPEL", "an absent flag takes the shipped mode")
+		assert(modules.CrowdControl.Default.Icons.ColorByDispelType == nil, "the boolean it replaced is dropped")
+		assert(modules.CrowdControl.Raid.Icons.ColorByDispelType == nil, "on every site")
+		assert(modules.PetCrowdControl.Icons.ColorByDispelType == nil, "the pet site included")
+
+		local profile = vars.Profiles.Plain.Modules.CrowdControl.Default.Icons
+		assert(profile.ColorMode == "CUSTOM", "a snapshot is folded the same way")
+		assert(vars.Version == 83)
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = {
+			Version = 81,
+			Modules = { CrowdControl = { Default = { Icons = { ColorByDispelType = true } } } },
+		}
+
+		assert(migrator:UpgradeToVersion83(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.CrowdControl.Default.Icons.ColorMode == nil, "and must fold nothing")
+		assert(vars.Version == 81)
+	end)
+
+	fw.it("keeps a mode already set over the stale boolean sitting beside it", function()
+		local vars = {
+			Version = 82,
+			Modules = {
+				CrowdControl = {
+					Default = { Icons = { ColorMode = "CUSTOM", ColorByDispelType = true } },
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion83(vars) == true)
+
+		local icons = vars.Modules.CrowdControl.Default.Icons
+		assert(icons.ColorMode == "CUSTOM", "an already-set mode must not be read off the stale boolean")
+		assert(icons.ColorByDispelType == nil, "the stale boolean is still dropped")
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 82,
+			Modules = {
+				CrowdControl = { Default = { Icons = { ColorByDispelType = false } }, Raid = { Icons = {} } },
+				PetCrowdControl = { Icons = { ColorByDispelType = true } },
+			},
+			Profiles = {
+				Other = {
+					Modules = {
+						CrowdControl = { Default = { Icons = { ColorByDispelType = false } } },
+					},
+				},
+			},
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 83, "the shipped version has to be past this step")
+		-- The live db takes this off the defaults whatever happens, so a stored profile is the
+		-- only place the step itself shows.
+		assert(db.Profiles.Other.Modules.CrowdControl.Default.Icons.ColorMode == "CUSTOM",
+			"the login path has to reach step 83")
+	end)
+end)

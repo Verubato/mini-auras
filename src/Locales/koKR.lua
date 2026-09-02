@@ -231,6 +231,7 @@ L:RegisterLocale("koKR", function() return {
 	["Change the colour of the glow on crowd control spells."] = "군중 제어 주문의 발광 색상을 변경합니다.",
 	["Icon colours"] = "아이콘 색상",
 	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "설정 탭의 색상으로 발광과 테두리를 칠합니다. 디스펠 색상을 고르면 군중 제어는 게임의 디버프 색상을 사용합니다. 예: 마법은 파란색.",
+	["Tints the glow and border with the CC colour above. Dispel colours instead give it the game's debuff colours, e.g. blue for magic. None leaves the icons uncoloured."] = "위의 CC 색상으로 발광과 테두리를 칠합니다. 디스펠 색상을 고르면 대신 게임의 디버프 색상을 사용합니다. 예: 마법은 파란색. 없음을 선택하면 아이콘이 색상 없이 표시됩니다.",
 	["None"] = "없음",
 	["Change the colour of the glow on defensive spells."] = "방어 주문의 발광 색상을 변경합니다.",
 	["Change the colour of the glow on important spells."] = "중요한 주문의 발광 색상을 변경합니다.",
