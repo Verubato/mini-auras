@@ -1,5 +1,6 @@
 -- The shared wrapper around C_UnitAuras.AddAuraSound and RemoveAuraSound. AddAuraSound answers a
--- refusal with no handle, and the engine will not take one at all inside a dungeon or a raid.
+-- refusal with no handle, and the engine will not take one at all while the player is in combat
+-- inside instanced PvE.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
@@ -309,51 +310,73 @@ fw.describe("AuraSounds - where the engine takes a registration", function()
 
 	---Registers one spell in the place named and hands back what the engine was asked for.
 	---@param instanceType string
+	---@param inCombat boolean? whether the player is fighting while the pass runs
 	---@return number handles
 	---@return number calls
-	local function RegisterIn(instanceType)
+	local function RegisterIn(instanceType, inCombat)
 		Zone(instanceType)
+		env.inCombat = inCombat == true
 
 		local before = env.auraSoundAdds
 		local ids = auraSounds:RegisterSet(nil, "player", { [FIRST] = true }, FILE, "Master")
 		local handles, calls = #ids, env.auraSoundAdds - before
 
 		auraSounds:RemoveSet(ids)
+		env.inCombat = false
 		Zone("none")
 
 		return handles, calls
 	end
 
-	fw.it("registers in the open world, a battleground and an arena", function()
+	fw.it("registers in the open world, a battleground and an arena, fighting or not", function()
 		for _, place in ipairs({ "none", "pvp", "arena" }) do
-			local handles, calls = RegisterIn(place)
+			for _, inCombat in ipairs({ false, true }) do
+				local handles, calls = RegisterIn(place, inCombat)
+				local when = place .. " with combat " .. tostring(inCombat)
+
+				assert(handles == 1, "one handle in " .. when .. ", got " .. handles)
+				assert(calls == 1, "one engine call in " .. when .. ", got " .. calls)
+			end
+		end
+	end)
+
+	fw.it("registers in a dungeon or a raid out of combat", function()
+		for _, place in ipairs({ "party", "raid" }) do
+			local handles, calls = RegisterIn(place, false)
 
 			assert(handles == 1, "one handle in " .. place .. ", got " .. handles)
 			assert(calls == 1, "one engine call in " .. place .. ", got " .. calls)
 		end
 	end)
 
-	fw.it("asks the engine for nothing in a dungeon or a raid", function()
+	fw.it("asks the engine for nothing in a dungeon or a raid in combat", function()
 		for _, place in ipairs({ "party", "raid" }) do
-			local handles, calls = RegisterIn(place)
+			local handles, calls = RegisterIn(place, true)
 
 			assert(handles == 0, "no handle in " .. place .. ", got " .. handles)
 			assert(calls == 0, "and no engine call in " .. place .. ", got " .. calls)
 		end
 	end)
 
-	fw.it("skips a kind of place the allow-list has never met", function()
-		local handles, calls = RegisterIn("scenario")
+	fw.it("treats a kind of place the allow-list has never met as the restricted kind", function()
+		local handles, calls = RegisterIn("scenario", true)
 
-		assert(handles == 0, "no handle, got " .. handles)
+		assert(handles == 0, "no handle while fighting, got " .. handles)
 		assert(calls == 0, "and no engine call, got " .. calls)
+
+		handles, calls = RegisterIn("scenario", false)
+
+		assert(handles == 1, "one handle out of combat, got " .. handles)
+		assert(calls == 1, "and one engine call, got " .. calls)
 	end)
 
-	-- Through Add rather than RegisterSet, so the gate staying ahead of the reporting is what
-	-- the assertion rests on.
+	-- Through Add rather than RegisterSet, so the gate staying ahead of both the engine call and
+	-- the reporting is what the assertions rest on.
 	fw.it("says nothing about a registration it never made", function()
+		local before = env.auraSoundAdds
 		local said = Printed(function()
 			Zone("raid")
+			env.inCombat = true
 
 			auraSounds:Add(Enum.UnitAuraSoundTrigger.Added, {
 				unitToken = "player",
@@ -362,9 +385,30 @@ fw.describe("AuraSounds - where the engine takes a registration", function()
 				outputChannel = "Master",
 			})
 
+			env.inCombat = false
 			Zone("none")
 		end)
 
+		assert(env.auraSoundAdds == before, "the engine was never asked")
 		assert(#said == 0, "nothing printed, got " .. table.concat(said, " | "))
+	end)
+
+	fw.it("holds a noted skip for the recovery, and forgets it once asked", function()
+		auraSounds:ConsumeSkipped()
+		auraSounds:NoteSkipped()
+
+		assert(auraSounds:ConsumeSkipped() == true, "the skip was recorded")
+		assert(auraSounds:ConsumeSkipped() == false, "and asking again clears it")
+	end)
+
+	-- The predicate is asked on every pass a module makes, whatever the player has switched on,
+	-- so only a caller that knows it had work to do may put the recovery on the hook.
+	fw.it("notes nothing on the answer alone", function()
+		auraSounds:ConsumeSkipped()
+
+		local handles = RegisterIn("party", true)
+
+		assert(handles == 0, "the pass was refused, got " .. handles)
+		assert(auraSounds:ConsumeSkipped() == false, "and being refused is not a noted skip")
 	end)
 end)

@@ -268,9 +268,10 @@ that was uninstalled, it falls back to Sonar. A media addon that loads *after* M
 waited for instead: the aura stays silent for a second or so rather than firing the fallback,
 then registers with the right file. Alert sounds play the default until that addon arrives and
 then switch to the file it brought. Sound settings have an output channel dropdown: Master,
-Sound Effects (SFX), Music, Ambience, or Dialog, default Master. Aura sounds work in the open
-world, battlegrounds, and arenas only. The game blocks the registration call in instanced PvE,
-so nothing sounds in dungeons, raids, delves, or scenarios.
+Sound Effects (SFX), Music, Ambience, or Dialog, default Master. Aura sounds work everywhere,
+but the game blocks the registration call while you are in combat inside instanced PvE, so a
+sound first wanted mid-pull in a dungeon, raid, delve, or scenario starts working once that
+pull ends.
 
 ### Countdown text
 

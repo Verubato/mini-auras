@@ -526,6 +526,24 @@ function M:Refresh()
 	lifecycle:Refresh()
 end
 
+---Re-runs the plate and ally sound registrations alone. The engine refuses them in combat inside
+---instanced PvE, and this is what redoes the ones it turned away once the pull ends.
+function M:RefreshSounds()
+	if not lifecycle or not lifecycle:IsActive() then
+		return
+	end
+
+	local tokens = display:GetActiveTokens()
+
+	sound:Refresh(tokens)
+
+	-- Refresh keeps its settings memo, so a plate that arrived while the engine was refusing
+	-- registrations has to be asked for by name. A warm token costs nothing.
+	for token in pairs(tokens) do
+		sound:RegisterToken(token)
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 

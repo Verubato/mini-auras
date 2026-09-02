@@ -145,6 +145,14 @@ function M:Refresh()
 	lifecycle:Refresh()
 end
 
+---Re-runs the healer sound registrations alone. The engine refuses them in combat inside instanced
+---PvE, and this is what redoes the ones it turned away once the pull ends.
+function M:RefreshSounds()
+	if lifecycle and lifecycle:IsActive() then
+		display:RefreshSounds()
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 	previousTestSoundEnabled = db.Modules.HealerCrowdControl.Sound.Enabled

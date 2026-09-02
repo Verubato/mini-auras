@@ -85,3 +85,90 @@ fw.describe("MiniAuras - the roster and the player's spec", function()
 		fw.eq(Cost("PLAYER_SPECIALIZATION_CHANGED", "party1"), 0, "refreshes for a group member")
 	end)
 end)
+
+fw.describe("MiniAuras - a sound registration the pull refused", function()
+	local auraSounds = addon.Core.AuraSounds
+	local db = addon.Framework:GetSavedVars()
+	local reconciles = 0
+
+	-- Derived rather than listed, so a module that grows a sound recovery is counted here without
+	-- anyone having to remember this test.
+	local soundModules = {}
+
+	for _, module in pairs(addon.Modules) do
+		if type(module) == "table" and type(module.RefreshSounds) == "function" then
+			soundModules[#soundModules + 1] = module
+		end
+	end
+
+	assert(#soundModules > 0, "some module redoes its sound registrations")
+
+	for _, module in ipairs(soundModules) do
+		local realRefreshSounds = module.RefreshSounds
+
+		module.RefreshSounds = function(self)
+			reconciles = reconciles + 1
+
+			return realRefreshSounds(self)
+		end
+	end
+
+	---Ends a pull and reports what it cost in sound reconciles and in full refreshes.
+	---@return number reconciles
+	---@return number refreshes
+	local function EndOfPull()
+		local before = reconciles
+		local refreshed = Cost("PLAYER_REGEN_ENABLED")
+
+		return reconciles - before, refreshed
+	end
+
+	fw.it("reconciles every sound module when combat ends", function()
+		-- Whatever the events above left on the record, so only this pull is measured.
+		EndOfPull()
+		auraSounds:NoteSkipped()
+
+		local reconciled, refreshed = EndOfPull()
+
+		fw.eq(reconciled, #soundModules, "each sound module redoes its own registrations")
+		fw.eq(refreshed, 0, "and none of it costs a full refresh")
+	end)
+
+	fw.it("costs nothing when the pull refused none", function()
+		local reconciled, refreshed = EndOfPull()
+
+		fw.eq(reconciled, 0, "sound modules asked for a pull with nothing to redo")
+		fw.eq(refreshed, 0, "and no full refresh either")
+	end)
+
+	-- The recovery reaches every one of them whatever the player runs, so it has to be safe on a
+	-- module whose lifecycle never set anything up.
+	fw.it("does nothing while every sound module is switched off", function()
+		local alerts = db.Modules.Alerts.Enabled
+		local healers = db.Modules.HealerCrowdControl.Enabled
+		local savedGroups = db.Modules.PersonalAuras.Groups
+		local wasAlerts = { Always = alerts.Always, World = alerts.World }
+		local wasHealers = { Always = healers.Always, World = healers.World }
+
+		alerts.Always, alerts.World = false, false
+		healers.Always, healers.World = false, false
+		-- No module-wide switch on personal auras; no groups is what switches them off.
+		db.Modules.PersonalAuras.Groups = {}
+		addon:Refresh()
+
+		local printed = #WowMock.State.Prints
+
+		auraSounds:NoteSkipped()
+
+		local reconciled, refreshed = EndOfPull()
+
+		alerts.Always, alerts.World = wasAlerts.Always, wasAlerts.World
+		healers.Always, healers.World = wasHealers.Always, wasHealers.World
+		db.Modules.PersonalAuras.Groups = savedGroups
+		addon:Refresh()
+
+		fw.eq(reconciled, #soundModules, "each module is still asked")
+		fw.eq(refreshed, 0, "without a full refresh")
+		fw.eq(#WowMock.State.Prints, printed, "and none of them said anything")
+	end)
+end)

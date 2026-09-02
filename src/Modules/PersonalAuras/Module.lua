@@ -202,6 +202,14 @@ function M:Refresh()
 	lifecycle:Refresh()
 end
 
+---Re-runs the group sound registrations alone. The engine refuses them in combat inside instanced
+---PvE, and this is what redoes the ones it turned away once the pull ends.
+function M:RefreshSounds()
+	if lifecycle and lifecycle:IsActive() then
+		display:RefreshSounds()
+	end
+end
+
 ---Normalises every saved group, and creates the starter ones for a profile that has never had
 ---them. Runs on load, after an import and after a profile switch.
 function M:NormaliseGroups()
@@ -246,5 +254,6 @@ end
 ---@class PersonalAurasModule
 ---@field Init fun(self: PersonalAurasModule)
 ---@field Refresh fun(self: PersonalAurasModule)
+---@field RefreshSounds fun(self: PersonalAurasModule)
 ---@field StartTesting fun(self: PersonalAurasModule)
 ---@field StopTesting fun(self: PersonalAurasModule)

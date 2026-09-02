@@ -3,6 +3,7 @@
 ## 5.33.3
 
 - Higher quality border texture, thanks to Mo for providing this.
+- Aura sounds now work in m+ and raids, apart from ones first needed during combat.
 
 ## 5.33.2
 

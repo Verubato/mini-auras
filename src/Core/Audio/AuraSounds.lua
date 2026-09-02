@@ -11,9 +11,9 @@ local moduleUtil = addon.Utils.ModuleUtil
 -- Failure lines one session may print. An engine that has stopped taking anything makes every
 -- spell id its own failure, and the set registered per unit runs to a thousand ids.
 local MAX_FAILURE_LINES = 10
--- Where the engine takes a registration, as ModuleUtil names the place. An allow-list, so a kind
--- of place nobody has thought of costs a sound rather than the blocked call this gate exists for.
-local REGISTERABLE_PLACES = {
+-- Places where combat has no say over a registration. An allow-list, so a kind of place nobody has
+-- thought of costs a sound rather than a blocked call.
+local COMBAT_SAFE_PLACES = {
 	none = true,
 	pvp = true,
 	arena = true,
@@ -29,6 +29,9 @@ local idListPool = {}
 ---@type table<string, number>
 local reportedFailures = {}
 local printedFailures = 0
+-- Whether a caller with registrations to make has been turned away, so combat ending knows there
+-- is work to redo.
+local skipped = false
 
 ---@class AuraSounds
 local M = {}
@@ -78,17 +81,32 @@ function M:ResetDebugLog()
 	printedFailures = 0
 end
 
----Whether the engine will take a registration where the player is standing. AddAuraSound is
----blocked in dungeons and raids, where the call raises a blocked action instead of failing.
+---Whether the engine will take a registration right now. AddAuraSound is blocked while the player
+---is in combat inside instanced PvE, where the call raises a blocked action instead of failing.
 ---@return boolean
 function M:CanRegister()
-	return REGISTERABLE_PLACES[moduleUtil:InstanceType()] == true
+	return COMBAT_SAFE_PLACES[moduleUtil:InstanceType()] == true or not InCombatLockdown()
+end
+
+---Records that a pass with work to do was turned away.
+function M:NoteSkipped()
+	skipped = true
+end
+
+---Whether anything was noted since this was last asked, clearing the record.
+---@return boolean
+function M:ConsumeSkipped()
+	local refused = skipped
+
+	skipped = false
+
+	return refused
 end
 
 ---Registers one sound with the engine.
 ---@param trigger number a UnitAuraSoundTrigger value
 ---@param info table UnitAuraSoundInfo
----@return number? handle nil where the place refuses registrations or the engine took no id
+---@return number? handle nil where the gate refuses or the engine took no id
 function M:Add(trigger, info)
 	-- The backstop for every caller, including the ones that register outside a reconcile pass.
 	if not self:CanRegister() then

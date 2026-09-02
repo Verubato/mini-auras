@@ -421,6 +421,12 @@ local function CreateFrames()
 	iconsContainer.Frame:Show()
 end
 
+---Reconciles the healer sound registrations without touching a display. The engine takes none
+---while the player is fighting inside instanced PvE, so the end of a pull redoes them.
+function M:RefreshSounds()
+	sound:Refresh(activePool)
+end
+
 ---Every healer the module currently draws, for the unit state poller's visibility scan.
 ---@param out string[] Filled in place and returned, so the caller can keep one table.
 ---@return string[]

@@ -246,10 +246,14 @@ end
 ---request reads the same as last time keeps the handles it already has.
 ---@param requests PersonalAuraSoundRequest[]
 function M:Apply(requests)
-	-- Nothing may be held where the engine refuses registrations, so the sweep below forgets
-	-- every key.
+	-- Ahead of the sweep below, because a registration made before the pull keeps playing through
+	-- it and forgetting a key here would take it away.
 	if not auraSounds:CanRegister() then
-		requests = EMPTY
+		if #requests > 0 or next(registered) ~= nil then
+			auraSounds:NoteSkipped()
+		end
+
+		return
 	end
 
 	wipe(wantedKeys)

@@ -124,7 +124,21 @@ function M:RefreshAllySounds(force)
 	local tts = db.Modules.Alerts.TTS
 	local enabled = (tts and tts.EnemyDebuff and tts.EnemyDebuff.Enabled) or false
 	local active = enabled and moduleUtil:IsModuleEnabled(moduleName.Alerts) and not paused
-		and auraSounds:CanRegister()
+
+	-- Nothing can register these again until the pull ends.
+	if not auraSounds:CanRegister() then
+		if active or allySoundIds then
+			auraSounds:NoteSkipped()
+		end
+
+		-- The memo would otherwise swallow the roster change the forced pass was made for.
+		if force then
+			allySoundGeneration = nil
+		end
+
+		return
+	end
+
 	local voicePack = active and ttsPacks:Resolve(tts and tts.VoicePack) or false
 	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
 	local channel = active and ((tts and tts.Channel) or "Master") or false
@@ -189,7 +203,7 @@ function M:RegisterToken(unitToken)
 	if alertSoundsByToken[unitToken] then
 		return
 	end
-	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) or not auraSounds:CanRegister() then
+	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
 		return
 	end
 	local sound = db.Modules.Alerts.Sound
@@ -199,6 +213,12 @@ function M:RegisterToken(unitToken)
 	local importantTts = tts and tts.Important and tts.Important.Enabled
 	local defensiveTts = tts and tts.Defensive and tts.Defensive.Enabled
 	if not importantEnabled and not defensiveEnabled and not importantTts and not defensiveTts then
+		return
+	end
+	-- Below the checks above, so only a token that really wanted sounds puts the end of the pull
+	-- on the hook for coming back to it.
+	if not auraSounds:CanRegister() then
+		auraSounds:NoteSkipped()
 		return
 	end
 
@@ -279,14 +299,22 @@ function M:Refresh(activeTokens)
 	local active = (importantEnabled or defensiveEnabled or importantTts or defensiveTts)
 		and moduleUtil:IsModuleEnabled(moduleName.Alerts)
 		and not paused
-		-- Part of the stamp, so leaving an instance moves it and every token registers again.
-		and auraSounds:CanRegister()
 	-- Only part of the stamp while something plays the clips; the pack is irrelevant otherwise.
 	-- The path goes in alongside the name because an addon registering a pack later changes where
 	-- the same saved name reads its clips from.
 	local voicePack = (importantTts or defensiveTts) and ttsPacks:Resolve(tts and tts.VoicePack) or false
 	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
 	local ttsChannel = (importantTts or defensiveTts) and ((tts and tts.Channel) or "Master") or false
+
+	-- The pass after the pull has to find the stamp exactly where this one left it.
+	if not auraSounds:CanRegister() then
+		if active or next(alertSoundsByToken) ~= nil then
+			auraSounds:NoteSkipped()
+		end
+
+		return
+	end
+
 	settingsStamp:Begin(ALERT_SOUND_KEY)
 	settingsStamp:Add(active)
 	settingsStamp:Add(importantEnabled)
