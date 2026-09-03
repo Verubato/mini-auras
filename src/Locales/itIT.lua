@@ -54,8 +54,6 @@ L:RegisterLocale("itIT", function() return {
 	["Show the aura's name inside the bar."] = "Mostra il nome dell'aura all'interno della barra.",
 	["Hide swipe"] = "Nascondi animazione",
 	["Hide the cooldown swipe animation on this group's icons."] = "Nasconde l'animazione di recupero sulle icone di questo gruppo.",
-	["Hide numbers"] = "Nascondi numeri",
-	["Hide the countdown text on this group's icons."] = "Nasconde il testo del conto alla rovescia sulle icone di questo gruppo.",
 	["Centre stacks"] = "Cariche centrate",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Mostra il numero di cariche al centro dell'icona al posto del testo del conto alla rovescia.",
 	["Custom icon"] = "Icona personalizzata",

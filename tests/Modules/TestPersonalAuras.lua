@@ -3746,6 +3746,33 @@ fw.describe("PersonalAuras - textures", function()
 	end)
 end)
 
+fw.describe("PersonalAuras - the countdown numbers on an icon group", function()
+	---@return table cooldown The clock the one drawn button was given.
+	local function CooldownOnPlayer()
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+
+		return button._lastArgs.SetDurationCooldown[1]
+	end
+
+	fw.it("drops them on a group that turned them off", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { EnableNumbers = false } })
+		module:Refresh()
+
+		assert(CooldownOnPlayer()._lastArgs.SetHideCountdownNumbers[1] == true,
+			"the group asked for the countdown to go")
+	end)
+
+	fw.it("keeps them on a group that left the switch alone", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		assert(CooldownOnPlayer()._lastArgs.SetHideCountdownNumbers[1] == false,
+			"an untouched group counts down")
+	end)
+end)
+
 fw.describe("PersonalAuras - text only", function()
 	local TEXT_ONLY = groups.DisplayStyle.TextOnly
 
@@ -3795,7 +3822,7 @@ fw.describe("PersonalAuras - text only", function()
 		AddGroup({
 			Unit = "player",
 			Spells = { ICE_BLOCK },
-			Icons = { Display = TEXT_ONLY, HideNumbers = true, CenterStacks = true },
+			Icons = { Display = TEXT_ONLY, EnableNumbers = false, CenterStacks = true },
 		})
 		module:Refresh()
 
@@ -3884,7 +3911,7 @@ fw.describe("PersonalAuras - text only", function()
 		local group = AddGroup({
 			Unit = "player",
 			Spells = { ICE_BLOCK },
-			Icons = { Display = TEXT_ONLY, HideNumbers = true, CenterStacks = true },
+			Icons = { Display = TEXT_ONLY, EnableNumbers = false, CenterStacks = true },
 		})
 
 		module:Refresh()

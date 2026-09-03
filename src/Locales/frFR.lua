@@ -54,8 +54,6 @@ L:RegisterLocale("frFR", function() return {
 	["Show the aura's name inside the bar."] = "Affiche le nom de l'aura à l'intérieur de la barre.",
 	["Hide swipe"] = "Masquer le balayage",
 	["Hide the cooldown swipe animation on this group's icons."] = "Masque l'animation de recharge sur les icônes de ce groupe.",
-	["Hide numbers"] = "Masquer les chiffres",
-	["Hide the countdown text on this group's icons."] = "Masque le texte du décompte sur les icônes de ce groupe.",
 	["Centre stacks"] = "Cumuls centrés",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Affiche le nombre de cumuls au centre de l'icône à la place du texte du décompte.",
 	["Custom icon"] = "Icône personnalisée",

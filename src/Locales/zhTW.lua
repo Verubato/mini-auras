@@ -54,8 +54,6 @@ L:RegisterLocale("zhTW", function() return {
 	["Show the aura's name inside the bar."] = "在條內顯示光環名稱。",
 	["Hide swipe"] = "隱藏掃描",
 	["Hide the cooldown swipe animation on this group's icons."] = "隱藏該組圖示上的冷卻掃描動畫。",
-	["Hide numbers"] = "隱藏數字",
-	["Hide the countdown text on this group's icons."] = "隱藏該組圖示上的倒數文字。",
 	["Centre stacks"] = "層數置中",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "在圖示中央顯示層數，以取代倒數文字。",
 	["Custom icon"] = "自訂圖示",

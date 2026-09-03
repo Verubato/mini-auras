@@ -902,7 +902,7 @@ fw.describe("Personal auras page - a group drawing text only", function()
 		local page = ShowPage(addon, group)
 
 		local gone = {
-			"Reverse swipe", "Hide swipe", "Hide numbers", "Centre stacks", "Custom icon",
+			"Reverse swipe", "Hide swipe", "Show numbers", "Centre stacks", "Custom icon",
 		}
 
 		for _, label in ipairs(gone) do
@@ -924,7 +924,7 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 		local page = ShowPage(addon, group)
 
 		local labels = {
-			"Glow icons", "Show border", "Reverse swipe", "Hide swipe", "Hide numbers",
+			"Glow icons", "Show border", "Reverse swipe", "Hide swipe", "Show numbers",
 			"Centre stacks", "Show tooltips", "Custom icon", "Pandemic", "Colour text",
 		}
 		local taken = {}
@@ -946,6 +946,24 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 	end)
 end)
 
+fw.describe("Personal auras page - the countdown numbers switch", function()
+	fw.it("reads the group it is editing and writes the key that group draws from", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		local page = ShowPage(addon, group)
+		local switch = CheckboxLabelled(page, "Show numbers")
+
+		fw.not_nil(switch, "the switch is on the appearance tab")
+		assert(group.Icons.EnableNumbers == true, "a group ships counting down")
+		fw.eq(switch:GetChecked(), true, "so the switch paints ticked")
+
+		switch:GetScript("OnClick")(switch)
+
+		assert(group.Icons.EnableNumbers == false, "unticking it drops the countdown")
+		fw.eq(switch:GetChecked(), false, "and the switch repaints from what it wrote")
+	end)
+end)
+
 fw.describe("Personal auras page - the milliseconds switch", function()
 	fw.it("sits one column to the right of the pandemic switch", function()
 		local addon, group = LoadWithGroup({ 45438 })
@@ -954,8 +972,8 @@ fw.describe("Personal auras page - the milliseconds switch", function()
 
 		-- Two switches known to be neighbours, so the flow's column width is read off the page.
 		local _, _, _, hideSwipeX = CheckboxLabelled(page, "Hide swipe"):GetPoint(1)
-		local _, _, _, hideNumbersX = CheckboxLabelled(page, "Hide numbers"):GetPoint(1)
-		local columnWidth = hideNumbersX - hideSwipeX
+		local _, _, _, showNumbersX = CheckboxLabelled(page, "Show numbers"):GetPoint(1)
+		local columnWidth = showNumbersX - hideSwipeX
 
 		local pandemic = CheckboxLabelled(page, "Pandemic")
 		local milliseconds = CheckboxLabelled(page, "Milliseconds")
@@ -1029,5 +1047,58 @@ fw.describe("Personal auras page - the milliseconds switch", function()
 		fw.eq(millisecondsX, borderX, "and starts that row's first column, same as border does on row one")
 		fw.eq(colorTextRow, millisecondsRow, "colour text is pushed onto the same row as milliseconds")
 		fw.eq(colorTextX - millisecondsX, columnWidth, "and lands one column to the right of it")
+	end)
+end)
+
+---The button under this frame carrying this caption.
+---@param window table
+---@param text string
+---@return table?
+local function ButtonSaying(window, text)
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame:GetObjectType() == "Button" and frame:GetText() == text
+			and DescendsFrom(frame, window) then
+			return frame
+		end
+	end
+
+	return nil
+end
+
+fw.describe("Personal auras page - a string exported before the countdown switch flipped", function()
+	fw.it("leaves a group that hid its countdown hidden", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local options = addon.Framework:GetSavedVars().Modules.PersonalAuras
+
+		ShowPage(addon, group)
+
+		-- The mock's CBOR is a stub, so the payload an old build would have written is handed
+		-- straight to the decoder.
+		local realDeserialize = _G.C_EncodingUtil.DeserializeCBOR
+
+		_G.C_EncodingUtil.DeserializeCBOR = function()
+			return { V = 1, Groups = { { Unit = "player", Icons = { HideNumbers = true } } } }
+		end
+
+		addon.Config.PersonalAurasUI.ShowImportWindow({})
+
+		local window = _G.MiniAurasAuraIOWindow
+
+		fw.not_nil(window, "the import window is built")
+		window.ImportBox:SetText("!MiniAuras:Auras:1!payload")
+
+		local importButton = ButtonSaying(window, "Import")
+
+		fw.not_nil(importButton, "and it offers a button to import with")
+		importButton:Click()
+
+		-- Put back before the asserts, so a failure here cannot leave a decoder that ignores its
+		-- input for whatever is appended after this block.
+		_G.C_EncodingUtil.DeserializeCBOR = realDeserialize
+
+		local imported = options.Groups[#options.Groups]
+
+		fw.eq(imported.Icons.EnableNumbers, false, "the author's choice survives the import")
+		fw.is_nil(imported.Icons.HideNumbers, "and the key it arrived under is not kept")
 	end)
 end)

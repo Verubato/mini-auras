@@ -147,13 +147,13 @@ function ui.BuildAppearanceTab(ctx)
 			Set = function(group, value) group.Icons.HideSwipe = value end,
 		},
 		{
-			-- Off the text shape because the countdown is all it draws, so hiding it would leave
-			-- a group that can never show anything.
+			-- Off the text shape, which forces the countdown on, so the switch has nothing to
+			-- do there.
 			Bars = false, Text = false,
-			Label = L["Hide numbers"],
-			Tooltip = L["Hide the countdown text on this group's icons."],
-			Get = function(group) return group.Icons.HideNumbers end,
-			Set = function(group, value) group.Icons.HideNumbers = value end,
+			Label = L["Show numbers"],
+			Tooltip = L["Shows cooldown numbers."],
+			Get = function(group) return group.Icons.EnableNumbers end,
+			Set = function(group, value) group.Icons.EnableNumbers = value end,
 		},
 		{
 			-- Off the text shape too, because the count stands in for a countdown that is

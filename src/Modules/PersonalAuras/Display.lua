@@ -136,7 +136,7 @@ local function BuildStyle(group)
 	-- whichever shape it draws.
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
 	style.HideSwipe = icons.HideSwipe
-	style.HideNumbers = icons.HideNumbers
+	style.HideNumbers = not icons.EnableNumbers
 	style.ShowTooltips = icons.ShowTooltips
 	style.Pandemic = icons.Pandemic
 	style.PandemicColor = moduleUtil:GetColorRGB(icons.PandemicColor)
@@ -679,7 +679,7 @@ local function RenderTestIcons(state, entry)
 	local textOnly = groups:DrawsTextOnly(group)
 	-- Mirrors what BuildStyle and StyleCountdown derive, short of the fractions a stand-in cannot draw.
 	local centerStacks = not drawsBars and not textOnly and group.Icons.CenterStacks == true
-	local hideNumbers = not textOnly and (group.Icons.HideNumbers or centerStacks)
+	local hideNumbers = not textOnly and (not group.Icons.EnableNumbers or centerStacks)
 	local hideSwipe = group.Icons.HideSwipe or textOnly
 	local textColor = group.Icons.ColorText
 		and moduleUtil:FillColor(textColorScratch, group.Icons.TextColor, DEFAULT_TEXT_COLOR)

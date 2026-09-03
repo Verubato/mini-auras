@@ -54,8 +54,6 @@ L:RegisterLocale("zhCN", function() return {
 	["Show the aura's name inside the bar."] = "在条内显示光环名称。",
 	["Hide swipe"] = "隐藏扫描",
 	["Hide the cooldown swipe animation on this group's icons."] = "隐藏该组图标上的冷却扫描动画。",
-	["Hide numbers"] = "隐藏数字",
-	["Hide the countdown text on this group's icons."] = "隐藏该组图标上的倒计时文字。",
 	["Centre stacks"] = "层数居中",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "在图标中央显示层数，以取代倒计时文字。",
 	["Custom icon"] = "自定义图标",

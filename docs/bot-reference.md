@@ -490,7 +490,7 @@ have an appearance." and no controls. **Display** itself lives on the Trigger ta
 group shows its own short set of controls instead of the ones below: **Select Texture** with a
 preview beside it, **Additive**, **Mirror**, **Desaturate**, and the **Colour** swatch, which
 tints the art. A **Text only** group drops the five switches that are about an icon's art and
-swipe (Reverse swipe, Hide swipe, Hide numbers, Centre stacks, Custom icon) and keeps the rest.
+swipe (Reverse swipe, Hide swipe, Show numbers, Centre stacks, Custom icon) and keeps the rest.
 Everything else here belongs to icons and bars.
 
 | Setting | Values / range | Default |
@@ -500,7 +500,7 @@ Everything else here belongs to icons and bars.
 | Show border | on/off | off (starter groups: on) |
 | Reverse swipe | on/off (icons only) | on |
 | Hide swipe | on/off (icons only) | off |
-| Hide numbers | on/off (icons only); drops the countdown text | off |
+| Show numbers | on/off (icons only); off drops the countdown text | on |
 | Centre stacks | on/off (icons only); the stack count replaces the countdown | off |
 | Show tooltips | on/off | off |
 | Spell name | on/off (bars only) | on |
@@ -523,7 +523,7 @@ arena) may not show until the match ends.
 **Text only** (since 5.23.0) is the icon shape with the art and the swipe left out, so the
 countdown is all that is drawn. It keeps the glow, the border, the tooltip, the pandemic reveal
 and the group's own **Colour text**, and it takes the Layout tab's icon controls, **Icon Size**
-included. The countdown is never dropped: the group's **Hide numbers** and **Centre stacks** are
+included. The countdown is never dropped: the group's **Show numbers** and **Centre stacks** are
 hidden for it, and the global **Disable Numbers** in Misc leaves it alone, because a text-only
 group with no text would show nothing at all. Masque skins nothing here, since there is no icon
 art for a skin to fit.
@@ -1408,7 +1408,7 @@ the game's overlay art is drawn on black and needs additive blending to read, so
 unless the picked texture is a normal image. Texture groups draw one picture whatever is up, and
 they carry no countdown, stack count, glow, border or tooltip by design.
 
-**"A personal aura's countdown text disappeared."** Either **Hide numbers** or **Centre
+**"A personal aura's countdown text disappeared."** Either **Show numbers** is off or **Centre
 stacks** is on for that group (Appearance tab), or its **Display** is set to Texture, which
 draws art with no text at all, or **Disable Numbers** (Misc) is on, which drops the countdown on
 every aura icon in the addon. Centre stacks deliberately swaps the countdown

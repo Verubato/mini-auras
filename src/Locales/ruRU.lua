@@ -54,8 +54,6 @@ L:RegisterLocale("ruRU", function() return {
 	["Show the aura's name inside the bar."] = "Показывает название эффекта внутри полосы.",
 	["Hide swipe"] = "Скрыть анимацию",
 	["Hide the cooldown swipe animation on this group's icons."] = "Скрывает анимацию восстановления на значках этой группы.",
-	["Hide numbers"] = "Скрыть цифры",
-	["Hide the countdown text on this group's icons."] = "Скрывает текст обратного отсчёта на значках этой группы.",
 	["Centre stacks"] = "Заряды по центру",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Показывает число зарядов в центре значка вместо текста обратного отсчёта.",
 	["Custom icon"] = "Свой значок",

@@ -54,8 +54,6 @@ L:RegisterLocale("ptBR", function() return {
 	["Show the aura's name inside the bar."] = "Mostra o nome da aura dentro da barra.",
 	["Hide swipe"] = "Ocultar varredura",
 	["Hide the cooldown swipe animation on this group's icons."] = "Oculta a animação de recarga nos ícones deste grupo.",
-	["Hide numbers"] = "Ocultar números",
-	["Hide the countdown text on this group's icons."] = "Oculta o texto da contagem regressiva nos ícones deste grupo.",
 	["Centre stacks"] = "Centralizar acúmulos",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Mostra o número de acúmulos no centro do ícone no lugar do texto da contagem regressiva.",
 	["Custom icon"] = "Ícone personalizado",

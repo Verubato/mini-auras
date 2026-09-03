@@ -55,8 +55,6 @@ L:SetDefaultStrings({
 	["Show the aura's name inside the bar."] = "Show the aura's name inside the bar.",
 	["Hide swipe"] = "Hide swipe",
 	["Hide the cooldown swipe animation on this group's icons."] = "Hide the cooldown swipe animation on this group's icons.",
-	["Hide numbers"] = "Hide numbers",
-	["Hide the countdown text on this group's icons."] = "Hide the countdown text on this group's icons.",
 	["Centre stacks"] = "Centre stacks",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Show the stack count in the middle of the icon instead of the countdown text.",
 	["Custom icon"] = "Custom icon",

@@ -2602,3 +2602,75 @@ fw.describe("Migrator - the v84 frame aura row pin", function()
 			"the login path has to reach step 84")
 	end)
 end)
+
+fw.describe("Migrator - the v85 personal aura countdown switch", function()
+	fw.it("turns the hide switch into the show one without changing what a group draws", function()
+		local vars = {
+			Version = 84,
+			Modules = {
+				PersonalAuras = {
+					Groups = {
+						{ Icons = { HideNumbers = true } },
+						{ Icons = { Size = 32 } },
+					},
+				},
+			},
+			Profiles = {
+				Plain = {
+					Modules = { PersonalAuras = { Groups = { { Icons = { HideNumbers = true } } } } },
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion85(vars) == true)
+
+		local groups = vars.Modules.PersonalAuras.Groups
+		assert(groups[1].Icons.EnableNumbers == false, "a group that hid the countdown keeps it hidden")
+		assert(groups[1].Icons.HideNumbers == nil, "and the old key goes")
+		assert(groups[2].Icons.EnableNumbers == true, "a group that never touched it kept its countdown")
+		assert(vars.Profiles.Plain.Modules.PersonalAuras.Groups[1].Icons.EnableNumbers == false,
+			"a snapshot is converted the same way")
+		assert(vars.Profiles.Plain.Modules.PersonalAuras.Groups[1].Icons.HideNumbers == nil)
+		assert(vars.Version == 85)
+	end)
+
+	fw.it("leaves a group with no icons table alone", function()
+		local vars = {
+			Version = 84,
+			Modules = { PersonalAuras = { Groups = { { Name = "Empty" } } } },
+		}
+
+		assert(migrator:UpgradeToVersion85(vars) == true)
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons == nil)
+		assert(vars.Version == 85)
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = {
+			Version = 83,
+			Modules = { PersonalAuras = { Groups = { { Icons = { HideNumbers = true } } } } },
+		}
+
+		assert(migrator:UpgradeToVersion85(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.PersonalAuras.Groups[1].Icons.HideNumbers == true, "and must convert nothing")
+		assert(vars.Version == 83)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 84,
+			Modules = { PersonalAuras = { Groups = { { Icons = { HideNumbers = true } } } } },
+			Profiles = {
+				Other = {
+					Modules = { PersonalAuras = { Groups = { { Icons = { HideNumbers = true } } } } },
+				},
+			},
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 85, "the shipped version has to be past this step")
+		assert(db.Profiles.Other.Modules.PersonalAuras.Groups[1].Icons.EnableNumbers == false,
+			"the login path has to reach step 85")
+	end)
+end)

@@ -54,8 +54,6 @@ L:RegisterLocale("deDE", function() return {
 	["Show the aura's name inside the bar."] = "Zeigt den Namen der Aura in der Leiste an.",
 	["Hide swipe"] = "Wischanimation aus",
 	["Hide the cooldown swipe animation on this group's icons."] = "Blendet die Abklingzeit-Animation auf den Symbolen dieser Gruppe aus.",
-	["Hide numbers"] = "Zahlen aus",
-	["Hide the countdown text on this group's icons."] = "Blendet den Zeittext auf den Symbolen dieser Gruppe aus.",
 	["Centre stacks"] = "Stufen mittig",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "Zeigt die Stufenanzahl mittig auf dem Symbol statt des Zeittexts.",
 	["Custom icon"] = "Eigenes Symbol",

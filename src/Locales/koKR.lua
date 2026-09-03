@@ -54,8 +54,6 @@ L:RegisterLocale("koKR", function() return {
 	["Show the aura's name inside the bar."] = "바 안에 오라 이름을 표시합니다.",
 	["Hide swipe"] = "휩쓸기 숨기기",
 	["Hide the cooldown swipe animation on this group's icons."] = "이 그룹 아이콘의 재사용 대기시간 애니메이션을 숨깁니다.",
-	["Hide numbers"] = "숫자 숨기기",
-	["Hide the countdown text on this group's icons."] = "이 그룹 아이콘의 남은 시간 텍스트를 숨깁니다.",
 	["Centre stacks"] = "중첩 가운데 표시",
 	["Show the stack count in the middle of the icon instead of the countdown text."] = "남은 시간 텍스트 대신 아이콘 가운데에 중첩 수를 표시합니다.",
 	["Custom icon"] = "사용자 지정 아이콘",
