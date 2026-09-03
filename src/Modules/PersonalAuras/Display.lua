@@ -678,8 +678,7 @@ local function RenderTestIcons(state, entry)
 	-- The live shape draws neither art nor a swipe, and keeps its countdown whatever the switches
 	-- say, so a stand-in that differed would be positioned against a look the group cannot have.
 	local textOnly = groups:DrawsTextOnly(group)
-	-- The same calls BuildStyle and StyleCountdown make, so the stand-ins show exactly what the
-	-- live icons will.
+	-- Mirrors what BuildStyle and StyleCountdown derive, short of the fractions a stand-in cannot draw.
 	local centerStacks = not drawsBars and not textOnly and group.Icons.CenterStacks == true
 	local hideNumbers = not textOnly and (group.Icons.HideNumbers or centerStacks)
 	local hideSwipe = group.Icons.HideSwipe or textOnly

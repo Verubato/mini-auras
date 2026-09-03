@@ -3,6 +3,7 @@
 ## Unreleased
 
 - The frame auras buff and debuff rows now carry a Reverse swipe switch, on by default.
+- Personal aura groups now carry a Milliseconds switch, off by default.
 
 ## 5.34.0
 

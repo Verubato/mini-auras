@@ -284,7 +284,7 @@ pull ends.
   defaulting to red in the last five seconds, yellow under a minute, and white above. A
   personal aura group with **Colour text** on ignores this and keeps its own text colour.
 - **Milliseconds**: displays with a "Milliseconds" checkbox (CC, Pet CC via CC path,
-  nameplate bars) show decimal seconds once the remaining time drops below the
+  nameplate bars, Personal Auras) show decimal seconds once the remaining time drops below the
   **Milliseconds Threshold** (Misc, 1-6 s, default 5).
 - **Font Scale** (0.5-2.0, step 0.05, default 1.0) scales one module's countdown
   text without touching its icon size. It is a per-module slider on its own page rather than one
@@ -496,6 +496,7 @@ Everything else here belongs to icons and bars.
 | Spell name | on/off (bars only) | on |
 | Custom icon | on/off (icons and bars only); draws the group's own icon over each spell's art | off |
 | Pandemic | on/off | off |
+| Milliseconds | on/off | off |
 | Colour (glow/border tint, or the bar's fill) | colour swatch | white |
 | Pandemic colour | colour swatch | red (1, 0.1, 0.1) |
 | Colour text | on/off | off |

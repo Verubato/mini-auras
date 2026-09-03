@@ -772,18 +772,40 @@ fw.describe("Personal auras page - with a group configured", function()
 	end)
 end)
 
----The checkbox carrying this label, found by the caption the framework writes onto it. The stock
----art pads the caption with a leading space, so the match is on a fragment.
+---@param frame table
+---@param ancestor table
+---@return boolean
+local function DescendsFrom(frame, ancestor)
+	local parent = frame:GetParent()
+
+	while parent do
+		if parent == ancestor then
+			return true
+		end
+
+		parent = parent:GetParent()
+	end
+
+	return false
+end
+
+---The checkbox on this page carrying this caption.
+---Check buttons only, because a swatch caption beside a switch carries the same words.
+---Under the page, because every other panel is built too.
+---The stock art pads the caption with a leading space, so the match is on a fragment.
+---@param page table
 ---@param label string
 ---@return table?
-local function CheckboxLabelled(label)
+local function CheckboxLabelled(page, label)
 	for _, frame in ipairs(WowMock.Frames) do
-		for index = 1, frame:GetNumRegions() do
-			local region = select(index, frame:GetRegions())
-			local text = region and region.GetText and region:GetText()
+		if frame:GetObjectType() == "CheckButton" and DescendsFrom(frame, page) then
+			for index = 1, frame:GetNumRegions() do
+				local region = select(index, frame:GetRegions())
+				local text = region and region.GetText and region:GetText()
 
-			if text and text:find(label, 1, true) then
-				return frame
+				if text and text:find(label, 1, true) then
+					return frame
+				end
 			end
 		end
 	end
@@ -846,21 +868,21 @@ fw.describe("Personal auras page - a group drawing text only", function()
 		group.Icons.Display = groups.DisplayStyle.TextOnly
 		groups:Normalise(group)
 
-		ShowPage(addon, group)
+		local page = ShowPage(addon, group)
 
 		local gone = {
 			"Reverse swipe", "Hide swipe", "Hide numbers", "Centre stacks", "Custom icon",
 		}
 
 		for _, label in ipairs(gone) do
-			local check = CheckboxLabelled(label)
+			local check = CheckboxLabelled(page, label)
 
 			fw.not_nil(check, label .. " is built")
 			fw.falsy(check:IsShown(), label .. " is put away for a text-only group")
 		end
 
-		fw.truthy(CheckboxLabelled("Show border"):IsShown(), "the border switch stays")
-		fw.truthy(CheckboxLabelled("Show tooltips"):IsShown(), "and so does the tooltip one")
+		fw.truthy(CheckboxLabelled(page, "Show border"):IsShown(), "the border switch stays")
+		fw.truthy(CheckboxLabelled(page, "Show tooltips"):IsShown(), "and so does the tooltip one")
 	end)
 end)
 
@@ -868,17 +890,16 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 	fw.it("gives every switch on an icon group a slot of its own", function()
 		local addon, group = LoadWithGroup({ 45438 })
 
-		ShowPage(addon, group)
+		local page = ShowPage(addon, group)
 
-		-- Pandemic is left out because the swatch caption beside it carries the same word.
 		local labels = {
 			"Glow icons", "Show border", "Reverse swipe", "Hide swipe", "Hide numbers",
-			"Centre stacks", "Show tooltips", "Custom icon", "Colour text",
+			"Centre stacks", "Show tooltips", "Custom icon", "Pandemic", "Colour text",
 		}
 		local taken = {}
 
 		for _, label in ipairs(labels) do
-			local check = CheckboxLabelled(label)
+			local check = CheckboxLabelled(page, label)
 
 			fw.not_nil(check, label .. " is built")
 			fw.truthy(check:IsShown(), label .. " is shown for an icon group")
@@ -891,5 +912,91 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 			fw.is_nil(taken[slot], label .. " draws on top of " .. tostring(taken[slot]))
 			taken[slot] = label
 		end
+	end)
+end)
+
+fw.describe("Personal auras page - the milliseconds switch", function()
+	fw.it("sits one column to the right of the pandemic switch", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		local page = ShowPage(addon, group)
+
+		-- Two switches known to be neighbours, so the flow's column width is read off the page.
+		local _, _, _, hideSwipeX = CheckboxLabelled(page, "Hide swipe"):GetPoint(1)
+		local _, _, _, hideNumbersX = CheckboxLabelled(page, "Hide numbers"):GetPoint(1)
+		local columnWidth = hideNumbersX - hideSwipeX
+
+		local pandemic = CheckboxLabelled(page, "Pandemic")
+		local milliseconds = CheckboxLabelled(page, "Milliseconds")
+
+		fw.not_nil(milliseconds, "the milliseconds switch is on the appearance tab")
+		fw.truthy(milliseconds:IsShown(), "and it is shown for an icon group")
+
+		local _, pandemicRow, _, pandemicX = pandemic:GetPoint(1)
+		local _, millisecondsRow, _, millisecondsX = milliseconds:GetPoint(1)
+
+		fw.eq(millisecondsRow, pandemicRow, "both sit on the same row of the flow")
+		fw.eq(millisecondsX - pandemicX, columnWidth, "and the new one is the next column along")
+	end)
+
+	fw.it("writes the switch to the group being edited", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		local page = ShowPage(addon, group)
+
+		local milliseconds = CheckboxLabelled(page, "Milliseconds")
+
+		fw.not_nil(milliseconds, "the milliseconds switch is on the appearance tab")
+		fw.eq(group.Icons.ShowMilliseconds, false, "a new group starts without fractions")
+
+		milliseconds:GetScript("OnClick")(milliseconds)
+
+		fw.eq(group.Icons.ShowMilliseconds, true, "ticking it reached the group")
+	end)
+
+	fw.it("is put away for a group drawing art, which has no countdown", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.PersonalAuras.Groups
+
+		group.Icons.Display = groups.DisplayStyle.Texture
+		groups:Normalise(group)
+
+		local page = ShowPage(addon, group)
+
+		local milliseconds = CheckboxLabelled(page, "Milliseconds")
+
+		fw.not_nil(milliseconds, "the milliseconds switch is built for every shape")
+		fw.falsy(milliseconds:IsShown(), "art draws no countdown to put them on")
+	end)
+
+	fw.it("opens row two and pushes colour text along on a group drawing bars", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.PersonalAuras.Groups
+
+		group.Icons.Display = groups.DisplayStyle.Bars
+		groups:Normalise(group)
+
+		local page = ShowPage(addon, group)
+
+		local border = CheckboxLabelled(page, "Show border")
+		local milliseconds = CheckboxLabelled(page, "Milliseconds")
+		local colorText = CheckboxLabelled(page, "Colour text")
+
+		fw.not_nil(milliseconds, "the milliseconds switch is on the appearance tab")
+		fw.truthy(milliseconds:IsShown(), "and it is shown for a bars group")
+
+		-- Pandemic already fills the last of five columns on a bars group, so border and spell
+		-- name, the row's first two columns, give the flow's column width to measure against.
+		local _, borderRow, _, borderX = border:GetPoint(1)
+		local _, _, _, spellNameX = CheckboxLabelled(page, "Spell name"):GetPoint(1)
+		local columnWidth = spellNameX - borderX
+
+		local _, millisecondsRow, _, millisecondsX = milliseconds:GetPoint(1)
+		local _, colorTextRow, _, colorTextX = colorText:GetPoint(1)
+
+		fw.truthy(millisecondsRow ~= borderRow, "milliseconds opens a new row rather than crowding row one")
+		fw.eq(millisecondsX, borderX, "and starts that row's first column, same as border does on row one")
+		fw.eq(colorTextRow, millisecondsRow, "colour text is pushed onto the same row as milliseconds")
+		fw.eq(colorTextX - millisecondsX, columnWidth, "and lands one column to the right of it")
 	end)
 end)

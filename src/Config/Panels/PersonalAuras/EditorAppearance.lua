@@ -208,6 +208,12 @@ function ui.BuildAppearanceTab(ctx)
 			Get = function(group) return group.Icons.Pandemic end,
 			Set = function(group, value) group.Icons.Pandemic = value end,
 		},
+		{
+			Label = L["Milliseconds"],
+			Tooltip = L["Show decimal milliseconds on the cooldown timer when below the configured threshold."],
+			Get = function(group) return group.Icons.ShowMilliseconds end,
+			Set = function(group, value) group.Icons.ShowMilliseconds = value end,
+		},
 	}
 
 	for _, spec in ipairs(checkboxes) do
