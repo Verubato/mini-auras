@@ -1,21 +1,14 @@
 # Changelog
 
-## Unreleased
+## 5.35.0
 
-- Personal auras now track the exact spell ID you enter. They previously also tracked every other spell sharing that name, so tracking Festering Scythe 1241077 also picked up Festering Strike 458123.
+- Fixed a bug with personal auras tracking spells by name instead of id.
 - Important: if one of your groups holds a spell's cast ID rather than the ID of the aura it applies, that group will now show nothing. Re-add the spell from the picker, which lists the aura IDs.
-- The spell picker no longer suggests the boss, NPC, mount, and passive copies of a name, and shows at most five IDs for any one name.
-- The bundled spell list is down to 190 KB from 360 KB, since it no longer carries IDs nobody can track.
+- Removed NPC spells from the spell picker.
 - The per-group personal aura spell cap is now 200, up from 100.
-- The frame auras buff and debuff rows now carry a Reverse swipe switch, on by default.
-- Personal aura groups now carry a Milliseconds switch, off by default.
-- A frame aura row now starts on its anchor point and grows away from it, so a row anchored to an
-  edge and growing outwards sits beside the frame rather than back across it. A row that stacks
-  downwards now hangs below its anchor point, so a row along the bottom of a frame wants LEFT_UP or
-  RIGHT_UP. Both rows ship with one. A row anchored to a top or bottom edge and growing left or
-  right is switched to the matching grow on upgrade, so it stays where you put it. A centred row, or
-  one anchored halfway up an edge, moves and may want nudging.
-- Fixed frame aura rows shifting out of their corner when the icons filled a second line.
+- Added reverse swipe to frame auras.
+- Added milliseconds to personal auras.
+- Fixed frame auras shifting out of their corner when icons filled onto a second row.
 
 ## 5.34.0
 
