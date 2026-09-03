@@ -30,7 +30,7 @@ local SLIDER_ROW_GAP = verticalSpacing * 3
 -- How tall every tab's page is. The window measures its scroll range from the tab container once,
 -- when the page is first shown, so a container that grew on a later tab change could never be
 -- scrolled to. Sized inside the window's own viewport, so only the spell list needs a scrollbar.
-local TAB_HEIGHT = 470
+local TAB_HEIGHT = 506
 local SIDEBAR_WIDTH = 120
 local SIDEBAR_ROW_HEIGHT = 24
 local SIDEBAR_ROW_GAP = 25
@@ -625,6 +625,11 @@ local function BuildBuffs(content, options)
 			Label = L["Centre stacks"],
 			Tooltip = L["Show the stack count in the middle of the icon instead of the countdown text."],
 		},
+		{
+			Key = "ReverseCooldown",
+			Label = L["Reverse swipe"],
+			Tooltip = L["Reverses the direction of the cooldown swipe animation."],
+		},
 	}, blurb)
 
 	local layout = Divider(content, L["Layout"], top)
@@ -751,6 +756,11 @@ local function BuildDebuffs(content, options)
 			Key = "CenterStacks",
 			Label = L["Centre stacks"],
 			Tooltip = L["Show the stack count in the middle of the icon instead of the countdown text."],
+		},
+		{
+			Key = "ReverseCooldown",
+			Label = L["Reverse swipe"],
+			Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 		},
 	}, blurb)
 

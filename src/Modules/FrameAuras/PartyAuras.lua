@@ -611,6 +611,15 @@ local function CentersStacks(side)
 	return options ~= nil and options.CenterStacks == true
 end
 
+---Which way one row's cooldown swipe runs.
+---@param side "Buffs"|"Debuffs"
+---@return boolean
+local function ReversesCooldown(side)
+	local options = SideOptions(side)
+
+	return options == nil or options.ReverseCooldown ~= false
+end
+
 ---Whether one row drops its countdown text. The display's own vocabulary is the negative one, so
 ---the row's positive switch is turned round here.
 ---@param side "Buffs"|"Debuffs"
@@ -672,7 +681,7 @@ local function BuildStyle(side)
 
 	style.Stacks = true
 	style.StackCoefficient = STACK_COEFFICIENT
-	style.ReverseCooldown = true
+	style.ReverseCooldown = ReversesCooldown(side)
 	-- Only ever adds to the global Disable Numbers switch, which the display resolves for itself.
 	style.HideNumbers = HidesNumbers(side)
 	style.FontScale = FontScale(side)
@@ -995,7 +1004,7 @@ local function ApplyTestSide(entry, side)
 	-- The stand-ins have to fold this in themselves, where a live button gets it from the display.
 	local centersStacks = CentersStacks(side)
 	local nextSlot = testSpells:FillContainer(container, list, 1, {
-		ReverseCooldown = true,
+		ReverseCooldown = ReversesCooldown(side),
 		HideNumbers = HidesNumbers(side) or centersStacks,
 		Glow = false,
 		-- Buffs carries no switch for this, and the debuff row's own reaches every stand-in on it.

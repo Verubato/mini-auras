@@ -632,6 +632,7 @@ testSpells.FillContainer = function(self, container, previewSpells, startSlot, f
 		HideNumbers = fillOptions.HideNumbers,
 		FontScale = fillOptions.FontScale,
 		CenterStackText = fillOptions.CenterStackText,
+		ReverseCooldown = fillOptions.ReverseCooldown,
 	}
 
 	return originalFill(self, container, previewSpells, startSlot, fillOptions)
@@ -2786,6 +2787,105 @@ fw.describe("Frame Auras - the gap between one icon and the next", function()
 		fw.eq(again.Spacing, MAX_PADDING, "which now leaves the wider gap the row does")
 
 		module:StopTesting()
+	end)
+end)
+
+fw.describe("Frame Auras - the direction of the cooldown swipe", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Buffs.ReverseCooldown = true
+		options.Debuffs.ReverseCooldown = true
+		ResetFills()
+		partyAuras:Refresh()
+	end)
+
+	fw.it("ships reversed on both rows, the way they were always drawn", function()
+		local shipped = dbDefaults.Modules.FrameAuras
+
+		assert(shipped.Buffs.ReverseCooldown == true, "the buff row ships reversed")
+		assert(shipped.Debuffs.ReverseCooldown == true, "and so does the debuff row")
+	end)
+
+	fw.it("turns the swipe round on the row that asked and no other", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+		options.Buffs.ReverseCooldown = false
+
+		local fresh = NewRaidFrame(31)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)), "the frame got a buff row")
+		local debuffs = assert(DisplayBehind(GroupRowOn(fresh, DEBUFF_GROUP)), "and a debuff row")
+
+		assert(buffs.Style.ReverseCooldown == false, "the switch reached the buff row's style")
+		assert(debuffs.Style.ReverseCooldown == true, "and left the debuff row swiping the other way")
+
+		options.Buffs.ReverseCooldown = true
+		DropRaidFrame(31)
+	end)
+
+	fw.it("carries a changed direction into a row already on screen", function()
+		options.Buffs.Enabled = true
+
+		local fresh = NewRaidFrame(32)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
+			"the frame got a buff row")
+
+		assert(display.Style.ReverseCooldown == true, "the row starts where it ships")
+
+		options.Buffs.ReverseCooldown = false
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(display.Style.ReverseCooldown == false, "the display it already had turned round")
+
+		options.Buffs.ReverseCooldown = true
+		DropRaidFrame(32)
+	end)
+
+	fw.it("swipes the preview the way the live row will", function()
+		options.Buffs.Enabled = true
+
+		module:StartTesting()
+
+		assert(#fills > 0, "the buff row previews something")
+		assert(fills[1].ReverseCooldown == true, "the preview starts reversed like the row")
+
+		module:StopTesting()
+		ResetFills()
+		options.Buffs.ReverseCooldown = false
+		module:StartTesting()
+
+		assert(fills[1].ReverseCooldown == false, "and follows the switch rather than staying put")
+
+		options.Buffs.ReverseCooldown = true
+		module:StopTesting()
+	end)
+
+	fw.it("leaves a profile written before the switch existed swiping as it did", function()
+		options.Buffs.Enabled = true
+		options.Buffs.ReverseCooldown = nil
+
+		local fresh = NewRaidFrame(33)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local display = assert(DisplayBehind(GroupRowOn(fresh, PARTY_BUFF_GROUP)),
+			"the frame got a buff row")
+
+		assert(display.Style.ReverseCooldown == true, "a missing key still draws the reversed swipe")
+
+		options.Buffs.ReverseCooldown = true
+		DropRaidFrame(33)
 	end)
 end)
 

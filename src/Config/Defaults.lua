@@ -689,6 +689,7 @@ local dbDefaults = {
 				PandemicColor = { R = 0.1, G = 0.9, B = 0.3 },
 				FontScale = 1.0,
 				CenterStacks = false,
+				ReverseCooldown = true,
 			},
 
 			---@class FrameAurasDebuffOptions
@@ -717,6 +718,7 @@ local dbDefaults = {
 				EnableNumbers = false,
 				FontScale = 1.0,
 				CenterStacks = false,
+				ReverseCooldown = true,
 				-- No "Mine" switch on this side. Everything landing on a group member came from
 				-- somebody else, so filtering to your own would only ever empty the row.
 			},

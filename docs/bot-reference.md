@@ -715,6 +715,7 @@ end, because flipping it makes the client rebuild the raid frames.
   way, and the global **Disable Numbers** in Misc still takes the text off everywhere.
 - **Centre stacks** (off) - draws the stack count in the middle of the icon at countdown size,
   which takes the countdown's place whatever **Show numbers** is set to.
+- **Reverse swipe** (on) - reverses the direction of the cooldown swipe animation.
 - **Pandemic glow** (on) plus a **Glow colour** (green, 0.1/0.9/0.3) - lights a heal-over-time up as
   its refresh window opens. Which spells carry it is fixed (Lifebloom), not a per-spell setting: the
   reveal is registered on a button when the engine builds it.
@@ -750,6 +751,7 @@ switch also opens a group of its own behind the lead group.
   game's untyped colour, which is red.
 - **Show numbers** (off) - as on the Buffs tab.
 - **Centre stacks** (off) - as on the Buffs tab.
+- **Reverse swipe** (on) - as on the Buffs tab.
 
 **Font Scale** on either tab scales that row's countdown and stack count, and the target and focus
 rows carry the same slider on their own tab once that part is switched on.

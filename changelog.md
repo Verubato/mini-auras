@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The frame auras buff and debuff rows now carry a Reverse swipe switch, on by default.
+
 ## 5.34.0
 
 - Added option to CC/Pet CC modules to disable the borders.

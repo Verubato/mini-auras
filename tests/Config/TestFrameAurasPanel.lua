@@ -642,6 +642,37 @@ fw.describe("Frame Auras page - centring the stack count", function()
 	end)
 end)
 
+fw.describe("Frame Auras page - the cooldown swipe direction", function()
+	fw.it("gives each tab a switch that writes its own row and not the other", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local buffs = SwitchOnTabWith(addon, addon.L["Reverse swipe"], addon.L["Mine"])
+		local debuffs = SwitchOnTabWith(addon, addon.L["Reverse swipe"], addon.L["Dispellable by me"])
+
+		fw.not_nil(buffs, "the buff tab offers the switch")
+		fw.not_nil(debuffs, "and so does the debuff tab")
+		assert(buffs ~= debuffs, "each tab has one of its own")
+
+		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
+
+		assert(frameAuras.Buffs.ReverseCooldown == true and frameAuras.Debuffs.ReverseCooldown == true,
+			"both rows ship with the swipe the way they were always drawn")
+		assert(buffs:GetChecked() == true, "which the buff switch paints ticked")
+		assert(debuffs:GetChecked() == true, "and the debuff switch with it")
+
+		buffs:GetScript("OnClick")(buffs)
+
+		assert(frameAuras.Buffs.ReverseCooldown == false, "the buff tab's switch writes the buff row")
+		assert(frameAuras.Debuffs.ReverseCooldown == true, "and leaves the debuff row alone")
+
+		debuffs:GetScript("OnClick")(debuffs)
+
+		assert(frameAuras.Debuffs.ReverseCooldown == false, "the debuff tab's switch writes the debuff row")
+	end)
+end)
+
 fw.describe("Frame Auras page - the dispellable by me and by raid switches", function()
 	fw.it("ticking by raid while by me is on clears by me and repaints its switch", function()
 		local addon = Load()
