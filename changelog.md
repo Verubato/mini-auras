@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Personal auras now track the exact spell ID you enter. They previously also tracked every other spell sharing that name, so tracking Festering Scythe 1241077 also picked up Festering Strike 458123.
+- Important: if one of your groups holds a spell's cast ID rather than the ID of the aura it applies, that group will now show nothing. Re-add the spell from the picker, which lists the aura IDs.
+- The spell picker no longer suggests the boss, NPC, mount, and passive copies of a name, and shows at most five IDs for any one name.
+- The bundled spell list is down to 190 KB from 360 KB, since it no longer carries IDs nobody can track.
+- The per-group personal aura spell cap is now 200, up from 100.
 - The frame auras buff and debuff rows now carry a Reverse swipe switch, on by default.
 - Personal aura groups now carry a Milliseconds switch, off by default.
 - A frame aura row now starts on its anchor point and grows away from it, so a row anchored to an

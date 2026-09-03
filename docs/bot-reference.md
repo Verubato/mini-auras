@@ -431,15 +431,19 @@ shown for one, and none of the red refusals or yellow caveats apply.
 **Spell IDs mode:**
 
 - **Add a spell**: a picker box ("Spell ID / name") with live suggestions; type an ID or a
-  name, pick with mouse or arrow keys + Enter.
+  name, pick with mouse or arrow keys + Enter. Also takes an ID typed in full when nothing
+  matches, because IDs are matched exactly. A name with several IDs (a cast and the aura it
+  applies, or talent variants) offers a row per ID, each showing its own ID, since the
+  configured ID has to be the exact one that lands. At most 5 rows per name, and 8
+  suggestions in total, so a name with more IDs than that needs the rest typed in full.
 - **Record**: captures the spells you cast (your casts only; the button toggles to "Stop")
   and lists them as "Recorded Casts" (up to 40 remembered, newest first, 12 shown). Clicking
   one adds it and stops recording. Tooltip warning: the recorded ID is the ID of the cast,
   which is often not the ID of the aura it applies. Recording stops automatically when the
   config window closes.
 - A group holds at most **200 spells** ("A group can hold at most 200 spells."), no
-  duplicates. Each added spell is automatically expanded to every spell ID sharing its name,
-  because the aura the game applies is often not the spellbook ID.
+  duplicates. Configured ids are matched exactly; the aura the game applies is often not the
+  spellbook ID, so a spell with several ids needs each one added.
 - A Spell IDs group with an empty list shows nothing (the empty list itself is the reason).
 
 **Aura filters mode** replaces the spell list with a grid of the engine's own filter

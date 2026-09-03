@@ -1,7 +1,5 @@
--- The spell picker's index. A user typing part of an ability name has to find it, and an ability
--- whose id list carries several variants must be offered once while still expanding back to every
--- variant when it is tracked (aura filters match the id the game applied, which is frequently not
--- the one in the spellbook).
+-- A user typing part of an ability name has to find it, and an ability with several ids is
+-- offered once per id, so the id is what tells otherwise-identical rows apart.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
@@ -26,8 +24,8 @@ for _, spellId in ipairs(TORRENT_IDS) do
 	assert(categoryIds.CC[spellId], "every Arcane Torrent variant must be in the CC list")
 end
 
--- A stand-in for the generated index. Rake is the case the whole thing exists for: 1822 is the
--- cast, 155722 is the bleed it leaves behind, and only the shared name links them.
+-- A stand-in for the generated index. Rake's cast and the bleed it leaves behind share a name
+-- but not an id, and configured ids are matched exactly, so both need their own row.
 local RAKE_CAST = 1822
 local RAKE_BLEED = 155722
 local INVENTED = 999003
@@ -91,11 +89,15 @@ fw.describe("SpellSearch - suggestions", function()
 		assert(Contains(search:Search("shot"), KIDNEY_SHOT), "'shot' finds Kidney Shot")
 	end)
 
-	fw.it("offers a repeated ability once", function()
+	fw.it("offers a repeated ability once per id, not collapsed to one row", function()
 		local results = search:Search("arcane torrent")
 
-		assert(CountNamed(results, "Arcane Torrent") == 1,
-			"the four Arcane Torrent ids collapse into one suggestion")
+		assert(CountNamed(results, "Arcane Torrent") == #TORRENT_IDS,
+			"every Arcane Torrent id gets its own row")
+
+		for _, spellId in ipairs(TORRENT_IDS) do
+			assert(Contains(results, spellId), "id " .. spellId .. " has its own row")
+		end
 	end)
 
 	fw.it("puts prefix matches before substring matches", function()
@@ -140,11 +142,111 @@ fw.describe("SpellSearch - suggestions", function()
 		assert(entry and entry.Name == "Kidney Shot", "the entry carries the name")
 	end)
 
-	fw.it("answers with the id that was asked about, not the canonical variant", function()
+	fw.it("answers each variant with its own row", function()
 		local entry = search:GetEntry(TORRENT_IDS[3])
 
-		assert(entry and entry.Id == TORRENT_IDS[3], "the requested variant is echoed back")
-		assert(entry.Name == "Arcane Torrent", "with the shared name")
+		assert(entry and entry.Id == TORRENT_IDS[3], "the id asked about is the id returned")
+		assert(entry.Name == "Arcane Torrent", "with the name it shares with the other variants")
+	end)
+end)
+
+fw.describe("SpellSearch - a name with several ids", function()
+	fw.it("returns a row for every id, not just the one the name resolves to first", function()
+		local results = search:Search("rake")
+
+		assert(Contains(results, RAKE_CAST), "the cast has its own row")
+		assert(Contains(results, RAKE_BLEED), "the bleed it leaves behind has its own row too")
+	end)
+end)
+
+fw.describe("SpellSearch - ranking ties", function()
+	-- A curated id the client cannot name at build time joins the arrays after every generated
+	-- row, so index order alone would put the generated row first.
+	local CURATED = 999010
+	local GENERATED = 999009
+	local frameTime = 0
+
+	fw.it("puts a curated id above a generated one at equal match quality", function()
+		local names = {}
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = { tostring(GENERATED) },
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		env.spellNames[GENERATED] = "Tiebreak"
+		categoryIds.Unflagged[CURATED] = true
+
+		local realGetSpellName = _G.C_Spell.GetSpellName
+		_G.C_Spell.GetSpellName = function(spellId)
+			if spellId == CURATED then
+				return names[spellId]
+			end
+
+			return realGetSpellName(spellId)
+		end
+
+		local realGetTime = _G.GetTime
+		_G.GetTime = function()
+			return frameTime
+		end
+
+		local ok, err = pcall(function()
+			assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
+
+			local lateSearch = target.Core.SpellSearch
+
+			assert(not Contains(lateSearch:Search("tiebreak"), CURATED),
+				"the curated id has no name to show while the build runs")
+
+			names[CURATED] = "Tiebreak"
+			frameTime = frameTime + 1
+
+			local results = lateSearch:Search("tiebreak")
+
+			assert(results[1] and results[1].Id == CURATED,
+				"the curated id leads though it joined the arrays last")
+			assert(Contains(results, GENERATED), "the generated id is still offered")
+		end)
+
+		_G.C_Spell.GetSpellName = realGetSpellName
+		_G.GetTime = realGetTime
+		categoryIds.Unflagged[CURATED] = nil
+
+		assert(ok, err)
+	end)
+end)
+
+fw.describe("SpellSearch - order within a generated group", function()
+	-- The generator emits a name's spellbook id first, then the ids it triggers, and the picker
+	-- shows only the first few, so file order is what decides which ids a player is offered.
+	local ORDERED = { 999205, 999201, 999203 }
+
+	for _, spellId in ipairs(ORDERED) do
+		env.spellNames[spellId] = "Ordered Ability"
+	end
+
+	fw.it("offers a group's ids in file order, not by ascending id", function()
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = { table.concat({ 999205, 999201, 999203 }, " ") },
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
+
+		local results = target.Core.SpellSearch:Search("ordered ability")
+
+		assert(results[1] and results[1].Id == ORDERED[1],
+			"the id the file leads with is the id the picker leads with")
 	end)
 end)
 
@@ -153,10 +255,13 @@ fw.describe("SpellSearch - sources", function()
 		-- Fortifying Brew is not in the aura category lists. The picker carries it itself rather
 		-- than reaching into the cooldown tracker, which is 12.0-only.
 		local fortifyingBrew = 115203
+		local name = C_Spell.GetSpellName(fortifyingBrew)
 
 		assert(not categoryIds.CC[fortifyingBrew] and not categoryIds.Defensive[fortifyingBrew],
 			"fixture must be one the generated data lacks")
-		assert(search:GetEntry(fortifyingBrew), "the picker knows it anyway")
+		-- Searched by name rather than asked for by id, since GetEntry answers for any id the
+		-- client can name whether the index carries a row for it or not.
+		assert(Contains(search:Search(name), fortifyingBrew), "the picker offers it anyway")
 	end)
 
 	fw.it("needs nothing from the cooldown module", function()
@@ -165,80 +270,30 @@ fw.describe("SpellSearch - sources", function()
 end)
 
 fw.describe("SpellSearch - the generated name index", function()
-	fw.it("expands a cast id to the aura id that shares its name", function()
-		local variants = search:GetVariants(RAKE_CAST)
-		local seen = {}
-
-		for _, spellId in ipairs(variants) do
-			seen[spellId] = true
-		end
-
-		assert(seen[RAKE_CAST], "the id that was asked about is included")
-		assert(seen[RAKE_BLEED], "so is the aura id, which no curated list carries")
-	end)
-
-	fw.it("expands from the aura id as well as the cast id", function()
-		assert(#search:GetVariants(RAKE_BLEED) == #search:GetVariants(RAKE_CAST),
-			"either end of the pair reaches the same set")
-	end)
-
 	fw.it("offers a name the curated lists have never heard of", function()
 		assert(Contains(search:Search("sudden doom"), INVENTED), "the index feeds the suggestions")
 	end)
 
-	fw.it("still offers a curated ability once, not twice", function()
-		assert(CountNamed(search:Search("arcane torrent"), "Arcane Torrent") == 1,
-			"a name in both sources is one suggestion")
+	fw.it("still offers every curated id under a name the generated pass also carries", function()
+		local results = search:Search("arcane torrent")
+
+		assert(CountNamed(results, "Arcane Torrent") == #TORRENT_IDS,
+			"the generated pass does not swallow any of the curated ids")
 	end)
 end)
 
-fw.describe("SpellSearch - variants", function()
-	fw.it("expands an ability to every id that shares its name", function()
-		local variants = search:GetVariants(TORRENT_IDS[1])
-		local seen = {}
+fw.describe("SpellSearch - copies of a spell the current data covers", function()
+	-- The curated lists carry a legacy or NPC id for nearly every ability, all sharing one name.
+	-- The picker offers a row per id, so those copies would bury the id a player actually wants.
 
-		for _, spellId in ipairs(variants) do
-			seen[spellId] = true
-		end
-
-		for _, spellId in ipairs(TORRENT_IDS) do
-			assert(seen[spellId], "variant " .. spellId .. " is included")
-		end
-	end)
-
-	fw.it("expands from any variant, not just the canonical one", function()
-		assert(#search:GetVariants(TORRENT_IDS[4]) == #search:GetVariants(TORRENT_IDS[1]),
-			"every variant expands to the same set")
-	end)
-
-	fw.it("hands an unknown id straight back", function()
-		local variants = search:GetVariants(999002)
-
-		assert(#variants == 1 and variants[1] == 999002, "an untracked id is its own only variant")
-	end)
-end)
-
-fw.describe("SpellSearch - the saved expansion cache", function()
-	-- Expanding a tracked spell is what an aura filter needs at login, and answering it from the
-	-- client means naming every generated group. The answer only moves when the data or the
-	-- language does, so a session hands the next one what it worked out.
-	-- The stamp covers the generated data, the addon's own version (which the curated lists ship
-	-- with), the client build (which decides which ids can be named at all) and the language the
-	-- grouping was done in.
-	local function Stamp()
-		return "test-index:" .. (C_AddOns.GetAddOnMetadata("MiniAuras", "Version") or "?")
-			.. ":" .. (select(2, GetBuildInfo()) or "?") .. ":" .. GetLocale()
-	end
-
-	local function WithStore(store, body)
-		local previous = _G.MiniAurasSpellCache
-		_G.MiniAurasSpellCache = store
-
+	---Runs `body` against a fresh SpellSearch whose generated index is exactly `index`.
+	---@param index string[]
+	---@param body fun(trimmed: SpellSearch)
+	local function WithGeneratedIndex(index, body)
 		local target = {
 			Core = {
 				AuraCategoryIds = categoryIds,
-				SpellNameIndex = { ("%d %d"):format(RAKE_CAST, RAKE_BLEED) },
-				SpellNameIndexVersion = "test-index",
+				SpellNameIndex = index,
 			},
 			Utils = {},
 			Modules = {},
@@ -246,159 +301,168 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 		}
 
 		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
-
-		local ok, err = pcall(body, target.Core.SpellSearch)
-
-		_G.MiniAurasSpellCache = previous
-		assert(ok, err)
+		body(target.Core.SpellSearch)
 	end
 
-	fw.it("keeps what it worked out for the next session", function()
-		local store = {}
+	fw.it("drops the ids under a name the generated index vouches for", function()
+		WithGeneratedIndex({ tostring(TORRENT_IDS[1]) }, function(trimmed)
+			local results = trimmed:Search("arcane torrent")
 
-		WithStore(store, function(reloaded)
-			local variants = reloaded:GetVariants(RAKE_CAST)
-
-			assert(#variants > 1, "the expansion covers the group")
-			assert(store.Ids[RAKE_CAST], "and it was kept")
-			assert(store.Stamp, "stamped with the data it came from")
+			assert(CountNamed(results, "Arcane Torrent") == 1, "the copies lose their rows")
+			assert(Contains(results, TORRENT_IDS[1]), "the vouched id is the one left")
 		end)
 	end)
 
-	-- The regression the store exists around. The generated index carries ids this build has
-	-- dropped, and storing waits for every pending id to name. A dropped id never names, so without
-	-- the guard the cache stays empty and every login pays the naming pass again.
-	local DROPPED_IDS = { 999000001, 999000002 }
+	fw.it("keeps every id of a name nothing vouches for", function()
+		WithGeneratedIndex({}, function(trimmed)
+			local results = trimmed:Search("arcane torrent")
 
-	---Runs `body` against an index carrying one group beyond the client's reach. The shared stand-in
-	---names every id it is asked about, so both halves need saying: `names` is what the client can
-	---name, `exists` is what it admits to having at all.
-	---@param store table
-	---@param body fun(search: table, names: table<number, string>, exists: table<number, boolean>)
-	local function WithDroppedGroup(store, body)
-		local previousStore = _G.MiniAurasSpellCache
-		_G.MiniAurasSpellCache = store
+			assert(CountNamed(results, "Arcane Torrent") == #TORRENT_IDS,
+				"a name the curated list is the only source of keeps all of it")
 
-		local names = {}
-		local exists = {}
-		local realName = _G.C_Spell.GetSpellName
-		local realExists = _G.C_Spell.DoesSpellExist
-
-		local function isDropped(spellId)
-			for _, dropped in ipairs(DROPPED_IDS) do
-				if spellId == dropped then
-					return true
-				end
+			for _, spellId in ipairs(TORRENT_IDS) do
+				assert(Contains(results, spellId), "id " .. spellId .. " still has its row")
 			end
+		end)
+	end)
+end)
 
-			return false
+fw.describe("SpellSearch - one name with more ids than the picker can show", function()
+	-- Every id under a name draws the identical string, so a dozen of them would fill the list
+	-- with rows a player has no way to tell apart.
+	local FLOOD_IDS = { 999101, 999102, 999103, 999104, 999105, 999106, 999107 }
+	local CAP = 5
+
+	for _, spellId in ipairs(FLOOD_IDS) do
+		env.spellNames[spellId] = "Floodlight"
+	end
+
+	---Runs `body` against a fresh SpellSearch whose generated index is one oversized group.
+	---@param body fun(flooded: SpellSearch)
+	local function WithFlood(body)
+		local raw = {}
+
+		for index, spellId in ipairs(FLOOD_IDS) do
+			raw[index] = tostring(spellId)
 		end
 
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = { table.concat(raw, " ") },
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
+		body(target.Core.SpellSearch)
+	end
+
+	fw.it("offers no more rows for one name than the cap allows", function()
+		WithFlood(function(flooded)
+			local results = flooded:Search("floodlight")
+
+			assert(#FLOOD_IDS > CAP, "the fixture must have more ids than the cap")
+			assert(CountNamed(results, "Floodlight") == CAP, "the suggestions stop at the cap")
+		end)
+	end)
+
+	fw.it("still answers for an id the cap left out", function()
+		WithFlood(function(flooded)
+			local excluded = FLOOD_IDS[#FLOOD_IDS]
+
+			assert(not Contains(flooded:Search("floodlight"), excluded),
+				"the fixture id must be one the cap leaves out")
+
+			local entry = flooded:GetEntry(excluded)
+
+			assert(entry and entry.Id == excluded, "the picker still answers for it by id")
+
+			local typed = flooded:Search(tostring(excluded))
+
+			assert(typed[1] and typed[1].Id == excluded, "and a fully typed id still leads the list")
+		end)
+	end)
+end)
+
+fw.describe("SpellSearch - a copy the client names late", function()
+	-- The trim groups ids by name, so an id the client cannot name yet is no id it can judge.
+	-- Those stay pending, and the name they land under is trimmed when they arrive.
+	local frameTime = 0
+
+	---Runs `body` against a fresh SpellSearch that cannot name `silentId`, with TORRENT_IDS[1] the
+	---only id the generated index vouches for.
+	---@param silentId number
+	---@param body fun(late: SpellSearch, names: table<number, string>, nextFrame: fun())
+	local function WithSilentId(silentId, body)
+		local names = {}
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = { tostring(TORRENT_IDS[1]) },
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		local realGetSpellName = _G.C_Spell.GetSpellName
 		_G.C_Spell.GetSpellName = function(spellId)
-			if isDropped(spellId) then
+			if spellId == silentId then
 				return names[spellId]
 			end
 
-			return realName(spellId)
+			return realGetSpellName(spellId)
 		end
 
-		_G.C_Spell.DoesSpellExist = function(spellId)
-			if isDropped(spellId) then
-				return exists[spellId] == true
-			end
-
-			return true
+		local realGetTime = _G.GetTime
+		_G.GetTime = function()
+			return frameTime
 		end
-
-		local target = {
-			Core = {
-				AuraCategoryIds = categoryIds,
-				SpellNameIndex = {
-					("%d %d"):format(RAKE_CAST, RAKE_BLEED),
-					("%d %d"):format(DROPPED_IDS[1], DROPPED_IDS[2]),
-				},
-				SpellNameIndexVersion = "test-index",
-			},
-			Utils = {},
-			Modules = {},
-			Config = {},
-		}
 
 		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
 
-		local ok, err = pcall(body, target.Core.SpellSearch, names, exists)
+		local ok, err = pcall(body, target.Core.SpellSearch, names, function()
+			frameTime = frameTime + 1
+		end)
 
-		_G.C_Spell.GetSpellName = realName
-		_G.C_Spell.DoesSpellExist = realExists
-		_G.MiniAurasSpellCache = previousStore
+		_G.C_Spell.GetSpellName = realGetSpellName
+		_G.GetTime = realGetTime
 		assert(ok, err)
 	end
 
-	fw.it("keeps what it worked out even though a group will never name", function()
-		local store = {}
+	fw.it("keeps the copies until the vouched id it cannot name yet arrives", function()
+		WithSilentId(TORRENT_IDS[1], function(late, names, nextFrame)
+			local before = late:Search("arcane torrent")
 
-		WithDroppedGroup(store, function(reloaded)
-			local variants = reloaded:GetVariants(RAKE_CAST)
+			assert(CountNamed(before, "Arcane Torrent") == #TORRENT_IDS - 1,
+				"the copies stand in while nothing vouched can be named")
+			assert(not Contains(before, TORRENT_IDS[1]), "the vouched id has no name to show yet")
 
-			assert(#variants > 1, "the expansion covers the group")
-			assert(store.Ids[RAKE_CAST],
-				"a group this build has dropped held the store shut for the session")
+			names[TORRENT_IDS[1]] = "Arcane Torrent"
+			nextFrame()
+
+			local results = late:Search("arcane torrent")
+
+			assert(CountNamed(results, "Arcane Torrent") == 1, "naming it drops the copies")
+			assert(Contains(results, TORRENT_IDS[1]), "and leaves it in their place")
 		end)
 	end)
 
-	fw.it("waits for an id the client has but has not loaded, then keeps the lot", function()
-		-- The distinction the whole guard rests on. An id the client admits to may still name
-		-- later and widen the answer, so nothing is stored while one is waiting. Once it names,
-		-- what was worked out in the meantime is settled and goes to the store.
-		local store = {}
+	fw.it("drops a copy the client names after the trim already ran", function()
+		WithSilentId(TORRENT_IDS[2], function(late, names, nextFrame)
+			assert(CountNamed(late:Search("arcane torrent"), "Arcane Torrent") == 1,
+				"the vouched id is the only row the build leaves")
 
-		WithDroppedGroup(store, function(reloaded, names, exists)
-			exists[DROPPED_IDS[1]] = true
+			names[TORRENT_IDS[2]] = "Arcane Torrent"
+			nextFrame()
 
-			reloaded:GetVariants(RAKE_CAST)
-			assert(store.Ids == nil or store.Ids[RAKE_CAST] == nil,
-				"an answer was stored while an id the client has was still unnamed")
+			local results = late:Search("arcane torrent")
 
-			names[DROPPED_IDS[1]] = "Moonfire"
-
-			-- Retries are one a frame at most, and the call above has spent this one.
-			require("WowApi").advanceTime(1)
-			reloaded:GetVariants(RAKE_BLEED)
-
-			assert(store.Ids[RAKE_BLEED], "nothing was kept once the id finally named")
-		end)
-	end)
-
-	fw.it("answers from the store without asking the client anything", function()
-		local store = { Stamp = Stamp(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
-
-		WithStore(store, function(reloaded)
-			local asked = 0
-			local realName = _G.C_Spell.GetSpellName
-
-			_G.C_Spell.GetSpellName = function(spellId)
-				asked = asked + 1
-
-				return realName(spellId)
-			end
-
-			local variants = reloaded:GetVariants(RAKE_CAST)
-
-			_G.C_Spell.GetSpellName = realName
-
-			assert(#variants == 3 and variants[1] == 1, "the stored answer is the answer")
-			assert(asked == 0, "naming the groups is what the store exists to avoid, and it asked " .. asked)
-		end)
-	end)
-
-	fw.it("throws the store away when the data behind it changed", function()
-		local store = { Stamp = "an-older-index:" .. Stamp(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
-
-		WithStore(store, function(reloaded)
-			local variants = reloaded:GetVariants(RAKE_CAST)
-
-			assert(#variants ~= 3 or variants[1] ~= 1, "a stale answer was handed back")
-			assert(store.Stamp == Stamp(), "and the store took the current stamp")
+			assert(not Contains(results, TORRENT_IDS[2]), "a copy arriving late gets no row")
+			assert(CountNamed(results, "Arcane Torrent") == 1, "the vouched id still stands alone")
 		end)
 	end)
 end)
@@ -431,17 +495,11 @@ fw.describe("SpellSearch - the client's own language", function()
 			return names[spellId] or realGetSpellName(spellId)
 		end
 
-		-- Its own session, so its own store: one carried over from another stand-in holds answers
-		-- built from different groups under the same stamp.
-		local previousStore = _G.MiniAurasSpellCache
-		_G.MiniAurasSpellCache = nil
-
 		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
 
 		local ok, err = pcall(body, target.Core.SpellSearch)
 
 		_G.C_Spell.GetSpellName = realGetSpellName
-		_G.MiniAurasSpellCache = previousStore
 		assert(ok, err)
 	end
 
@@ -454,32 +512,17 @@ fw.describe("SpellSearch - the client's own language", function()
 		end)
 	end)
 
-	fw.it("still expands a cast id to its aura id there", function()
-		WithClientNames({ [RAKE_CAST] = "Harken", [RAKE_BLEED] = "Harken" }, function(localised)
-			local seen = {}
-
-			for _, spellId in ipairs(localised:GetVariants(RAKE_CAST)) do
-				seen[spellId] = true
-			end
-
-			assert(seen[RAKE_BLEED],
-				"the id bridge is the shared name, so it has to work in any language")
-		end)
-	end)
-
-	fw.it("merges two groups the client gives the same name", function()
-		-- Distinct in English, identical in another language. Neither group may swallow the other,
-		-- or one ability's ids would vanish from every filter built on that name.
+	fw.it("gives every id a row when two groups collide under the same name", function()
+		-- Distinct in English, identical in another language. Neither group's ids are lost to
+		-- the merge, since a name collision no longer costs a row.
 		WithClientNames({ [RAKE_CAST] = "Hieb", [RAKE_BLEED] = "Hieb", [OTHER] = "Hieb" },
 			function(localised)
-				local seen = {}
+				local results = localised:Search("hieb")
 
-				for _, spellId in ipairs(localised:GetVariants(RAKE_CAST)) do
-					seen[spellId] = true
-				end
-
-				assert(seen[RAKE_CAST] and seen[RAKE_BLEED], "the group's own ids survive")
-				assert(seen[OTHER], "and so do the colliding group's")
+				assert(CountNamed(results, "Hieb") == 3, "one row per id under the shared name")
+				assert(Contains(results, RAKE_CAST), "the first group's cast survives the merge")
+				assert(Contains(results, RAKE_BLEED), "the first group's bleed survives the merge")
+				assert(Contains(results, OTHER), "the second group's id survives the merge")
 			end)
 	end)
 end)
@@ -487,12 +530,13 @@ end)
 fw.describe("SpellSearch - spell data that arrives late", function()
 	-- The index is built as early as login, and the client answers nothing for a spell whose data
 	-- it has not loaded yet. Those ids have to join the index when it does load, or the spell is
-	-- missing from the picker and its variant ids never reach a filter for the whole session.
+	-- missing from the picker for the whole session.
 	local LATE_CAST = 999005
 	local LATE_AURA = 999006
 	local GROUP_A = 999007
 	local GROUP_B = 999008
-	-- One curated id whose name nothing else shares, and one whose siblings arrive without it.
+	-- LATE_CURATED is a curated id whose name nothing else shares. LATE_TORRENT only keeps a
+	-- real curated id silent alongside it; no test asserts on it directly.
 	local LATE_CURATED = KIDNEY_SHOT
 	local LATE_TORRENT = TORRENT_IDS[1]
 	local SILENT = { LATE_CAST, LATE_AURA, GROUP_A, GROUP_B, LATE_CURATED, LATE_TORRENT }
@@ -532,10 +576,6 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 			return realGetSpellName(spellId)
 		end
 
-		-- Its own session. See WithClientNames.
-		local previousStore = _G.MiniAurasSpellCache
-		_G.MiniAurasSpellCache = nil
-
 		-- The retry throttle keys on the clock moving between frames, so the clock is the
 		-- test's to move. The shared mock's needs an install this file never does.
 		local realGetTime = _G.GetTime
@@ -549,7 +589,6 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 
 		_G.C_Spell.GetSpellName = realGetSpellName
 		_G.GetTime = realGetTime
-		_G.MiniAurasSpellCache = previousStore
 		assert(ok, err)
 	end
 
@@ -573,25 +612,6 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 		end)
 	end)
 
-	fw.it("expands a late group that first expanded to nothing", function()
-		WithLateSpellData(function(late, names)
-			assert(#late:GetVariants(LATE_CAST) == 1,
-				"there is nothing to expand to while the client is silent")
-
-			names[LATE_CAST] = "Lightwell"
-			names[LATE_AURA] = "Lightwell"
-			NextFrame()
-
-			local seen = {}
-
-			for _, spellId in ipairs(late:GetVariants(LATE_CAST)) do
-				seen[spellId] = true
-			end
-
-			assert(seen[LATE_AURA], "the aura id is back, so filters built later cover it")
-		end)
-	end)
-
 	fw.it("offers a curated spell the client could not name at first", function()
 		WithLateSpellData(function(late, names)
 			assert(not Contains(late:Search("latecomer"), LATE_CURATED),
@@ -608,44 +628,97 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 		end)
 	end)
 
-	fw.it("expands a curated spell that arrives after its siblings", function()
+	fw.it("gives a late curated spell its own row alongside a generated group under the same name", function()
 		WithLateSpellData(function(late, names)
-			assert(#late:GetVariants(LATE_TORRENT) == 1,
-				"an unnamed id stands alone, whatever it will turn out to share a name with")
-
-			names[LATE_TORRENT] = "Arcane Torrent"
-			NextFrame()
-
-			local seen = {}
-
-			for _, spellId in ipairs(late:GetVariants(LATE_TORRENT)) do
-				seen[spellId] = true
-			end
-
-			for _, spellId in ipairs(TORRENT_IDS) do
-				assert(seen[spellId], "variant " .. spellId .. " is included")
-			end
-		end)
-	end)
-
-	fw.it("gives a late curated spell the row its name already has", function()
-		WithLateSpellData(function(late, names)
-			-- The generated group is named from the start, so it owns the suggestion until the
-			-- curated id turns up under the same name. Two rows for one name is what a build with
-			-- both loaded would never produce.
+			-- Naming GROUP_A resolves the whole raw group, so both of its ids get a row even
+			-- though GROUP_B is still individually unnamed. The curated id joins them rather
+			-- than replacing anything, since a shared name is no longer a reason to collapse.
 			names[GROUP_A] = "Wisplight"
 			NextFrame()
 
-			assert(CountNamed(late:Search("wisplight"), "Wisplight") == 1,
-				"the generated group is the only row while the curated id is unnamed")
+			assert(CountNamed(late:Search("wisplight"), "Wisplight") == 2,
+				"the generated group's two ids are the only rows while the curated id is unnamed")
 
 			names[LATE_CURATED] = "Wisplight"
 			NextFrame()
 
 			local results = late:Search("wisplight")
 
-			assert(CountNamed(results, "Wisplight") == 1, "the curated id takes that row over")
-			assert(Contains(results, LATE_CURATED), "and the row it leaves is the curated one")
+			assert(CountNamed(results, "Wisplight") == 3,
+				"the curated id gets its own row alongside the generated group's two ids")
+			assert(Contains(results, GROUP_A), "the first generated id keeps its row")
+			assert(Contains(results, GROUP_B), "the second generated id keeps its row too")
+			assert(Contains(results, LATE_CURATED), "the curated id gets its own row")
+		end)
+	end)
+end)
+
+fw.describe("SpellSearch - ids this build has dropped", function()
+	-- Unlike spell data that has not loaded, an id the client denies exists never will, so it
+	-- must not join pendingIds or a keystroke would retry it for the rest of the session.
+	local DROPPED_CURATED = KIDNEY_SHOT
+
+	local function WithDroppedId(body)
+		local names = {}
+		local frameTime = 0
+		local realGetSpellName = _G.C_Spell.GetSpellName
+		local realDoesSpellExist = _G.C_Spell.DoesSpellExist
+
+		_G.C_Spell.GetSpellName = function(spellId)
+			if spellId == DROPPED_CURATED then
+				return names[spellId]
+			end
+
+			return realGetSpellName(spellId)
+		end
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			if spellId == DROPPED_CURATED then
+				return false
+			end
+
+			return realDoesSpellExist(spellId)
+		end
+
+		local realGetTime = _G.GetTime
+		_G.GetTime = function()
+			return frameTime
+		end
+
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = {},
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
+
+		local ok, err = pcall(body, target.Core.SpellSearch, names, function()
+			frameTime = frameTime + 1
+		end)
+
+		_G.C_Spell.GetSpellName = realGetSpellName
+		_G.C_Spell.DoesSpellExist = realDoesSpellExist
+		_G.GetTime = realGetTime
+		assert(ok, err)
+	end
+
+	fw.it("never retries a curated id the client denies exists", function()
+		WithDroppedId(function(dropped, names, nextFrame)
+			assert(not Contains(dropped:Search("kidney shot"), DROPPED_CURATED),
+				"an unnamed id is nothing the picker can show yet")
+
+			-- Named after the index was already built, to prove the id never went on pendingIds
+			-- rather than merely being unnamed so far.
+			names[DROPPED_CURATED] = "Kidney Shot"
+			nextFrame()
+
+			assert(not Contains(dropped:Search("kidney shot"), DROPPED_CURATED),
+				"an id DoesSpellExist refused is never retried, however it later answers")
 		end)
 	end)
 end)
