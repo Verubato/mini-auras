@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 5.36.0
 
-- The important auras and portrait modules now carry a Show numbers switch, on by default.
+- Added show numbers to important auras and portraits.
 
 ## 5.35.0
 
