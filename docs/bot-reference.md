@@ -490,7 +490,7 @@ have an appearance." and no controls. **Display** itself lives on the Trigger ta
 group shows its own short set of controls instead of the ones below: **Select Texture** with a
 preview beside it, **Additive**, **Mirror**, **Desaturate**, and the **Colour** swatch, which
 tints the art. A **Text only** group drops the five switches that are about an icon's art and
-swipe (Reverse swipe, Hide swipe, Show numbers, Centre stacks, Custom icon) and keeps the rest.
+swipe (Reverse swipe, Show swipe, Show numbers, Centre stacks, Custom icon) and keeps the rest.
 Everything else here belongs to icons and bars.
 
 | Setting | Values / range | Default |
@@ -499,7 +499,7 @@ Everything else here belongs to icons and bars.
 | Glow icons | on/off (icons only) | off (starter groups: on) |
 | Show border | on/off | off (starter groups: on) |
 | Reverse swipe | on/off (icons only) | on |
-| Hide swipe | on/off (icons only) | off |
+| Show swipe | on/off (icons only); off drops the cooldown pie | on |
 | Show numbers | on/off (icons only); off drops the countdown text | on |
 | Centre stacks | on/off (icons only); the stack count replaces the countdown | off |
 | Show tooltips | on/off | off |

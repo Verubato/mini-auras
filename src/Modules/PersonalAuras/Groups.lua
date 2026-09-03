@@ -444,10 +444,9 @@ function M:Normalise(group)
 	icons.Pandemic = icons.Pandemic == true
 	-- On unless it was turned off, since the swipe filling up reads as time running out.
 	icons.ReverseCooldown = icons.ReverseCooldown ~= false
-	-- Off by default, since an aura icon without a swipe is the unusual want.
-	icons.HideSwipe = icons.HideSwipe == true
-	-- On unless it was turned off. The old key is read here too, since an imported group never
-	-- went through the migrations.
+	-- The old keys are read here too, since an imported group never went through the migrations.
+	icons.EnableSwipe = icons.EnableSwipe ~= false and icons.HideSwipe ~= true
+	icons.HideSwipe = nil
 	icons.EnableNumbers = icons.EnableNumbers ~= false and icons.HideNumbers ~= true
 	icons.HideNumbers = nil
 	icons.CenterStacks = icons.CenterStacks == true
@@ -1206,7 +1205,7 @@ end
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
 ---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
----@field Icons { Size: number, Spacing: number, FontScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, EnableNumbers: boolean, CenterStacks: boolean, ShowMilliseconds: boolean, ShowTooltips: boolean, UseGroupIcon: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Icons { Size: number, Spacing: number, FontScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, EnableSwipe: boolean, EnableNumbers: boolean, CenterStacks: boolean, ShowMilliseconds: boolean, ShowTooltips: boolean, UseGroupIcon: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Texture { Asset: string|number, Width: number, Height: number, Rotation: number, Opacity: number, Mirror: boolean, Desaturate: boolean, Additive: boolean } Texture display only; Asset is a file id or a path, and empty draws nothing.
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.

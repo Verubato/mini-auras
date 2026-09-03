@@ -135,7 +135,7 @@ local function BuildStyle(group)
 	-- The same colour drives the glow, the border and a bar's fill, so one swatch covers a group
 	-- whichever shape it draws.
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
-	style.HideSwipe = icons.HideSwipe
+	style.HideSwipe = not icons.EnableSwipe
 	style.HideNumbers = not icons.EnableNumbers
 	style.ShowTooltips = icons.ShowTooltips
 	style.Pandemic = icons.Pandemic
@@ -680,7 +680,7 @@ local function RenderTestIcons(state, entry)
 	-- Mirrors what BuildStyle and StyleCountdown derive, short of the fractions a stand-in cannot draw.
 	local centerStacks = not drawsBars and not textOnly and group.Icons.CenterStacks == true
 	local hideNumbers = not textOnly and (not group.Icons.EnableNumbers or centerStacks)
-	local hideSwipe = group.Icons.HideSwipe or textOnly
+	local hideSwipe = not group.Icons.EnableSwipe or textOnly
 	local textColor = group.Icons.ColorText
 		and moduleUtil:FillColor(textColorScratch, group.Icons.TextColor, DEFAULT_TEXT_COLOR)
 		or nil

@@ -902,7 +902,7 @@ fw.describe("Personal auras page - a group drawing text only", function()
 		local page = ShowPage(addon, group)
 
 		local gone = {
-			"Reverse swipe", "Hide swipe", "Show numbers", "Centre stacks", "Custom icon",
+			"Reverse swipe", "Show swipe", "Show numbers", "Centre stacks", "Custom icon",
 		}
 
 		for _, label in ipairs(gone) do
@@ -924,7 +924,7 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 		local page = ShowPage(addon, group)
 
 		local labels = {
-			"Glow icons", "Show border", "Reverse swipe", "Hide swipe", "Show numbers",
+			"Glow icons", "Show border", "Reverse swipe", "Show swipe", "Show numbers",
 			"Centre stacks", "Show tooltips", "Custom icon", "Pandemic", "Colour text",
 		}
 		local taken = {}
@@ -943,6 +943,24 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 			fw.is_nil(taken[slot], label .. " draws on top of " .. tostring(taken[slot]))
 			taken[slot] = label
 		end
+	end)
+end)
+
+fw.describe("Personal auras page - the cooldown swipe switch", function()
+	fw.it("reads the group it is editing and writes the key that group draws from", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		local page = ShowPage(addon, group)
+		local switch = CheckboxLabelled(page, "Show swipe")
+
+		fw.not_nil(switch, "the switch is on the appearance tab")
+		assert(group.Icons.EnableSwipe == true, "a group ships with its swipe drawn")
+		fw.eq(switch:GetChecked(), true, "so the switch paints ticked")
+
+		switch:GetScript("OnClick")(switch)
+
+		assert(group.Icons.EnableSwipe == false, "unticking it drops the swipe")
+		fw.eq(switch:GetChecked(), false, "and the switch repaints from what it wrote")
 	end)
 end)
 
@@ -971,9 +989,9 @@ fw.describe("Personal auras page - the milliseconds switch", function()
 		local page = ShowPage(addon, group)
 
 		-- Two switches known to be neighbours, so the flow's column width is read off the page.
-		local _, _, _, hideSwipeX = CheckboxLabelled(page, "Hide swipe"):GetPoint(1)
+		local _, _, _, showSwipeX = CheckboxLabelled(page, "Show swipe"):GetPoint(1)
 		local _, _, _, showNumbersX = CheckboxLabelled(page, "Show numbers"):GetPoint(1)
-		local columnWidth = showNumbersX - hideSwipeX
+		local columnWidth = showNumbersX - showSwipeX
 
 		local pandemic = CheckboxLabelled(page, "Pandemic")
 		local milliseconds = CheckboxLabelled(page, "Milliseconds")
@@ -1065,8 +1083,8 @@ local function ButtonSaying(window, text)
 	return nil
 end
 
-fw.describe("Personal auras page - a string exported before the countdown switch flipped", function()
-	fw.it("leaves a group that hid its countdown hidden", function()
+fw.describe("Personal auras page - a string exported before the icon switches flipped", function()
+	fw.it("leaves a group that hid its countdown and its swipe hidden", function()
 		local addon, group = LoadWithGroup({ 45438 })
 		local options = addon.Framework:GetSavedVars().Modules.PersonalAuras
 
@@ -1077,7 +1095,10 @@ fw.describe("Personal auras page - a string exported before the countdown switch
 		local realDeserialize = _G.C_EncodingUtil.DeserializeCBOR
 
 		_G.C_EncodingUtil.DeserializeCBOR = function()
-			return { V = 1, Groups = { { Unit = "player", Icons = { HideNumbers = true } } } }
+			return {
+				V = 1,
+				Groups = { { Unit = "player", Icons = { HideNumbers = true, HideSwipe = true } } },
+			}
 		end
 
 		addon.Config.PersonalAurasUI.ShowImportWindow({})
@@ -1100,5 +1121,7 @@ fw.describe("Personal auras page - a string exported before the countdown switch
 
 		fw.eq(imported.Icons.EnableNumbers, false, "the author's choice survives the import")
 		fw.is_nil(imported.Icons.HideNumbers, "and the key it arrived under is not kept")
+		fw.eq(imported.Icons.EnableSwipe, false, "the swipe the author dropped stays dropped")
+		fw.is_nil(imported.Icons.HideSwipe, "and its old key is not kept either")
 	end)
 end)

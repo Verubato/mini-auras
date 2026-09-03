@@ -3746,14 +3746,34 @@ fw.describe("PersonalAuras - textures", function()
 	end)
 end)
 
+---@return table cooldown The clock the one drawn button was given.
+local function CooldownOnPlayer()
+	local button = ContainerFor("player")._groups.helpful.buttons[1]
+
+	return button._lastArgs.SetDurationCooldown[1]
+end
+
+fw.describe("PersonalAuras - the cooldown swipe on an icon group", function()
+	fw.it("drops it on a group that turned it off", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { EnableSwipe = false } })
+		module:Refresh()
+
+		assert(CooldownOnPlayer()._lastArgs.SetDrawSwipe[1] == false,
+			"the group asked for the swipe to go")
+	end)
+
+	fw.it("keeps it on a group that left the switch alone", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		assert(CooldownOnPlayer()._lastArgs.SetDrawSwipe[1] == true,
+			"an untouched group draws its swipe")
+	end)
+end)
+
 fw.describe("PersonalAuras - the countdown numbers on an icon group", function()
-	---@return table cooldown The clock the one drawn button was given.
-	local function CooldownOnPlayer()
-		local button = ContainerFor("player")._groups.helpful.buttons[1]
-
-		return button._lastArgs.SetDurationCooldown[1]
-	end
-
 	fw.it("drops them on a group that turned them off", function()
 		ClearGroups()
 		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { EnableNumbers = false } })
@@ -3797,14 +3817,14 @@ fw.describe("PersonalAuras - text only", function()
 	end)
 
 	fw.it("draws the countdown with the swipe off", function()
-		-- The group's own Hide swipe switch is off here, so the swipe going is the shape's doing.
+		-- The group's own Show swipe switch is on here, so the swipe going is the shape's doing.
 		ClearGroups()
 
 		local group = AddTextGroup()
 
 		module:Refresh()
 
-		assert(group.Icons.HideSwipe == false, "the group never asked for the swipe to go")
+		assert(group.Icons.EnableSwipe == true, "the group never asked for the swipe to go")
 
 		local button = ContainerFor("player")._groups.helpful.buttons[1]
 		local cooldown = button._lastArgs.SetDurationCooldown[1]

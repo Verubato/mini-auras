@@ -141,10 +141,10 @@ function ui.BuildAppearanceTab(ctx)
 		},
 		{
 			Bars = false, Text = false,
-			Label = L["Hide swipe"],
-			Tooltip = L["Hide the cooldown swipe animation on this group's icons."],
-			Get = function(group) return group.Icons.HideSwipe end,
-			Set = function(group, value) group.Icons.HideSwipe = value end,
+			Label = L["Show swipe"],
+			Tooltip = L["Shows the cooldown swipe animation on this group's icons."],
+			Get = function(group) return group.Icons.EnableSwipe end,
+			Set = function(group, value) group.Icons.EnableSwipe = value end,
 		},
 		{
 			-- Off the text shape, which forces the countdown on, so the switch has nothing to
