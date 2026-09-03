@@ -431,7 +431,7 @@ shown for one, and none of the red refusals or yellow caveats apply.
   one adds it and stops recording. Tooltip warning: the recorded ID is the ID of the cast,
   which is often not the ID of the aura it applies. Recording stops automatically when the
   config window closes.
-- A group holds at most **100 spells** ("A group can hold at most 100 spells."), no
+- A group holds at most **200 spells** ("A group can hold at most 200 spells."), no
   duplicates. Each added spell is automatically expanded to every spell ID sharing its name,
   because the aura the game applies is often not the spellbook ID.
 - A Spell IDs group with an empty list shows nothing (the empty list itself is the reason).
@@ -615,7 +615,7 @@ choices still only fire while the unit is on the side the choice names.
 
 ### Limits
 
-- Max 100 spells per group.
+- Max 200 spells per group.
 - Max 40 icons or bars shown per group; 3 preview stand-ins while positioning. A texture group
   draws exactly one picture, with one stand-in.
 - Icon size 10-200, bar height 8-50, bar width 40-250, texture width/height 8-400, rotation

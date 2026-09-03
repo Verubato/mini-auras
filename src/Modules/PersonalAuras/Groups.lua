@@ -90,7 +90,7 @@ local MAX_ICONS = 40
 -- grows without covering the screen for a filter group that could match anything.
 local PREVIEW_ICONS = 3
 -- Anything above this is a corrupt or hostile import rather than a configuration.
-local MAX_SPELLS_PER_GROUP = 100
+local MAX_SPELLS_PER_GROUP = 200
 
 -- Filter string components a group can require or forbid, in the order the options page lists
 -- them. Helpful and harmful are excluded, since AuraType already carries that.
