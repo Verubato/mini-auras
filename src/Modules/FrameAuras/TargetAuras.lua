@@ -32,8 +32,8 @@ local ICON_SPACING = 2
 -- Both rows grow rightwards from their own top left, wrapping downwards. The preview reads it too,
 -- so a wrapped preview line starts on the edge the live one does.
 local ROW_GROW = "RIGHT"
--- The icons hang off this corner too, so a second line leaves the first where it was.
-local ROW_PIN = "TOPLEFT"
+-- The corner a rightwards row hangs off, so a second line grows away from the first.
+local ROW_PIN = growAnchors:GetFlowPin(ROW_GROW)
 -- Where Blizzard's own rows sit. The frame's art runs wider and lower than the bars drawn on it,
 -- so a row is pulled back up over the texture's bottom edge rather than hung below it.
 local ROW_X = 5
@@ -634,7 +634,6 @@ local function Apply(host)
 	rowScratch[2].Display, rowScratch[2].Group = host.Buffs, BUFF_GROUP
 
 	for _, entry in ipairs(rowScratch) do
-		entry.Display:SetPinPoint(ROW_PIN)
 		entry.Display:SetGrow(ROW_GROW)
 		entry.Display:SetPerLine(perRow)
 		entry.Display:SetMaxIcons(entry.Group, maxIcons)

@@ -4,6 +4,11 @@
 
 - The frame auras buff and debuff rows now carry a Reverse swipe switch, on by default.
 - Personal aura groups now carry a Milliseconds switch, off by default.
+- A frame aura row now starts on its anchor point and grows away from it, so a row anchored to an
+  edge and growing outwards sits beside the frame rather than back across it. A row that stacks
+  downwards now hangs below its anchor point, so a row along the bottom of a frame wants LEFT_UP or
+  RIGHT_UP. Both rows ship with one, and nothing moves unless the anchor or the grow was changed by
+  hand.
 - Fixed frame aura rows shifting out of their corner when the icons filled a second line.
 
 ## 5.34.0

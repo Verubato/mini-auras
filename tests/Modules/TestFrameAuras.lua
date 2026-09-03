@@ -1286,6 +1286,7 @@ fw.describe("Frame Auras - where the player puts each row", function()
 	fw.it("pins a row to the point and the offset the settings name", function()
 		options.Buffs.Enabled = true
 		options.Buffs.Anchor = "TOPLEFT"
+		options.Buffs.Grow = "RIGHT"
 		options.Buffs.Offset.X = 7
 		options.Buffs.Offset.Y = -9
 
@@ -1335,8 +1336,8 @@ fw.describe("Frame Auras - where the player puts each row", function()
 
 		-- Pinned before the two are compared, or a preview and a live row both stuck on the
 		-- shipped corner would agree and say nothing.
-		assert(livePoint == "TOP" and liveRelative == "TOP",
-			"the live row took the point asked for, got " .. tostring(livePoint))
+		assert(liveRelative == "TOP",
+			"the live row took the point asked for, got " .. tostring(liveRelative))
 		assert(liveX == 3 and liveY == -4,
 			"at the offset asked for, got " .. tostring(liveX) .. ", " .. tostring(liveY))
 
@@ -1364,7 +1365,9 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
 		local point, _, relativePoint, x, y = preview.Frame:GetPoint(1)
 
-		assert(point == "RIGHT" and relativePoint == "RIGHT",
+		-- The shipped debuff grow runs right and up, so the row hangs its bottom left corner off
+		-- the frame's right edge and runs out from there.
+		assert(point == "BOTTOMLEFT" and relativePoint == "RIGHT",
 			"the preview took the point asked for, got " .. tostring(point))
 		assert(x == -6 and y == 5, "at the offset asked for, got " .. x .. ", " .. y)
 
@@ -1387,9 +1390,9 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		acm.tickAll(400)
 
 		local row = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the buff row was built")
-		local point, _, _, x, y = row:GetPoint(1)
+		local _, _, relativePoint, x, y = row:GetPoint(1)
 
-		assert(point == "TOPRIGHT", "the row stayed at the top, got " .. tostring(point))
+		assert(relativePoint == "TOPRIGHT", "the row stayed at the top, got " .. tostring(relativePoint))
 		assert(x == -2 and y == -2, "with nothing added for the bar, got " .. x .. ", " .. y)
 
 		DropRaidFrame(14)
@@ -1406,14 +1409,14 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		module:StartTesting()
 
 		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
-		local point, _, _, x, y = preview.Frame:GetPoint(1)
+		local _, _, relativePoint, x, y = preview.Frame:GetPoint(1)
 
 		-- The party frame is shared with every section after this one, so the field comes off
 		-- before anything can fail.
 		memberFrame.powerBarUsedHeight = nil
 		module:StopTesting()
 
-		assert(point == "CENTER", "the preview stayed centred, got " .. tostring(point))
+		assert(relativePoint == "CENTER", "the preview stayed centred, got " .. tostring(relativePoint))
 		assert(x == 0 and y == 0, "with nothing added for the bar, got " .. x .. ", " .. y)
 	end)
 
@@ -1429,9 +1432,10 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		acm.tickAll(400)
 
 		local row = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the buff row was built")
-		local point = row:GetPoint(1)
+		local _, _, relativePoint = row:GetPoint(1)
 
-		assert(point == "BOTTOMRIGHT", "the row goes back to what it ships in, got " .. tostring(point))
+		assert(relativePoint == "BOTTOMRIGHT",
+			"the row goes back to what it ships in, got " .. tostring(relativePoint))
 
 		DropRaidFrame(15)
 	end)
@@ -1455,7 +1459,7 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		DropRaidFrame(16)
 	end)
 
-	fw.it("wraps the preview away from the edge the row hangs off", function()
+	fw.it("wraps the preview the way the grow says", function()
 		options.Buffs.Enabled = true
 		options.Buffs.Anchor = "TOPRIGHT"
 		options.Buffs.Grow = "LEFT"
@@ -1465,24 +1469,24 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
 
 		assert(preview.GrowDown == true and preview.GrowUp == false,
-			"a row on a top corner drops its second line, got up " .. tostring(preview.GrowUp))
+			"a plain grow drops its second line, got up " .. tostring(preview.GrowUp))
 
 		module:StopTesting()
 
-		options.Buffs.Anchor = "BOTTOMRIGHT"
+		options.Buffs.Grow = "LEFT_UP"
 		module:StartTesting()
 
 		preview = assert(RowOn(memberFrame), "the party frame got a preview row again")
 
 		assert(preview.GrowUp == true and preview.GrowDown == false,
-			"a row on a bottom corner stacks it upwards, got down " .. tostring(preview.GrowDown))
+			"a corner grow lifts it, got down " .. tostring(preview.GrowDown))
 
 		module:StopTesting()
 	end)
 
-	fw.it("leaves the grow to say which way a row up the side of the frame wraps", function()
+	fw.it("stacks a wrapped line the way the grow says, whichever edge the row is on", function()
 		options.Debuffs.Enabled = true
-		options.Debuffs.Anchor = "LEFT"
+		options.Debuffs.Anchor = "TOPLEFT"
 		options.Debuffs.Grow = "RIGHT"
 
 		local frame = NewRaidFrame(18)
@@ -1492,9 +1496,8 @@ fw.describe("Frame Auras - where the player puts each row", function()
 
 		local row = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
 
-		-- Neither edge of the frame is nearer than the other here, so nothing overrules the grow.
 		assert(row._flowAnchorPoint == "TOPLEFT",
-			"a plain grow still drops its second line, got " .. tostring(row._flowAnchorPoint))
+			"a plain grow drops its second line, got " .. tostring(row._flowAnchorPoint))
 
 		options.Debuffs.Grow = "RIGHT_UP"
 
@@ -1502,9 +1505,73 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		acm.tickAll(400)
 
 		assert(row._flowAnchorPoint == "BOTTOMLEFT",
-			"and a corner grow still lifts it, got " .. tostring(row._flowAnchorPoint))
+			"and a corner grow lifts it, got " .. tostring(row._flowAnchorPoint))
 
 		DropRaidFrame(18)
+	end)
+
+	fw.it("hangs a row off its anchor so the icons run away from the frame", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.Anchor = "LEFT"
+		options.Debuffs.Grow = "LEFT"
+
+		local frame = NewRaidFrame(19)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
+		local point, _, relativePoint = row:GetPoint(1)
+
+		-- Held by the corner the icons start from, so a row growing left off the left edge sits
+		-- outside the frame instead of over it.
+		assert(point == "TOPRIGHT" and relativePoint == "LEFT",
+			"the row hangs off its own top right, got " .. tostring(point))
+
+		DropRaidFrame(19)
+	end)
+
+	fw.it("hangs a centred row by its edge so it spreads both ways", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.Anchor = "TOPRIGHT"
+		options.Debuffs.Grow = "CENTER"
+
+		local frame = NewRaidFrame(30)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
+		local point, _, relativePoint = row:GetPoint(1)
+
+		assert(point == "TOP" and relativePoint == "TOPRIGHT",
+			"a centred row takes no corner of its own, got " .. tostring(point))
+
+		DropRaidFrame(30)
+	end)
+
+	fw.it("adds no power bar lift to a row that hangs below the bar", function()
+		options.Buffs.Enabled = true
+		options.Buffs.Anchor = "BOTTOMRIGHT"
+		options.Buffs.Grow = "LEFT"
+		options.Buffs.Offset.Y = 2
+
+		local frame = NewRaidFrame(31)
+
+		frame.powerBarUsedHeight = 8
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the buff row was built")
+		local point, _, relativePoint, _, y = row:GetPoint(1)
+
+		-- The row drops away from the bottom corner rather than sitting on it, so it is already
+		-- clear of the bar.
+		assert(point == "TOPRIGHT" and relativePoint == "BOTTOMRIGHT" and y == 2,
+			"the row kept its own offset, got " .. tostring(point) .. " at " .. tostring(y))
+
+		DropRaidFrame(31)
 	end)
 
 	fw.it("holds a wrapped row to the corner it hangs off", function()
@@ -4045,6 +4112,8 @@ fw.describe("Frame Auras - how the target rows stack", function()
 			"every buff icon hangs off the row's own corner, got " .. tostring(buffs._flowAnchorPoint))
 		assert(debuffs._flowAnchorPoint == "TOPLEFT",
 			"and every debuff icon too, got " .. tostring(debuffs._flowAnchorPoint))
+		assert(buffs:GetPoint(1) == "TOPLEFT" and debuffs:GetPoint(1) == "TOPLEFT",
+			"and each row hangs by that same corner, got " .. tostring(buffs:GetPoint(1)))
 	end)
 end)
 

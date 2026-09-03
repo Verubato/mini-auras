@@ -9,8 +9,7 @@ local _, addon = ...
 --   Chain  - how to continue a row after a preceding frame (the kick icon, or the previous
 --            unit's container in the chained 12.1 rows). XMul/YMul turn a spacing value into
 --            the offset for that direction.
---   Flow   - 12.1 AuraContainer flow layout settings, so the first icon sits nearest the
---            container's anchored edge like the legacy layouts.
+--   Flow   - 12.1 AuraContainer flow layout settings, and the point the container hangs off.
 
 ---@class GrowAnchors
 local M = {}
@@ -46,58 +45,20 @@ M.Chain = {
 	RIGHT_UP = { Point = "LEFT", RelativePoint = "RIGHT", XMul = 1, YMul = 0 },
 }
 
----@type table<string, { Axis: string, AnchorPoint: string, Horizontal: string, Vertical: string }>
+-- AnchorPoint is the corner a run starts from, so it names the edge each axis grows away from.
+-- Pin hangs that box off the host.
+---@type table<string, { Axis: string, AnchorPoint: string, Pin: string, Horizontal: string, Vertical: string }>
 M.Flow = {
-	LEFT = { Axis = "Horizontal", AnchorPoint = "RIGHT", Horizontal = "Left", Vertical = "Down" },
-	RIGHT = { Axis = "Horizontal", AnchorPoint = "LEFT", Horizontal = "Right", Vertical = "Down" },
-	CENTER = { Axis = "Horizontal", AnchorPoint = "LEFT", Horizontal = "Right", Vertical = "Down" },
-	DOWN = { Axis = "Vertical", AnchorPoint = "TOP", Horizontal = "Right", Vertical = "Down" },
-	UP = { Axis = "Vertical", AnchorPoint = "BOTTOM", Horizontal = "Right", Vertical = "Up" },
-	-- A caller that names the point it hangs off gets the wrap from there instead.
-	LEFT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMRIGHT", Horizontal = "Left", Vertical = "Up" },
-	RIGHT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMLEFT", Horizontal = "Right", Vertical = "Up" },
+	LEFT = { Axis = "Horizontal", AnchorPoint = "TOPRIGHT", Pin = "TOPRIGHT", Horizontal = "Left", Vertical = "Down" },
+	RIGHT = { Axis = "Horizontal", AnchorPoint = "TOPLEFT", Pin = "TOPLEFT", Horizontal = "Right", Vertical = "Down" },
+	-- A centred row spreads both ways from the anchor, so it keeps a mid-edge pin.
+	CENTER = { Axis = "Horizontal", AnchorPoint = "TOPLEFT", Pin = "TOP", Horizontal = "Right", Vertical = "Down" },
+	DOWN = { Axis = "Vertical", AnchorPoint = "TOPLEFT", Pin = "TOP", Horizontal = "Right", Vertical = "Down" },
+	UP = { Axis = "Vertical", AnchorPoint = "BOTTOMLEFT", Pin = "BOTTOM", Horizontal = "Right", Vertical = "Up" },
+	-- The two corner grows, which stack a wrapped line upwards instead of down.
+	LEFT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMRIGHT", Pin = "BOTTOMRIGHT", Horizontal = "Left", Vertical = "Up" },
+	RIGHT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMLEFT", Pin = "BOTTOMLEFT", Horizontal = "Right", Vertical = "Up" },
 }
-
--- A point missing from this is centred on the frame's height, so the row it holds spreads either
--- way rather than off one edge.
-local VERTICAL_HALF = {
-	TOPLEFT = "TOP",
-	TOP = "TOP",
-	TOPRIGHT = "TOP",
-	BOTTOMLEFT = "BOTTOM",
-	BOTTOM = "BOTTOM",
-	BOTTOMRIGHT = "BOTTOM",
-}
--- A container is sized to its icons, so a button held anywhere but the edge its run starts from
--- sits outside that box, and moves with every line the row gains.
-local HORIZONTAL_START = { Left = "RIGHT", Right = "LEFT" }
-local VERTICAL_START = { Up = "BOTTOM", Down = "TOP" }
--- A row in the bottom corner of a frame has to wrap upwards, or its second line lands on whatever
--- sits below.
-local VERTICAL_WRAP = { TOP = "Down", BOTTOM = "Up" }
-
--- One table per grow and pin pair, built as each pair is first asked for.
-local resolvedFlow = {}
-
----@param grow string?
----@param pin string
----@return { Axis: string, AnchorPoint: string, Horizontal: string, Vertical: string }
-local function ResolveFlow(grow, pin)
-	local base = M.Flow[grow] or M.Flow[M.Default]
-	local vertical = base.Vertical
-
-	-- Which way a row down a column runs is the player's own answer rather than the pin's.
-	if base.Axis ~= "Vertical" then
-		vertical = VERTICAL_WRAP[VERTICAL_HALF[pin]] or vertical
-	end
-
-	return {
-		Axis = base.Axis,
-		AnchorPoint = VERTICAL_START[vertical] .. HORIZONTAL_START[base.Horizontal],
-		Horizontal = base.Horizontal,
-		Vertical = vertical,
-	}
-end
 
 ---Anchor points for positioning a row against its anchor frame.
 ---@param grow string?
@@ -165,25 +126,18 @@ function M:GetChain(grow, spacing)
 end
 
 ---12.1 flow layout settings for a container.
----Pass the point the container hangs off and a wrapped line stacks away from it, so the line
----already on screen stays where the player put it.
 ---@param grow string?
----@param pin string? The point of the container that is anchored to its host.
----@return { Axis: string, AnchorPoint: string, Horizontal: string, Vertical: string }
-function M:GetFlow(grow, pin)
-	if not pin then
-		return M.Flow[grow] or M.Flow[M.Default]
-	end
+---@return { Axis: string, AnchorPoint: string, Pin: string, Horizontal: string, Vertical: string }
+function M:GetFlow(grow)
+	return M.Flow[grow] or M.Flow[M.Default]
+end
 
-	local key = (grow or M.Default) .. pin
-	local flow = resolvedFlow[key]
-
-	if not flow then
-		flow = ResolveFlow(grow, pin)
-		resolvedFlow[key] = flow
-	end
-
-	return flow
+---The point of a 12.1 container to hang off its host's anchor point, so the first icon lands on
+---that anchor and every line the row gains grows away from it.
+---@param grow string?
+---@return string point
+function M:GetFlowPin(grow)
+	return (M.Flow[grow] or M.Flow[M.Default]).Pin
 end
 
 ---Whether a row runs leftwards from its anchored edge, so the first icon is the rightmost one.

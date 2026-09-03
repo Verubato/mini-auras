@@ -145,13 +145,15 @@ other.
 - **Anchor** is a Frame Auras control and nothing else has one. It names which of the nine points
   of the unit frame the display hangs off (TOPLEFT, TOP, TOPRIGHT, LEFT, CENTER, RIGHT,
   BOTTOMLEFT, BOTTOM, BOTTOMRIGHT), and every other module pins its display to a corner the code
-  chooses. A display sitting on one of the three bottom points is raised clear of the frame's
-  power bar on top of its own Offset Y, which is why moving it up to a top point drops that
-  lift rather than keeping it. The Anchor also decides which way a wrapped line stacks: a row on
-  one of the three top points wraps downwards and one on a bottom point wraps upwards, so the
-  line already on screen stays where it was put. Only on the three middle points (LEFT, CENTER,
-  RIGHT) does the Grow direction decide it, which is where LEFT_UP and RIGHT_UP still differ from
-  LEFT and RIGHT.
+  chooses. The first icon sits on the Anchor point and the row grows away from it on both axes,
+  so a row anchored to LEFT and growing LEFT sits outside the frame while the same anchor growing
+  RIGHT runs back across it. The vertical half works the same way: LEFT_UP and RIGHT_UP stack a
+  wrapped line upwards and so sit above the Anchor point, and LEFT, RIGHT, and CENTER stack
+  downwards and sit below it. A row along the bottom edge of a frame therefore wants one of the
+  two _UP grows, which is what both sides ship with. CENTER is the one grow that spreads both ways
+  from the anchor rather than running off it. A row sitting on one of the three bottom points and
+  stacking upwards is raised clear of the frame's power bar on top of its own Offset Y; a row that
+  hangs below its anchor is already clear of the bar and takes no lift.
 
 ### Common icon options and ranges
 
@@ -697,7 +699,7 @@ icon cap to sit on the aura container rather than on each group inside it, which
 
 **Buffs sub-tab.** Replaces the buff row on the party and raid frames, shipping in the bottom right
 corner growing left and wrapping upward. The Anchor, Grow, and Offset X/Y controls move it
-anywhere on the frame. Blizzard's **compact** frames only, since those are the ones the
+anywhere on or around the frame. Blizzard's **compact** frames only, since those are the ones the
 cvar below controls; a player on the standard (non-compact) party frames sees no change here, and
 none at all if DandersFrames has replaced the compact frames outright. Switching it on remembers the `raidFramesDisplayBuffs` cvar and sets it to 0;
 switching it off puts the remembered value back. The cvar is only written when the switch actually moves, so a player who

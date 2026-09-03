@@ -172,14 +172,14 @@ fw.describe("Alerts - a centred row in the arena", function()
 		enterArena(3)
 
 		local leftAnchor, leftGrowth = flowOf(defOf("arena1"))
-		assert(leftAnchor == "RIGHT" and leftGrowth == _G.AnchorUtil.FlowDirection.Left,
+		assert(leftAnchor == "TOPRIGHT" and leftGrowth == _G.AnchorUtil.FlowDirection.Left,
 			"arena1 fills leftwards, got " .. tostring(leftAnchor))
 
 		local rightAnchor, rightGrowth = flowOf(defOf("arena3"))
-		assert(rightAnchor == "LEFT" and rightGrowth == _G.AnchorUtil.FlowDirection.Right,
+		assert(rightAnchor == "TOPLEFT" and rightGrowth == _G.AnchorUtil.FlowDirection.Right,
 			"arena3 fills rightwards, got " .. tostring(rightAnchor))
 
-		assert((flowOf(defOf("arena2"))) == "LEFT", "arena2 reads with the right half")
+		assert((flowOf(defOf("arena2"))) == "TOPLEFT", "arena2 reads with the right half")
 	end)
 
 	fw.it("puts arena1 and arena2 either side of the seam when the count is even", function()
@@ -196,8 +196,8 @@ fw.describe("Alerts - a centred row in the arena", function()
 			assert(not (point == "CENTER" and target == mainBar), "no unit takes the centre itself")
 		end
 
-		assert((flowOf(defOf("arena1"))) == "RIGHT", "arena1 still fills towards the centre")
-		assert((flowOf(defOf("arena2"))) == "LEFT", "and arena2 away from it")
+		assert((flowOf(defOf("arena1"))) == "TOPRIGHT", "arena1 still fills towards the centre")
+		assert((flowOf(defOf("arena2"))) == "TOPLEFT", "and arena2 away from it")
 	end)
 
 	fw.it("turns the new middle unit around when it was in the left half", function()
@@ -210,14 +210,14 @@ fw.describe("Alerts - a centred row in the arena", function()
 		env.phased["arena1"] = true
 		module:Refresh()
 
-		assert((flowOf(defOf("arena2"))) == "RIGHT",
+		assert((flowOf(defOf("arena2"))) == "TOPRIGHT",
 			"precondition: arena2 is in the left half and fills leftwards")
 
 		env.phased["arena1"] = nil
 		module:Refresh()
 
 		anchoredAt(defOf("arena2"), "CENTER", mainBar, "CENTER", 0, "arena2 back on the centre")
-		assert((flowOf(defOf("arena2"))) == "LEFT",
+		assert((flowOf(defOf("arena2"))) == "TOPLEFT",
 			"arena2 fills rightwards again as the middle unit")
 	end)
 
@@ -255,7 +255,7 @@ fw.describe("Alerts - a centred row deeper than a half of one", function()
 		anchoredAt(defOf("arena1"), "RIGHT", leftInner, "LEFT", -SPACING, "arena1")
 		anchoredAt(defOf("arena4"), "LEFT", rightInner, "RIGHT", SPACING, "arena4")
 
-		assert((flowOf(defOf("arena1"))) == "RIGHT", "the outer left unit fills towards the centre too")
+		assert((flowOf(defOf("arena1"))) == "TOPRIGHT", "the outer left unit fills towards the centre too")
 	end)
 
 	fw.it("re-partitions when the set grows to an odd count", function()
@@ -336,7 +336,7 @@ fw.describe("Alerts - CENTER on the nameplate path", function()
 		anchoredAt(defOf("nameplate2"), "LEFT", first, "RIGHT", SPACING, "nameplate2")
 
 		for _, frame in ipairs(rowOf("nameplate1", "nameplate2")) do
-			assert((flowOf(frame)) == "LEFT", "every plate display fills rightwards")
+			assert((flowOf(frame)) == "TOPLEFT", "every plate display fills rightwards")
 		end
 
 		removePlate("nameplate1")

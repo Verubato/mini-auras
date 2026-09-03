@@ -884,12 +884,13 @@ local function PowerBarInset(frame)
 end
 
 ---How far a row hanging off a given point has to rise to clear the power bar. Only a bottom point
----sits in the space the bar takes, so every other one is left where the player put it.
+---sits in the space the bar takes, and only a row stacking up over that point stays in it.
 ---@param frame table
 ---@param point string
+---@param pin string The point of the row itself that hangs off `point`.
 ---@return number
-local function PowerBarLift(frame, point)
-	if not point:find("BOTTOM") then
+local function PowerBarLift(frame, point, pin)
+	if not point:find("BOTTOM") or not pin:find("BOTTOM") then
 		return 0
 	end
 
@@ -905,10 +906,11 @@ end
 local function AnchorSide(display, frame, side)
 	local containerFrame = display.Frame
 	local point = AnchorPoint(side)
+	local grow = Grow(side)
+	local pin = growAnchors:GetFlowPin(grow)
 	local offsetX, offsetY = Offset(side)
 
-	display:SetPinPoint(point)
-	display:SetGrow(Grow(side))
+	display:SetGrow(grow)
 
 	-- Scales with the frame, unlike the free-standing displays elsewhere. At any UI scale but 1, a
 	-- row that ignored it would take the wrong fraction of the frame and its corner inset would not
@@ -925,7 +927,7 @@ local function AnchorSide(display, frame, side)
 	end
 
 	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(point, frame, point, offsetX, offsetY + PowerBarLift(frame, point))
+	containerFrame:SetPoint(pin, frame, point, offsetX, offsetY + PowerBarLift(frame, point, pin))
 end
 
 ---@param container IconSlotContainer?
@@ -981,7 +983,8 @@ local function ApplyTestSide(entry, side)
 	local frame = entry.Frame
 	local grow = Grow(side)
 	local point = AnchorPoint(side)
-	local flow = growAnchors:GetFlow(grow, point)
+	local flow = growAnchors:GetFlow(grow)
+	local pin = growAnchors:GetFlowPin(grow)
 	local offsetX, offsetY = Offset(side)
 	local containerFrame = container.Frame
 	local count = TestIconCount(side)
@@ -1036,7 +1039,7 @@ local function ApplyTestSide(entry, side)
 	end
 
 	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(point, frame, point, offsetX, offsetY + PowerBarLift(frame, point))
+	containerFrame:SetPoint(pin, frame, point, offsetX, offsetY + PowerBarLift(frame, point, pin))
 	containerFrame:Show()
 end
 
