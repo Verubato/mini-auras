@@ -161,6 +161,7 @@ Config\Migrations\V80.lua
 Config\Migrations\V81.lua
 Config\Migrations\V82.lua
 Config\Migrations\V83.lua
+Config\Migrations\V84.lua
 Config\Config.lua
 Config\PanelHelpers.lua
 Config\SpellPicker.lua

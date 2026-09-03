@@ -7,8 +7,9 @@
 - A frame aura row now starts on its anchor point and grows away from it, so a row anchored to an
   edge and growing outwards sits beside the frame rather than back across it. A row that stacks
   downwards now hangs below its anchor point, so a row along the bottom of a frame wants LEFT_UP or
-  RIGHT_UP. Both rows ship with one, and nothing moves unless the anchor or the grow was changed by
-  hand.
+  RIGHT_UP. Both rows ship with one. A row anchored to a top or bottom edge and growing left or
+  right is switched to the matching grow on upgrade, so it stays where you put it. A centred row, or
+  one anchored halfway up an edge, moves and may want nudging.
 - Fixed frame aura rows shifting out of their corner when the icons filled a second line.
 
 ## 5.34.0

@@ -2494,3 +2494,111 @@ fw.describe("Migrator - the v83 crowd control colour mode", function()
 			"the login path has to reach step 83")
 	end)
 end)
+
+fw.describe("Migrator - the v84 frame aura row pin", function()
+	fw.it("swaps a top or bottom anchored grow for the twin that leaves the row where it was", function()
+		local vars = {
+			Version = 83,
+			Modules = {
+				FrameAuras = {
+					Buffs = { Anchor = "BOTTOMRIGHT", Grow = "LEFT" },
+					Debuffs = { Anchor = "TOPLEFT", Grow = "RIGHT_UP" },
+				},
+			},
+			Profiles = {
+				Plain = {
+					Modules = { FrameAuras = { Buffs = { Anchor = "BOTTOMLEFT", Grow = "RIGHT" } } },
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion84(vars) == true)
+
+		local frameAuras = vars.Modules.FrameAuras
+		assert(frameAuras.Buffs.Grow == "LEFT_UP", "a bottom anchored row has to stack upwards to stay put")
+		assert(frameAuras.Debuffs.Grow == "RIGHT", "a top anchored row has to stack downwards to stay put")
+		assert(frameAuras.Buffs.Anchor == "BOTTOMRIGHT", "the anchor the player picked is left alone")
+		assert(vars.Profiles.Plain.Modules.FrameAuras.Buffs.Grow == "RIGHT_UP",
+			"a snapshot is swapped the same way")
+		assert(vars.Version == 84)
+	end)
+
+	fw.it("leaves a pairing that already hangs where it did", function()
+		local vars = {
+			Version = 83,
+			Modules = {
+				FrameAuras = {
+					-- What the addon ships, so nobody who left it alone has anything to put back.
+					Buffs = { Anchor = "BOTTOMRIGHT", Grow = "LEFT_UP" },
+					Debuffs = { Anchor = "TOPRIGHT", Grow = "RIGHT" },
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion84(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.Grow == "LEFT_UP")
+		assert(vars.Modules.FrameAuras.Debuffs.Grow == "RIGHT")
+		assert(vars.Version == 84)
+	end)
+
+	fw.it("leaves a centred row alone, there being no upward twin to swap it for", function()
+		local vars = {
+			Version = 83,
+			Modules = { FrameAuras = { Buffs = { Anchor = "BOTTOMRIGHT", Grow = "CENTER" } } },
+		}
+
+		assert(migrator:UpgradeToVersion84(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.Grow == "CENTER")
+		assert(vars.Version == 84)
+	end)
+
+	fw.it("leaves a mid-height anchor alone, having no grow that reproduces its old pin", function()
+		local vars = {
+			Version = 83,
+			Modules = { FrameAuras = { Buffs = { Anchor = "LEFT", Grow = "LEFT" } } },
+		}
+
+		assert(migrator:UpgradeToVersion84(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.Grow == "LEFT")
+		assert(vars.Version == 84)
+	end)
+
+	fw.it("leaves an anchor it does not recognise alone, the runtime falling back to another", function()
+		local vars = {
+			Version = 83,
+			Modules = { FrameAuras = { Buffs = { Anchor = "TOPMIDDLE", Grow = "LEFT_UP" } } },
+		}
+
+		assert(migrator:UpgradeToVersion84(vars) == true)
+		assert(vars.Modules.FrameAuras.Buffs.Grow == "LEFT_UP")
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = {
+			Version = 82,
+			Modules = { FrameAuras = { Buffs = { Anchor = "BOTTOMRIGHT", Grow = "LEFT" } } },
+		}
+
+		assert(migrator:UpgradeToVersion84(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.FrameAuras.Buffs.Grow == "LEFT", "and must swap nothing")
+		assert(vars.Version == 82)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 83,
+			Modules = { FrameAuras = { Buffs = { Anchor = "BOTTOMRIGHT", Grow = "LEFT" } } },
+			Profiles = {
+				Other = {
+					Modules = { FrameAuras = { Debuffs = { Anchor = "BOTTOMLEFT", Grow = "RIGHT" } } },
+				},
+			},
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 84, "the shipped version has to be past this step")
+		assert(db.Profiles.Other.Modules.FrameAuras.Debuffs.Grow == "RIGHT_UP",
+			"the login path has to reach step 84")
+	end)
+end)
