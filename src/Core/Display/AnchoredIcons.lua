@@ -103,6 +103,8 @@ function M:RenderKickIcon(entry, options, kickEntry, wantsDispelColor, onExpiry,
 		slotOptions.Alpha = true
 		slotOptions.ReverseCooldown = options.Icons.ReverseCooldown
 		slotOptions.ShowMilliseconds = options.Icons.ShowMilliseconds
+		-- A module with no switch of its own leaves the key unset, which reads as numbers on.
+		slotOptions.HideNumbers = options.Icons.EnableNumbers == false
 		slotOptions.Glow = options.Icons.Glow
 		slotOptions.Color = wantsDispelColor and kickEntry.Color or nil
 		slotOptions.FontScale = fontScale

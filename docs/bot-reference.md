@@ -655,6 +655,7 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Show defensives | on/off | on | on |
 | Show CC | on/off | off | on |
 | Show interrupts | on/off | off | on |
+| Show numbers | on/off | on | on |
 | Relative size / Icon Size (%) | 25-100 % | 75 | 65 |
 | Icon Size | 10-100 px | 20 (30 before 5.16.0) | 20 (25 before 5.23.0) |
 | Max Icons | 1-5 | 3 | 3 |
@@ -672,6 +673,9 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
   frame can show up to three of each rather than three in total. CC has always had its own
   budget on top.
 - "Show interrupts" shows an icon when a friendly unit gets interrupted.
+- "Show numbers" is the countdown text on this setting group's icons, the interrupt icon
+  included. The cooldown swipe stays either way, and the global **Disable Numbers** in Misc still
+  takes the text off everywhere.
 
 **Colours sub-tab.** Two swatches, **Important** (default red) and **Defensive** (default
 green), applying to both setting groups. They only take effect while the **Colours** checkbox
@@ -1002,7 +1006,11 @@ Sidebar: General > Portraits. Shows CC, defensives and other important spells on
 target, focus and pet portraits.
 
 Settings: **Enabled** (single switch, applies everywhere, default on), **Reverse swipe**
-(default on), and **Font Scale** (0.5-2.0, step 0.05, default 1.0).
+(default on), **Show numbers** (default on), and **Font Scale** (0.5-2.0, step 0.05, default 1.0).
+
+**Show numbers** is the countdown text on the portrait icon and the interrupt icon. The cooldown
+swipe stays either way, and the global **Disable Numbers** in Misc still takes the text off
+everywhere.
 
 **Extra buffs** (since 5.19.0) is a searchable spell list under the settings, and the buffs
 ticked there are shown on the player's own portrait, under every flagged category. It exists

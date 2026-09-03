@@ -42,6 +42,21 @@ env.loadModule("src/Modules/Portrait/Display.lua")
 env.loadModule("src/Modules/Portrait/Anchors.lua")
 env.loadModule("src/Modules/Portrait/Module.lua")
 local module = env.addon.Modules.PortraitModule
+
+-- The interrupt icon is a slot on the container rather than a display, so what a setting did to it
+-- can only be read off the options KickSlot was handed.
+local kickSlot = env.addon.Core.KickSlot
+local kickHideNumbers
+local realKickSlotRender = kickSlot.Render
+
+kickSlot.Render = function(self, container, kickEntry, slotOptions, previousTimer, onExpired)
+	if kickEntry then
+		kickHideNumbers = slotOptions.HideNumbers
+	end
+
+	return realKickSlotRender(self, container, kickEntry, slotOptions, previousTimer, onExpired)
+end
+
 module:Init()
 -- Init only builds the lifecycle. A module sets itself up on the first refresh that finds it
 -- enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
@@ -139,6 +154,101 @@ fw.describe("Portrait 12.1 - the five-category stack", function()
 			local widgets = select(2, next(display.ButtonWidgets))
 			assert(widgets.Border == nil and widgets.Glow == nil, "no chrome widgets built")
 		end
+	end)
+end)
+
+fw.describe("Portrait 12.1 - the countdown numbers", function()
+	---Whether the portrait icons have dropped their countdown, read off a button the engine built
+	---for the top layer of the stack.
+	---@return boolean
+	local function NumbersHidden()
+		local displays = displaysFor("target")
+		local display = displays[#displays]
+		local group = assert(display.Frame._groups[display.Groups[1].Key], "the layer has a group")
+		local button = assert(group.buttons[1], "the group built a button")
+		local cooldown = assert(button._lastArgs.SetDurationCooldown, "the button was given a cooldown")[1]
+
+		return cooldown._lastArgs.SetHideCountdownNumbers[1]
+	end
+
+	---Lands a kick on the target and reports whether the icon it drew dropped its countdown.
+	---@return boolean
+	local function KickNumbersHidden()
+		kickHideNumbers = "unset"
+
+		env.kicks.target = {
+			Texture = "tex:kick",
+			DurationObject = {},
+			StartTime = 0,
+			Duration = 3,
+		}
+		env.fireKick("target")
+
+		assert(kickHideNumbers ~= "unset", "fixture: firing a kick reached KickSlot:Render")
+
+		return kickHideNumbers
+	end
+
+	---Whether the stand-in the preview draws over the portrait dropped its countdown.
+	---@return boolean
+	local function PreviewNumbersHidden()
+		module:StartTesting()
+
+		local container = assert(containerFor("target"), "no portrait container for target")
+		local layer = assert(container.Slots[1].Container, "the preview filled the portrait's slot")
+		local hidden = layer.Cooldown._lastArgs.SetHideCountdownNumbers[1]
+
+		module:StopTesting()
+
+		return hidden
+	end
+
+	fw.before_each(function()
+		portraitOptions().EnableNumbers = true
+		env.db.DisableNumbers = false
+		module:Refresh()
+	end)
+
+	fw.it("keeps counting down while the switch is on", function()
+		assert(NumbersHidden() == false, "the portrait icon shows its countdown")
+	end)
+
+	fw.it("counts down for a profile saved before the switch existed", function()
+		portraitOptions().EnableNumbers = nil
+		module:Refresh()
+
+		assert(NumbersHidden() == false, "a missing switch reads as on")
+	end)
+
+	fw.it("drops the countdown once the switch is off", function()
+		portraitOptions().EnableNumbers = false
+		module:Refresh()
+
+		assert(NumbersHidden() == true, "the switch takes the numbers off")
+
+		portraitOptions().EnableNumbers = true
+		module:Refresh()
+	end)
+
+	fw.it("takes them off the interrupt icon too, which is a slot rather than an aura", function()
+		assert(KickNumbersHidden() == false, "the interrupt icon counts down with the switch on")
+
+		portraitOptions().EnableNumbers = false
+		module:Refresh()
+
+		assert(KickNumbersHidden() == true, "and drops the numbers when the portrait icon does")
+	end)
+
+	fw.it("takes them out of the preview the switch is read against", function()
+		assert(PreviewNumbersHidden() == false, "the stand-in counts down like the live icon")
+
+		portraitOptions().EnableNumbers = false
+		module:Refresh()
+
+		assert(PreviewNumbersHidden() == true, "and drops the numbers when the live icon does")
+
+		portraitOptions().EnableNumbers = true
+		module:Refresh()
 	end)
 end)
 

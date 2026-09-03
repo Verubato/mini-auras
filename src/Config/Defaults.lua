@@ -207,6 +207,8 @@ local dbDefaults = {
 			},
 
 			ReverseCooldown = true,
+			-- On, so a portrait that has always counted down keeps doing it.
+			EnableNumbers = true,
 			FontScale = 1.0,
 			-- Which of the unflagged buffs the player wants on their own portrait, under every
 			-- flagged category. Buffs only: 12.1 drops a spell id map for harmful auras on a unit
@@ -608,6 +610,8 @@ local dbDefaults = {
 					SizePercent = 75,
 					Glow = true,
 					ReverseCooldown = true,
+					-- On, so a display that has always counted down keeps doing it.
+					EnableNumbers = true,
 					MaxIcons = 3,
 					ColorByDispelType = true,
 				},
@@ -631,6 +635,7 @@ local dbDefaults = {
 					SizePercent = 65,
 					Glow = true,
 					ReverseCooldown = true,
+					EnableNumbers = true,
 					MaxIcons = 3,
 					ColorByDispelType = true,
 				},

@@ -52,11 +52,13 @@ end
 -- off the options KickSlot was actually handed.
 local kickSlot = env.addon.Core.KickSlot
 local kickSlotColor
+local kickSlotHideNumbers
 local realKickSlotRender = kickSlot.Render
 
 kickSlot.Render = function(self, container, kickEntry, slotOptions, previousTimer, onExpired)
 	if kickEntry then
 		kickSlotColor = slotOptions.Color
+		kickSlotHideNumbers = slotOptions.HideNumbers
 	end
 
 	return realKickSlotRender(self, container, kickEntry, slotOptions, previousTimer, onExpired)
@@ -200,5 +202,19 @@ fw.describe("CrowdControl - the kick icon's colour", function()
 		module:Refresh()
 
 		fw.is_nil(RenderedKickColor(), "Custom mode colours only the aura icons, not the kick")
+	end)
+end)
+
+fw.describe("CrowdControl - the kick icon's countdown", function()
+	fw.before_each(function()
+		options.Icons.ColorMode = "DISPEL"
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("keeps it, since this module offers no switch to take it off", function()
+		fw.not_nil(RenderedKickColor(), "fixture: a kick reached the slot")
+
+		assert(kickSlotHideNumbers == false, "a module with no Show numbers switch reads as on")
 	end)
 end)

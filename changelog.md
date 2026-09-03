@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The important auras and portrait modules now carry a Show numbers switch, on by default.
+
 ## 5.35.0
 
 - Fixed a bug with personal auras tracking spells by name instead of id.

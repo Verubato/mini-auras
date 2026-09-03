@@ -76,6 +76,21 @@ function M:Build(panel)
 	reverseSweepChk:SetPoint("TOP", enabled, "TOP", 0, 0)
 	reverseSweepChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 
+	local showNumbersChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show numbers"],
+		Tooltip = L["Shows cooldown numbers."],
+		GetValue = function()
+			return db.Modules.Portrait.EnableNumbers ~= false
+		end,
+		SetValue = function(value)
+			db.Modules.Portrait.EnableNumbers = value
+			config:Apply(moduleName.Portrait)
+		end,
+	})
+
+	showNumbersChk:SetPoint("LEFT", enabled, "LEFT", checkColumnWidth * 2, 0)
+
 	local fontScaleSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Font Scale"],
@@ -95,7 +110,7 @@ function M:Build(panel)
 	-- On the switch row, dropped by one gap so the slider's own label and value box have room
 	-- above them.
 	fontScaleSlider.Slider:SetPoint("TOP", reverseSweepChk, "TOP", 0, -verticalSpacing)
-	fontScaleSlider.Slider:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	fontScaleSlider.Slider:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
 
 	local customDivider = mini:Divider({
 		Parent = panel,

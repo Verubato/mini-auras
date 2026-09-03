@@ -204,6 +204,21 @@ local function BuildInstance(panel, options, defaults)
 	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (3 + catOffset), 0)
 	size.Checkbox:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
+	local showNumbersChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show numbers"],
+		Tooltip = L["Shows cooldown numbers."],
+		GetValue = function()
+			return options.Icons.EnableNumbers ~= false
+		end,
+		SetValue = function(value)
+			options.Icons.EnableNumbers = value
+			config:Apply(moduleName.ImportantAuras)
+		end,
+	})
+
+	showNumbersChk:SetPoint("TOPLEFT", showImportantChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,
 		Items = GROW_OPTIONS,
@@ -213,7 +228,7 @@ local function BuildInstance(panel, options, defaults)
 		SettingsKey = moduleName.ImportantAuras,
 	})
 
-	growDdl.Label:SetPoint("TOPLEFT", showImportantChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+	growDdl.Label:SetPoint("TOPLEFT", showNumbersChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	size.Pixel.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 

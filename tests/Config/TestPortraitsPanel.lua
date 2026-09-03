@@ -183,6 +183,20 @@ local function CheckboxFor(spellId, page)
 	return nil
 end
 
+---The switch the page drew for a label.
+---@param labelText string
+---@param page table
+---@return table?
+local function SwitchFor(labelText, page)
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.__options and frame.__options.LabelText == labelText and Inside(frame, page) then
+			return frame
+		end
+	end
+
+	return nil
+end
+
 ---Toggles a checkbox the way a user does, flipping whatever the source currently says.
 ---@param chk table
 local function Click(chk)
@@ -279,5 +293,27 @@ fw.describe("Portraits page - the unflagged buff list", function()
 		chk:MiniRefresh()
 
 		fw.eq(chk:GetChecked(), true, "the row shows what the db holds")
+	end)
+end)
+
+fw.describe("Portraits page - the countdown numbers", function()
+	fw.it("ships on and writes where the portrait reads it", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+		local switch = SwitchFor(addon.L["Show numbers"], page)
+
+		fw.not_nil(switch, "the page offers the numbers switch")
+
+		local portrait = addon.Framework:GetSavedVars().Modules.Portrait
+
+		assert(portrait.EnableNumbers == true, "the portrait ships counting down")
+
+		Click(switch)
+
+		assert(portrait.EnableNumbers == false, "the switch takes the numbers off")
+
+		Click(switch)
+
+		assert(portrait.EnableNumbers == true, "and a second click puts them back")
 	end)
 end)

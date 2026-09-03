@@ -49,6 +49,30 @@ local function Inside(frame, page)
 	return false
 end
 
+---Every switch on the page carrying a label. Both instance tabs are laid out at once and label
+---their switches the same, so a lookup by label finds one per instance.
+---@param addon table
+---@param labelText string
+---@return table[]
+local function SwitchesFor(addon, labelText)
+	local page = addon.Config.TabController:GetContent("ImportantAuras")
+	local found = {}
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.__options and frame.__options.LabelText == labelText and Inside(frame, page) then
+			found[#found + 1] = frame
+		end
+	end
+
+	return found
+end
+
+---Toggles a checkbox the way a user does, flipping whatever the source currently says.
+---@param chk table
+local function Click(chk)
+	chk:GetScript("OnClick")(chk)
+end
+
 ---The picker's edit box on the spells tab, which is the only box on the page that hands a spell
 ---to a callback.
 ---@param addon table
@@ -108,5 +132,42 @@ fw.describe("Important Auras page - the spell picker", function()
 
 		fw.eq(overrides.Disabled[curated], nil, "the switch that had it off is cleared")
 		fw.eq(overrides.Custom[curated], nil, "and it stays in the section that owns it")
+	end)
+end)
+
+fw.describe("Important Auras page - the countdown numbers", function()
+	fw.it("gives each instance a switch that writes its own settings", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local switches = SwitchesFor(addon, addon.L["Show numbers"])
+
+		fw.eq(#switches, 2, "one switch per instance tab")
+
+		local importantAuras = addon.Framework:GetSavedVars().Modules.ImportantAuras
+
+		assert(importantAuras.Default.Icons.EnableNumbers == true
+			and importantAuras.Raid.Icons.EnableNumbers == true, "both instances ship counting down")
+
+		---How many of the two instances are currently without their numbers.
+		---@return number
+		local function OffCount()
+			return (importantAuras.Default.Icons.EnableNumbers == false and 1 or 0)
+				+ (importantAuras.Raid.Icons.EnableNumbers == false and 1 or 0)
+		end
+
+		Click(switches[1])
+
+		fw.eq(OffCount(), 1, "one switch took one instance's numbers off, and only that one")
+
+		Click(switches[1])
+
+		fw.eq(OffCount(), 0, "and a second click puts them back")
+
+		Click(switches[2])
+		Click(switches[1])
+
+		fw.eq(OffCount(), 2, "the two switches write an instance each")
 	end)
 end)

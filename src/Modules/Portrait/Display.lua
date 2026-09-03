@@ -69,6 +69,13 @@ local function AddMask(tex, mask)
 	tex:AddMaskTexture(mask)
 end
 
+---Whether the portrait icons drop their countdown text. The display's own vocabulary is the
+---negative one, so the module's positive switch is turned round here.
+---@return boolean
+local function HidesNumbers()
+	return db.Modules.Portrait.EnableNumbers == false
+end
+
 ---The button style every portrait display takes: cooldown direction from the options, and never
 ---a border, glow or mouse input. Returned in the wrapper's shared scratch, so use it and hand it
 ---straight to SetStyle.
@@ -77,6 +84,8 @@ local function BuildPortraitStyle()
 	-- The cooldown direction lives on the module options root, so there is no Icons table to pass.
 	local style = auraContainerDisplay:BuildStandardStyle(nil, db.Modules.Portrait.FontScale)
 	style.ReverseCooldown = db.Modules.Portrait.ReverseCooldown or false
+	-- Only ever adds to the global Disable Numbers switch, which the display resolves for itself.
+	style.HideNumbers = HidesNumbers()
 	style.ShowTooltips = false
 
 	return style
@@ -430,6 +439,7 @@ function M:UpdateKickIcon(unit, container)
 		slotOptions.DurationObject = kickEntry.DurationObject
 		slotOptions.Alpha = true
 		slotOptions.ReverseCooldown = db.Modules.Portrait.ReverseCooldown
+		slotOptions.HideNumbers = HidesNumbers()
 		slotOptions.FontScale = db.Modules.Portrait.FontScale
 		slotOptions.Color = kickEntry.Color
 	end
@@ -468,6 +478,7 @@ function M:RefreshTestIcons()
 			Alpha = true,
 			Glow = false,
 			ReverseCooldown = db.Modules.Portrait.ReverseCooldown,
+			HideNumbers = HidesNumbers(),
 			FontScale = db.Modules.Portrait.FontScale,
 		})
 	end
