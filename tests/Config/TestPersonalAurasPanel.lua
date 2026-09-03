@@ -371,26 +371,26 @@ fw.describe("Personal auras page - the two tracking modes", function()
 	end)
 end)
 
-fw.describe("Personal auras page - walking the suggestions with the arrow keys", function()
-	---The spell picker's edit box, found by the placeholder only it carries.
-	---@return table?
-	local function Picker()
-		for _, frame in ipairs(WowMock.Frames) do
-			if frame.OnAccept and frame:GetScript("OnArrowPressed") then
-				return frame
-			end
+---The spell picker's edit box, found through its accept callback and arrow-key script.
+---@return table?
+local function Picker()
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.OnAccept and frame:GetScript("OnArrowPressed") then
+			return frame
 		end
-
-		return nil
 	end
 
-	---@param box table
-	---@param query string
-	local function Type(box, query)
-		box:SetText(query)
-		box:GetScript("OnTextChanged")(box, true)
-	end
+	return nil
+end
 
+---@param box table
+---@param query string
+local function Type(box, query)
+	box:SetText(query)
+	box:GetScript("OnTextChanged")(box, true)
+end
+
+fw.describe("Personal auras page - walking the suggestions with the arrow keys", function()
 	fw.it("adds the highlighted suggestion rather than the best match", function()
 		local addon, group = LoadWithGroup({})
 
@@ -464,6 +464,37 @@ fw.describe("Personal auras page - walking the suggestions with the arrow keys",
 
 		fw.eq(group.Spells[1], addon.Core.SpellSearch:Search("arcane t", 1)[1].Id,
 			"Enter took the new best match, not the old second row")
+	end)
+end)
+
+fw.describe("Personal auras page - typing a spell id directly", function()
+	fw.it("tracks a typed id the client cannot even name", function()
+		local addon, group = LoadWithGroup({})
+		local realGetSpellName = _G.C_Spell.GetSpellName
+		-- Past anything the shipped index carries, and nameless on top of that, so no suggestion
+		-- can be offered for it at all.
+		local unknown = 9999999
+
+		_G.C_Spell.GetSpellName = function(spellId)
+			if spellId == unknown then
+				return nil
+			end
+
+			return realGetSpellName(spellId)
+		end
+
+		ShowPage(addon, group)
+
+		local box = Picker()
+
+		fw.not_nil(box, "the spell picker exists")
+
+		Type(box, tostring(unknown))
+		box:GetScript("OnEnterPressed")(box)
+
+		_G.C_Spell.GetSpellName = realGetSpellName
+
+		fw.eq(group.Spells[1], unknown, "the id was taken as typed")
 	end)
 end)
 

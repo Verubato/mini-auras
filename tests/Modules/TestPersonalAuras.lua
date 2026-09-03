@@ -40,14 +40,8 @@ module:Init()
 
 local ICE_BLOCK = 45438
 local POLYMORPH = 118
--- Four ids the generated data really does carry for one ability. The mock names spells after
--- their id by default, so the shared name has to be installed before anything builds the search
--- index, or nothing would ever look like a variant of anything.
+-- Four ids of one ability, so a tracked id can be proven to match only itself.
 local TORRENT_IDS = { 33390, 36022, 47779, 222783 }
-
-for _, spellId in ipairs(TORRENT_IDS) do
-	env.spellNames[spellId] = "Arcane Torrent"
-end
 
 -- Ids nothing in the addon carries, which is the point: the wrong-side check asks the client, so
 -- it has to answer for whatever somebody types into the picker. Stubbed here rather than in the
@@ -821,7 +815,7 @@ fw.describe("PersonalAuras - units that follow a role", function()
 end)
 
 fw.describe("PersonalAuras - spell filters", function()
-	fw.it("expands each tracked id to every variant of the ability", function()
+	fw.it("matches only the tracked id, not the other ids the ability is known by", function()
 		local group = groups:Normalise({ Spells = { TORRENT_IDS[1] } })
 		local filters = groups:BuildFilters(group)
 		local count = 0
@@ -831,7 +825,7 @@ fw.describe("PersonalAuras - spell filters", function()
 		end
 
 		assert(filters.includeSpellIDs[TORRENT_IDS[1]], "the id that was asked for")
-		assert(count > 1, "and the other ids the same ability is known by")
+		assert(count == 1, "and nothing else")
 	end)
 
 	fw.it("changes its generation when the tracked set moves", function()
@@ -2321,7 +2315,7 @@ fw.describe("PersonalAuras - icon order", function()
 end)
 
 fw.describe("PersonalAuras - sounds", function()
-	fw.it("registers one sound per tracked spell variant on the group's unit", function()
+	fw.it("registers a sound for a tracked spell on the group's unit", function()
 		ClearGroups()
 		addon.Modules.PersonalAuras.Sound:Clear()
 
@@ -2334,7 +2328,9 @@ fw.describe("PersonalAuras - sounds", function()
 		})
 		module:Refresh()
 
-		assert(env.auraSoundAdds > before, "the engine was asked to play something")
+		-- One handle per id, so a group that registered anything beyond the id it was given would
+		-- show up as a second add.
+		assert(env.auraSoundAdds == before + 1, "one spell on one trigger is one registration")
 
 		local last = env.auraSounds[env.auraSoundAdds]
 

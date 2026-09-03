@@ -10,7 +10,6 @@ local testSpellData = addon.Core.TestSpells
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
-local spellSearch = addon.Core.SpellSearch
 local units = addon.Utils.UnitUtil
 local sweep = addon.Core.Sweep
 
@@ -103,9 +102,8 @@ local function DeclareNextGroup(display)
 	end
 end
 
----Every id the custom list covers, each expanded to the ids sharing its name, because the aura
----the game applies is often not the one in the spellbook. A fresh table each call, since the
----engine keeps the reference it is handed.
+---The custom list as the map the engine's includeSpellIDs filter wants, exactly the ticked ids.
+---A fresh table each call, since the engine keeps the reference it is handed.
 ---@return table? candidateFilters nil while the list is empty.
 local function BuildCustomFilters()
 	local spells = db.Modules.Portrait.CustomSpells
@@ -118,9 +116,7 @@ local function BuildCustomFilters()
 	local ids = {}
 
 	for spellId in pairs(spells) do
-		for _, variant in ipairs(spellSearch:GetVariants(spellId)) do
-			ids[variant] = true
-		end
+		ids[spellId] = true
 	end
 
 	return { includeSpellIDs = ids }

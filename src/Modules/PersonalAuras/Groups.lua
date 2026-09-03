@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Framework
 local artTextures = addon.Core.ArtTextures
-local spellSearch = addon.Core.SpellSearch
 local sounds = addon.Core.Sounds
 local units = addon.Utils.UnitUtil
 local changeStamp = addon.Utils.ChangeStamp
@@ -1073,11 +1072,10 @@ function M:CanFilterUnit(group, unit)
 	return not assistable
 end
 
----Every id a spell list covers, each expanded to the ids sharing its name, because the aura the
----game applies is often not the spellbook one.
+---A spell list as the map the engine's includeSpellIDs filter wants, exactly the ids configured.
 ---@param spells number[]
 ---@return table<number, boolean>?
-local function ExpandSpells(spells)
+local function SpellIdMap(spells)
 	if #spells == 0 then
 		return nil
 	end
@@ -1085,9 +1083,7 @@ local function ExpandSpells(spells)
 	local ids = {}
 
 	for _, spellId in ipairs(spells) do
-		for _, variant in ipairs(spellSearch:GetVariants(spellId)) do
-			ids[variant] = true
-		end
+		ids[spellId] = true
 	end
 
 	return ids
@@ -1130,7 +1126,7 @@ function M:BuildFilters(group)
 	local filters = {}
 
 	if M:TracksSpells(group) then
-		filters.includeSpellIDs = ExpandSpells(group.Spells)
+		filters.includeSpellIDs = SpellIdMap(group.Spells)
 	end
 
 	for _, flag in ipairs(CANDIDATE_FLAGS) do

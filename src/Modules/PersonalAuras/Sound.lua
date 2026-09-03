@@ -19,7 +19,7 @@ local changeStamp = addon.Utils.ChangeStamp
 
 addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
--- Variants times triggers times visible plates reaches the thousands on a careless configuration.
+-- Spells times triggers times visible plates reaches the thousands on a careless configuration.
 local MAX_REGISTRATIONS = 1500
 -- Group sound keys to the engine trigger each registers against.
 local TRIGGER_ENUM = Enum.UnitAuraSoundTrigger or {}

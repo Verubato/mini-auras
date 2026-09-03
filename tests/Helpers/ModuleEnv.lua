@@ -342,9 +342,6 @@ function M.build()
 	-- and the displays crop every icon they build through it.
 	loadFile("src/Utils/IconUtil.lua")
 	loadFile("src/Core/Auras/AuraCategoryIds.lua")
-	-- Reads the curated category lists above, and expands a tracked id to the variants sharing
-	-- its name. Modules with user-authored spell lists index it directly.
-	loadFile("src/Core/Auras/SpellSearch.lua")
 	-- The alert sound registrations index the baked TTS clip map and its pack list directly, so an
 	-- env without them can only exercise the announcements while they are off.
 	loadFile("src/Core/Auras/AuraTtsSounds.lua")

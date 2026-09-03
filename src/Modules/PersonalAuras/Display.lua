@@ -13,7 +13,6 @@ local units = addon.Utils.UnitUtil
 local frames = addon.Core.Frames
 local pool = addon.Core.Pool
 local sweep = addon.Core.Sweep
-local spellSearch = addon.Core.SpellSearch
 local positionEditor = addon.Core.PositionEditor
 local groups = addon.Modules.PersonalAuras.Groups
 local sound = addon.Modules.PersonalAuras.Sound
@@ -120,8 +119,8 @@ local M = {}
 addon.Modules.PersonalAuras.Display = M
 
 -- Coalesced to one pass per frame. Plates churn a handful at a time as people come in and out of
--- range, and each rebuild walks every group's spell variants to check for a change that has usually
--- not moved. A teardown cancels the pending pass rather than let it re-register what it cleared.
+-- range, and each rebuild walks every group's spells to check for a change that has usually not
+-- moved. A teardown cancels the pending pass rather than let it re-register what it cleared.
 local QueueSoundRefresh, CancelSoundRefresh = moduleUtil:Coalesced(function()
 	M:RefreshSounds()
 end)
@@ -1376,13 +1375,7 @@ local function CollectSoundRequests(state)
 		end
 	end
 
-	local spellIds = {}
-
-	for _, spellId in ipairs(group.Spells) do
-		for _, variant in ipairs(spellSearch:GetVariants(spellId)) do
-			spellIds[#spellIds + 1] = variant
-		end
-	end
+	local spellIds = group.Spells
 
 	local function Add(unit)
 		for _, trigger in ipairs(configured) do

@@ -206,6 +206,14 @@ fw.describe("Portrait 12.1 - the custom spell layer", function()
 		assert(group.candidateFilters and group.candidateFilters.includeSpellIDs[FEINT],
 			"the tracked id reached the container")
 
+		local matched = 0
+
+		for _ in pairs(group.candidateFilters.includeSpellIDs) do
+			matched = matched + 1
+		end
+
+		assert(matched == 1, "and nothing else, since the ticked ids are matched exactly")
+
 		setCustomSpells()
 		assert(group.maxFrameCount == 0, "clearing the list closes the layer again")
 	end)

@@ -307,6 +307,8 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		OnAccept = ui.AddSpellToCurrent,
 		-- Reddens a spell the selected group's aura type can never match.
 		LabelColor = ui.SpellLabelColor,
+		-- An id the shipped index has never heard of is still a spell worth tracking.
+		AcceptsTypedIds = true,
 	})
 	picker:SetPoint("TOPLEFT", pickerLabel, "BOTTOMLEFT", 6, -4)
 
