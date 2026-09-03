@@ -3,7 +3,6 @@
 ## 5.35.0
 
 - Fixed a bug with personal auras tracking spells by name instead of id.
-- Important: if one of your groups holds a spell's cast ID rather than the ID of the aura it applies, that group will now show nothing. Re-add the spell from the picker, which lists the aura IDs.
 - Removed NPC spells from the spell picker.
 - The per-group personal aura spell cap is now 200, up from 100.
 - Added reverse swipe to frame auras.
