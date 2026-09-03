@@ -53,11 +53,51 @@ M.Flow = {
 	CENTER = { Axis = "Horizontal", AnchorPoint = "LEFT", Horizontal = "Right", Vertical = "Down" },
 	DOWN = { Axis = "Vertical", AnchorPoint = "TOP", Horizontal = "Right", Vertical = "Down" },
 	UP = { Axis = "Vertical", AnchorPoint = "BOTTOM", Horizontal = "Right", Vertical = "Up" },
-	-- Corner-anchored, so a wrapped line stacks upwards. A row in the bottom corner of a unit
-	-- frame that wrapped downwards would put its second line over the frame below it.
+	-- A caller that names the point it hangs off gets the wrap from there instead.
 	LEFT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMRIGHT", Horizontal = "Left", Vertical = "Up" },
 	RIGHT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMLEFT", Horizontal = "Right", Vertical = "Up" },
 }
+
+-- A point missing from this is centred on the frame's height, so the row it holds spreads either
+-- way rather than off one edge.
+local VERTICAL_HALF = {
+	TOPLEFT = "TOP",
+	TOP = "TOP",
+	TOPRIGHT = "TOP",
+	BOTTOMLEFT = "BOTTOM",
+	BOTTOM = "BOTTOM",
+	BOTTOMRIGHT = "BOTTOM",
+}
+-- A container is sized to its icons, so a button held anywhere but the edge its run starts from
+-- sits outside that box, and moves with every line the row gains.
+local HORIZONTAL_START = { Left = "RIGHT", Right = "LEFT" }
+local VERTICAL_START = { Up = "BOTTOM", Down = "TOP" }
+-- A row in the bottom corner of a frame has to wrap upwards, or its second line lands on whatever
+-- sits below.
+local VERTICAL_WRAP = { TOP = "Down", BOTTOM = "Up" }
+
+-- One table per grow and pin pair, built as each pair is first asked for.
+local resolvedFlow = {}
+
+---@param grow string?
+---@param pin string
+---@return { Axis: string, AnchorPoint: string, Horizontal: string, Vertical: string }
+local function ResolveFlow(grow, pin)
+	local base = M.Flow[grow] or M.Flow[M.Default]
+	local vertical = base.Vertical
+
+	-- Which way a row down a column runs is the player's own answer rather than the pin's.
+	if base.Axis ~= "Vertical" then
+		vertical = VERTICAL_WRAP[VERTICAL_HALF[pin]] or vertical
+	end
+
+	return {
+		Axis = base.Axis,
+		AnchorPoint = VERTICAL_START[vertical] .. HORIZONTAL_START[base.Horizontal],
+		Horizontal = base.Horizontal,
+		Vertical = vertical,
+	}
+end
 
 ---Anchor points for positioning a row against its anchor frame.
 ---@param grow string?
@@ -125,10 +165,25 @@ function M:GetChain(grow, spacing)
 end
 
 ---12.1 flow layout settings for a container.
+---Pass the point the container hangs off and a wrapped line stacks away from it, so the line
+---already on screen stays where the player put it.
 ---@param grow string?
+---@param pin string? The point of the container that is anchored to its host.
 ---@return { Axis: string, AnchorPoint: string, Horizontal: string, Vertical: string }
-function M:GetFlow(grow)
-	return M.Flow[grow] or M.Flow[M.Default]
+function M:GetFlow(grow, pin)
+	if not pin then
+		return M.Flow[grow] or M.Flow[M.Default]
+	end
+
+	local key = (grow or M.Default) .. pin
+	local flow = resolvedFlow[key]
+
+	if not flow then
+		flow = ResolveFlow(grow, pin)
+		resolvedFlow[key] = flow
+	end
+
+	return flow
 end
 
 ---Whether a row runs leftwards from its anchored edge, so the first icon is the rightmost one.

@@ -32,6 +32,8 @@ local ICON_SPACING = 2
 -- Both rows grow rightwards from their own top left, wrapping downwards. The preview reads it too,
 -- so a wrapped preview line starts on the edge the live one does.
 local ROW_GROW = "RIGHT"
+-- The icons hang off this corner too, so a second line leaves the first where it was.
+local ROW_PIN = "TOPLEFT"
 -- Where Blizzard's own rows sit. The frame's art runs wider and lower than the bars drawn on it,
 -- so a row is pulled back up over the texture's bottom edge rather than hung below it.
 local ROW_X = 5
@@ -446,10 +448,10 @@ local function AnchorRows(host)
 	end
 
 	buffs:ClearAllPoints()
-	buffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
+	buffs:SetPoint(ROW_PIN, ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
 
 	debuffs:ClearAllPoints()
-	debuffs:SetPoint("TOPLEFT", buffs, "BOTTOMLEFT", 0, 0)
+	debuffs:SetPoint(ROW_PIN, buffs, "BOTTOMLEFT", 0, 0)
 end
 
 ---One preview row. Nothing can put a fake aura in front of the engine, so the preview draws its
@@ -576,10 +578,10 @@ local function ApplyTestRows(host, options)
 	ParentTestRow(buffs, frame)
 
 	buffs:ClearAllPoints()
-	buffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
+	buffs:SetPoint(ROW_PIN, ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
 
 	debuffs:ClearAllPoints()
-	debuffs:SetPoint("TOPLEFT", buffs, "BOTTOMLEFT", 0, 0)
+	debuffs:SetPoint(ROW_PIN, buffs, "BOTTOMLEFT", 0, 0)
 
 	debuffs:Show()
 	buffs:Show()
@@ -632,6 +634,7 @@ local function Apply(host)
 	rowScratch[2].Display, rowScratch[2].Group = host.Buffs, BUFF_GROUP
 
 	for _, entry in ipairs(rowScratch) do
+		entry.Display:SetPinPoint(ROW_PIN)
 		entry.Display:SetGrow(ROW_GROW)
 		entry.Display:SetPerLine(perRow)
 		entry.Display:SetMaxIcons(entry.Group, maxIcons)

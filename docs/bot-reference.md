@@ -147,7 +147,11 @@ other.
   BOTTOMLEFT, BOTTOM, BOTTOMRIGHT), and every other module pins its display to a corner the code
   chooses. A display sitting on one of the three bottom points is raised clear of the frame's
   power bar on top of its own Offset Y, which is why moving it up to a top point drops that
-  lift rather than keeping it.
+  lift rather than keeping it. The Anchor also decides which way a wrapped line stacks: a row on
+  one of the three top points wraps downwards and one on a bottom point wraps upwards, so the
+  line already on screen stays where it was put. Only on the three middle points (LEFT, CENTER,
+  RIGHT) does the Grow direction decide it, which is where LEFT_UP and RIGHT_UP still differ from
+  LEFT and RIGHT.
 
 ### Common icon options and ranges
 

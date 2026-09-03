@@ -1507,7 +1507,7 @@ end
 
 ---@param instance AuraContainerDisplay
 local function ApplyFlowLayout(instance)
-	local layout = growAnchors:GetFlow(instance.Grow)
+	local layout = growAnchors:GetFlow(instance.Grow, instance.PinPoint)
 	local frame = instance.Frame
 	frame:SetFlowLayoutAxis(AnchorUtil.FlowLayoutAxis[layout.Axis])
 	frame:SetFlowLayoutAnchorPoint(layout.AnchorPoint)
@@ -2177,6 +2177,18 @@ function M:SetGrow(grow)
 	ApplyFlowLayout(self)
 end
 
+---The point of this display's own frame that its caller anchors to a host. The buttons hang off
+---the same corner, so the container growing a line taller leaves every one of them where it was.
+---@param point string?
+function M:SetPinPoint(point)
+	if self.PinPoint == point then
+		return
+	end
+
+	self.PinPoint = point
+	ApplyFlowLayout(self)
+end
+
 ---How many icons a line holds before the row wraps. Nil never wraps, which is what every display
 ---but the frame aura rows wants. Unlike a button's look this is container-level, so it can change
 ---at any time, restriction or not.
@@ -2536,6 +2548,8 @@ end
 ---@class AuraContainerDisplay
 ---@field Frame table The AuraContainer frame (anchor/show/hide through this).
 ---@field PerLine number? Icons per line before the row wraps. Nil never wraps.
+---@field PinPoint string? The point of the frame its caller anchors to a host, which the buttons
+---hang off so a resize cannot move them.
 ---@field LineCapped boolean? Whether a wrap cap has been published to the engine, so dropping
 ---PerLine can take it back off again.
 ---@field Processing boolean? The aura processing policy last published, so an unchanged one

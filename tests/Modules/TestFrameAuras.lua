@@ -1455,28 +1455,76 @@ fw.describe("Frame Auras - where the player puts each row", function()
 		DropRaidFrame(16)
 	end)
 
-	fw.it("wraps the preview the way the grow says", function()
+	fw.it("wraps the preview away from the edge the row hangs off", function()
 		options.Buffs.Enabled = true
-		options.Buffs.Grow = "RIGHT"
+		options.Buffs.Anchor = "TOPRIGHT"
+		options.Buffs.Grow = "LEFT"
 
 		module:StartTesting()
 
 		local preview = assert(RowOn(memberFrame), "the party frame got a preview row")
 
 		assert(preview.GrowDown == true and preview.GrowUp == false,
-			"a row that runs rightwards drops its second line, got up " .. tostring(preview.GrowUp))
+			"a row on a top corner drops its second line, got up " .. tostring(preview.GrowUp))
 
 		module:StopTesting()
 
-		options.Buffs.Grow = "RIGHT_UP"
+		options.Buffs.Anchor = "BOTTOMRIGHT"
 		module:StartTesting()
 
 		preview = assert(RowOn(memberFrame), "the party frame got a preview row again")
 
 		assert(preview.GrowUp == true and preview.GrowDown == false,
-			"a corner grow stacks it upwards, got down " .. tostring(preview.GrowDown))
+			"a row on a bottom corner stacks it upwards, got down " .. tostring(preview.GrowDown))
 
 		module:StopTesting()
+	end)
+
+	fw.it("leaves the grow to say which way a row up the side of the frame wraps", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.Anchor = "LEFT"
+		options.Debuffs.Grow = "RIGHT"
+
+		local frame = NewRaidFrame(18)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
+
+		-- Neither edge of the frame is nearer than the other here, so nothing overrules the grow.
+		assert(row._flowAnchorPoint == "TOPLEFT",
+			"a plain grow still drops its second line, got " .. tostring(row._flowAnchorPoint))
+
+		options.Debuffs.Grow = "RIGHT_UP"
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(row._flowAnchorPoint == "BOTTOMLEFT",
+			"and a corner grow still lifts it, got " .. tostring(row._flowAnchorPoint))
+
+		DropRaidFrame(18)
+	end)
+
+	fw.it("holds a wrapped row to the corner it hangs off", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.Anchor = "TOPRIGHT"
+		options.Debuffs.Grow = "LEFT"
+
+		local frame = NewRaidFrame(17)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(GroupRowOn(frame, DEBUFF_GROUP), "the debuff row was built")
+
+		-- The container sizes itself to its icons, so anything but the pinned corner drops the
+		-- whole row down the moment a second line appears.
+		assert(row._flowAnchorPoint == "TOPRIGHT",
+			"every icon hangs off the corner the row does, got " .. tostring(row._flowAnchorPoint))
+
+		DropRaidFrame(17)
 	end)
 end)
 
@@ -3985,6 +4033,18 @@ fw.describe("Frame Auras - how the target rows stack", function()
 		local _, relativeTo = targetFrame.spellbar:GetPoint(1)
 
 		assert(relativeTo == debuffs, "the bar follows the bottom row, so it cannot cover it")
+	end)
+
+	fw.it("holds both rows to the corner they hang off", function()
+		local buffs = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local debuffs = assert(DebuffContainer(targetFrame), "and a debuff row")
+
+		-- A container sizes itself to its icons, so anything but the pinned corner drops the whole
+		-- row the moment a second line appears.
+		assert(buffs._flowAnchorPoint == "TOPLEFT",
+			"every buff icon hangs off the row's own corner, got " .. tostring(buffs._flowAnchorPoint))
+		assert(debuffs._flowAnchorPoint == "TOPLEFT",
+			"and every debuff icon too, got " .. tostring(debuffs._flowAnchorPoint))
 	end)
 end)
 

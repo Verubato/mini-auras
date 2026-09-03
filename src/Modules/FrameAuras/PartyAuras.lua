@@ -907,6 +907,7 @@ local function AnchorSide(display, frame, side)
 	local point = AnchorPoint(side)
 	local offsetX, offsetY = Offset(side)
 
+	display:SetPinPoint(point)
 	display:SetGrow(Grow(side))
 
 	-- Scales with the frame, unlike the free-standing displays elsewhere. At any UI scale but 1, a
@@ -979,8 +980,8 @@ local function ApplyTestSide(entry, side)
 
 	local frame = entry.Frame
 	local grow = Grow(side)
-	local flow = growAnchors:GetFlow(grow)
 	local point = AnchorPoint(side)
+	local flow = growAnchors:GetFlow(grow, point)
 	local offsetX, offsetY = Offset(side)
 	local containerFrame = container.Frame
 	local count = TestIconCount(side)
