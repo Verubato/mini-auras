@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 5.37.0
 
-- Personal aura groups can now be limited to one or more specs, picked from every spec in the game. A group limited to another class's spec does not show on this character.
+- Personal auras can now be tied to a spec.
 
 ## 5.36.0
 
