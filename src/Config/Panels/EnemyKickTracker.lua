@@ -91,41 +91,6 @@ function M:Build(panel)
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
 	settingsDivider:SetPoint("TOP", healerEnabled, "BOTTOM", 0, -verticalSpacing)
 
-	local borderChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show border"],
-		Tooltip = L["Draw a border around the icons."],
-		GetValue = function()
-			return db.Modules.EnemyKickTracker.Icons.Border
-		end,
-		SetValue = function(value)
-			db.Modules.EnemyKickTracker.Icons.Border = value
-			config:Apply(moduleName.EnemyKickTracker)
-		end,
-	})
-
-	borderChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local colorSwatch = mini:ColorSwatch({
-		Parent = panel,
-		LabelText = L["Colour"],
-		Tooltip = L["Change the colour of the icon's glow and border."],
-		HasOpacity = false,
-		GetValue = function()
-			local color = db.Modules.EnemyKickTracker.Icons.Color
-			return color.R, color.G, color.B, color.A
-		end,
-		SetValue = function(r, g, b, a)
-			local color = db.Modules.EnemyKickTracker.Icons.Color
-			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply(moduleName.EnemyKickTracker)
-		end,
-	})
-
-	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
-	colorSwatch:SetPoint("TOP", borderChk, "TOP", 0,
-		-math.floor((borderChk:GetHeight() - colorSwatch:GetHeight()) / 2))
-
 	local iconSizeSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
@@ -139,7 +104,7 @@ function M:Build(panel)
 		SettingsKey = moduleName.EnemyKickTracker,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", borderChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSpacingSlider = helpers:BuildClampedSlider({
 		Parent = panel,
