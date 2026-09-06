@@ -1603,7 +1603,8 @@ fw.describe("AuraContainerDisplay - countdown colour by time", function()
 		local button = instance.Buttons[1]
 		local widgets = instance.ButtonWidgets[button]
 
-		widgets.Cooldown.MiniAurasFontString = widgets.Cooldown:CreateFontString()
+		-- The client's own countdown string comes fonted, which is what there is to copy.
+		widgets.Cooldown.MiniAurasFontString = widgets.Cooldown:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		mockDb.ColorCountdownByTime = true
 		instance:SetStyle({})
 

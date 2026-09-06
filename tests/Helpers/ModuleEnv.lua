@@ -113,11 +113,24 @@ function M.build()
 	_G.UnitClassBase = function(unit)
 		return unit == "player" and env.playerClass or nil
 	end
-	-- Returns the localised name first and the class token second, as the client does.
+	-- Returns the localised name first and the class token second, as the client does. Kept
+	-- distinct so a caller that reads the wrong one fails a test instead of passing by luck.
 	_G.UnitClassFromGUID = function(guid)
-		local class = env.unitClasses[guid]
+		local token = env.unitClasses[guid]
 
-		return class, class
+		if token == nil then
+			return nil, nil
+		end
+
+		if issecretvalue(token) then
+			return wow.markSecret({}), token
+		end
+
+		if type(token) ~= "string" then
+			return token, token
+		end
+
+		return token:lower(), token
 	end
 	-- A function call takes a secret token, where indexing RAID_CLASS_COLORS with one would throw.
 	-- The colour object it hands back is an ordinary table whose components are secret, so they can
@@ -125,7 +138,13 @@ function M.build()
 	_G.C_ClassColor = {
 		GetClassColor = function(token)
 			if issecretvalue(token) then
-				return { r = wow.markSecret({}), g = wow.markSecret({}), b = wow.markSecret({}) }
+				-- Real numbers, not opaque placeholders, since the icon glow key runs
+				-- string.format on them before its own secrecy guard.
+				return {
+					r = wow.markSecret(0.918273),
+					g = wow.markSecret(0.827364),
+					b = wow.markSecret(0.736455),
+				}
 			end
 
 			return _G.RAID_CLASS_COLORS[token]
@@ -366,6 +385,10 @@ function M.build()
 		-- handed the face it stands in for, sized as asked.
 		CurrentFace = function()
 			return nil
+		end,
+		-- Stands in for the client's own font object, which a bare string has to be handed.
+		GameFace = function()
+			return "Fonts\\FRIZQT__.TTF"
 		end,
 		BaseFace = function(_, fontString, face)
 			return face or (fontString and fontString:GetFont())
@@ -663,6 +686,7 @@ function M.build()
 
 	loadFile("src/Core/Kicks/KickData.lua")
 	loadFile("src/Core/Kicks/KickEvents.lua")
+	loadFile("src/Core/Kicks/KickColors.lua")
 	loadFile("src/Core/TestMode/TestSpells.lua")
 	loadFile("src/Core/Events/EventGate.lua")
 	loadFile("src/Core/Lifecycle/ModuleLifecycle.lua")

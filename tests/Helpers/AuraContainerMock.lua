@@ -101,7 +101,11 @@ local function NewAnimationGroup(owner)
 	return anim
 end
 
-local function NewRegion(parent, regionType)
+-- What a font string built from an inherit template reports before anything sets a font on it.
+local TEMPLATE_FACE = "MockFont"
+local TEMPLATE_SIZE = 10
+
+local function NewRegion(parent, regionType, inheritedFace)
 	local region = {
 		_parent = parent,
 		_type = regionType,
@@ -142,8 +146,19 @@ local function NewRegion(parent, regionType)
 		local args = region._lastArgs.SetText
 		return args and args[1] or ""
 	end
+	-- A string built without an inherit template has no font until something sets one, and says so.
 	function region:GetFont()
-		return "MockFont", 10, ""
+		local args = region._lastArgs.SetFont
+
+		if args then
+			return args[1], args[2], args[3]
+		end
+
+		if inheritedFace then
+			return inheritedFace, TEMPLATE_SIZE, ""
+		end
+
+		return nil
 	end
 	function region:GetStringWidth()
 		return 0
@@ -399,8 +414,8 @@ function M.NewFrame(frameType, name, parent, template)
 	-- Font strings are kept in creation order too, so a test can read what a widget put on each one.
 	frame._createdFontStrings = {}
 
-	function frame:CreateFontString()
-		local fontString = NewRegion(frame, "FontString")
+	function frame:CreateFontString(_, _, inherits)
+		local fontString = NewRegion(frame, "FontString", inherits and TEMPLATE_FACE or nil)
 		frame._createdFontStrings[#frame._createdFontStrings + 1] = fontString
 		return fontString
 	end
@@ -818,6 +833,10 @@ function M.loadDisplay()
 				-- keeps the face it already wears.
 				CurrentFace = function()
 					return M.fontFace
+				end,
+				-- Stands in for the client's own font object, which a bare string has to be handed.
+				GameFace = function()
+					return "Fonts\\FRIZQT__.TTF"
 				end,
 				BaseFace = function(_, fontString, face)
 					return face or (fontString and fontString:GetFont())

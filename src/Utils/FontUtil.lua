@@ -11,6 +11,8 @@ local STACK_COEFFICIENT = 0.38
 -- The alphabets a font family carries a member for. Only the client's own locale takes the
 -- configured file, so text in another script still renders from the game's files.
 local FAMILY_ALPHABETS = { "roman", "korean", "simplifiedchinese", "traditionalchinese", "russian" }
+-- Only reached on a client that answers nothing for its own font object.
+local LAST_RESORT_FACE = "Fonts\\FRIZQT__.TTF"
 local LOCALE_ALPHABETS = {
 	koKR = "korean",
 	zhCN = "simplifiedchinese",
@@ -24,6 +26,8 @@ local cachedName
 local cachedFile
 -- The saved variables table, kept between calls.
 local cachedDb
+-- The game's own face, resolved on first use.
+local gameFace
 local subscribedToFonts = false
 -- One shared font object per file, size and flags, nested file -> size -> flags, each created
 -- once and never re-fonted. Text attaches to one with SetFontObject rather than being handed the
@@ -33,6 +37,15 @@ local subscribedToFonts = false
 -- re-applied strings a new object.
 local fontObjects = {}
 local fontObjectCount = 0
+
+--- The face a string built with no template of its own falls back to. A non-Latin locale needs a
+--- file that has its glyphs.
+--- @return string file
+function M:GameFace()
+	gameFace = gameFace or (GameFontNormal and GameFontNormal:GetFont()) or LAST_RESORT_FACE
+
+	return gameFace
+end
 
 --- The file the font option resolves to right now, or nil when no font is picked or the pick
 --- belongs to a media addon that has not registered it yet.

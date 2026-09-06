@@ -3,12 +3,10 @@ local _, addon = ...
 
 local iconUtil = addon.Utils.IconUtil
 local fontUtil = addon.Utils.FontUtil
+local kickColors = addon.Core.KickColors
 
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
--- Resolved from the client's own font object on first layout. Non-Latin locales substitute a
--- file that actually has their glyphs, where a hardcoded western Friz Quadrata renders boxes.
-local fontFile
 local FONT_FLAGS = "OUTLINE"
 -- Everything inside a bar is derived from its height, so one slider sizes the whole row.
 local NAME_FONT_COEFFICIENT = 0.42
@@ -38,28 +36,6 @@ local function CountdownText(seconds)
 	end
 
 	return tostring(math.ceil(seconds))
-end
-
----The kicker's class colour. The class token is secret inside an instance and a table cannot be
----keyed by a secret, so the colour comes from the API call, which takes one. The colour handed
----back is itself secret, which the status bar's setter accepts and arithmetic on it does not.
----@param class string?
----@return table?
-local function ClassColor(class)
-	if class == nil then
-		return nil
-	end
-
-	if C_ClassColor and C_ClassColor.GetClassColor then
-		return C_ClassColor.GetClassColor(class)
-	end
-
-	-- Nothing but an old client gets here, where the token is never secret to begin with.
-	if issecretvalue(class) then
-		return nil
-	end
-
-	return RAID_CLASS_COLORS and RAID_CLASS_COLORS[class] or nil
 end
 
 ---Paints a raid marker onto a texture. The index is secret inside an instance, and the FrameXML
@@ -119,8 +95,7 @@ local function LayoutBar(bar, options)
 	bar.Bar:SetStatusBarTexture(options.FillTexture)
 
 	local nameSize = math.max(6, math.floor(height * NAME_FONT_COEFFICIENT * (options.FontScale or 1)))
-
-	fontFile = fontFile or (GameFontNormal and GameFontNormal:GetFont()) or "Fonts\\FRIZQT__.TTF"
+	local fontFile = fontUtil:GameFace()
 
 	fontUtil:Apply(bar.Name, nameSize, FONT_FLAGS, fontFile)
 	fontUtil:Apply(bar.Time, math.floor(nameSize * COUNTDOWN_FONT_SCALE), FONT_FLAGS, fontFile)
@@ -223,7 +198,7 @@ local function PaintRecord(bar, record)
 
 	bar.Marker:SetShown(PaintMarker(bar.Marker, record.Marker))
 
-	local color = ClassColor(record.Class)
+	local color = kickColors:ClassColor(record.Class)
 
 	if color then
 		bar.Bar:SetStatusBarColor(color.r, color.g, color.b)

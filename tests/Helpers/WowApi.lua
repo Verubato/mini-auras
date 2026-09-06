@@ -18,7 +18,33 @@ local _roles         = {}   -- unit -> "TANK" | "HEALER" | "DAMAGER"
 local _inRaid        = false
 local _locale        = "enUS"
 
+-- The client lets a secret through string.format and marks the string it hands back secret.
+local rawFormat = string.format
+
+local function FormatPropagatingSecrets(template, ...)
+	local result = rawFormat(template, ...)
+
+	if _secretValues[template] then
+		_secretValues[result] = true
+		return result
+	end
+
+	for index = 1, select("#", ...) do
+		if _secretValues[(select(index, ...))] then
+			_secretValues[result] = true
+			break
+		end
+	end
+
+	return result
+end
+
 function M.setup()
+	-- Lua interns strings and secrecy is keyed by value, so a short formatted result would stay
+	-- secret for the rest of the run.
+	_secretValues = {}
+
+	string.format = FormatPropagatingSecrets -- luacheck: ignore 122
 	-- Blizzard's own deep copy, which addons rely on.
 	_G.CopyTable = function(source)
 		local out = {}

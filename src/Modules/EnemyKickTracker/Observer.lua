@@ -22,14 +22,16 @@ local eventFrames = {}
 -- claims it and the rest are ignored until the unit starts casting again.
 ---@type table<string, boolean>
 local kickedByUnits = {}
----@type fun()[]
+---@type fun(name: any, class: any)[]
 local kickCallbacks = {}
 local paused = false
 local watching = false
 
-local function FireKicked()
+---@param name any the interrupter's name, secret inside an instance
+---@param class any the interrupter's class token, secret inside an instance
+local function FireKicked(name, class)
 	for _, fn in ipairs(kickCallbacks) do
-		fn()
+		fn(name, class)
 	end
 end
 
@@ -55,7 +57,10 @@ local function OnUnitEvent(unit, _, event, ...)
 	end
 
 	kickedByUnits[unit] = true
-	FireKicked()
+
+	-- Both calls take the secret GUID and hand a secret back. Never read, compared, or used as
+	-- a table key.
+	FireKicked(UnitNameFromGUID(kickedBy), select(2, UnitClassFromGUID(kickedBy)))
 end
 
 ---Builds the per-unit event frames. Nothing is registered until Enable.
@@ -65,7 +70,7 @@ function M:Create()
 	end
 end
 
----@param callback fun()
+---@param callback fun(name: any, class: any)
 function M:RegisterKickCallback(callback)
 	kickCallbacks[#kickCallbacks + 1] = callback
 end

@@ -4,6 +4,7 @@
 -- someone is watching the bar during a match.
 
 local fw = require("Framework")
+local wow = require("WowApi")
 local acm = require("AuraContainerMock")
 local moduleEnv = require("ModuleEnv")
 
@@ -20,6 +21,16 @@ env.loadModule("src/Modules/EnemyKickTracker/Module.lua")
 
 local module = assert(env.addon.Modules.EnemyKickTrackerModule, "module registered")
 local display = assert(env.addon.Modules.EnemyKickTracker.Display, "display registered")
+local observer = assert(env.addon.Modules.EnemyKickTracker.Observer, "observer registered")
+local BORDER_ASSET = env.addon.Core.BorderTextures:GetDispelAsset()
+local glowStyles = env.addon.Core.GlowStyles
+local GLOW_ASSET = glowStyles.Specs[glowStyles.DefaultName].Texture
+-- The slider floors from Config/Panels/EnemyKickTracker.lua, where a name is at its smallest.
+local MIN_ICON_SIZE = 20
+local MIN_FONT_SCALE = 0.5
+local DEFAULT_ICON_SIZE = options.Icons.Size
+-- The floor the name font is held at, whatever the two above multiply out to.
+local MIN_NAME_FONT_SIZE = 6
 
 env.inInstance = true
 env.instanceType = "arena"
@@ -54,6 +65,60 @@ local function usedSlots()
 		end
 	end
 	return count
+end
+
+---The kicker labels on screen, in slot order. The display puts one font string on each slot
+---frame and hides it again whenever that slot has nobody to name.
+local function shownNames()
+	local labels = {}
+	for _, frame in ipairs(acm.frames) do
+		if frame._name and frame._name:match("^MiniAuras_Slot_") then
+			local label = frame._createdFontStrings[1]
+			if label and label:IsShown() then
+				labels[#labels + 1] = label
+			end
+		end
+	end
+	return labels
+end
+
+---The border rings on screen, in slot order, found by the art every one of them wears.
+local function shownBorders()
+	local borders = {}
+	for _, frame in ipairs(acm.frames) do
+		for _, texture in ipairs(frame._createdTextures or {}) do
+			local asset = texture._lastArgs.SetTexture
+			if asset and asset[1] == BORDER_ASSET and texture:IsShown() then
+				borders[#borders + 1] = texture
+			end
+		end
+	end
+	return borders
+end
+
+---The static glow overlays on screen. Each one is a frame of its own carrying a single texture,
+---and the frame is what gets shown, so its state is what says the glow is up.
+local function shownGlows()
+	local glows = {}
+	for _, frame in ipairs(acm.frames) do
+		for _, texture in ipairs(frame._createdTextures or {}) do
+			local asset = texture._lastArgs.SetTexture
+			if asset and asset[1] == GLOW_ASSET and frame:IsShown() then
+				glows[#glows + 1] = texture
+			end
+		end
+	end
+	return glows
+end
+
+---Kicks the player's cast, crediting the given GUID. A fresh start event each time, since one
+---cast only ever produces one icon.
+---@param guid any
+local function kicked(guid)
+	local frame = assert(castFrameFor("player"), "player cast frame")
+
+	frame:TriggerEvent("UNIT_SPELLCAST_START", "player")
+	frame:TriggerEvent("UNIT_SPELLCAST_INTERRUPTED", "player", "cast-who", 0, guid)
 end
 
 fw.describe("EnemyKickTracker - arena gating", function()
@@ -134,7 +199,199 @@ fw.describe("EnemyKickTracker - interrupt to icon", function()
 	end)
 end)
 
+-- The GUID the stop event carries is secret inside an arena, so the name and the class token it
+-- resolves to are secret too: handed to a setter and never read, compared or used as a key.
+fw.describe("EnemyKickTracker - attributing a kick", function()
+	-- Nothing unregisters an observer callback, so one is installed for the file and only records
+	-- while a test has asked it to.
+	local capture
+
+	observer:RegisterKickCallback(function(name, class)
+		if capture then
+			capture.Name, capture.Class = name, class
+		end
+	end)
+
+	fw.before_each(function()
+		capture = nil
+		options.Icons.Border = false
+		options.Icons.Glow = false
+		options.Icons.Color = { R = 1, G = 1, B = 1, A = 1 }
+		options.FontScale = 1.0
+		module:Refresh()
+		display:Clear()
+		wipe(env.unitNames)
+		wipe(env.unitClasses)
+	end)
+
+	fw.it("hands the interrupter's name and class to the kick callback", function()
+		local seen = {}
+
+		capture = seen
+
+		env.unitNames["arena1"] = "Kicker"
+		env.unitClasses["arena1"] = "ROGUE"
+
+		kicked("arena1")
+
+		capture = nil
+
+		assert(seen.Name == "Kicker", "the name was dropped, got " .. tostring(seen.Name))
+		assert(seen.Class == "ROGUE", "the class was dropped, got " .. tostring(seen.Class))
+	end)
+
+	fw.it("draws the name above the icon", function()
+		env.unitNames["arena1"] = "Kicker"
+
+		kicked("arena1")
+
+		local labels = shownNames()
+		assert(#labels == 1, "one label, got " .. #labels)
+		assert(labels[1]:GetText() == "Kicker", "got " .. tostring(labels[1]:GetText()))
+	end)
+
+	fw.it("draws the name it is not allowed to read", function()
+		local name = wow.markSecret({})
+
+		env.unitNames["arena1"] = name
+
+		kicked("arena1")
+
+		local labels = shownNames()
+		assert(#labels == 1, "one label, got " .. #labels)
+		assert(labels[1]._lastArgs.SetText[1] == name, "the secret name is handed to SetText untouched")
+	end)
+
+	fw.it("rings the icon in a class colour it is not allowed to read", function()
+		-- RAID_CLASS_COLORS cannot be indexed by a secret, so the colour has to come from the API
+		-- call. What it returns is secret too, and only a setter may be given it.
+		env.unitClasses["arena1"] = wow.markSecret({})
+
+		kicked("arena1")
+
+		local borders = shownBorders()
+		assert(#borders == 1, "one ring, got " .. #borders)
+		assert(issecretvalue(borders[1]._lastArgs.SetVertexColor[1]),
+			"the secret class colour reached the ring")
+	end)
+
+	fw.it("glows the icon in a class colour it is not allowed to read", function()
+		-- With no border the glow carries the colour on its own. Its colour cache key comes out of
+		-- string.format, which on a secret hands back a string the layer may not compare.
+		options.Icons.Glow = true
+		module:Refresh()
+
+		env.unitClasses["arena1"] = wow.markSecret({})
+
+		kicked("arena1")
+
+		local glows = shownGlows()
+
+		assert(usedSlots() == 1, "the kick still produced its icon, got " .. usedSlots())
+		assert(#glows == 1, "one glow, got " .. #glows)
+		assert(issecretvalue(glows[1]._lastArgs.SetVertexColor[1]),
+			"the secret class colour reached the glow")
+
+		local layer = glows[1]._parent._parent
+
+		assert(layer._GlowColorKey == nil,
+			"a key it cannot compare must not be cached, got " .. tostring(layer._GlowColorKey))
+	end)
+
+	fw.it("falls back to the colour the user picked when the class did not resolve", function()
+		options.Icons.Border = true
+		options.Icons.Color = { R = 0.25, G = 0.5, B = 0.75, A = 1 }
+		module:Refresh()
+
+		-- Nothing maps this GUID to a class, which is what an old client answers.
+		kicked("arena1")
+
+		local applied = shownBorders()[1]._lastArgs.SetVertexColor
+		assert(applied[1] == 0.25 and applied[2] == 0.5 and applied[3] == 0.75,
+			"the user's own tint should still draw the ring, got " .. tostring(applied[1]))
+	end)
+
+	fw.it("clamps a long name to the icon rather than cutting the string down", function()
+		-- string.sub on a secret name throws, so the trimming is the client's to do.
+		env.unitNames["arena1"] = "Averyveryverylongname"
+
+		kicked("arena1")
+
+		local label = shownNames()[1]
+		assert(label:GetText() == "Averyveryverylongname", "the whole string is handed over")
+		assert(label._lastArgs.SetWidth[1] == options.Icons.Size,
+			"clamped to the icon's width, got " .. tostring(label._lastArgs.SetWidth[1]))
+		assert(label._lastArgs.SetWordWrap[1] == false, "and kept on one line")
+	end)
+
+	fw.it("sets a real font on the name, sized by the module's own font scale", function()
+		-- A bare font string inherits no font, and SetText on one errors on a live client.
+		options.FontScale = 1.5
+		module:Refresh()
+
+		env.unitNames["arena1"] = "Kicker"
+		kicked("arena1")
+
+		local applied = shownNames()[1]._lastArgs.SetFont
+
+		assert(applied and applied[1] ~= nil, "the label was given a font face")
+		assert(applied[2] == math.floor(options.Icons.Size * 0.25 * 1.5),
+			"the label follows the scale, got " .. tostring(applied and applied[2]))
+	end)
+
+	fw.it("keeps the name legible on the smallest icon the sliders allow", function()
+		-- The scaled size floors to two points here, which draws nothing anyone can read.
+		options.Icons.Size = MIN_ICON_SIZE
+		options.FontScale = MIN_FONT_SCALE
+		module:Refresh()
+
+		env.unitNames["arena1"] = "Kicker"
+		kicked("arena1")
+
+		local applied = shownNames()[1]._lastArgs.SetFont
+		local size = applied and applied[2]
+
+		options.Icons.Size = DEFAULT_ICON_SIZE
+		module:Refresh()
+
+		assert(size == MIN_NAME_FONT_SIZE, "the name must not go below " ..
+			MIN_NAME_FONT_SIZE .. " points, got " .. tostring(size))
+	end)
+
+	fw.it("takes the name down with the kick it belongs to", function()
+		env.unitNames["arena1"] = "First"
+		kicked("arena1")
+		assert(#shownNames() == 1, "the name is up")
+
+		acm.runTimers()
+
+		assert(usedSlots() == 0, "the kick expired")
+		assert(#shownNames() == 0, "and its name went with it")
+	end)
+
+	fw.it("takes every name down when the bar is cleared", function()
+		-- What an arena's prep round does, so last match's kickers are not still named.
+		env.unitNames["arena1"] = "First"
+		kicked("arena1")
+		assert(#shownNames() == 1, "the name is up")
+
+		display:Clear()
+
+		assert(#shownNames() == 0, "a cleared bar still names somebody")
+	end)
+end)
+
 fw.describe("EnemyKickTracker - lifecycle", function()
+	fw.it("names every preview kick, and takes the names down with the preview", function()
+		module:StartTesting()
+
+		local labels = shownNames()
+		assert(#labels == 3, "one label per preview icon, got " .. #labels)
+
+		module:StopTesting()
+		assert(#shownNames() == 0, "and they go with the preview")
+	end)
+
 	fw.it("test mode fills the bar and leaving it empties the bar again", function()
 		display:Clear()
 		local before = usedSlots()

@@ -24,6 +24,14 @@ local testModeActive = false
 local KICK_ICON = C_Spell.GetSpellTexture(1766)
 
 local TEST_SPEC_IDS = testSpellData.KickSpecIds
+-- One stand-in kicker per spec id in TEST_SPEC_IDS, so the preview shows the name and class colour
+-- a live kick would. Keyed by spec id rather than position, so a spec added to KickSpecIds without
+-- an entry here falls back to the plain tint.
+local TEST_KICKERS = {
+	[62] = { Name = "Emberfall", Class = "MAGE" },    -- Arcane Mage
+	[254] = { Name = "Longshot", Class = "HUNTER" },  -- Marksmanship Hunter
+	[259] = { Name = "Nightblade", Class = "ROGUE" }, -- Assassination Rogue
+}
 -- Safe to reuse for every preview because the display reads it straight away and keeps nothing.
 local testEntriesScratch = {}
 
@@ -76,8 +84,10 @@ local function OnArenaPrep()
 	display:Clear()
 end
 
-local function OnKicked()
-	display:AddKick(minKickCooldown, KICK_ICON)
+---@param name any the interrupter's name, secret inside an instance
+---@param class any the interrupter's class token, secret inside an instance
+local function OnKicked(name, class)
+	display:AddKick(minKickCooldown, KICK_ICON, name, class)
 end
 
 -- The cast events only produce icons inside an arena, so they stay unregistered elsewhere
@@ -99,9 +109,15 @@ local function ShowTestIcons()
 
 	for _, specId in ipairs(TEST_SPEC_IDS) do
 		local specInfo = kickData.SpecData[specId]
+		local kicker = TEST_KICKERS[specId]
 
 		if specInfo and specInfo.KickCd then
-			testEntriesScratch[#testEntriesScratch + 1] = { Duration = specInfo.KickCd, Icon = KICK_ICON }
+			testEntriesScratch[#testEntriesScratch + 1] = {
+				Duration = specInfo.KickCd,
+				Icon = KICK_ICON,
+				Name = kicker and kicker.Name,
+				Class = kicker and kicker.Class,
+			}
 		end
 	end
 

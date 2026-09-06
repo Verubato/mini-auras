@@ -467,3 +467,53 @@ fw.describe("FontUtil:Apply", function()
 		assert(size == 9, "55% of the icon, got " .. tostring(size))
 	end)
 end)
+
+fw.describe("FontUtil:GameFace", function()
+	local builtGameFontNormal = _G.GameFontNormal
+	-- A face no other test uses, so what comes back names where it came from.
+	local LOCALE_FACE = "Fonts\\2002.TTF"
+
+	---A FontUtil that has not been asked yet, because the game's face is settled on first use.
+	local function FreshFontUtil()
+		local scratch = { Core = {}, Utils = {}, Framework = addon.Framework }
+
+		assert(loadfile("src/Utils/FontUtil.lua"))("MiniAuras", scratch)
+
+		return scratch.Utils.FontUtil
+	end
+
+	fw.before_each(function()
+		_G.GameFontNormal = {
+			GetFont = function()
+				return LOCALE_FACE, 12, ""
+			end,
+		}
+	end)
+
+	fw.it("hands out the face the game's own font object wears", function()
+		local face = FreshFontUtil():GameFace()
+
+		assert(face == LOCALE_FACE, "the game's face, got " .. tostring(face))
+	end)
+
+	fw.it("keeps answering it after the object it read is gone", function()
+		local util = FreshFontUtil()
+
+		assert(util:GameFace() == LOCALE_FACE, "fixture: the game's face is up")
+
+		_G.GameFontNormal = nil
+
+		assert(util:GameFace() == LOCALE_FACE, "the first answer is the one it holds")
+	end)
+
+	fw.it("falls back to a file it names itself on a client that answers nothing", function()
+		_G.GameFontNormal = nil
+
+		local face = FreshFontUtil():GameFace()
+
+		-- Every label built without a template asks for this, so nil is not an answer it can give.
+		assert(face == GAME_FACE, "the last resort face, got " .. tostring(face))
+	end)
+
+	_G.GameFontNormal = builtGameFontNormal
+end)
