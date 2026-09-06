@@ -209,8 +209,8 @@ local function OnEvent(_, event, unit)
 		-- re-run the gates so everything hides on the way in and wakes on the way out.
 		QueueHousingCheck()
 	elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-		-- The kick trackers are enabled per spec. A respec fires no world or roster event, so
-		-- without this nothing would wake a module the player's new spec switches on.
+		-- The kick trackers are enabled per spec, and a personal aura group can be limited to one.
+		-- A respec fires no world or roster event, so without this nothing would notice.
 		if unit == "player" then
 			addon:Refresh()
 		end

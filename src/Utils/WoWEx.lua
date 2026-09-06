@@ -142,6 +142,47 @@ function M:GetSpecializationInfoForClassID(classId, specIndex)
 	return fn(classId, specIndex)
 end
 
+---Every class the client knows and the specs it offers, in the client's own order. Not cached: a
+---cache warmed before the client has spec data would stick empty for the session.
+---@return SpecClass[]
+function M:GetAllSpecs()
+	local out = {}
+
+	if not (GetNumClasses and GetClassInfo) then
+		return out
+	end
+
+	local _, _, playerClassId = UnitClass("player")
+
+	for classIndex = 1, GetNumClasses() do
+		local className, _, classId = GetClassInfo(classIndex)
+
+		if className and classId then
+			local entry = {
+				Id = classId,
+				Name = className,
+				Player = classId == playerClassId,
+				Specs = {},
+			}
+
+			for specIndex = 1, M:GetNumSpecializationsForClassID(classId) do
+				local specId, specName = M:GetSpecializationInfoForClassID(classId, specIndex)
+
+				if type(specId) == "number" and specId > 0 then
+					entry.Specs[#entry.Specs + 1] = { Id = specId, Name = specName or tostring(specId) }
+				end
+			end
+
+			-- A class the client has no spec data for is left out.
+			if #entry.Specs > 0 then
+				out[#out + 1] = entry
+			end
+		end
+	end
+
+	return out
+end
+
 function M:IsAddOnEnabled(addonName)
 	return C_AddOns.GetAddOnEnableState(addonName, UnitName("player")) == 2
 end
@@ -172,3 +213,9 @@ end
 function M:GetDurationExpiry(durationObject)
 	return durationObject and durationExpiries[durationObject] or nil
 end
+
+---@class SpecClass
+---@field Id number
+---@field Name string
+---@field Player boolean True for the class the player is on.
+---@field Specs { Id: number, Name: string }[]

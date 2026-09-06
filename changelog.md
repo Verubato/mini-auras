@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Personal aura groups can now be limited to one or more specs, picked from every spec in the game. A group limited to another class's spec does not show on this character.
+
 ## 5.36.0
 
 - Added show numbers to important auras and portraits.

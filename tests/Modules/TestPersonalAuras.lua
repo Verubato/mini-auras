@@ -1141,6 +1141,157 @@ fw.describe("PersonalAuras - the combat condition", function()
 	end)
 end)
 
+fw.describe("PersonalAuras - limited to a spec", function()
+	-- The module environment answers nothing about specs, so this block supplies a class of its own.
+	local SPEC_IDS = { 251, 252, 253 }
+	local BLOOD, FROST = SPEC_IDS[1], SPEC_IDS[2]
+	-- A spec of some other class, which is what a shared profile brings with it.
+	local FOREIGN_SPEC = 999
+	local realSpecInfo = _G.C_SpecializationInfo
+
+	---@param index number? Which spec the player is in, nil for a client that cannot say yet.
+	local function UseSpec(index)
+		_G.C_SpecializationInfo = {
+			GetSpecialization = function()
+				return index
+			end,
+			GetSpecializationInfo = function(specIndex)
+				return SPEC_IDS[specIndex], "Spec " .. tostring(specIndex)
+			end,
+			GetNumSpecializations = function()
+				return #SPEC_IDS
+			end,
+		}
+	end
+
+	fw.it("shows a group that named no spec whatever the player is in", function()
+		ClearGroups()
+		UseSpec(1)
+
+		-- A restricted group elsewhere in the profile, so the display really does read the spec.
+		AddGroup({ Unit = "pet", Spells = { ICE_BLOCK }, Specs = { [FROST] = true } })
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		assert(Budget(ContainerFor("player"), "helpful") == groups.MaxIcons, "shown in the first spec")
+
+		UseSpec(2)
+		module:Refresh()
+
+		assert(Budget(ContainerFor("player"), "helpful") == groups.MaxIcons, "and in the second")
+	end)
+
+	fw.it("holds a group back until the player is in a spec it named", function()
+		ClearGroups()
+		UseSpec(1)
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Specs = { [FROST] = true } })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container == nil or Budget(container, "helpful") == 0, "nothing in the wrong spec")
+
+		UseSpec(2)
+		module:Refresh()
+
+		assert(Budget(ContainerFor("player"), "helpful") == groups.MaxIcons,
+			"and the full budget once the player respecs into it")
+	end)
+
+	fw.it("holds a group back when the list names only another class's spec", function()
+		ClearGroups()
+		UseSpec(1)
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Specs = { [FOREIGN_SPEC] = true } })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container == nil or Budget(container, "helpful") == 0,
+			"a group authored for another class's spec shows on no character but that one")
+	end)
+
+	fw.it("shows the group while the client cannot say which spec the player is in", function()
+		ClearGroups()
+		UseSpec(nil)
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Specs = { [FROST] = true } })
+		module:Refresh()
+
+		assert(Budget(ContainerFor("player"), "helpful") == groups.MaxIcons,
+			"an unanswerable question hides nothing")
+	end)
+
+	fw.it("draws a spec limited group in test mode whatever the spec", function()
+		ClearGroups()
+		UseSpec(1)
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Specs = { [FROST] = true } })
+		module:StartTesting()
+
+		assert(ContainerFor("player"), "a preview that hid itself would read as broken")
+
+		module:StopTesting()
+	end)
+
+	fw.it("registers no sound for a sound only group the spec locks out", function()
+		ClearGroups()
+		addon.Modules.PersonalAuras.Sound:Clear()
+		UseSpec(1)
+
+		local before = env.auraSoundAdds
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Specs = { [FROST] = true },
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		assert(env.auraSoundAdds == before, "a group held back by its spec makes no noise either")
+	end)
+
+	fw.it("answers the gate directly", function()
+		assert(groups:ShowsForSpec({}, BLOOD), "a group with no list is in every spec")
+		assert(groups:ShowsForSpec({ Specs = {} }, BLOOD), "an empty list is no restriction either")
+		assert(groups:ShowsForSpec({ Specs = { [FROST] = true } }, nil),
+			"an unknown spec cannot rule the group out")
+		assert(groups:ShowsForSpec({ Specs = { [FROST] = true } }, FROST),
+			"the spec it named shows it")
+		assert(not groups:ShowsForSpec({ Specs = { [FROST] = true } }, BLOOD),
+			"and any other spec does not")
+		assert(not groups:ShowsForSpec({ Specs = { [FOREIGN_SPEC] = true } }, BLOOD),
+			"a list naming nothing this class has hides it too")
+	end)
+
+	fw.it("keeps only whole spec ids a stored list actually asked for", function()
+		local group = groups:Normalise({
+			Specs = { ["251"] = true, [0] = true, [FROST] = false, x = true },
+		})
+
+		assert(group.Specs[BLOOD] == true, "a stringified id is coerced back")
+		assert(group.Specs[FROST] == nil, "an unticked one is dropped")
+		assert(next(group.Specs) == BLOOD and next(group.Specs, BLOOD) == nil, "and nothing else survives")
+	end)
+
+	fw.it("reads an empty list as no restriction at all", function()
+		assert(groups:Normalise({ Specs = {} }).Specs == nil, "an empty set would hide everything")
+		assert(groups:Normalise({}).Specs == nil, "and an untouched group has none")
+	end)
+
+	fw.it("costs nothing to refresh a profile that restricts no group", function()
+		assert(not groups:AnySpecRestricted({ Groups = { { Specs = {} }, {} } }),
+			"neither an empty list nor a missing one is a restriction")
+		assert(groups:AnySpecRestricted({ Groups = { {}, { Specs = { [BLOOD] = true } } } }),
+			"one restricted group is enough to make the display ask")
+	end)
+
+	_G.C_SpecializationInfo = realSpecInfo
+end)
+
 fw.describe("PersonalAuras - options page preview", function()
 	fw.it("draws a selected group that its own conditions would otherwise hide", function()
 		ClearGroups()

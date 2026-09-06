@@ -1583,6 +1583,12 @@ function M:Refresh(options, moduleEnabled)
 	-- Test mode ignores it. A group held back by its combat state would look broken there, with
 	-- nothing to tell it apart from one whose spells simply are not up.
 	local inCombat = InCombatLockdown()
+	-- Most profiles restrict no group, so the spec is read only when one does.
+	local playerSpecId
+
+	if groups:AnySpecRestricted(options) then
+		playerSpecId = wowEx:GetPlayerSpecId()
+	end
 
 	for _, groupDef in ipairs(options.Groups) do
 		live[groupDef.Id] = true
@@ -1591,7 +1597,9 @@ function M:Refresh(options, moduleEnabled)
 		local state = EnsureState(groupDef)
 
 		state.Allowed = moduleEnabled and groupDef.Enabled and groups:Supports(groupDef)
-			and (testModeActive or groups:ShowsInCombat(groupDef, inCombat))
+			and (testModeActive
+				or (groups:ShowsInCombat(groupDef, inCombat)
+					and groups:ShowsForSpec(groupDef, playerSpecId)))
 
 		-- Previewed only once there is something to draw. The stand-in icons are the handle, so
 		-- a group with no spells yet would be an invisible frame to drag around.

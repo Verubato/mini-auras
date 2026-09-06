@@ -860,6 +860,95 @@ local function DropdownLabelled(label)
 	return nil
 end
 
+---A stand-in menu description that reports every checkbox the generator builds, along with the
+---caption of the submenu holding it and the control handed back for it. The control records
+---whether SetSelectionIgnored was called on it, checkable once the whole menu has been built.
+---@param onCheckbox fun(text: string, isSelected: fun(value: any): boolean, onClick: fun(value: any), value: any, class: string?, control: table)
+---@param class string? The submenu's caption, nil at the root.
+---@return table
+local function MenuNode(onCheckbox, class)
+	local node = {}
+
+	function node.CreateCheckbox(_, text, isSelected, onClick, value)
+		local control = { SelectionIgnored = false }
+
+		function control:SetSelectionIgnored()
+			self.SelectionIgnored = true
+		end
+
+		onCheckbox(text, isSelected, onClick, value, class, control)
+
+		return control
+	end
+
+	function node.CreateButton(_, text)
+		return MenuNode(onCheckbox, text)
+	end
+
+	node.CreateTitle = function() end
+	node.CreateDivider = function() end
+
+	return node
+end
+
+---The rows an open spec menu would draw, read by running the dropdown's own generator.
+---@param dropdown table
+---@return table[] rows Each { Value, Text, Class, Selected }, in menu order.
+local function SpecRows(dropdown)
+	local rows = {}
+
+	dropdown.__menuGenerator(dropdown, MenuNode(function(text, isSelected, _, value, class)
+		rows[#rows + 1] = {
+			Value = value,
+			Text = text,
+			Class = class,
+			Selected = isSelected(value) == true,
+		}
+	end))
+
+	return rows
+end
+
+---Ticks or unticks one row the way a click on it would.
+---@param dropdown table
+---@param value any
+local function ClickSpec(dropdown, value)
+	dropdown.__menuGenerator(dropdown, MenuNode(function(_, _, onClick, rowValue)
+		if rowValue == value then
+			onClick(rowValue)
+		end
+	end))
+end
+
+---The raw isSelected closures from one run of the menu generator, keyed by row value. Unlike
+---SpecRows, this does not call them, so a test can call one again later and see whether it was
+---reading a snapshot or the live state.
+---@param dropdown table
+---@return table<any, fun(value: any): boolean>
+local function SpecSelectors(dropdown)
+	local selectors = {}
+
+	dropdown.__menuGenerator(dropdown, MenuNode(function(_, isSelected, _, value)
+		selectors[value] = isSelected
+	end))
+
+	return selectors
+end
+
+---Every spec row's control, collected across the whole menu build so a call a row makes on it
+---afterward (such as SetSelectionIgnored) can be checked once building is done.
+---@param dropdown table
+---@return table[] controls
+local function SpecControls(dropdown)
+	local controls = {}
+
+	dropdown.__menuGenerator(dropdown, MenuNode(function(_, _, _, _, _, control)
+		controls[#controls + 1] = control
+	end))
+
+	return controls
+end
+
 fw.describe("Personal auras page - naming where a sound came from", function()
 	fw.it("names the addon a sound came from in the trigger's dropdown", function()
 		local addon, group = LoadWithGroup({ 45438 })
@@ -1124,4 +1213,170 @@ fw.describe("Personal auras page - a string exported before the icon switches fl
 		fw.eq(imported.Icons.EnableSwipe, false, "the swipe the author dropped stays dropped")
 		fw.is_nil(imported.Icons.HideSwipe, "and its old key is not kept either")
 	end)
+end)
+
+fw.describe("Personal auras page - limiting a group to a spec", function()
+	-- The player's own class on the mock is class 1, so 101 to 103 are this character's specs.
+	local MINE_FIRST, MINE_SECOND = 101, 102
+	-- A spec of another class, which is what a profile shared with an alt brings with it.
+	local FOREIGN_SPEC = 501
+	-- One page for the whole block. A load per test runs the suite out of memory.
+	local addon, group = LoadWithGroup({ 45438 })
+	local groups = addon.Modules.PersonalAuras.Groups
+	local realSpecsForClass = _G.GetSpecializationInfoForClassID
+
+	-- The mock answers the same three ids for every class, which would make thirteen identical
+	-- submenus. Keyed on the class here so a row can be told from its neighbour.
+	_G.GetSpecializationInfoForClassID = function(classId, index)
+		return classId * 100 + index, ("Spec %d-%d"):format(classId, index)
+	end
+
+	local specDropdown
+
+	---The spec dropdown, refreshed onto the stored list the test asked for. A page build per test
+	---runs the suite out of memory, so later tests drive the refresh the tab framework drives.
+	---@param specs table<number, boolean>?
+	---@return table
+	local function ShowSpecs(specs)
+		group.Specs = specs
+		groups:Normalise(group)
+
+		if not specDropdown then
+			ShowPage(addon, group)
+			specDropdown = DropdownLabelled("For spec")
+		end
+
+		fw.not_nil(specDropdown, "the trigger tab offers a spec dropdown")
+		specDropdown:MiniRefresh()
+
+		return specDropdown
+	end
+
+	fw.it("offers every spec in the game, not just this character's", function()
+		local rows = SpecRows(ShowSpecs(nil))
+		local foreign
+
+		for _, row in ipairs(rows) do
+			if row.Value == FOREIGN_SPEC then
+				foreign = row
+			end
+		end
+
+		fw.eq(#rows, 39, "thirteen classes at three specs each")
+		fw.not_nil(foreign, "including a spec no character of this class can be in")
+	end)
+
+	fw.it("leads with the player's own class", function()
+		local rows = SpecRows(ShowSpecs(nil))
+
+		fw.eq(rows[1].Value, MINE_FIRST, "the player's specs sit at the root")
+		fw.eq(rows[2].Value, MINE_SECOND, "in the order the client lists them")
+		fw.eq(rows[3].Value, 103, "down to the last")
+		fw.is_nil(rows[1].Class, "with no submenu above them")
+		fw.is_nil(rows[3].Class, "nor above the last of them")
+
+		for index = 4, #rows do
+			fw.not_nil(rows[index].Class, "every other class costs a hover")
+		end
+	end)
+
+	fw.it("starts with nothing ticked", function()
+		local dropdown = ShowSpecs(nil)
+		local rows = SpecRows(dropdown)
+
+		fw.eq(#rows, 39, "thirteen classes at three specs each")
+
+		for _, row in ipairs(rows) do
+			fw.eq(row.Selected, false, "a group that named no spec is restricted to none of them")
+		end
+
+		fw.eq(dropdown:GetText(), "All specs", "and the face says so")
+	end)
+
+	fw.it("keeps every spec row out of the dropdown's own selection summary", function()
+		local controls = SpecControls(ShowSpecs(nil))
+
+		fw.eq(#controls, 39, "thirteen classes at three specs each")
+
+		for _, control in ipairs(controls) do
+			fw.eq(control.SelectionIgnored, true,
+				"the row would otherwise pile every ticked name onto the button's own text")
+		end
+	end)
+
+	fw.it("stores and names the one spec of your own class you tick", function()
+		local dropdown = ShowSpecs(nil)
+
+		ClickSpec(dropdown, MINE_FIRST)
+
+		fw.truthy(group.Specs[MINE_FIRST], "the spec that was ticked is stored")
+		fw.is_nil(next(group.Specs, MINE_FIRST), "and nothing else is")
+		fw.eq(dropdown:GetText(), "Spec 1-1", "your own spec needs no qualifier")
+	end)
+
+	fw.it("names a lone spec by its id rather than saying '1 specs' when class data is missing", function()
+		local dropdown = ShowSpecs({ [MINE_FIRST] = true })
+		local realGetNumClasses = _G.GetNumClasses
+
+		_G.GetNumClasses = nil
+		dropdown:MiniRefresh()
+
+		fw.eq(dropdown:GetText(), tostring(MINE_FIRST), "a bare id beats a mislabelled count of one")
+
+		_G.GetNumClasses = realGetNumClasses
+	end)
+
+	fw.it("names the class beside a spec that is not yours", function()
+		local dropdown = ShowSpecs({ [FOREIGN_SPEC] = true })
+
+		fw.eq(dropdown:GetText(), "Spec 5-1 |cff888888(Priest)|r",
+			"the reported bug was that nothing on screen named the other class")
+	end)
+
+	fw.it("counts past one ticked spec", function()
+		local dropdown = ShowSpecs({ [MINE_FIRST] = true, [FOREIGN_SPEC] = true })
+
+		fw.eq(dropdown:GetText(), "2 specs", "two names would not fit the face")
+	end)
+
+	fw.it("clears the restriction when the only ticked spec comes off", function()
+		local dropdown = ShowSpecs({ [MINE_FIRST] = true })
+
+		ClickSpec(dropdown, MINE_FIRST)
+
+		fw.is_nil(group.Specs, "an empty set is no restriction at all")
+		fw.eq(dropdown:GetText(), "All specs", "and the face goes back to saying so")
+	end)
+
+	fw.it("ticks only the stored spec when it belongs to another class", function()
+		local ticked = {}
+
+		for _, row in ipairs(SpecRows(ShowSpecs({ [FOREIGN_SPEC] = true }))) do
+			if row.Selected then
+				ticked[#ticked + 1] = row.Value
+			end
+		end
+
+		fw.eq(#ticked, 1, "one row ticked, not this class's three")
+		fw.eq(ticked[1], FOREIGN_SPEC, "and it is the one the group asked for")
+	end)
+
+	fw.it("answers a row's tick from current state, not from when the menu opened", function()
+		local dropdown = ShowSpecs({ [MINE_FIRST] = true })
+		local isSelected = SpecSelectors(dropdown)[MINE_FIRST]
+
+		ClickSpec(dropdown, MINE_FIRST)
+
+		fw.eq(isSelected(MINE_FIRST), false, "the same closure sees the untick without the menu reopening")
+	end)
+
+	fw.it("keeps the summary on the face when the button repaints itself", function()
+		local dropdown = ShowSpecs({ [MINE_FIRST] = true })
+
+		dropdown:SetText("anything")
+
+		fw.eq(dropdown:GetText(), "Spec 1-1", "the button would otherwise write its own row list")
+	end)
+
+	_G.GetSpecializationInfoForClassID = realSpecsForClass
 end)

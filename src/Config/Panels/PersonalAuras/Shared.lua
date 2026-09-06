@@ -61,10 +61,19 @@ function ui.Apply()
 	config:Apply(moduleName.PersonalAuras)
 end
 
+---A label followed by a grey qualifier in parentheses, the shape a spell id and a foreign spec's
+---class both need beside a name.
+---@param name string
+---@param qualifier string|number
+---@return string
+function ui.QualifiedLabel(name, qualifier)
+	return ("%s |cff888888(%s)|r"):format(name, qualifier)
+end
+
 ---@param spellId number
 ---@return string
 function ui.SpellLabel(spellId)
-	return ("%s |cff888888(%d)|r"):format(C_Spell.GetSpellName(spellId) or "?", spellId)
+	return ui.QualifiedLabel(C_Spell.GetSpellName(spellId) or "?", spellId)
 end
 
 ---What colour a spell reads in: red for one the selected group's aura type can never match, so

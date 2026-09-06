@@ -7,6 +7,7 @@ local spellPicker = addon.Config.SpellPicker
 local groups = addon.Modules.PersonalAuras.Groups
 local recorder = addon.Modules.PersonalAuras.Recorder
 local ui = addon.Config.PersonalAurasUI
+local wowEx = addon.Utils.WoWEx
 local MESSAGE_ROW_HEIGHT = 26
 local SPELL_ROW_HEIGHT = 26
 local SPELL_COLUMNS = 3
@@ -27,6 +28,8 @@ local SHOW_WHEN_OPTIONS = {
 	groups.ShowWhen.InCombat,
 	groups.ShowWhen.OutOfCombat,
 }
+-- The spec rows are built by a menu of the panel's own, so the framework has no list to walk.
+local EMPTY_SPEC_ITEMS = {}
 
 -- Rebuilt lists, recycled rather than recreated.
 local spellRows = {}
@@ -290,6 +293,124 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 			end
 		end,
 	}, conditionRow, 0)
+
+	local specDropdown
+
+	---@param group PersonalAuraGroup?
+	---@return string
+	local function SpecFaceText(group)
+		local wanted = group and group.Specs
+
+		if not wanted or next(wanted) == nil then
+			return L["All specs"]
+		end
+
+		local count = 0
+
+		for _ in pairs(wanted) do
+			count = count + 1
+		end
+
+		if count == 1 then
+			local specId = next(wanted)
+
+			for _, class in ipairs(wowEx:GetAllSpecs()) do
+				for _, spec in ipairs(class.Specs) do
+					if wanted[spec.Id] then
+						return class.Player and spec.Name
+							or ui.QualifiedLabel(spec.Name, class.Name)
+					end
+				end
+			end
+
+			-- The client cannot yet name a spec it has no class data for at all.
+			return tostring(specId)
+		end
+
+		return L["%d specs"]:format(count)
+	end
+
+	---@param specId number
+	---@return boolean
+	local function IsSpecTicked(specId)
+		local group = ui.Current()
+
+		return group ~= nil and group.Specs ~= nil and group.Specs[specId] == true
+	end
+
+	---@param specId number
+	local function ToggleSpec(specId)
+		local group = ui.Current()
+
+		if not group then
+			return
+		end
+
+		local wanted = {}
+
+		for id in pairs(group.Specs or EMPTY_SPEC_ITEMS) do
+			wanted[id] = true
+		end
+
+		if wanted[specId] then
+			wanted[specId] = nil
+		else
+			wanted[specId] = true
+		end
+
+		group.Specs = next(wanted) ~= nil and wanted or nil
+		ui.Apply()
+		-- The button leaves the old face up when a click selects nothing, which every row here does.
+		specDropdown:SetText()
+	end
+
+	---@param node table A menu description, either the root or a class submenu.
+	---@param class SpecClass
+	local function AddSpecRows(node, class)
+		for _, spec in ipairs(class.Specs) do
+			local row = node:CreateCheckbox(spec.Name, IsSpecTicked, ToggleSpec, spec.Id)
+
+			-- Left out of the button's own selection text, which would list every ticked name.
+			row:SetSelectionIgnored()
+		end
+	end
+
+	specDropdown = ctx.Dropdown(L["For spec"], {
+		Items = EMPTY_SPEC_ITEMS,
+		GetValue = ui.Current,
+		GetText = SpecFaceText,
+		SetValue = ToggleSpec,
+	}, conditionRow, ui.DropdownColumn)
+
+	local baseSetText = specDropdown.SetText
+
+	-- The button repaints its own face after a menu click, so every writer lands on the same string.
+	function specDropdown.SetText(ddSelf)
+		baseSetText(ddSelf, SpecFaceText(ui.Current()))
+	end
+
+	specDropdown:SetupMenu(function(_, rootDescription)
+		local classes = wowEx:GetAllSpecs()
+		local mine = false
+
+		for _, class in ipairs(classes) do
+			if class.Player then
+				rootDescription:CreateTitle(class.Name)
+				AddSpecRows(rootDescription, class)
+				mine = true
+			end
+		end
+
+		if mine then
+			rootDescription:CreateDivider()
+		end
+
+		for _, class in ipairs(classes) do
+			if not class.Player then
+				AddSpecRows(rootDescription:CreateButton(class.Name), class)
+			end
+		end
+	end)
 
 	-- Where the spell-id filter rules get explained in terms of the two dropdowns above.
 	local problem = triggerPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")

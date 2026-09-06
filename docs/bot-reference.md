@@ -403,6 +403,13 @@ the old Precognition module's settings is frozen at what that release shipped.
   under the four above, since those already fill the width. The whole group is held back while the
   player's combat state does not match, its sounds included. Test mode ignores it, so a preview
   always draws. Groups saved before this option have no field and read as Always.
+- **For spec**: a checkbox dropdown beside Show when, offering every spec in the game grouped by
+  class. The player's own class sits at the root under its name and every other class is a
+  submenu. Nothing ticked (the default) means no restriction, and its closed face reads All specs.
+  One ticked spec is named on the face, with its class beside it when it is not the player's, and
+  more than one reads as a count. The group is held back outside a ticked spec, its sounds
+  included, unless test mode is active. A group restricted to another class's spec therefore shows
+  on no character but that one.
 
 **The spell-ID rule (why some combinations are refused).** The game only honours a spell-ID
 filter for helpful auras on units you can assist, and for harmful auras on units you cannot;
@@ -1404,7 +1411,8 @@ until they return; (5) the group's unit names a side and the unit is currently o
 side (buffs show only while friendly, debuffs only while hostile); (6) the group's own
 Enabled toggle is off; (7) it is a Texture group whose art was cleared with the browser's
 Reset button, so there is nothing to draw; (8) its **Show when** is In combat or Out of combat and
-the player is in the other state, which holds the whole group back, sounds included.
+the player is in the other state, which holds the whole group back, sounds included; (9) its
+**For spec** list does not name the player's current spec, which holds it back the same way.
 
 **"A personal aura tracking a permanent buff never shows."** Fixed in 5.15.0, where a spell-ID
 group no longer hides an aura that runs forever. On an older version the group works for timed

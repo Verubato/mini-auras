@@ -17,8 +17,6 @@ local changeStamp = addon.Utils.ChangeStamp
 -- caster filters: the engine cannot attribute casters on a unit outside the player's visible
 -- world, and a check it cannot evaluate is skipped rather than failed, so those are budgeted to
 -- zero there.
---
--- Class and spec conditions are deliberately absent. Profiles already switch on specialisation.
 
 addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
@@ -345,6 +343,32 @@ local function SpellList(stored)
 	return out
 end
 
+---The spec ids a group is limited to, rebuilt rather than cleaned in place so an import cannot
+---smuggle anything else in. String keys are coerced, since a round trip can stringify them.
+---@param stored any
+---@return table<number, boolean>?
+local function SpecSet(stored)
+	if type(stored) ~= "table" then
+		return nil
+	end
+
+	local out = {}
+	local any = false
+
+	-- An id belonging to another class is kept, because the same profile is loaded on the alt it
+	-- was set up for.
+	for key, value in pairs(stored) do
+		local specId = tonumber(key)
+
+		if value == true and specId and specId > 0 and specId == math.floor(specId) then
+			out[specId] = true
+			any = true
+		end
+	end
+
+	return any and out or nil
+end
+
 ---A fresh group with everything filled in, and the module's id counter advanced past it.
 ---@param options PersonalAurasModuleOptions
 ---@param name string?
@@ -511,6 +535,7 @@ function M:Normalise(group)
 		and group.Sort or SORT_OLDEST
 	group.ShowWhen = (group.ShowWhen == SHOW_WHEN.InCombat
 		or group.ShowWhen == SHOW_WHEN.OutOfCombat) and group.ShowWhen or SHOW_WHEN.Always
+	group.Specs = SpecSet(group.Specs)
 
 	-- Rebuilt rather than cleaned in place, so an import cannot smuggle in keys the engine would
 	-- reject and a component Blizzard has since dropped falls out on its own.
@@ -978,6 +1003,21 @@ function M:ShowsInCombat(group, inCombat)
 	return true
 end
 
+---Whether the player's current spec is one the group asked for. An empty list means every spec.
+---A spec the client cannot name yet is a loading state rather than a choice, so it shows.
+---@param group PersonalAuraGroup
+---@param specId number? The player's spec, nil while the client cannot say.
+---@return boolean
+function M:ShowsForSpec(group, specId)
+	local wanted = group.Specs
+
+	if not wanted or next(wanted) == nil or not specId then
+		return true
+	end
+
+	return wanted[specId] == true
+end
+
 ---Whether any group is conditional on combat, which is what decides whether the module has to
 ---listen for the regen events at all.
 ---@param options PersonalAurasModuleOptions
@@ -985,6 +1025,20 @@ end
 function M:AnyCombatConditional(options)
 	for _, group in ipairs(options.Groups) do
 		if group.ShowWhen == SHOW_WHEN.InCombat or group.ShowWhen == SHOW_WHEN.OutOfCombat then
+			return true
+		end
+	end
+
+	return false
+end
+
+---Whether any group is limited to a spec, which is what decides whether the display reads the
+---spec API at all.
+---@param options PersonalAurasModuleOptions
+---@return boolean
+function M:AnySpecRestricted(options)
+	for _, group in ipairs(options.Groups) do
+		if group.Specs and next(group.Specs) ~= nil then
 			return true
 		end
 	end
@@ -1214,4 +1268,5 @@ end
 ---@field Caster string "ANY"|"MINE"|"OTHERS"
 ---@field Sort string "OLDEST"|"LONGEST"|"SHORTEST"
 ---@field ShowWhen string "ALWAYS"|"INCOMBAT"|"OUTOFCOMBAT"
+---@field Specs table<number, boolean>? Spec ids the group is limited to; absent means every spec.
 ---@field Spells number[]
