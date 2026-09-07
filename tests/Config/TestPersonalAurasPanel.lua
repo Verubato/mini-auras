@@ -245,8 +245,8 @@ fw.describe("Personal auras page - controls inside a tab", function()
 	end)
 end)
 
-fw.describe("Personal auras page - the cast recorder", function()
-	fw.it("adds the spell when a recorded cast is clicked", function()
+fw.describe("Personal auras page - the aura recorder", function()
+	fw.it("adds the spell when a recorded aura is clicked", function()
 		local addon, group = LoadWithGroup({})
 		local recorder = addon.Modules.PersonalAuras.Recorder
 		local spellId = 45438
@@ -254,12 +254,12 @@ fw.describe("Personal auras page - the cast recorder", function()
 		ShowPage(addon, group)
 
 		recorder:Start()
-		WowMock.FireEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", spellId)
+		WowMock.FireEvent("UNIT_AURA", "player", { addedAuras = { { spellId = spellId } } })
 		ShowPage(addon, group)
 
 		local row = RecordedRow(spellId)
 
-		fw.not_nil(row, "the recorded cast has a row to click")
+		fw.not_nil(row, "the recorded aura has a row to click")
 
 		row:GetScript("OnClick")(row)
 

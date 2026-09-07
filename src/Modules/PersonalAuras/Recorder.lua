@@ -1,24 +1,21 @@
 ---@type string, Addon
 local _, addon = ...
+local wowEx = addon.Utils.WoWEx
 
--- Captures the spell ids the player casts, so a group can be built without a spell database.
---
--- Only the local player's cast ids are readable on 12.1, and a group member's arrive as secret
--- values that cannot even be used as a table key. What it records is the cast id, which is usually
--- but not always the id of the aura it applies.
+-- Captures the auras that land on the player, so a group can be built without a spell database.
 
 addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 
--- Long enough for a full rotation, short enough to still scan.
+-- Long enough for a fight's worth of auras, short enough to still scan.
 local MAX_ENTRIES = 40
 
 ---@type table?
 local eventsFrame
 local recording = false
 -- Newest first, which is the order the list is read in.
----@type PersonalAuraRecordedCast[]
+---@type PersonalAuraRecordedAura[]
 local entries = {}
----@type table<number, PersonalAuraRecordedCast>
+---@type table<number, PersonalAuraRecordedAura>
 local byId = {}
 ---@type fun()[]
 local changeCallbacks = {}
@@ -41,7 +38,7 @@ local function Record(spellId)
 	if existing then
 		existing.Count = existing.Count + 1
 
-		-- A spell pressed again is the one being looked for.
+		-- An aura that lands again is the one being looked for.
 		for index, entry in ipairs(entries) do
 			if entry == existing then
 				table.remove(entries, index)
@@ -67,15 +64,28 @@ local function Record(spellId)
 	NotifyChanged()
 end
 
-local function OnEvent(_, _, _, _, spellId)
+local function OnEvent(_, _, _, updateInfo)
 	if not recording then
 		return
 	end
 
-	spellId = tonumber(spellId)
+	-- The payload is a secret value while auras are hidden, so nothing reads it before this.
+	if wowEx:IsAuraStylingRestricted() then
+		return
+	end
 
-	if spellId then
-		Record(spellId)
+	local added = updateInfo and updateInfo.addedAuras
+
+	if not added then
+		return
+	end
+
+	for _, aura in ipairs(added) do
+		local spellId = aura and tonumber(aura.spellId)
+
+		if spellId then
+			Record(spellId)
+		end
 	end
 end
 
@@ -95,8 +105,8 @@ function M:Start()
 
 	EnsureFrame()
 	recording = true
-	-- Only while recording, since the event fires on every global cooldown.
-	eventsFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+	-- Registered only while recording, since UNIT_AURA is the busiest event the client has.
+	eventsFrame:RegisterUnitEvent("UNIT_AURA", "player")
 end
 
 function M:Stop()
@@ -105,7 +115,7 @@ function M:Stop()
 	end
 
 	recording = false
-	eventsFrame:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+	eventsFrame:UnregisterEvent("UNIT_AURA")
 end
 
 ---@return boolean
@@ -113,8 +123,8 @@ function M:IsRecording()
 	return recording
 end
 
----The captured casts, newest first. Shared table, so do not keep or mutate it.
----@return PersonalAuraRecordedCast[]
+---The captured auras, newest first. Shared table, so do not keep or mutate it.
+---@return PersonalAuraRecordedAura[]
 function M:GetEntries()
 	return entries
 end
@@ -130,6 +140,6 @@ function M:OnChanged(fn)
 	changeCallbacks[#changeCallbacks + 1] = fn
 end
 
----@class PersonalAuraRecordedCast
+---@class PersonalAuraRecordedAura
 ---@field SpellId number
 ---@field Count number

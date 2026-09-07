@@ -112,7 +112,7 @@ local function UnitLabel(unit)
 end
 
 ---Builds the trigger tab, which is what makes the group fire: the unit/type/tracking dropdowns,
----then either a spell list with the picker and cast recorder, or the filter-component grid.
+---then either a spell list with the picker and aura recorder, or the filter-component grid.
 ---@param ctx PersonalAurasEditorContext
 ---@param refreshFlags fun(shown: boolean?) The filters tab's flag grid, re-read alongside the spells.
 ---@return fun(group: PersonalAuraGroup) refreshState Problem text and aura-type choices.
@@ -487,9 +487,9 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		GameTooltip:SetOwner(buttonSelf, "ANCHOR_RIGHT")
 		GameTooltip:SetText(L["Record"], 1, 0.82, 0)
 		GameTooltip:AddLine(
-			L["Records the spells you cast so you can add them without looking up IDs."], 1, 1, 1, true)
+			L["Records the auras you gain so you can add them without looking up IDs."], 1, 1, 1, true)
 		GameTooltip:AddLine(
-			L["This is the ID of the cast, which is often not the ID of the aura it applies."],
+			L["Nothing is recorded in combat, or anywhere else the client hides your auras."],
 			1, 0.82, 0, true)
 		GameTooltip:Show()
 	end)
@@ -498,11 +498,11 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	end)
 
 	local recordLabel = triggerPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	recordLabel:SetText(L["Recorded Casts"])
+	recordLabel:SetText(L["Recorded Auras"])
 	recordLabel:SetPoint("TOPLEFT", recordRow, "TOPLEFT", 0, 0)
 
-	---What the player has cast since Record was pressed. Only ever on screen while recording, so
-	---the row costs no space the rest of the time.
+	---What has landed on the player since Record was pressed. Only ever on screen while recording,
+	---so the row costs no space the rest of the time.
 	function RefreshRecorded()
 		local recording = recorder:IsRecording()
 		local entries = recorder:GetEntries()
@@ -571,7 +571,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	recorder:OnChanged(RefreshRecorded)
 
 	-- The hunt is scoped to the open config window; without this, closing it mid-recording
-	-- leaves the cast event firing on every global cooldown for the rest of the session.
+	-- leaves UNIT_AURA firing into the recorder for the rest of the session.
 	addon.Config.Window:HookScript("OnHide", function()
 		if recorder:IsRecording() then
 			recorder:Stop()

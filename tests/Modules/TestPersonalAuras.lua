@@ -3526,7 +3526,20 @@ fw.describe("PersonalAuras - sounds from media addons", function()
 	end)
 end)
 
-fw.describe("PersonalAuras - cast recorder", function()
+fw.describe("PersonalAuras - aura recorder", function()
+	---A UNIT_AURA payload carrying the given spell ids as newly applied auras.
+	---@param ... number
+	---@return table
+	local function Added(...)
+		local added = {}
+
+		for _, spellId in ipairs({ ... }) do
+			added[#added + 1] = { spellId = spellId }
+		end
+
+		return { addedAuras = added }
+	end
+
 	fw.it("records nothing until it is started", function()
 		recorder:Clear()
 		recorder:Stop()
@@ -3537,23 +3550,75 @@ fw.describe("PersonalAuras - cast recorder", function()
 		assert(frame, "the recorder built an event frame")
 	end)
 
-	fw.it("captures the player's casts, newest first, counting repeats", function()
+	fw.it("captures the auras applied to the player, newest first, counting repeats", function()
 		recorder:Clear()
 		recorder:Start()
 
-		local frame = acm.lastFrameForEvent("UNIT_SPELLCAST_SUCCEEDED")
+		local frame = acm.lastFrameForEvent("UNIT_AURA")
 
-		assert(frame, "recording registered the cast event")
+		assert(frame, "recording registered the aura event")
 
-		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast1", POLYMORPH)
-		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast2", ICE_BLOCK)
-		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast3", POLYMORPH)
+		frame:GetScript("OnEvent")(frame, "UNIT_AURA", "player", Added(POLYMORPH))
+		frame:GetScript("OnEvent")(frame, "UNIT_AURA", "player", Added(ICE_BLOCK))
+		frame:GetScript("OnEvent")(frame, "UNIT_AURA", "player", Added(POLYMORPH))
 
 		local entries = recorder:GetEntries()
 
 		assert(#entries == 2, "a repeat is counted, not listed twice")
-		assert(entries[1].SpellId == POLYMORPH, "the most recent cast leads")
+		assert(entries[1].SpellId == POLYMORPH, "the most recent aura leads")
 		assert(entries[1].Count == 2, "with its count")
+
+		recorder:Stop()
+	end)
+
+	fw.it("takes every aura a single update added", function()
+		recorder:Clear()
+		recorder:Start()
+
+		local frame = acm.lastFrameForEvent("UNIT_AURA")
+
+		frame:GetScript("OnEvent")(frame, "UNIT_AURA", "player", Added(POLYMORPH, ICE_BLOCK))
+
+		assert(#recorder:GetEntries() == 2, "both auras of the update were captured")
+
+		recorder:Stop()
+	end)
+
+	fw.it("ignores an update that added nothing", function()
+		recorder:Clear()
+		recorder:Start()
+
+		local frame = acm.lastFrameForEvent("UNIT_AURA")
+
+		frame:GetScript("OnEvent")(frame, "UNIT_AURA", "player", { isFullUpdate = true })
+
+		assert(#recorder:GetEntries() == 0, "a full update carries no added auras to read")
+
+		recorder:Stop()
+	end)
+
+	fw.it("does not touch the payload while auras are secret", function()
+		recorder:Clear()
+		recorder:Start()
+
+		local frame = acm.lastFrameForEvent("UNIT_AURA")
+
+		-- Errors on any read, standing in for the secret value the client hands over in combat.
+		local trap = setmetatable({}, {
+			__index = function()
+				error("the recorder read a secret payload")
+			end,
+		})
+
+		acm.restricted = true
+
+		local ok, err = pcall(frame:GetScript("OnEvent"), frame, "UNIT_AURA", "player", trap)
+
+		-- Restored before the assert, or every test after this one runs restricted.
+		acm.restricted = false
+
+		assert(ok, err)
+		assert(#recorder:GetEntries() == 0, "nothing is recorded while auras are secret")
 
 		recorder:Stop()
 	end)
@@ -3562,11 +3627,14 @@ fw.describe("PersonalAuras - cast recorder", function()
 		recorder:Clear()
 		recorder:Start()
 
-		local frame = acm.lastFrameForEvent("UNIT_SPELLCAST_SUCCEEDED")
+		local frame = acm.lastFrameForEvent("UNIT_AURA")
 
 		recorder:Stop()
-		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast4", ICE_BLOCK)
+		frame:GetScript("OnEvent")(frame, "UNIT_AURA", "player", Added(ICE_BLOCK))
 
+		-- Leaving UNIT_AURA registered would keep the busiest event the client has firing for
+		-- the rest of the session.
+		assert(frame._events["UNIT_AURA"] == nil, "stopping unregistered the aura event")
 		assert(#recorder:GetEntries() == 0, "nothing is recorded after stopping")
 	end)
 end)

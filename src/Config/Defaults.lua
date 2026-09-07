@@ -485,8 +485,8 @@ local dbDefaults = {
 				Glow = false,
 				Border = false,
 				ReverseCooldown = true,
-				-- Glow/border tint. These icons carry no dispel or category colouring to derive
-				-- one from, so the colour is the user's choice.
+				-- Glow/border tint, used only where the kicker's class does not resolve. Kept
+				-- for profiles saved before the swatch left the panel.
 				Color = { R = 1, G = 1, B = 1, A = 1 },
 			},
 		},
