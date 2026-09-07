@@ -91,6 +91,21 @@ function M:Build(panel)
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
 	settingsDivider:SetPoint("TOP", healerEnabled, "BOTTOM", 0, -verticalSpacing)
 
+	local showNameChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show name"],
+		Tooltip = L["Shows the name of the enemy who kicked, above their icon."],
+		GetValue = function()
+			return db.Modules.EnemyKickTracker.ShowName ~= false
+		end,
+		SetValue = function(value)
+			db.Modules.EnemyKickTracker.ShowName = value
+			config:Apply(moduleName.EnemyKickTracker)
+		end,
+	})
+
+	showNameChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSizeSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
@@ -104,7 +119,7 @@ function M:Build(panel)
 		SettingsKey = moduleName.EnemyKickTracker,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", showNameChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	local iconSpacingSlider = helpers:BuildClampedSlider({
 		Parent = panel,
@@ -140,21 +155,6 @@ function M:Build(panel)
 	})
 
 	fontScaleSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-
-	local showNameChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show name"],
-		Tooltip = L["Shows the name of the enemy who kicked, above their icon."],
-		GetValue = function()
-			return db.Modules.EnemyKickTracker.ShowName ~= false
-		end,
-		SetValue = function(value)
-			db.Modules.EnemyKickTracker.ShowName = value
-			config:Apply(moduleName.EnemyKickTracker)
-		end,
-	})
-
-	showNameChk:SetPoint("TOPLEFT", fontScaleSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	M.Panel = panel
 end
