@@ -117,7 +117,9 @@ end
 ---@param slotIndex number
 ---@param name any the interrupter's name, secret inside an instance
 local function PaintName(slotIndex, name)
-	if name == nil then
+	local showName = db.Modules.EnemyKickTracker.ShowName ~= false
+
+	if name == nil or not showName then
 		ClearName(slotIndex)
 		return
 	end
@@ -227,11 +229,17 @@ function M:ApplyOptions(options)
 		kickBar.Container:SetIconSize(tonumber(options.Icons.Size) or 50)
 		kickBar.Container:SetSpacing(options.IconSpacing or 2)
 
-		-- The icons under the labels have just moved, so a label already on screen follows its slot.
-		for _, text in pairs(kickBar.Names) do
-			if text:IsShown() then
-				text:SetWidth(kickBar.Container.Size)
-				ApplyNameFont(text, kickBar.Container.Size, options.FontScale)
+		if options.ShowName ~= false then
+			-- The icons under the labels have just moved, so a label already on screen follows its slot.
+			for _, text in pairs(kickBar.Names) do
+				if text:IsShown() then
+					text:SetWidth(kickBar.Container.Size)
+					ApplyNameFont(text, kickBar.Container.Size, options.FontScale)
+				end
+			end
+		else
+			for slotIndex in pairs(kickBar.Names) do
+				ClearName(slotIndex)
 			end
 		end
 	end

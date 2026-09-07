@@ -275,6 +275,8 @@ L:RegisterLocale("esMX", function() return {
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Interrupciones enemigas",
 	["Enemy Kicks_Short"] = "Interr. enemigas",
+	["Show name"] = "Mostrar nombre",
+	["Shows the name of the enemy who kicked, above their icon."] = "Muestra el nombre del enemigo que interrumpió, sobre su icono.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Cambia el color del brillo/borde según el tipo de penalización.",

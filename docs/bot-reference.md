@@ -1220,8 +1220,9 @@ known interrupt cooldown on the enemy team** (15 s fallback until the opponents'
 known). Since 5.38.0 it also says **who kicked**: the interrupter's name sits above the icon
 and their class colour tints its border. The name and class are secret inside an instance, so
 the addon passes them straight to the game without reading them, which is why the name cannot
-be shortened. Where the class does not resolve, no border is drawn at all; a profile that had
-**Show border** on before 5.38.0 keeps drawing the colour it saved.
+be shortened. **Show name** turns the name off and leaves the class-coloured border alone.
+Where the class does not resolve, no border is drawn at all; a profile that had **Show
+border** on before 5.38.0 keeps drawing the colour it saved.
 
 **Show border** and **Colour** were removed from this panel in 5.38.0, since the kicker's
 class now drives both.
@@ -1231,6 +1232,7 @@ class now drives both.
 | Icon Size | 20-120 | 50 |
 | Icon Padding | 0-20 | 2 |
 | Font Scale | 0.5-2.0, step 0.05 | 1.0 |
+| Show name | on/off | on |
 
 Position: centred, 200 px below screen centre; draggable in test mode.
 

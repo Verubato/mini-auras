@@ -275,6 +275,8 @@ L:SetDefaultStrings({
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Enemy Kicks",
 	["Enemy Kicks_Short"] = "Enemy Kicks",
+	["Show name"] = "Show name",
+	["Shows the name of the enemy who kicked, above their icon."] = "Shows the name of the enemy who kicked, above their icon.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Change the colour of the glow/border based on the type of debuff.",

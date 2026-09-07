@@ -274,6 +274,8 @@ L:RegisterLocale("deDE", function() return {
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Gegnerische Unterbrechungen",
 	["Enemy Kicks_Short"] = "Gegn. Unterbr.",
+	["Show name"] = "Name zeigen",
+	["Shows the name of the enemy who kicked, above their icon."] = "Zeigt den Namen des Gegners, der unterbrochen hat, über dessen Symbol.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Typ des Debuffs.",

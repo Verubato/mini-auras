@@ -218,6 +218,7 @@ fw.describe("EnemyKickTracker - attributing a kick", function()
 		options.Icons.Glow = false
 		options.Icons.Color = { R = 1, G = 1, B = 1, A = 1 }
 		options.FontScale = 1.0
+		options.ShowName = true
 		module:Refresh()
 		display:Clear()
 		wipe(env.unitNames)
@@ -248,6 +249,35 @@ fw.describe("EnemyKickTracker - attributing a kick", function()
 		local labels = shownNames()
 		assert(#labels == 1, "one label, got " .. #labels)
 		assert(labels[1]:GetText() == "Kicker", "got " .. tostring(labels[1]:GetText()))
+	end)
+
+	fw.it("still draws the name with the option on", function()
+		options.ShowName = true
+		env.unitNames["arena1"] = "Kicker"
+
+		kicked("arena1")
+
+		assert(#shownNames() == 1, "one label, got " .. #shownNames())
+	end)
+
+	fw.it("draws no name with the option off", function()
+		options.ShowName = false
+		env.unitNames["arena1"] = "Kicker"
+
+		kicked("arena1")
+
+		assert(#shownNames() == 0, "a label must not be drawn with the option off")
+	end)
+
+	fw.it("blanks a label already on screen when the option is switched off", function()
+		env.unitNames["arena1"] = "Kicker"
+		kicked("arena1")
+		assert(#shownNames() == 1, "the name is up")
+
+		options.ShowName = false
+		module:Refresh()
+
+		assert(#shownNames() == 0, "ApplyOptions must blank the label when the option is off")
 	end)
 
 	fw.it("draws the name it is not allowed to read", function()

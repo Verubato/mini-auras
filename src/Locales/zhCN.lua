@@ -274,6 +274,8 @@ L:RegisterLocale("zhCN", function() return {
 	-- Kick Timer tab
 	["Enemy Kicks"] = "敌方打断",
 	["Enemy Kicks_Short"] = "敌方打断",
+	["Show name"] = "显示名字",
+	["Shows the name of the enemy who kicked, above their icon."] = "在图标上方显示打断的敌人姓名。",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "根据减益类型更改发光/边框的颜色。",

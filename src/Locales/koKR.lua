@@ -274,6 +274,8 @@ L:RegisterLocale("koKR", function() return {
 	-- Kick Timer tab
 	["Enemy Kicks"] = "적 차단",
 	["Enemy Kicks_Short"] = "적 차단",
+	["Show name"] = "이름 표시",
+	["Shows the name of the enemy who kicked, above their icon."] = "차단한 적의 이름을 아이콘 위에 표시합니다.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "디버프 유형에 따라 발광/테두리 색상을 변경합니다.",

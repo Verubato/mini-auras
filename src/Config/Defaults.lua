@@ -479,6 +479,7 @@ local dbDefaults = {
 
 			IconSpacing = 2,
 			FontScale = 1.0,
+			ShowName = true,
 
 			Icons = {
 				Size = 50,

@@ -274,6 +274,8 @@ L:RegisterLocale("ruRU", function() return {
 	-- Kick Timer tab
 	["Enemy Kicks"] = "Прерывания врагов",
 	["Enemy Kicks_Short"] = "Прерыв. врагов",
+	["Show name"] = "Показывать имя",
+	["Shows the name of the enemy who kicked, above their icon."] = "Показывает имя врага, который прервал каст, над его иконкой.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Изменить цвет свечения/границы в зависимости от типа дебаффа.",
