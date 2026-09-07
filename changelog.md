@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.38.0
+
+- The enemy kick tracker now shows who kicked, with the interrupter's name above the icon and their class colour on the border.
+- The personal aura Record button now records the auras you gain instead of the spells you cast.
+
 ## 5.37.0
 
 - Personal auras can now be tied to a spec.

@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.37.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.38.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -223,12 +223,16 @@ category on or off, applies in combat as normal.
   glow switched off: it draws nothing while the glow is on, since two rings in the same colour
   around one icon only smudge each other.
 - Every pair defaults to red (1, 0.2, 0.2) for Important and green (0.2, 1, 0.2) for
-  Defensive. Class colouring is not on offer anywhere, because a unit's class is not something
-  the addon can read from an aura container.
-- **Flat colour** (Trinkets, Enemy Kicks, Personal Auras): the user picks one colour for the
-  glow and border, because these icons carry no category to derive one from. Personal Auras
-  carries a second, independent **Text colour** for its countdown, stack count and bar spell
-  name; see its Appearance tab.
+  Defensive. Class colouring is not on offer here, because a unit's class is not something the
+  addon can read from an aura container. Alerts is the exception, and gets it from the unit
+  behind the icon rather than from the container; see its **Class colours** switch.
+- **Flat colour** (Trinkets, Personal Auras): the user picks one colour for the glow and
+  border, because these icons carry no category to derive one from. Personal Auras carries a
+  second, independent **Text colour** for its countdown, stack count and bar spell name; see
+  its Appearance tab.
+- **Kicker's class** (Enemy Kicks, since 5.38.0): the border takes the interrupter's class
+  colour. It works because the class token goes straight to the game's own colour call without
+  the addon reading it.
 
 ### Glow Type (global, under Misc)
 
@@ -443,11 +447,14 @@ shown for one, and none of the red refusals or yellow caveats apply.
   applies, or talent variants) offers a row per ID, each showing its own ID, since the
   configured ID has to be the exact one that lands. At most 5 rows per name, and 8
   suggestions in total, so a name with more IDs than that needs the rest typed in full.
-- **Record**: captures the spells you cast (your casts only; the button toggles to "Stop")
-  and lists them as "Recorded Casts" (up to 40 remembered, newest first, 12 shown). Clicking
-  one adds it and stops recording. Tooltip warning: the recorded ID is the ID of the cast,
-  which is often not the ID of the aura it applies. Recording stops automatically when the
-  config window closes.
+- **Record**: since 5.38.0, captures the auras that land on you, whoever applied them (the
+  button toggles to "Stop"), and lists them as "Recorded Auras" (up to 40 remembered, newest
+  first, 12 shown). Clicking one adds it and stops recording. It records the aura ID, which
+  is the ID a group has to be given; before 5.38.0 it recorded the cast ID instead, which is
+  usually a different number. Nothing is recorded while the game hides your auras, which
+  covers combat and also anywhere out of combat inside Mythic+, encounters, and rated PvP, so
+  an aura gained in combat has to be gained again somewhere quiet to be captured. Recording
+  stops automatically when the config window closes.
 - A group holds at most **200 spells** ("A group can hold at most 200 spells."), no
   duplicates. Configured ids are matched exactly; the aura the game applies is often not the
   spellbook ID, so a spell with several ids needs each one added.
@@ -1208,14 +1215,19 @@ icons only appear inside arena matches).
 counts as healer or caster comes from the addon's spec data; if your spec cannot be read the
 module assumes enabled.
 
-The game does not identify who interrupted, so the tracker shows a generic kick icon (the
-rogue Kick spell's icon) timed with the **shortest known interrupt cooldown on the enemy
-team** (15 s fallback until the opponents' specs are known).
+The tracker shows a generic kick icon (the rogue Kick spell's icon) timed with the **shortest
+known interrupt cooldown on the enemy team** (15 s fallback until the opponents' specs are
+known). Since 5.38.0 it also says **who kicked**: the interrupter's name sits above the icon
+and their class colour tints its border. The name and class are secret inside an instance, so
+the addon passes them straight to the game without reading them, which is why the name cannot
+be shortened. Where the class does not resolve, no border is drawn at all; a profile that had
+**Show border** on before 5.38.0 keeps drawing the colour it saved.
+
+**Show border** and **Colour** were removed from this panel in 5.38.0, since the kicker's
+class now drives both.
 
 | Setting | Range | Default |
 |---|---|---|
-| Show border | on/off | off |
-| Colour | swatch | white |
 | Icon Size | 20-120 | 50 |
 | Icon Padding | 0-20 | 2 |
 | Font Scale | 0.5-2.0, step 0.05 | 1.0 |
@@ -1402,8 +1414,9 @@ its settings open below; clicking empty grid space closes them again. Since 5.14
 says so in place of the editor.
 
 **"A personal aura group shows nothing."** Usual causes: (1) it is in Spell IDs mode with an
-empty spell list; (2) the spell ID added is the cast ID, not the aura the cast applies (the
-Record button records cast IDs; find the aura's ID instead); (3) it is a Debuff group on
+empty spell list; (2) the spell ID added is the cast ID, not the aura the cast applies (find
+the aura's ID instead; since 5.38.0 the Record button records aura IDs, so re-recording the
+spell gives the right one); (3) it is a Debuff group on
 Self, My Pet or Raid Frames in Spell IDs mode, which the game forbids (switch to Aura
 filters mode); (4) a caster filter (Cast by, From me or my pet, Applied by me) with the unit
 in another instance or phase, where the game cannot attribute casters, so the group hides
@@ -1539,8 +1552,9 @@ see trinkets used in the starting room.
 
 **"Enemy kick tracker missing."** It only shows inside arena, and only if your role matches
 its enable settings (Healer and Caster on by default; tick "Any" to force it for every
-spec). It cannot name the kicker: one generic icon with the enemy team's shortest kick
-cooldown is expected behaviour.
+spec). The icon itself is always the generic kick icon timed with the enemy team's shortest
+kick cooldown, which is expected behaviour; since 5.38.0 the kicker's name sits above it and
+their class colour tints the border.
 
 **"Ally kick bars don't count down correctly in M+."** Expected: Blizzard hides who kicked
 inside Mythic+, so rows last a flat 15 seconds. Only your own row ("Show self") shows a real
