@@ -23,6 +23,7 @@ M.PayloadKeys = {
 }
 
 local onProfileChangedCallbacks = {}
+local onProfileChangedLastCallbacks = {}
 local db
 
 local function DeepCopy(src)
@@ -61,6 +62,12 @@ end
 
 local function FireProfileChanged(name)
 	for _, cb in pairs(onProfileChangedCallbacks) do
+		cb(name)
+	end
+
+	-- A stored profile can hold data a module fills in from its own callback, so anything that
+	-- reads it back goes after every module has had its turn.
+	for _, cb in pairs(onProfileChangedLastCallbacks) do
 		cb(name)
 	end
 end
@@ -258,13 +265,21 @@ end
 
 ---@param key string
 ---@param callback fun(name: string)
-function M:RegisterOnProfileChanged(key, callback)
-	onProfileChangedCallbacks[key] = callback
+---@param runLast boolean? Runs after every callback registered without it.
+function M:RegisterOnProfileChanged(key, callback, runLast)
+	if runLast then
+		onProfileChangedCallbacks[key] = nil
+		onProfileChangedLastCallbacks[key] = callback
+	else
+		onProfileChangedCallbacks[key] = callback
+		onProfileChangedLastCallbacks[key] = nil
+	end
 end
 
 ---@param key string
 function M:UnregisterOnProfileChanged(key)
 	onProfileChangedCallbacks[key] = nil
+	onProfileChangedLastCallbacks[key] = nil
 end
 
 ---Part of the module contract; profile state is event-driven and needs nothing on a refresh.

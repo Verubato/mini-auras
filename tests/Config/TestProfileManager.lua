@@ -162,6 +162,51 @@ fw.describe("ProfileManager - switching", function()
 		assert(firedWith == nil, "unregistered callback must not fire")
 	end)
 
+	fw.it("runs a runLast callback after every ordinary one", function()
+		-- The config panels read group data a module fills in from its own callback, so they
+		-- crash on a half-built group when the two fire the other way round.
+		local order = {}
+		profileManager:RegisterOnProfileChanged("ui", function()
+			order[#order + 1] = "ui"
+		end, true)
+		for i = 1, 5 do
+			profileManager:RegisterOnProfileChanged("module" .. i, function()
+				order[#order + 1] = "module"
+			end)
+		end
+
+		profileManager:SwitchProfile("Alt")
+		assert(#order == 6, "every callback fired")
+		assert(order[6] == "ui", "the runLast callback fired last")
+
+		-- Re-registering under the same key moves it rather than leaving a copy behind.
+		order = {}
+		profileManager:RegisterOnProfileChanged("ui", function()
+			order[#order + 1] = "ui"
+		end)
+		profileManager:SwitchProfile("Default")
+		local uiCount = 0
+		for _, entry in ipairs(order) do
+			uiCount = uiCount + (entry == "ui" and 1 or 0)
+		end
+		assert(uiCount == 1, "the callback fires once after moving buckets")
+
+		-- "ui" now sits in the ordinary bucket, so unregistering it proves nothing about the
+		-- other one. "last" is here to be cleared out of that one.
+		profileManager:RegisterOnProfileChanged("last", function()
+			order[#order + 1] = "last"
+		end, true)
+		profileManager:UnregisterOnProfileChanged("last")
+		profileManager:UnregisterOnProfileChanged("ui")
+		for i = 1, 5 do
+			profileManager:UnregisterOnProfileChanged("module" .. i)
+		end
+		order = {}
+		profileManager:SwitchProfile("Alt")
+		profileManager:SwitchProfile("Default")
+		assert(#order == 0, "unregister clears both buckets")
+	end)
+
 	fw.it("switches immediately during combat", function()
 		inCombat = true
 		profileManager:SwitchProfile("Alt")

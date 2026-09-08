@@ -526,12 +526,12 @@ function M:Build(panel)
 
 	panel.OnMiniRefresh()
 
-	-- Refresh all panels whenever the active profile changes.
+	-- Last, so the panels read what the modules have already filled in.
 	profileManager:RegisterOnProfileChanged("ConfigUI", function()
 		local tabController = addon.Config.TabController
 		if not tabController then return end
 		for i = 1, #tabController.Tabs do
 			mini.GUI.RefreshPanelTree(tabController:GetContent(tabController.Tabs[i].Key))
 		end
-	end)
+	end, true)
 end
