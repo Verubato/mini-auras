@@ -27,7 +27,8 @@ end
 ---@param portrait table
 ---@param min number crop coordinate for the left/top edge
 ---@param max number crop coordinate for the right/bottom edge
-local function StretchSlotsOverPortrait(container, portrait, min, max)
+---@param mask table? shape mask reused from a detached, shaped third-party portrait.
+local function StretchSlotsOverPortrait(container, portrait, min, max, mask)
 	local originalSetSlot = container.SetSlot
 	container.SetSlot = function(self, slotIndex, options)
 		originalSetSlot(self, slotIndex, options)
@@ -36,7 +37,11 @@ local function StretchSlotsOverPortrait(container, portrait, min, max)
 			slot.Frame:SetAllPoints(portrait)
 			slot.Container.Frame:SetAllPoints(portrait)
 			slot.Container.Icon:SetAllPoints(portrait)
-			slot.Container.Icon:SetTexCoord(min, max, min, max)
+			if mask then
+				display:ApplyMaskToLayer(slot.Container, mask, min, max)
+			else
+				slot.Container.Icon:SetTexCoord(min, max, min, max)
+			end
 			slot.Container.Cooldown:SetAllPoints(portrait)
 		end
 	end
@@ -159,6 +164,7 @@ end
 ---@param unit string
 ---@return table? unitFrame
 ---@return table? portrait
+---@return table? mask shape mask, present only on a detached portrait shaped other than "none".
 local function GetEllesmereUIFrame(unit)
 	local frame
 	if unit == "player" then
@@ -183,7 +189,9 @@ local function GetEllesmereUIFrame(unit)
 		return nil, nil
 	end
 
-	return frame, portrait
+	-- Detached, shaped portraits clip themselves with this MaskTexture, reused live if the user
+	-- changes shape.
+	return frame, portrait, portrait._shapeMask
 end
 
 ---@param unit string
@@ -273,7 +281,7 @@ local function AttachBlizzardFrame(unit)
 			originalSetSlot(self, slotIndex, options)
 			local slot = self.Slots[slotIndex]
 			if slot and slot.Container then
-				display:ApplyMaskToLayer(slot.Container, mask)
+				display:ApplyMaskToLayer(slot.Container, mask, 0.1, 0.9)
 			end
 		end
 	end
@@ -389,13 +397,13 @@ end
 
 ---@param unit string
 local function AttachEllesmereUIFrame(unit)
-	local euiFrame, euiPortrait = GetEllesmereUIFrame(unit)
+	local euiFrame, euiPortrait, euiMask = GetEllesmereUIFrame(unit)
 
 	if not euiFrame or not euiPortrait then
 		return
 	end
 
-	local container = display:CreateContainer(euiFrame, euiPortrait, unit, { 0.15, 0.85, 0.15, 0.85 })
+	local container = display:CreateContainer(euiFrame, euiPortrait, unit, { 0.15, 0.85, 0.15, 0.85 }, euiMask)
 	if not container then return end
 	local portraitLevel = euiPortrait.GetFrameLevel and euiPortrait:GetFrameLevel()
 		or euiFrame:GetFrameLevel()
@@ -404,7 +412,7 @@ local function AttachEllesmereUIFrame(unit)
 
 	-- EllesmereUI insets its portrait texture with SetTexCoord(0.15, 0.85). Match that on our
 	-- overlay so the CC icon visually fills the same area as the portrait beneath it.
-	StretchSlotsOverPortrait(container, euiPortrait, 0.15, 0.85)
+	StretchSlotsOverPortrait(container, euiPortrait, 0.15, 0.85, euiMask)
 
 	RegisterUnitUpdate(unit, container)
 	display:AddContainer(container)

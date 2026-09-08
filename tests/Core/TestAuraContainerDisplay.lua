@@ -1396,14 +1396,30 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 	end)
 
 	fw.it("applies the icon crop and mask to every button icon", function()
-		local mask = { _mask = true }
+		local mask = acm.NewFrame("Frame"):CreateMaskTexture()
+		mask:SetTexture("tex:shape_mask")
 		local instance = newOptionInstance({ IconTexCoord = { 0.1, 0.9, 0.1, 0.9 }, IconMask = mask })
 		local button = instance.Buttons[1]
 		local icon = button._createdTextures and button._createdTextures[1]
+		local cooldown = assert(button._lastArgs.SetDurationCooldown, "the button was given a cooldown")[1]
 
 		assert(icon, "the button created an icon texture")
 		assert(icon._lastArgs.SetTexCoord and icon._lastArgs.SetTexCoord[1] == 0.1, "crop applied")
 		assert(icon._lastArgs.AddMaskTexture and icon._lastArgs.AddMaskTexture[1] == mask, "mask applied")
+		assert(cooldown._lastArgs.SetSwipeTexture[1] == "tex:shape_mask",
+			"the swipe wears the mask art, so it is cut to the same shape as the icon")
+	end)
+
+	-- The stock portrait frames build their masks from an atlas, which leaves no texture to read.
+	fw.it("keeps the round swipe under a mask with no texture of its own", function()
+		local mask = acm.NewFrame("Frame"):CreateMaskTexture()
+		mask:SetAtlas("CircleMask")
+		local instance = newOptionInstance({ IconMask = mask })
+		local button = instance.Buttons[1]
+		local cooldown = assert(button._lastArgs.SetDurationCooldown, "the button was given a cooldown")[1]
+
+		assert(cooldown._lastArgs.SetSwipeTexture[1] == "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask",
+			"an atlas mask falls back to the round portrait swipe rather than leaving a square one")
 	end)
 
 	-- The overlays and the border ring both have rounded inner corners, so a square icon under

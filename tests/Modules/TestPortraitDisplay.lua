@@ -516,3 +516,32 @@ fw.describe("Portrait 12.1 - enable/disable", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
 	end)
 end)
+
+fw.describe("Portrait 12.1 - the swipe follows the mask's shape", function()
+	local display = env.addon.Modules.Portrait.Display
+
+	---@param mask table
+	---@return string
+	local function SwipeUnder(mask)
+		local layer = { Icon = acm.NewFrame("Frame"), Cooldown = acm.NewFrame("Cooldown") }
+		display:ApplyMaskToLayer(layer, mask, 0.1, 0.9)
+
+		return layer.Cooldown._lastArgs.SetSwipeTexture[1]
+	end
+
+	fw.it("cuts the swipe to whatever art the mask carries", function()
+		local mask = acm.NewFrame("Frame"):CreateMaskTexture()
+		mask:SetTexture("tex:diamond_mask")
+
+		assert(SwipeUnder(mask) == "tex:diamond_mask", "a shaped portrait gets a swipe cut to its shape")
+	end)
+
+	-- The stock portrait frames build their masks from an atlas, which leaves no texture to read.
+	fw.it("keeps the round swipe under a mask with no texture of its own", function()
+		local mask = acm.NewFrame("Frame"):CreateMaskTexture()
+		mask:SetAtlas("CircleMask")
+
+		assert(SwipeUnder(mask) == "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask",
+			"an atlas mask falls back to the round portrait swipe rather than leaving a square one")
+	end)
+end)

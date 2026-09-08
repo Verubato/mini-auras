@@ -13,10 +13,17 @@ local ICON_CORNER_MASK = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Mask
 -- the same texture it started with.
 local SQUARE_SWIPE_TEXTURE = "Interface\\Buttons\\WHITE8X8"
 
+-- The shape a portrait wears when its own mask cannot say. A mask built from an atlas, which is
+-- how the stock frames build theirs, has no texture to read back.
+local PORTRAIT_MASK = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
+
 ---@class GlowStyles
 local M = {}
 
 addon.Core.GlowStyles = M
+
+-- The art a portrait mask is built from, for a mask of our own that has to match the stock ones.
+M.PortraitMask = PORTRAIT_MASK
 
 -- Texture overlays only. LibCustomGlow re-parents pooled frames onto its target and 12.1 disallows
 -- SetParent onto AuraButtons, so anything the 12.1 path cannot draw is left out.
@@ -88,6 +95,17 @@ end
 ---@param cooldown table
 function M:SquareSwipe(cooldown)
 	cooldown:SetSwipeTexture(SQUARE_SWIPE_TEXTURE)
+end
+
+---Swipe art cutting a cooldown to the shape of the mask an icon wears.
+---@param mask table
+---@return string
+function M:MaskSwipeTexture(mask)
+	if mask:GetAtlas() then
+		return PORTRAIT_MASK
+	end
+
+	return mask:GetTexture() or PORTRAIT_MASK
 end
 
 ---Cuts an icon's corners to the glow art's shape, or squares them back up. Only call on a change:

@@ -146,6 +146,24 @@ local function NewRegion(parent, regionType, inheritedFace)
 		local args = region._lastArgs.SetText
 		return args and args[1] or ""
 	end
+	-- One art slot in the client, so setting an atlas clears the texture and the other way round.
+	local recordSetTexture, recordSetAtlas = region.SetTexture, region.SetAtlas
+	function region:SetTexture(...)
+		region._lastArgs.SetAtlas = nil
+		return recordSetTexture(self, ...)
+	end
+	function region:SetAtlas(...)
+		region._lastArgs.SetTexture = nil
+		return recordSetAtlas(self, ...)
+	end
+	function region:GetTexture()
+		local args = region._lastArgs.SetTexture
+		return args and args[1] or nil
+	end
+	function region:GetAtlas()
+		local args = region._lastArgs.SetAtlas
+		return args and args[1] or nil
+	end
 	-- A string built without an inherit template has no font until something sets one, and says so.
 	function region:GetFont()
 		local args = region._lastArgs.SetFont

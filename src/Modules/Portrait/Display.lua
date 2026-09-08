@@ -10,6 +10,7 @@ local testSpellData = addon.Core.TestSpells
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
+local glowStyles = addon.Core.GlowStyles
 local units = addon.Utils.UnitUtil
 local sweep = addon.Core.Sweep
 
@@ -153,7 +154,7 @@ end
 ---@param kickFrame table The kick IconSlotContainer's frame, already anchored over the portrait.
 ---@param unit string
 ---@param texCoord table? {left, right, top, bottom} icon crop, per unit-frame addon.
----@param mask table? MaskTexture for round portraits (Blizzard frames).
+---@param mask table? MaskTexture clipping the icon to the portrait's shape.
 ---@param iconSize number
 ---@return { Displays: AuraContainerDisplay[], DisarmDisplay: AuraContainerDisplay, CustomDisplay: AuraContainerDisplay? }
 local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSize)
@@ -268,31 +269,32 @@ function M:CreatePortraitMask(portrait)
 	end
 
 	local mask = parent:CreateMaskTexture()
-	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	mask:SetTexture(glowStyles.PortraitMask, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
 	mask:SetAllPoints(portrait)
 	return mask
 end
 
-function M:ApplyMaskToLayer(layer, mask)
+---@param layer table
+---@param mask table MaskTexture clipping the icon to the portrait's shape.
+---@param cropMin number icon crop coordinate for the left/top edge
+---@param cropMax number icon crop coordinate for the right/bottom edge
+function M:ApplyMaskToLayer(layer, mask, cropMin, cropMax)
 	if not layer then
 		return
 	end
 
-	-- A portrait is round already, so its icon must not also pick up the rounded-square corners a
-	-- glow asks for.
+	-- A masked portrait already carries its own shape, so its icon must not also pick up the
+	-- rounded-square corners a glow asks for.
 	layer.CustomShape = true
 
 	if layer.Icon then
-		if mask then
-			AddMask(layer.Icon, mask)
-		end
-		-- Crop the icon like Blizzard does
-		layer.Icon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
+		AddMask(layer.Icon, mask)
+		layer.Icon:SetTexCoord(cropMin, cropMax, cropMin, cropMax)
 	end
 
 	if layer.Cooldown then
-		-- Keep cooldown within the portrait icon
-		layer.Cooldown:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+		-- The mask art is the icon's shape, so the swipe wears it too.
+		layer.Cooldown:SetSwipeTexture(glowStyles:MaskSwipeTexture(mask))
 	end
 end
 

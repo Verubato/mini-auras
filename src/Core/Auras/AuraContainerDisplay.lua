@@ -1238,8 +1238,8 @@ local function InitializeButton(instance, button, group)
 	cd:SetSwipeColor(0, 0, 0, 0.7)
 	glowStyles:SquareSwipe(cd)
 	if instance.IconMask then
-		-- Keep the swipe inside the masked (round) icon.
-		cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+		-- The mask art is the icon's shape, so the swipe wears it too.
+		cd:SetSwipeTexture(glowStyles:MaskSwipeTexture(instance.IconMask))
 	end
 	button:SetDurationCooldown(cd)
 

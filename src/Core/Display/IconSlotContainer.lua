@@ -577,7 +577,7 @@ end
 ---@param options IconLayerOptions
 ---@param borderVisible boolean Whether the border ring is actually drawn this slot.
 local function ApplyIconCorners(layer, options, borderVisible)
-	-- Portrait icons carry a round mask and a swipe to match; leave both alone.
+	-- Portrait icons carry the portrait's own mask and a swipe to match, so leave both alone.
 	if layer.CustomShape then
 		return
 	end
