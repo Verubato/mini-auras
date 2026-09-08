@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.39.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.39.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -1042,6 +1042,10 @@ Supported portrait providers: Blizzard frames, ElvUI, TPerl, UUF (Unhalted Unit 
 MSUF, Ellesmere UI Unit Frames, EnhancedQoL, Shadowed Unit Frames. Every provider covers the
 pet portrait except ElvUI and TPerl, which cover player, target and focus only.
 
+Since 5.39.1 the icons and their cooldown swipes are cut with whatever mask the frame already
+clips its portrait with, rather than a round one, which is what a detached Ellesmere UI portrait
+needs. A portrait carrying no mask of its own still gets the round one.
+
 Since 5.6.1 the icons draw underneath the unit frame's border art rather than over it, so a
 frame whose border overlaps the portrait clips them at its edge. That is intended. The pet
 portrait is the exception and keeps its icons inside the portrait instead: its mask hangs off
@@ -1318,7 +1322,7 @@ which other addons read to find them, so those values changed with the group nam
 
 A skin is applied when an icon is created, so **reload after changing a skin** for it
 to reach icons that already exist. Some displays stay unskinned by design: personal aura groups
-drawn as bars, as a texture or as text only, the round portrait icons (the skin would fight their
+drawn as bars, as a texture or as text only, the portrait icons (the skin would fight their
 own mask), and any button whose size the game keeps secret, which covers nameplate icons. If Masque itself errors while
 skinning, the display drops skinning for that sub-group for the rest of the session and prints
 one chat warning naming it, rather than losing the icons.

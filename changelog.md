@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.39.1
+
+- Potential fix for supporting detached EllesmereUI portraits.
+- Fixed an error when switching profiles with the options open.
+
 ## 5.39.0
 
 - The name above the enemy kick icons can now be turned off.
