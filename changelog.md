@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.39.0
+
+- The name above the enemy kick icons can now be turned off.
+
 ## 5.38.0
 
 - The enemy kick tracker now shows who kicked, with the interrupter's name above the icon and their class colour on the border.

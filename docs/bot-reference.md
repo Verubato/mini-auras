@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.38.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.39.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -1220,7 +1220,8 @@ known interrupt cooldown on the enemy team** (15 s fallback until the opponents'
 known). Since 5.38.0 it also says **who kicked**: the interrupter's name sits above the icon
 and their class colour tints its border. The name and class are secret inside an instance, so
 the addon passes them straight to the game without reading them, which is why the name cannot
-be shortened. **Show name** turns the name off and leaves the class-coloured border alone.
+be shortened. **Show name**, since 5.39.0, turns the name off and leaves the class-coloured border
+alone.
 Where the class does not resolve, no border is drawn at all; a profile that had **Show
 border** on before 5.38.0 keeps drawing the colour it saved.
 
