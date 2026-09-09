@@ -276,6 +276,11 @@ L:RegisterLocale("koKR", function() return {
 	["Enemy Kicks_Short"] = "적 차단",
 	["Show name"] = "이름 표시",
 	["Shows the name of the enemy who kicked, above their icon."] = "차단한 적의 이름을 아이콘 위에 표시합니다.",
+	["Show a class coloured border around the kick icons."] = "차단 아이콘 주위에 직업 색상 테두리를 표시합니다.",
+	["Unknown kicks"] = "알 수 없는 차단",
+	["What to show for a kick that cannot be identified."] = "식별할 수 없는 차단에 표시할 항목입니다.",
+	["Class crest"] = "직업 문장",
+	["Generic kick icon"] = "일반 차단 아이콘",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "디버프 유형에 따라 발광/테두리 색상을 변경합니다.",

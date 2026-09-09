@@ -277,6 +277,11 @@ L:SetDefaultStrings({
 	["Enemy Kicks_Short"] = "Enemy Kicks",
 	["Show name"] = "Show name",
 	["Shows the name of the enemy who kicked, above their icon."] = "Shows the name of the enemy who kicked, above their icon.",
+	["Show a class coloured border around the kick icons."] = "Show a class coloured border around the kick icons.",
+	["Unknown kicks"] = "Unknown kicks",
+	["What to show for a kick that cannot be identified."] = "What to show for a kick that cannot be identified.",
+	["Class crest"] = "Class crest",
+	["Generic kick icon"] = "Generic kick icon",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Change the colour of the glow/border based on the type of debuff.",

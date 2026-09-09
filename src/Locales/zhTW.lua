@@ -276,6 +276,11 @@ L:RegisterLocale("zhTW", function() return {
 	["Enemy Kicks_Short"] = "敵方打斷",
 	["Show name"] = "顯示名稱",
 	["Shows the name of the enemy who kicked, above their icon."] = "在圖示上方顯示打斷的敵方姓名。",
+	["Show a class coloured border around the kick icons."] = "在打斷圖示周圍顯示職業顏色的邊框。",
+	["Unknown kicks"] = "未知打斷",
+	["What to show for a kick that cannot be identified."] = "無法辨識的打斷要顯示什麼。",
+	["Class crest"] = "職業徽章",
+	["Generic kick icon"] = "通用打斷圖示",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "根據減益類型更改發光/邊框的顏色。",

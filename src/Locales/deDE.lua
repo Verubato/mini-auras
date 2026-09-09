@@ -276,6 +276,11 @@ L:RegisterLocale("deDE", function() return {
 	["Enemy Kicks_Short"] = "Gegn. Unterbr.",
 	["Show name"] = "Name zeigen",
 	["Shows the name of the enemy who kicked, above their icon."] = "Zeigt den Namen des Gegners, der unterbrochen hat, über dessen Symbol.",
+	["Show a class coloured border around the kick icons."] = "Zeigt einen klassenfarbenen Rahmen um die Unterbrechungssymbole.",
+	["Unknown kicks"] = "Unbekannte Unterbrechungen",
+	["What to show for a kick that cannot be identified."] = "Was bei einer nicht identifizierbaren Unterbrechung angezeigt wird.",
+	["Class crest"] = "Klassenwappen",
+	["Generic kick icon"] = "Allgemeines Unterbrechungssymbol",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Typ des Debuffs.",

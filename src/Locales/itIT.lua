@@ -276,6 +276,11 @@ L:RegisterLocale("itIT", function() return {
 	["Enemy Kicks_Short"] = "Interr. nemiche",
 	["Show name"] = "Mostra nome",
 	["Shows the name of the enemy who kicked, above their icon."] = "Mostra il nome del nemico che ha interrotto, sopra la sua icona.",
+	["Show a class coloured border around the kick icons."] = "Mostra un bordo del colore della classe attorno alle icone di interruzione.",
+	["Unknown kicks"] = "Interruzioni sconosciute",
+	["What to show for a kick that cannot be identified."] = "Cosa mostrare per un'interruzione che non può essere identificata.",
+	["Class crest"] = "Stemma di classe",
+	["Generic kick icon"] = "Icona generica di interruzione",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Cambia il colore del bagliore/bordo in base al tipo di debuff.",

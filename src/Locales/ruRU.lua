@@ -276,6 +276,11 @@ L:RegisterLocale("ruRU", function() return {
 	["Enemy Kicks_Short"] = "Прерыв. врагов",
 	["Show name"] = "Показывать имя",
 	["Shows the name of the enemy who kicked, above their icon."] = "Показывает имя врага, который прервал каст, над его иконкой.",
+	["Show a class coloured border around the kick icons."] = "Показывать рамку цвета класса вокруг иконок прерывания.",
+	["Unknown kicks"] = "Неизвестные прерывания",
+	["What to show for a kick that cannot be identified."] = "Что показывать для прерывания, которое невозможно определить.",
+	["Class crest"] = "Эмблема класса",
+	["Generic kick icon"] = "Универсальная иконка прерывания",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on the type of debuff."] = "Изменить цвет свечения/границы в зависимости от типа дебаффа.",
