@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.40.0
+
+- When an enemy kicks you, we now track their interrupt accurately. Credit to Mo for the solution.
+
 ## 5.39.1
 
 - Potential fix for supporting detached EllesmereUI portraits.

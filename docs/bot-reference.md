@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.39.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.40.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -232,7 +232,7 @@ category on or off, applies in combat as normal.
   its Appearance tab.
 - **Kicker's class** (Enemy Kicks, since 5.38.0): the border takes the interrupter's class
   colour. It works because the class token goes straight to the game's own colour call without
-  the addon reading it.
+  the addon reading it. Since 5.40.0 the panel's **Show border** switch turns it off.
 
 ### Glow Type (global, under Misc)
 
@@ -1219,25 +1219,39 @@ icons only appear inside arena matches).
 counts as healer or caster comes from the addon's spec data; if your spec cannot be read the
 module assumes enabled.
 
-The tracker shows a generic kick icon (the rogue Kick spell's icon) timed with the **shortest
-known interrupt cooldown on the enemy team** (15 s fallback until the opponents' specs are
-known). Since 5.38.0 it also says **who kicked**: the interrupter's name sits above the icon
+Since 5.40.0 the tracker works out **which interrupt was used** and counts that spell's own
+cooldown down, drawing the spell's icon. It can only do that when your own cast was the one
+interrupted, because that is the only case where the game lets the addon read the kicker's
+class. The class is matched against the enemy team's specs to pick the exact spell; where a
+class's specs interrupt with different spells and the arena has not said which spec is
+present, the spell most of that class's specs share wins, with the shortest cooldown breaking
+a tie.
+
+Every other kick is unidentified, which includes every kick on a teammate. Those show the
+**shortest known interrupt cooldown on the enemy team** (15 s fallback until the opponents'
+specs are known), and **Unknown kicks** picks what is drawn on them: **Class crest**
+(default) puts the kicker's class crest on the icon, **Generic kick icon** leaves the rogue
+Kick art there instead.
+
+Since 5.38.0 the tracker also says **who kicked**: the interrupter's name sits above the icon
 and their class colour tints its border. The name and class are secret inside an instance, so
 the addon passes them straight to the game without reading them, which is why the name cannot
-be shortened. **Show name**, since 5.39.0, turns the name off and leaves the class-coloured border
-alone.
-Where the class does not resolve, no border is drawn at all; a profile that had **Show
-border** on before 5.38.0 keeps drawing the colour it saved.
+be shortened. **Show name**, since 5.39.0, turns the name off and leaves the class-coloured
+border alone; it defaults to off from 5.40.0.
+Where the class does not resolve, no border is drawn at all.
 
-**Show border** and **Colour** were removed from this panel in 5.38.0, since the kicker's
-class now drives both.
+**Show border** returned to this panel in 5.40.0 and is on by default. It drops the
+class-coloured ring; a Masque skin's own border art stays, because that belongs to the skin.
+The old per-icon **Colour** swatch is still gone, since the kicker's class drives the tint.
 
 | Setting | Range | Default |
 |---|---|---|
 | Icon Size | 20-120 | 50 |
 | Icon Padding | 0-20 | 2 |
 | Font Scale | 0.5-2.0, step 0.05 | 1.0 |
-| Show name | on/off | on |
+| Show name | on/off | off |
+| Show border | on/off | on |
+| Unknown kicks | Class crest / Generic kick icon | Class crest |
 
 Position: centred, 200 px below screen centre; draggable in test mode.
 
@@ -1559,9 +1573,10 @@ see trinkets used in the starting room.
 
 **"Enemy kick tracker missing."** It only shows inside arena, and only if your role matches
 its enable settings (Healer and Caster on by default; tick "Any" to force it for every
-spec). The icon itself is always the generic kick icon timed with the enemy team's shortest
-kick cooldown, which is expected behaviour; since 5.38.0 the kicker's name sits above it and
-their class colour tints the border.
+spec). A kick the addon cannot identify is timed with the enemy team's shortest kick cooldown,
+which is expected behaviour; only a kick on your own cast can be traced back to the spell that
+did it. Since 5.38.0 the kicker's name sits above the icon and their class colour tints the
+border.
 
 **"Ally kick bars don't count down correctly in M+."** Expected: Blizzard hides who kicked
 inside Mythic+, so rows last a flat 15 seconds. Only your own row ("Show self") shows a real
