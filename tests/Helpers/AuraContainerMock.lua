@@ -416,8 +416,10 @@ function M.NewFrame(frameType, name, parent, template)
 	-- Textures are kept in creation order, so a button's icon is the first one a test finds.
 	frame._createdTextures = {}
 
-	function frame:CreateTexture(_, layer)
+	function frame:CreateTexture(_, layer, _, subLevel)
 		local texture = NewRegion(frame, "Texture")
+		texture._layer = layer
+		texture._subLevel = subLevel
 		frame._createdTextures[#frame._createdTextures + 1] = texture
 		return texture
 	end

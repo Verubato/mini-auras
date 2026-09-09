@@ -48,4 +48,15 @@ fw.describe("IconSlotContainer - the dispel border", function()
 		local layer = NewSlot(nil, { Color = { r = 1, g = 1, b = 1, a = 1 } })
 		assert(layer.CornersRounded == true, "a drawn border should round the icon even without Border")
 	end)
+
+	fw.it("draws no ring for a colour the caller asked to hide the border on", function()
+		local layer = NewSlot(nil, {
+			Color = { r = 1, g = 1, b = 1, a = 1 },
+			Border = true,
+			HideBorder = true,
+		})
+
+		assert(layer.Border:IsShown() == false, "a hidden border was drawn anyway")
+		assert(layer.CornersRounded == false, "a border nobody can see should not round the icon")
+	end)
 end)

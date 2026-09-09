@@ -24,6 +24,7 @@ end
 
 -- Debounce table keyed by container: one deferred ReSkin per container per frame
 local masqueReskinPending = {}
+local SyncAtlasCorners
 local cachedDb = nil
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
@@ -212,6 +213,7 @@ local function ScheduleMasqueReSkin(instance)
 
 			if container then
 				group:ReSkin(container.Frame)
+				SyncAtlasCorners(container)
 			end
 		end
 	end)
@@ -420,11 +422,81 @@ local function StopLCGGlowsExcept(parent, exceptType)
 	end
 end
 
+---Swaps one of the crest's masks, remembering it so the old one comes off first.
+---@param layer IconLayer
+---@param key string the layer field holding the mask this slot last applied
+---@param mask table? the mask to wear now
+local function ApplyAtlasMask(layer, key, mask)
+	if layer[key] == mask then
+		return
+	end
+
+	if layer[key] then
+		layer.AtlasIcon:RemoveMaskTexture(layer[key])
+	end
+
+	if mask then
+		layer.AtlasIcon:AddMaskTexture(mask)
+	end
+
+	layer[key] = mask
+end
+
+-- Puts the crest under whatever shapes the icon, since a square crest overhangs a rounded edge.
+function SyncAtlasCorners(layer)
+	if not layer.AtlasIcon then
+		return
+	end
+
+	ApplyAtlasMask(layer, "AtlasCornerMask", layer.CornersRounded and layer.CornerMask or nil)
+	-- Masque shapes the icon with a mask of its own, which no API hands back.
+	ApplyAtlasMask(layer, "AtlasSkinMask", layer.Icon._MSQ_Mask or layer.Icon._MSQ_ButtonMask)
+end
+
+-- An atlas is a region of a bigger sheet, so a crop on the icon would slide that region off.
+local function ApplyAtlasIcon(layer, atlas)
+	local atlasIcon = layer.AtlasIcon
+
+	if not atlas then
+		if atlasIcon then
+			atlasIcon:Hide()
+		end
+		return
+	end
+
+	if not atlasIcon then
+		-- Masque draws a skin's border in ARTWORK and puts the icon in BACKGROUND, so the crest
+		-- goes just above the icon to stay under that border.
+		atlasIcon = layer.Frame:CreateTexture(nil, "BACKGROUND", nil, 2)
+		-- A skin is free to size its icon past the button, and a crest that grew with it would
+		-- overhang the ring.
+		atlasIcon:SetAllPoints(layer.Frame)
+		layer.AtlasIcon = atlasIcon
+	end
+
+	atlasIcon:SetTexture(nil)
+
+	-- A secret name cannot be checked before it is used, so a bad one has to throw.
+	local ok = pcall(atlasIcon.SetAtlas, atlasIcon, atlas)
+
+	if ok then
+		atlasIcon:Show()
+	else
+		atlasIcon:Hide()
+	end
+
+	SyncAtlasCorners(layer)
+end
+
 local function ClearLayerData(layer, glowFrame)
 	if not layer then
 		return
 	end
 	layer.Icon:SetTexture(nil)
+	if layer.AtlasIcon then
+		layer.AtlasIcon:Hide()
+	end
+
 	layer.Cooldown:Clear()
 	ResetCountdownColor(layer.Cooldown)
 	if layer.Border then
@@ -593,6 +665,8 @@ local function ApplyIconCorners(layer, options, borderVisible)
 
 	layer.CornersRounded = rounded
 	layer.CornerMask = glowStyles:SetIconCorners(layer.Frame, layer.Icon, layer.Cooldown, layer.CornerMask, rounded)
+
+	SyncAtlasCorners(layer)
 end
 
 ---How far a run of icons reaches, where the first of them may be drawn larger than the rest.
@@ -1052,6 +1126,8 @@ end
 ---@param options IconLayerOptions Options for the layer
 ---@class IconLayerOptions
 ---@field Texture string Texture path/ID
+---@field Atlas any? Atlas name drawn over the texture, uncropped. May be a secret string; when
+---the atlas cannot be applied the texture stays visible underneath
 ---@field DurationObject table? DurationObject from C_DurationUtil.CreateDuration or C_UnitAuras.GetAuraDuration
 ---@field Alpha number|boolean? Control alpha: number sets it directly, boolean uses SetAlphaFromBoolean
 ---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
@@ -1062,6 +1138,7 @@ end
 ---@field ShowNumbers boolean? Keep the countdown text, whatever the global setting says
 ---@field Color table? RGBA color table {r, g, b, a} for glow and border color
 ---@field Border boolean? Show the coloured border even while a glow is active
+---@field HideBorder boolean? Drop the coloured border. A skin's own border art is Masque's and stays
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
 ---@field Layer number? Which layer to render on (1 = base, 2+ = stacked above; default: 1)
 ---@field SpellId number? Spell ID for tooltip on hover
@@ -1076,7 +1153,7 @@ function M:SetSlot(slotIndex, options)
 		return
 	end
 
-	if not options.Texture and not options.HideIcon then
+	if not options.Texture and not options.Atlas and not options.HideIcon then
 		return
 	end
 
@@ -1138,6 +1215,7 @@ function M:SetSlot(slotIndex, options)
 
 	local db = GetDb()
 	layer.Icon:SetTexture(not options.HideIcon and options.Texture or nil)
+	ApplyAtlasIcon(layer, not options.HideIcon and options.Atlas or nil)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
 	layer.Cooldown:SetHideCountdownNumbers(not options.ShowNumbers
 		and (options.HideNumbers == true or (db and db.DisableNumbers) == true))
@@ -1240,8 +1318,10 @@ function M:SetSlot(slotIndex, options)
 	-- The coloured border normally gives way to an active glow so the two rings do not double up.
 	-- Border forces both, for icons standing in for aura buttons: the engine draws border and glow
 	-- together on those, and a preview rendered here must not look different from live.
-	local borderVisible = (options.Color and layer.Border and (options.Border == true or not options.Glow))
-		and true or false
+	local wantBorder = not options.HideBorder and options.Color
+
+	local borderVisible = (wantBorder and layer.Border
+		and (options.Border == true or not options.Glow)) and true or false
 
 	if borderVisible then
 		layer.Border:SetVertexColor(
@@ -1344,6 +1424,9 @@ end
 ---@class IconLayer
 ---@field Frame table
 ---@field Icon table
+---@field AtlasIcon table?
+---@field AtlasCornerMask table?
+---@field AtlasSkinMask table?
 ---@field Cooldown table
 ---@field Border table
 
