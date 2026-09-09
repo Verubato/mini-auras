@@ -35,6 +35,11 @@ local TEST_KICKERS = {
 -- Safe to reuse for every preview because the display reads it straight away and keeps nothing.
 local testEntriesScratch = {}
 
+---@type table<string, ClassKick[]>?
+local classKicks
+---@type number[]
+local opponentSpecIds = {}
+
 ---@type ModuleLifecycle?
 local lifecycle
 ---@type EventGate?
@@ -56,15 +61,45 @@ local function GetPlayerSpecId()
 	return addon.Utils.WoWEx:GetPlayerSpecId()
 end
 
-local function UpdateMinKickCooldown()
+---@return EnemyKickTrackerModuleOptions?
+local function GetOptions()
+	return db and db.Modules.EnemyKickTracker
+end
+
+---@return table<string, ClassKick[]>
+local function GetClassKicks()
+	if classKicks then
+		return classKicks
+	end
+
+	local built = {}
+
+	for specId, specInfo in pairs(kickData.SpecData) do
+		if specInfo.SpellId and specInfo.KickCd and specInfo.Class then
+			local list = built[specInfo.Class] or {}
+			built[specInfo.Class] = list
+			list[#list + 1] = { SpecId = specId, SpellId = specInfo.SpellId, KickCd = specInfo.KickCd }
+		end
+	end
+
+	classKicks = built
+
+	return built
+end
+
+local function UpdateOpponents()
 	local minCd = 15
 	local found = false
+
+	wipe(opponentSpecIds)
 
 	local specs = GetNumArenaOpponentSpecs()
 
 	for i = 1, specs do
 		local specId = inspectorFacade:GetUnitSpecId("arena" .. i)
 		if specId and specId > 0 then
+			opponentSpecIds[#opponentSpecIds + 1] = specId
+
 			local info = kickData.SpecData[specId]
 			local cd = info and info.KickCd
 			if cd then
@@ -80,14 +115,95 @@ local function UpdateMinKickCooldown()
 end
 
 local function OnArenaPrep()
-	UpdateMinKickCooldown()
+	UpdateOpponents()
 	display:Clear()
 end
 
+---@param spellId number
+---@return string|number
+local function GetKickIcon(spellId)
+	return C_Spell.GetSpellTexture(spellId) or KICK_ICON
+end
+
+---@param class any the interrupter's class token, readable only for the player's own casts
+---@return number? duration
+---@return string|number? icon
+local function ResolveKick(class)
+	if issecretvalue(class) or class == nil then
+		return nil, nil
+	end
+
+	local kicks = GetClassKicks()[class]
+	if not kicks or #kicks == 0 then
+		return nil, nil
+	end
+
+	local match
+	local ambiguous = false
+
+	for _, specId in ipairs(opponentSpecIds) do
+		for _, kick in ipairs(kicks) do
+			if kick.SpecId == specId then
+				if match and (match.SpellId ~= kick.SpellId or match.KickCd ~= kick.KickCd) then
+					ambiguous = true
+				end
+				match = match or kick
+			end
+		end
+	end
+
+	if ambiguous or not match then
+		local counts = {}
+		for _, kick in ipairs(kicks) do
+			counts[kick.SpellId] = (counts[kick.SpellId] or 0) + 1
+		end
+
+		match = kicks[1]
+		for _, kick in ipairs(kicks) do
+			local better = counts[kick.SpellId] > counts[match.SpellId]
+				or (counts[kick.SpellId] == counts[match.SpellId] and kick.KickCd < match.KickCd)
+			if better then
+				match = kick
+			end
+		end
+	end
+
+	return match.KickCd, GetKickIcon(match.SpellId)
+end
+
+---@param class any the interrupter's class token, readable or secret
+---@return any? atlas the class crest atlas name, secret when the token is
+local function ClassAtlas(class)
+	if not class then
+		return nil
+	end
+
+	return ("classicon-%s"):format(class)
+end
+
+---What to draw for a kick whose interrupt could not be resolved, which is any kick on a teammate.
+---@param options EnemyKickTrackerModuleOptions?
+---@param class any the interrupter's class token, readable or secret
+---@return any? atlas the class crest atlas name, secret when the token is
+local function UnknownKickVisual(options, class)
+	if options and options.UnknownKickIcon == "generic" then
+		return nil
+	end
+
+	return ClassAtlas(class)
+end
+
 ---@param name any the interrupter's name, secret inside an instance
----@param class any the interrupter's class token, secret inside an instance
+---@param class any the interrupter's class token, secret unless the player's own cast was cut
 local function OnKicked(name, class)
-	display:AddKick(minKickCooldown, KICK_ICON, name, class)
+	local duration, icon = ResolveKick(class)
+	local atlas
+
+	if not icon then
+		atlas = UnknownKickVisual(GetOptions(), class)
+	end
+
+	display:AddKick(duration or minKickCooldown, icon or KICK_ICON, name, class, atlas)
 end
 
 -- The cast events only produce icons inside an arena, so they stay unregistered elsewhere
@@ -107,26 +223,27 @@ end
 local function ShowTestIcons()
 	wipe(testEntriesScratch)
 
-	for _, specId in ipairs(TEST_SPEC_IDS) do
+	local options = GetOptions()
+
+	-- The last preview icon stands for a kick the addon could not attribute, so both looks the
+	-- bar can wear are on screen while the settings are being changed.
+	for index, specId in ipairs(TEST_SPEC_IDS) do
 		local specInfo = kickData.SpecData[specId]
 		local kicker = TEST_KICKERS[specId]
+		local identified = index ~= #TEST_SPEC_IDS and specInfo and specInfo.SpellId
 
 		if specInfo and specInfo.KickCd then
 			testEntriesScratch[#testEntriesScratch + 1] = {
-				Duration = specInfo.KickCd,
-				Icon = KICK_ICON,
+				Duration = identified and specInfo.KickCd or minKickCooldown,
+				Icon = identified and GetKickIcon(specInfo.SpellId) or KICK_ICON,
 				Name = kicker and kicker.Name,
 				Class = kicker and kicker.Class,
+				Atlas = not identified and UnknownKickVisual(options, kicker and kicker.Class) or nil,
 			}
 		end
 	end
 
 	display:ShowTestKicks(testEntriesScratch)
-end
-
----@return EnemyKickTrackerModuleOptions?
-local function GetOptions()
-	return db and db.Modules.EnemyKickTracker
 end
 
 ---@return boolean
@@ -269,3 +386,8 @@ function M:Init()
 		Apply = Apply,
 	})
 end
+
+---@class ClassKick
+---@field SpecId number
+---@field SpellId number
+---@field KickCd number

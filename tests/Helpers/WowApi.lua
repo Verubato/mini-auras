@@ -20,20 +20,29 @@ local _locale        = "enUS"
 
 -- The client lets a secret through string.format and marks the string it hands back secret.
 local rawFormat = string.format
+-- Zero stands in under every conversion the addon formats with, string ones included.
+local SECRET_STAND_IN = 0
 
 local function FormatPropagatingSecrets(template, ...)
-	local result = rawFormat(template, ...)
+	local count = select("#", ...)
+	local args = {}
+	local secret = _secretValues[template] == true
 
-	if _secretValues[template] then
-		_secretValues[result] = true
-		return result
+	for index = 1, count do
+		local value = (select(index, ...))
+		-- Secrets are marked with tables here, which rawFormat refuses, so each one stands in and
+		-- the result carries the secrecy instead.
+		if _secretValues[value] then
+			secret = true
+			value = SECRET_STAND_IN
+		end
+		args[index] = value
 	end
 
-	for index = 1, select("#", ...) do
-		if _secretValues[(select(index, ...))] then
-			_secretValues[result] = true
-			break
-		end
+	local result = rawFormat(template, unpack(args, 1, count))
+
+	if secret then
+		_secretValues[result] = true
 	end
 
 	return result

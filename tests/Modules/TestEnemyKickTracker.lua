@@ -214,7 +214,7 @@ fw.describe("EnemyKickTracker - attributing a kick", function()
 
 	fw.before_each(function()
 		capture = nil
-		options.Icons.Border = false
+		options.Icons.Border = true
 		options.Icons.Glow = false
 		options.Icons.Color = { R = 1, G = 1, B = 1, A = 1 }
 		options.FontScale = 1.0
@@ -329,7 +329,6 @@ fw.describe("EnemyKickTracker - attributing a kick", function()
 	end)
 
 	fw.it("falls back to the colour the user picked when the class did not resolve", function()
-		options.Icons.Border = true
 		options.Icons.Color = { R = 0.25, G = 0.5, B = 0.75, A = 1 }
 		module:Refresh()
 
@@ -339,6 +338,18 @@ fw.describe("EnemyKickTracker - attributing a kick", function()
 		local applied = shownBorders()[1]._lastArgs.SetVertexColor
 		assert(applied[1] == 0.25 and applied[2] == 0.5 and applied[3] == 0.75,
 			"the user's own tint should still draw the ring, got " .. tostring(applied[1]))
+	end)
+
+	fw.it("draws no ring with the border option off", function()
+		options.Icons.Border = false
+		module:Refresh()
+
+		env.unitClasses["arena1"] = "ROGUE"
+
+		kicked("arena1")
+
+		assert(usedSlots() == 1, "the kick still produced its icon, got " .. usedSlots())
+		assert(#shownBorders() == 0, "a ring was drawn with the option off")
 	end)
 
 	fw.it("clamps a long name to the icon rather than cutting the string down", function()
@@ -408,6 +419,121 @@ fw.describe("EnemyKickTracker - attributing a kick", function()
 		display:Clear()
 
 		assert(#shownNames() == 0, "a cleared bar still names somebody")
+	end)
+end)
+
+-- Only the player's own interrupted cast reports a class the addon may read. Every other kick
+-- falls back to the art the Unknown kicks setting picks.
+fw.describe("EnemyKickTracker - identifying the interrupt", function()
+	-- Cooldowns are read from KickData rather than repeated, so a balance change moves both.
+	local COUNTERSPELL_CD = env.addon.Core.KickData.SpecData[62].KickCd
+	local COUNTER_SHOT_CD = env.addon.Core.KickData.SpecData[253].KickCd
+	local WIND_SHEAR_CD = env.addon.Core.KickData.SpecData[262].KickCd
+	local GENERIC_ICON = "tex:1766"
+
+	---Leaves the arena and comes back, which is the only path that rereads the opponents' specs.
+	local function reenterArena()
+		env.inInstance = false
+		env.instanceType = "none"
+		env.invalidateWorldState()
+		module:Refresh()
+
+		env.inInstance = true
+		env.instanceType = "arena"
+		env.invalidateWorldState()
+		module:Refresh()
+	end
+
+	---Kicks the player's cast and reports what the module handed the display.
+	---@param guid any
+	---@return table
+	local function kickedBy(guid)
+		local realAddKick = display.AddKick
+		local seen
+
+		display.AddKick = function(self, duration, icon, name, class, atlas)
+			seen = { Duration = duration, Icon = icon, Atlas = atlas }
+			return realAddKick(self, duration, icon, name, class, atlas)
+		end
+
+		kicked(guid)
+		display.AddKick = realAddKick
+
+		return assert(seen, "the kick never reached the display")
+	end
+
+	fw.before_each(function()
+		options.UnknownKickIcon = "class"
+		wipe(env.unitClasses)
+		wipe(env.arenaSpecs)
+		-- A shaman on the enemy team holds the unattributed floor below every cooldown asserted
+		-- here, so a fallback duration cannot pass for an identified one.
+		env.arenaSpecs.arena1 = 62
+		env.arenaSpecs.arena2 = 262
+		reenterArena()
+		display:Clear()
+	end)
+
+	fw.it("draws the interrupt of the class that cut the cast, at its own cooldown", function()
+		env.unitClasses["arena1"] = "MAGE"
+
+		local kick = kickedBy("arena1")
+
+		fw.eq(kick.Icon, "tex:2139", "Counterspell's own art")
+		fw.eq(kick.Duration, COUNTERSPELL_CD, "and the cooldown that interrupt really has")
+		fw.is_nil(kick.Atlas, "an identified kick needs no class crest to stand in")
+	end)
+
+	fw.it("identifies a class nobody on the enemy team is playing", function()
+		-- No rogue spec is on the team, so the arena tells the addon nothing and the class's own
+		-- interrupt has to carry it.
+		env.unitClasses["arena1"] = "ROGUE"
+
+		local kick = kickedBy("arena1")
+
+		fw.eq(kick.Icon, GENERIC_ICON, "Kick's art, because Kick is what a rogue interrupts with")
+		fw.eq(kick.Duration, env.addon.Core.KickData.SpecData[259].KickCd, "at a rogue's cooldown")
+	end)
+
+	fw.it("picks the interrupt most of a split class's specs share", function()
+		-- Two hunter specs are up and they interrupt with different spells at different cooldowns.
+		-- Counter Shot covers two of the three, so it is the safer thing to show.
+		env.arenaSpecs.arena1 = 253
+		env.arenaSpecs.arena2 = 255
+		reenterArena()
+		env.unitClasses["arena1"] = "HUNTER"
+
+		local kick = kickedBy("arena1")
+
+		fw.eq(kick.Icon, "tex:147362", "Counter Shot rather than Muzzle")
+		fw.eq(kick.Duration, COUNTER_SHOT_CD, "at the cooldown Counter Shot carries")
+	end)
+
+	fw.it("falls back to the shortest cooldown on the team for a class it may not read", function()
+		env.unitClasses["arena1"] = wow.markSecret({})
+
+		local kick = kickedBy("arena1")
+
+		fw.eq(kick.Icon, GENERIC_ICON, "no interrupt was named, so the generic icon stands in")
+		fw.eq(kick.Duration, WIND_SHEAR_CD, "and the fastest interrupt the team could have")
+	end)
+
+	fw.it("crests the icon with a class it may not read", function()
+		env.unitClasses["arena1"] = wow.markSecret({})
+
+		local kick = kickedBy("arena1")
+
+		assert(issecretvalue(kick.Atlas), "the crest name is built from a secret and stays one")
+	end)
+
+	fw.it("leaves the crest off a kick set to stay generic", function()
+		options.UnknownKickIcon = "generic"
+		env.unitClasses["arena1"] = wow.markSecret({})
+
+		local kick = kickedBy("arena1")
+
+		fw.eq(kick.Icon, GENERIC_ICON, "the plain kick icon")
+		fw.is_nil(kick.Atlas, "and nothing over it")
 	end)
 end)
 

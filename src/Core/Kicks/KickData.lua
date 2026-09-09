@@ -5,7 +5,8 @@ local _, addon = ...
 local M = {}
 addon.Core.KickData = M
 
--- PvP school lockout durations in seconds (manually tested in-game).
+-- PvP school lockout durations in seconds (manually tested in-game). Silence is the one entry
+-- that diminishes, so a repeat inside the DR window runs shorter than the icon shows.
 ---@type table<number, number>
 M.SpellLockoutDuration = {
 	[1766]   = 3, -- Kick (Rogue)
@@ -23,6 +24,7 @@ M.SpellLockoutDuration = {
 	[351338] = 3, -- Quell (Evoker)
 	[132409] = 5, -- Spell Lock (Warlock pet)
 	[119910] = 5, -- Command Demon: Spell Lock (Warlock player-side cast)
+	[15487]  = 4, -- Silence (Shadow Priest)
 }
 
 -- Class token fallback used when a unit's spec is unknown.
@@ -47,70 +49,70 @@ M.ClassInterruptSpell = {
 ---@type table<number, KickSpecData>
 M.SpecData = {
 	-- Rogue
-	[259] = { SpellId = 1766,   KickCd = 15, IsCaster = false, IsHealer = false }, -- Assassination
-	[260] = { SpellId = 1766,   KickCd = 15, IsCaster = false, IsHealer = false }, -- Outlaw
-	[261] = { SpellId = 1766,   KickCd = 15, IsCaster = false, IsHealer = false }, -- Subtlety
+	[259] = { SpellId = 1766,   KickCd = 15, IsCaster = false, IsHealer = false, Class = "ROGUE" }, -- Assassination
+	[260] = { SpellId = 1766,   KickCd = 15, IsCaster = false, IsHealer = false, Class = "ROGUE" }, -- Outlaw
+	[261] = { SpellId = 1766,   KickCd = 15, IsCaster = false, IsHealer = false, Class = "ROGUE" }, -- Subtlety
 
 	-- Warrior
-	[71]  = { SpellId = 6552,   KickCd = 15, IsCaster = false, IsHealer = false }, -- Arms
-	[72]  = { SpellId = 6552,   KickCd = 15, IsCaster = false, IsHealer = false }, -- Fury
-	[73]  = { SpellId = 6552,   KickCd = 15, IsCaster = false, IsHealer = false }, -- Protection
+	[71]  = { SpellId = 6552,   KickCd = 15, IsCaster = false, IsHealer = false, Class = "WARRIOR" }, -- Arms
+	[72]  = { SpellId = 6552,   KickCd = 15, IsCaster = false, IsHealer = false, Class = "WARRIOR" }, -- Fury
+	[73]  = { SpellId = 6552,   KickCd = 15, IsCaster = false, IsHealer = false, Class = "WARRIOR" }, -- Protection
 
 	-- Death Knight
-	[250] = { SpellId = 47528,  KickCd = 15, IsCaster = false, IsHealer = false }, -- Blood
-	[251] = { SpellId = 47528,  KickCd = 15, IsCaster = false, IsHealer = false }, -- Frost
-	[252] = { SpellId = 47528,  KickCd = 15, IsCaster = false, IsHealer = false }, -- Unholy
+	[250] = { SpellId = 47528,  KickCd = 15, IsCaster = false, IsHealer = false, Class = "DEATHKNIGHT" }, -- Blood
+	[251] = { SpellId = 47528,  KickCd = 15, IsCaster = false, IsHealer = false, Class = "DEATHKNIGHT" }, -- Frost
+	[252] = { SpellId = 47528,  KickCd = 15, IsCaster = false, IsHealer = false, Class = "DEATHKNIGHT" }, -- Unholy
 
 	-- Demon Hunter
-	[577]  = { SpellId = 183752, KickCd = 15, IsCaster = false, IsHealer = false }, -- Havoc
-	[581]  = { SpellId = 183752, KickCd = 15, IsCaster = false, IsHealer = false }, -- Vengeance
-	[1480] = { SpellId = 183752, KickCd = 15, IsCaster = false, IsHealer = false }, -- Devourer
+	[577]  = { SpellId = 183752, KickCd = 15, IsCaster = false, IsHealer = false, Class = "DEMONHUNTER" }, -- Havoc
+	[581]  = { SpellId = 183752, KickCd = 15, IsCaster = false, IsHealer = false, Class = "DEMONHUNTER" }, -- Vengeance
+	[1480] = { SpellId = 183752, KickCd = 15, IsCaster = false, IsHealer = false, Class = "DEMONHUNTER" }, -- Devourer
 
 	-- Monk
-	[268] = { SpellId = 116705, KickCd = 15,  IsCaster = false, IsHealer = false }, -- Brewmaster
-	[269] = { SpellId = 116705, KickCd = 15,  IsCaster = false, IsHealer = false }, -- Windwalker
-	[270] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true  }, -- Mistweaver
+	[268] = { SpellId = 116705, KickCd = 15,  IsCaster = false, IsHealer = false, Class = "MONK" }, -- Brewmaster
+	[269] = { SpellId = 116705, KickCd = 15,  IsCaster = false, IsHealer = false, Class = "MONK" }, -- Windwalker
+	[270] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true , Class = "MONK" }, -- Mistweaver
 
 	-- Paladin
-	[65]  = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true  }, -- Holy
-	[66]  = { SpellId = 96231,  KickCd = 15,  IsCaster = false, IsHealer = false }, -- Protection
-	[70]  = { SpellId = 96231,  KickCd = 15,  IsCaster = false, IsHealer = false }, -- Retribution
+	[65]  = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true , Class = "PALADIN" }, -- Holy
+	[66]  = { SpellId = 96231,  KickCd = 15,  IsCaster = false, IsHealer = false, Class = "PALADIN" }, -- Protection
+	[70]  = { SpellId = 96231,  KickCd = 15,  IsCaster = false, IsHealer = false, Class = "PALADIN" }, -- Retribution
 
 	-- Druid
-	[102] = { SpellId = 78675,  KickCd = 60,  IsCaster = true,  IsHealer = false }, -- Balance
-	[103] = { SpellId = 106839, KickCd = 15,  IsCaster = false, IsHealer = false }, -- Feral
-	[104] = { SpellId = 106839, KickCd = 15,  IsCaster = false, IsHealer = false }, -- Guardian
-	[105] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true  }, -- Restoration
+	[102] = { SpellId = 78675,  KickCd = 60,  IsCaster = true,  IsHealer = false, Class = "DRUID" }, -- Balance
+	[103] = { SpellId = 106839, KickCd = 15,  IsCaster = false, IsHealer = false, Class = "DRUID" }, -- Feral
+	[104] = { SpellId = 106839, KickCd = 15,  IsCaster = false, IsHealer = false, Class = "DRUID" }, -- Guardian
+	[105] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true , Class = "DRUID" }, -- Restoration
 
 	-- Hunter
-	[253] = { SpellId = 147362, KickCd = 24,  IsCaster = true,  IsHealer = false }, -- Beast Mastery
-	[254] = { SpellId = 147362, KickCd = 24,  IsCaster = true,  IsHealer = false }, -- Marksmanship
-	[255] = { SpellId = 187707, KickCd = 15,  IsCaster = false, IsHealer = false }, -- Survival
+	[253] = { SpellId = 147362, KickCd = 24,  IsCaster = true,  IsHealer = false, Class = "HUNTER" }, -- Beast Mastery
+	[254] = { SpellId = 147362, KickCd = 24,  IsCaster = true,  IsHealer = false, Class = "HUNTER" }, -- Marksmanship
+	[255] = { SpellId = 187707, KickCd = 15,  IsCaster = false, IsHealer = false, Class = "HUNTER" }, -- Survival
 
 	-- Mage
-	[62]  = { SpellId = 2139,   KickCd = 20,  IsCaster = true,  IsHealer = false }, -- Arcane
-	[63]  = { SpellId = 2139,   KickCd = 20,  IsCaster = true,  IsHealer = false }, -- Fire
-	[64]  = { SpellId = 2139,   KickCd = 20,  IsCaster = true,  IsHealer = false }, -- Frost
+	[62]  = { SpellId = 2139,   KickCd = 20,  IsCaster = true,  IsHealer = false, Class = "MAGE" }, -- Arcane
+	[63]  = { SpellId = 2139,   KickCd = 20,  IsCaster = true,  IsHealer = false, Class = "MAGE" }, -- Fire
+	[64]  = { SpellId = 2139,   KickCd = 20,  IsCaster = true,  IsHealer = false, Class = "MAGE" }, -- Frost
 
 	-- Warlock
-	[265] = { SpellId = 132409, KickCd = 24,  IsCaster = true,  IsHealer = false }, -- Affliction
-	[266] = { SpellId = 132409, KickCd = 30,  IsCaster = true,  IsHealer = false }, -- Demonology
-	[267] = { SpellId = 132409, KickCd = 24,  IsCaster = true,  IsHealer = false }, -- Destruction
+	[265] = { SpellId = 132409, KickCd = 24,  IsCaster = true,  IsHealer = false, Class = "WARLOCK" }, -- Affliction
+	[266] = { SpellId = 132409, KickCd = 30,  IsCaster = true,  IsHealer = false, Class = "WARLOCK" }, -- Demonology
+	[267] = { SpellId = 132409, KickCd = 24,  IsCaster = true,  IsHealer = false, Class = "WARLOCK" }, -- Destruction
 
 	-- Shaman
-	[262] = { SpellId = 57994,  KickCd = 12,  IsCaster = true,  IsHealer = false }, -- Elemental
-	[263] = { SpellId = 57994,  KickCd = 12,  IsCaster = false, IsHealer = false }, -- Enhancement
-	[264] = { SpellId = 57994,  KickCd = 30,  IsCaster = false, IsHealer = true  }, -- Restoration
+	[262] = { SpellId = 57994,  KickCd = 12,  IsCaster = true,  IsHealer = false, Class = "SHAMAN" }, -- Elemental
+	[263] = { SpellId = 57994,  KickCd = 12,  IsCaster = false, IsHealer = false, Class = "SHAMAN" }, -- Enhancement
+	[264] = { SpellId = 57994,  KickCd = 30,  IsCaster = false, IsHealer = true , Class = "SHAMAN" }, -- Restoration
 
 	-- Evoker
-	[1467] = { SpellId = 351338, KickCd = 20, IsCaster = true,  IsHealer = false }, -- Devastation
-	[1468] = { SpellId = nil,    KickCd = nil, IsCaster = false, IsHealer = true  }, -- Preservation
-	[1473] = { SpellId = nil,    KickCd = nil, IsCaster = true,  IsHealer = false }, -- Augmentation
+	[1467] = { SpellId = 351338, KickCd = 20, IsCaster = true,  IsHealer = false, Class = "EVOKER" }, -- Devastation
+	[1468] = { SpellId = nil,    KickCd = nil, IsCaster = false, IsHealer = true , Class = "EVOKER" }, -- Preservation
+	[1473] = { SpellId = nil,    KickCd = nil, IsCaster = true,  IsHealer = false, Class = "EVOKER" }, -- Augmentation
 
 	-- Priest
-	[256] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true  }, -- Discipline
-	[257] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true  }, -- Holy
-	[258] = { SpellId = nil,    KickCd = nil,  IsCaster = true,  IsHealer = false }, -- Shadow
+	[256] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true , Class = "PRIEST" }, -- Discipline
+	[257] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true , Class = "PRIEST" }, -- Holy
+	[258] = { SpellId = 15487,  KickCd = 45,   IsCaster = true,  IsHealer = false, Class = "PRIEST" }, -- Shadow (Silence)
 }
 
 ---@class KickSpecData
@@ -118,3 +120,4 @@ M.SpecData = {
 ---@field KickCd number?   -- cooldown of the interrupt in seconds; nil = no interrupt
 ---@field IsCaster boolean
 ---@field IsHealer boolean
+---@field Class string    -- class token of the spec

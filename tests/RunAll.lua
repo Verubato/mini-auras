@@ -30,6 +30,7 @@ local testFiles = {
     "tests/Core/TestArtTextures.lua",
     "tests/Core/TestBorderTextures.lua",
     "tests/Core/TestIconSlotBorder.lua",
+    "tests/Core/TestIconSlotArt.lua",
     "tests/Core/TestGlowStyles.lua",
     "tests/Core/TestSounds.lua",
     "tests/Core/TestAuraSounds.lua",

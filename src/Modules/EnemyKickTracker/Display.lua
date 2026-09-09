@@ -141,7 +141,8 @@ end
 ---@param icon string|number
 ---@param name any the interrupter's name, secret inside an instance
 ---@param class any the interrupter's class token, secret inside an instance
-local function AddIcon(duration, icon, name, class)
+---@param atlas any? atlas drawn over the icon, secret when built from a secret class token
+local function AddIcon(duration, icon, name, class, atlas)
 	if not kickBar.Container then
 		return
 	end
@@ -156,6 +157,7 @@ local function AddIcon(duration, icon, name, class)
 
 	kickBar.Container:SetSlot(slotIndex, {
 		Texture = icon,
+		Atlas = atlas,
 		DurationObject = wowEx:CreateDuration(GetTime(), duration),
 		Alpha = true,
 		ReverseCooldown = iconOptions.ReverseCooldown or false,
@@ -163,6 +165,7 @@ local function AddIcon(duration, icon, name, class)
 		-- Who kicked is worth more than the tint the user picked, so the class wins where it
 		-- resolved.
 		Color = kickColors:ClassColor(class) or moduleUtil:GetIconColor(iconOptions),
+		HideBorder = iconOptions.Border == false,
 		FontScale = db.Modules.EnemyKickTracker.FontScale,
 	})
 
@@ -249,8 +252,9 @@ end
 ---@param icon string|number
 ---@param name any the interrupter's name, secret inside an instance
 ---@param class any the interrupter's class token, secret inside an instance
-function M:AddKick(duration, icon, name, class)
-	AddIcon(duration, icon, name, class)
+---@param atlas any? atlas drawn over the icon, secret when built from a secret class token
+function M:AddKick(duration, icon, name, class, atlas)
+	AddIcon(duration, icon, name, class, atlas)
 end
 
 function M:Clear()
@@ -307,12 +311,12 @@ function M:SetTestMode(active)
 end
 
 ---Replaces whatever is on the bar with a fixed set of icons that never expire.
----@param entries { Duration: number, Icon: string|number, Name: string?, Class: string? }[]
+---@param entries { Duration: number, Icon: string|number, Name: string?, Class: string?, Atlas: string? }[]
 function M:ShowTestKicks(entries)
 	CancelTimers()
 
 	for _, entry in ipairs(entries) do
-		AddIcon(entry.Duration, entry.Icon, entry.Name, entry.Class)
+		AddIcon(entry.Duration, entry.Icon, entry.Name, entry.Class, entry.Atlas)
 	end
 
 	if kickBar.Container then

@@ -200,3 +200,25 @@ fw.describe("KickTracker - lifecycle", function()
 		assert(notified == 0, "unsubscribed callback must not fire, got " .. notified)
 	end)
 end)
+
+fw.describe("KickTracker - the interrupt data", function()
+	fw.it("knows the lockout of every interrupt it credits a spec with", function()
+		local missing = {}
+
+		for specId, specInfo in pairs(addon.Core.KickData.SpecData) do
+			if specInfo.SpellId and not addon.Core.KickData.SpellLockoutDuration[specInfo.SpellId] then
+				missing[#missing + 1] = specId .. " casts " .. specInfo.SpellId
+			end
+		end
+
+		-- The same lookup serves an ally whose spec never arrived, through the class fallback.
+		for class, spellId in pairs(addon.Core.KickData.ClassInterruptSpell) do
+			if not addon.Core.KickData.SpellLockoutDuration[spellId] then
+				missing[#missing + 1] = class .. " casts " .. spellId
+			end
+		end
+
+		assert(#missing == 0, "a lockout drawn from these would be the 3s default: "
+			.. table.concat(missing, ", "))
+	end)
+end)
