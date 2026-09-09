@@ -2746,3 +2746,57 @@ fw.describe("Migrator - the v86 personal aura swipe switch", function()
 			"the login path has to reach step 86")
 	end)
 end)
+
+fw.describe("Migrator - the v87 kick border switch", function()
+	fw.it("puts back the border an old default had turned off", function()
+		local vars = {
+			Version = 86,
+			Modules = { EnemyKickTracker = { Icons = { Border = false } } },
+			Profiles = {
+				Plain = { Modules = { EnemyKickTracker = { Icons = { Border = false } } } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion87(vars) == true)
+
+		assert(vars.Modules.EnemyKickTracker.Icons.Border == true, "the border everyone sees stays")
+		assert(vars.Profiles.Plain.Modules.EnemyKickTracker.Icons.Border == true,
+			"a snapshot is converted the same way")
+		assert(vars.Version == 87)
+	end)
+
+	fw.it("leaves a db that never reached the module alone", function()
+		local vars = { Version = 86, Modules = {} }
+
+		assert(migrator:UpgradeToVersion87(vars) == true)
+		assert(vars.Modules.EnemyKickTracker == nil)
+		assert(vars.Version == 87)
+	end)
+
+	fw.it("refuses to run against the wrong source version", function()
+		local vars = {
+			Version = 85,
+			Modules = { EnemyKickTracker = { Icons = { Border = false } } },
+		}
+
+		assert(migrator:UpgradeToVersion87(vars) == false, "wrong version must be rejected")
+		assert(vars.Modules.EnemyKickTracker.Icons.Border == false, "and must convert nothing")
+		assert(vars.Version == 85)
+	end)
+
+	fw.it("reaches a db logging in at the version before it", function()
+		_G.MiniAurasDB = {
+			Version = 86,
+			Modules = { EnemyKickTracker = { Icons = { Border = false } } },
+			Profiles = {
+				Other = { Modules = { EnemyKickTracker = { Icons = { Border = false } } } },
+			},
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(LATEST_VERSION >= 87, "the shipped version has to be past this step")
+		assert(db.Profiles.Other.Modules.EnemyKickTracker.Icons.Border == true,
+			"the login path has to reach step 87")
+	end)
+end)

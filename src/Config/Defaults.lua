@@ -3,7 +3,7 @@ local _, addon = ...
 
 ---@class Db
 local dbDefaults = {
-	Version = 86,
+	Version = 87,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -479,12 +479,13 @@ local dbDefaults = {
 
 			IconSpacing = 2,
 			FontScale = 1.0,
-			ShowName = true,
+			ShowName = false,
+			UnknownKickIcon = "class",
 
 			Icons = {
 				Size = 50,
 				Glow = false,
-				Border = false,
+				Border = true,
 				ReverseCooldown = true,
 				-- Glow/border tint, used only where the kicker's class does not resolve. Kept
 				-- for profiles saved before the swatch left the panel.

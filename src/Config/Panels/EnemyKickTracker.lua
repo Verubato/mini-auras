@@ -8,6 +8,12 @@ local helpers = addon.Config.PanelHelpers
 local dbDefaults = addon.Config.Defaults
 local moduleName = addon.Utils.ModuleName
 
+local UNKNOWN_KICK_MODES = { "class", "generic" }
+local UNKNOWN_KICK_MODE_TEXT = {
+	class = L["Class crest"],
+	generic = L["Generic kick icon"],
+}
+
 ---@class EnemyKickTrackerConfig
 local M = {}
 
@@ -106,6 +112,42 @@ function M:Build(panel)
 
 	showNameChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local showBorderChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show border"],
+		Tooltip = L["Show a class coloured border around the kick icons."],
+		GetValue = function()
+			return db.Modules.EnemyKickTracker.Icons.Border ~= false
+		end,
+		SetValue = function(value)
+			db.Modules.EnemyKickTracker.Icons.Border = value
+			config:Apply(moduleName.EnemyKickTracker)
+		end,
+	})
+
+	showBorderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
+	showBorderChk:SetPoint("TOP", showNameChk, "TOP", 0, 0)
+
+	local unknownKickDropdown = mini:Dropdown({
+		Parent = panel,
+		LabelText = L["Unknown kicks"],
+		Tooltip = L["What to show for a kick that cannot be identified."],
+		Items = UNKNOWN_KICK_MODES,
+		GetText = function(value)
+			return UNKNOWN_KICK_MODE_TEXT[value] or tostring(value)
+		end,
+		GetValue = function()
+			return db.Modules.EnemyKickTracker.UnknownKickIcon or "class"
+		end,
+		SetValue = function(value)
+			db.Modules.EnemyKickTracker.UnknownKickIcon = value
+			config:Apply(moduleName.EnemyKickTracker)
+		end,
+		Width = sliderWidth,
+	})
+
+	unknownKickDropdown.Label:SetPoint("TOPLEFT", showNameChk, "BOTTOMLEFT", 4, -verticalSpacing)
+
 	local iconSizeSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
@@ -119,7 +161,7 @@ function M:Build(panel)
 		SettingsKey = moduleName.EnemyKickTracker,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", showNameChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", unknownKickDropdown.Label, "BOTTOMLEFT", 0, -verticalSpacing * 4)
 
 	local iconSpacingSlider = helpers:BuildClampedSlider({
 		Parent = panel,
