@@ -46,8 +46,9 @@ fw.describe("BorderTextures", function()
 		borderTextures:ApplyDispel(texture)
 
 		local coords = assert(texture.Coords, "the ring was left uncropped")
-		-- Uncropped, the round cell beside the square one shows over the icon as well.
-		assert(coords[1] == 0.296875, "left edge moved")
+		-- Uncropped, the round cell beside the square one shows over the icon as well. The left
+		-- edge is the ring's own first opaque column, measured at x156 of the 512px atlas.
+		assert(coords[1] == 0.3046875, "left edge moved")
 		assert(coords[2] == 0.5703125, "right edge moved")
 		assert(coords[3] == 0, "top edge moved")
 		assert(coords[4] == 0.515625, "bottom edge moved")

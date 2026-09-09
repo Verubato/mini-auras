@@ -2,10 +2,10 @@
 local addonName, addon = ...
 
 -- Our own copy of the client's debuff overlay atlas, redrawn so the ring reads smooth at the
--- sizes icons are shown at. Same layout, so the cell coordinates below are unchanged.
+-- sizes icons are shown at.
 local DISPEL_ATLAS = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Borders\\DispelBorder.blp"
--- The square cell of the atlas, as SetTexCoord's four arguments.
-local DISPEL_LEFT, DISPEL_RIGHT, DISPEL_TOP, DISPEL_BOTTOM = 0.296875, 0.5703125, 0, 0.515625
+-- Trimmed to the ring itself, since a transparent gutter draws as icon spilling past the border.
+local DISPEL_LEFT, DISPEL_RIGHT, DISPEL_TOP, DISPEL_BOTTOM = 0.3046875, 0.5703125, 0, 0.515625
 
 ---@class BorderTextures
 local M = {}
