@@ -40,7 +40,7 @@ local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
 -- Narrows to what anybody in the group can take off.
 local REQUIRE_DISPELLABLE = "|DISPELLABLE"
--- The plain group never draws crowd control, whatever the switch says.
+-- Neither the plain group nor the role group ever draws crowd control, whatever the switch says.
 local DEBUFF_PLAIN_FILTER = DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
 local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
 -- Where each part sits in the row. Spelled out because the crowd control group is declared after
@@ -383,8 +383,9 @@ end
 ---answers isBossOrRoleAura on the aura itself and nothing negates that in a string. It is always
 ---set, so none of them can come back nil.
 ---
----Crowd control gets its own table with no dispel-type filter at all, because a spec's inability
----to dispel a stun is not a reason to hide it.
+---Crowd control gets its own table with no dispel-type filter, because a spec's inability to
+---dispel a stun is not a reason to hide it. It carries no boss and role flag either, since the game
+---can flag a stun as a role aura and its own group has to catch it whichever way that goes.
 ---@return table role Feeds the group leading the row.
 ---@return table rest Feeds the plain group behind crowd control.
 ---@return table crowdControl Feeds the crowd control group.
@@ -409,7 +410,6 @@ local function DebuffCandidates()
 	}
 	crowdControlDebuffCandidates = {
 		maxDuration = maxDuration,
-		isBossOrRoleAura = false,
 	}
 
 	return roleDebuffCandidates, restDebuffCandidates, crowdControlDebuffCandidates
@@ -454,16 +454,11 @@ local function CrowdControlIcons()
 	return math.min(MaxIcons("Debuffs"), MAX_CROWD_CONTROL_ICONS)
 end
 
----The boss and role group's filter. It closes to crowd control when the Crowd control switch is
----off, and narrows to what the raid can dispel when the Dispellable by raid switch is on.
+---The boss and role group's filter. Always closed to crowd control, which has its own group, and
+---narrows to what the raid can dispel when the Dispellable by raid switch is on.
 ---@return string
 local function RoleFilter()
-	local options = SideOptions("Debuffs")
-	local filter = DEBUFF_FILTER
-
-	if options == nil or options.ShowCrowdControl ~= true then
-		filter = filter .. EXCLUDE_CROWD_CONTROL
-	end
+	local filter = DEBUFF_PLAIN_FILTER
 
 	if DispellableByRaidOn() then
 		filter = filter .. REQUIRE_DISPELLABLE
@@ -1121,7 +1116,8 @@ local function ApplySettings(entry)
 		-- the row it is on this way.
 		entry.Debuffs:SetGroupColorByDispelTypes(DEBUFF_GROUP_KEYS, DebuffDispelColors())
 
-		-- The boss and role flag is what keeps the leading group apart from the two behind it.
+		-- The boss and role flag is what keeps the leading group apart from the plain group behind
+		-- it. Crowd control is kept apart by its own filter string instead.
 		local role, rest, crowdControl = DebuffCandidates()
 
 		entry.Debuffs:SetFilterString(DEBUFF_ROLE_GROUP, RoleFilter())

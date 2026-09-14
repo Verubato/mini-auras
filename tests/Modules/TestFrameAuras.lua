@@ -2479,12 +2479,11 @@ local function DebuffGroup(frame)
 	return nil
 end
 
----The groups behind the lead are always the false half of the boss and role partition, whatever
----the two switches on the page are set to, since the game never negates that flag in a filter
----string.
+---The plain group is always the false half of the boss and role partition, whatever the two
+---switches on the page are set to, since the game never negates that flag in a filter string.
 ---@param filters table
 local function AssertRestHalf(filters)
-	assert(filters.isBossOrRoleAura == false, "the groups behind the lead are the half without the boss and role auras")
+	assert(filters.isBossOrRoleAura == false, "the plain group is the half without the boss and role auras")
 end
 
 fw.describe("Frame Auras - what the debuff row lets through", function()
@@ -3381,14 +3380,14 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		local plainFilters = assert(plain.candidateFilters, "and so is the rest of the row")
 
 		assert(roleFilters.isBossOrRoleAura == true, "the group takes the boss and role auras and nothing else")
-		AssertRestHalf(ccFilters)
+		assert(ccFilters.isBossOrRoleAura == nil, "crowd control carries no boss and role flag of its own")
 		AssertRestHalf(plainFilters)
 
 		options.Debuffs.ShowCrowdControl = false
 		DropRaidFrame(13)
 	end)
 
-	fw.it("takes a plain HARMFUL filter string while crowd control is switched on", function()
+	fw.it("keeps crowd control out of the role group's filter string, whatever the switch says", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 
@@ -3400,8 +3399,8 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
 		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
 
-		assert(role.filterString == "HARMFUL",
-			"a crowd control debuff that is also boss or role flagged reaches this group, got "
+		assert(role.filterString:find("!CROWD_CONTROL", 1, true),
+			"a crowd control debuff the game also flags as boss or role still has to land in its own group, got "
 				.. tostring(role.filterString))
 
 		options.Debuffs.ShowCrowdControl = false
@@ -3426,7 +3425,7 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		DropRaidFrame(40)
 	end)
 
-	fw.it("follows the switch on a row that was already built", function()
+	fw.it("keeps its filter string closed to crowd control on a row already built, whatever the switch does", function()
 		options.Debuffs.Enabled = true
 
 		local fresh = NewRaidFrame(40)
@@ -3437,21 +3436,21 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
 		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
 
-		assert(role.filterString:find("!CROWD_CONTROL", 1, true), "it starts with the switch off")
+		assert(role.filterString:find("!CROWD_CONTROL", 1, true), "it starts closed to crowd control")
 
 		options.Debuffs.ShowCrowdControl = true
 		partyAuras:Refresh()
 		acm.tickAll(400)
 
-		assert(not role.filterString:find("!CROWD_CONTROL", 1, true),
-			"the switch going on re-opens the group, got " .. tostring(role.filterString))
+		assert(role.filterString:find("!CROWD_CONTROL", 1, true),
+			"the switch going on does not reopen it, got " .. tostring(role.filterString))
 
 		options.Debuffs.ShowCrowdControl = false
 		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		assert(role.filterString:find("!CROWD_CONTROL", 1, true),
-			"and going off again closes it, got " .. tostring(role.filterString))
+			"and going off again leaves it exactly where it was, got " .. tostring(role.filterString))
 
 		DropRaidFrame(40)
 	end)
@@ -3540,8 +3539,8 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 
 		assert(role.candidateFilters.maxDuration == 60, "the role group picked up the new bound")
 		assert(role.candidateFilters.isBossOrRoleAura == true, "without losing its own half of the partition")
-		assert(cc.candidateFilters.maxDuration == 60 and cc.candidateFilters.isBossOrRoleAura == false,
-			"crowd control took the rest half, with the same bound")
+		assert(cc.candidateFilters.maxDuration == 60 and cc.candidateFilters.isBossOrRoleAura == nil,
+			"crowd control picked up the same bound, with no boss and role flag of its own")
 		assert(plain.candidateFilters.maxDuration == 60 and plain.candidateFilters.isBossOrRoleAura == false,
 			"and so did the plain group behind it")
 
