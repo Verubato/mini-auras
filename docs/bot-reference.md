@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.40.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.40.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -756,9 +756,9 @@ ordered by the game itself, because an aura's spell id is secret and nothing can
 once it has rendered. The game's own boss and role auras lead the row, drawn 40% larger than
 the rest of it and capped at two icons on their own budget. There is no switch to hold the group
 itself back: a debuff like Unstable Affliction has to be seen before anything else on the frame.
-Crowd control is the one thing the **Crowd control** switch reaches there too: with the switch off, a
-boss or role flagged crowd control debuff is kept off the row like any other, and with it on the
-switch also opens a group of its own behind the lead group.
+The lead group never holds crowd control, whatever the switch says. Since 5.40.1 a boss or role
+flagged crowd control debuff goes to the crowd control group behind it instead, so the dispellable
+switches on the lead group can no longer hide a stun.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3), icon padding 0-5 (default 1), font scale 0.5-2.0 (default 1.0).
@@ -772,9 +772,8 @@ switch also opens a group of its own behind the lead group.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
 - **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,
-  drawn 40% larger than the rest of the row and capped at two icons on its own budget, and lets
-  a crowd control debuff into the boss and role group ahead of it. Off by default for the same reason
-  as the two on the Buffs tab.
+  drawn 40% larger than the rest of the row and capped at two icons on its own budget. Off by
+  default for the same reason as the two on the Buffs tab.
 - **Dispel colours** (on) - rings every group on the row in the game's colour for its dispel
   type. A debuff the game gives no type at all, such as a physical stun, is ringed too, in the
   game's untyped colour, which is red.

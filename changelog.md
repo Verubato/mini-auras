@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.40.1
+
+- Fixed crowd control such as Cyclone and Bash missing from frame aura debuffs.
+
 ## 5.40.0
 
 - When an enemy kicks you, we now track their interrupt accurately. Credit to Mo for the solution.
