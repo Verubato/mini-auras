@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120100, 16001
 ## Title: MiniAuras
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Category: Mini
