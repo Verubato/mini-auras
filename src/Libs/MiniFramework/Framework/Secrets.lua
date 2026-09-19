@@ -15,12 +15,10 @@ M.IsSecret = issecretvalue
 		return false
 	end
 
----Whether this client is a version that produces secret values at all.
+---Whether this client produces secret values at all. A Classic client can carry the 12.x
+---interface, so the expansion level cannot tell.
 ---@return boolean
 function M:HasSecrets()
-	if LE_EXPANSION_LEVEL_CURRENT == nil or LE_EXPANSION_MIDNIGHT == nil then
-		return false
-	end
-
-	return LE_EXPANSION_LEVEL_CURRENT >= LE_EXPANSION_MIDNIGHT
+	-- Mists Classic shares the engine, so the predicate alone does not settle it.
+	return WOW_PROJECT_ID ~= nil and WOW_PROJECT_ID == WOW_PROJECT_MAINLINE and issecretvalue ~= nil
 end

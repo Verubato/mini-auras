@@ -5,14 +5,11 @@ local M = addon.Framework
 -- Blizzard settings container; addons hosting their own window assign their content width here.
 M.ContentWidth = nil
 
----Whether the client still allows opening the settings panel while in combat.
+---Whether the client still allows opening the settings panel while in combat. The 12.x
+---interface stopped that, and it is the interface that has secret values.
 ---@return boolean
 function M:CanOpenOptionsDuringCombat()
-	if LE_EXPANSION_LEVEL_CURRENT == nil or LE_EXPANSION_MIDNIGHT == nil then
-		return true
-	end
-
-	return LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_MIDNIGHT
+	return not M:HasSecrets()
 end
 
 ---@return number width, number height of the Blizzard settings content area
