@@ -73,7 +73,7 @@ function M:Build(panel)
 	newsText:SetWidth(contentWidth - newsPadding * 2 - 3)
 	newsText:SetJustifyH("LEFT")
 	newsText:SetSpacing(newsSpacing)
-	newsText:SetText(L["In Blizzard's 12.1 patch, addons can no longer process aura information; only display it.\n\nWhat's removed:\n* Friendly and enemy cooldown tracking (not possible in 12.1).\n\nWhat's added/changed:\n* New personal auras functionality (think mini weak auras).\n  - When aura added show icon and play sound.\n  - Precognition & Nullifying Shroud module have been merged into this.\n* Ally kick tracker for dungeons/M+.\n* Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.\n* New custom text-to-speech voices.\n* Masque skins are applied when an icon is created, so reload after changing one.\n* UI overhaul so it looks sexier."])
+	newsText:SetText(L["WoW Forever support added!"])
 	newsText:SetPoint("TOPLEFT", newsCard, "TOPLEFT", newsPadding + 3, -newsPadding)
 	-- GetStringHeight leaves out the SetSpacing gaps, so wordy locales spill past the card.
 	newsCard:SetHeight(newsText:GetStringHeight() + (newsText:GetNumLines() - 1) * newsSpacing + newsPadding * 2)
