@@ -570,6 +570,33 @@ fw.describe("WoWEx aura-styling gate", function()
 	end)
 end)
 
+fw.describe("WoWEx spell existence", function()
+	local wowEx = loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
+
+	fw.it("answers true for any id when the client cannot say", function()
+		local realCSpell = _G.C_Spell
+		_G.C_Spell = {}
+
+		assert(wowEx:SpellExists(408) == true, "no DoesSpellExist means nothing is ruled out")
+
+		_G.C_Spell = realCSpell
+	end)
+
+	fw.it("mirrors what the client says once it can answer", function()
+		local realCSpell = _G.C_Spell
+		_G.C_Spell = {
+			DoesSpellExist = function(spellId)
+				return spellId ~= 33206
+			end,
+		}
+
+		assert(wowEx:SpellExists(33206) == false, "an id the client refuses")
+		assert(wowEx:SpellExists(408) == true, "an id the client has")
+
+		_G.C_Spell = realCSpell
+	end)
+end)
+
 -- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped
 -- answering, which emptied every spec lookup in the addon, so profiles stopped auto switching and
 -- the kick tracker errored. The classic clients only ever had the globals, so both shapes have

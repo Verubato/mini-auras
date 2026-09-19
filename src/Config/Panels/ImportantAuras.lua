@@ -21,6 +21,7 @@ local helpers = addon.Config.PanelHelpers
 local spellPicker = addon.Config.SpellPicker
 local auraCategoryIds = addon.Core.AuraCategoryIds
 local moduleName = addon.Utils.ModuleName
+local wowEx = addon.Utils.WoWEx
 -- Sidebar sections. Derived from AuraCategoryIds and the user's own additions and nothing else,
 -- so this list stands on its own rather than leaning on another module's data for its structure.
 local CLASS_ORDER = {
@@ -367,7 +368,9 @@ local function SpellGroups()
 
 	for _, source in ipairs(sources) do
 		for spellId in pairs(source) do
-			Bucket(auraCategoryIds.Classes[spellId] or GENERAL_GROUP_KEY, spellId)
+			if wowEx:SpellExists(spellId) then
+				Bucket(auraCategoryIds.Classes[spellId] or GENERAL_GROUP_KEY, spellId)
+			end
 		end
 	end
 

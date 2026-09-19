@@ -171,3 +171,40 @@ fw.describe("Alerts page - the grow control", function()
 		fw.eq(TooltipBodyOf(dropdown), addon.L[CENTER_CAVEAT], "and hovering the control does")
 	end)
 end)
+
+fw.describe("Alerts page - the spells the TTS tab offers", function()
+	fw.it("drops a spell the client lacks", function()
+		local addon = Load()
+		local helpers = addon.Config.PanelHelpers
+		-- Adrenaline Rush, the only id under AdrenalineRush.ogg in AuraTtsSounds.Important.
+		local ADRENALINE_RUSH = 13750
+		local ICY_VEINS = 12472
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			return spellId ~= ADRENALINE_RUSH
+		end
+
+		addon.Config:EnsureWindow()
+
+		_G.C_Spell.DoesSpellExist = nil
+
+		local page = addon.Config.TabController:GetContent("Alerts")
+		local droppedLabel = helpers:TrimName("Spell " .. ADRENALINE_RUSH, 24)
+		local keptLabel = helpers:TrimName("Spell " .. ICY_VEINS, 24)
+		local droppedFound, keptFound = false, false
+
+		for _, frame in ipairs(WowMock.Frames) do
+			if frame.__options and Inside(frame, page) then
+				if frame.__options.LabelText == droppedLabel then
+					droppedFound = true
+				end
+				if frame.__options.LabelText == keptLabel then
+					keptFound = true
+				end
+			end
+		end
+
+		assert(not droppedFound, "the client denies it exists")
+		assert(keptFound, "another TTS spell still shows")
+	end)
+end)

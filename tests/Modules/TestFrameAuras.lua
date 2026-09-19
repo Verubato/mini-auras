@@ -303,6 +303,61 @@ fw.describe("Frame Auras - the tracked buff list", function()
 		assert(custom.Ids[1] == CUSTOM, "and the added id is in it")
 	end)
 
+	fw.it("leaves out a curated spell the client lacks", function()
+		ResetSpells()
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			return spellId ~= FULL_BLOOM
+		end
+
+		local druid
+		for _, group in ipairs(spells:SpellGroups()) do
+			if group.Key == "DRUID" then
+				druid = group
+			end
+		end
+
+		_G.C_Spell.DoesSpellExist = nil
+
+		assert(druid, "the druid section still exists")
+
+		local hasFullBloom, hasRejuvenation = false, false
+		for _, spellId in ipairs(druid.Ids) do
+			hasFullBloom = hasFullBloom or spellId == FULL_BLOOM
+			hasRejuvenation = hasRejuvenation or spellId == 774
+		end
+
+		assert(not hasFullBloom, "the client denies it exists")
+		assert(hasRejuvenation, "another druid spell it does have is still listed")
+	end)
+
+	fw.it("leaves out a class none of whose spells exist", function()
+		ResetSpells()
+
+		local evokerIds = {}
+		for _, group in ipairs(trackedBuffs.Groups) do
+			if group.Class == "EVOKER" then
+				for _, spellId in ipairs(group.Ids) do
+					evokerIds[spellId] = true
+				end
+			end
+		end
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			return not evokerIds[spellId]
+		end
+
+		local groups = spells:SpellGroups()
+
+		_G.C_Spell.DoesSpellExist = nil
+
+		for _, group in ipairs(groups) do
+			assert(group.Key ~= "EVOKER", "no evoker spell exists on this client")
+		end
+
+		assert(groups[#groups].Key == spells.CustomGroupKey, "the custom section is still last")
+	end)
+
 	fw.it("never hands the engine an empty spell-id map", function()
 		ResetSpells()
 

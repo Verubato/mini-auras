@@ -173,7 +173,7 @@ fw.describe("SpellSearch - ranking ties", function()
 				AuraCategoryIds = categoryIds,
 				SpellNameIndex = { tostring(GENERATED) },
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}
@@ -236,7 +236,7 @@ fw.describe("SpellSearch - order within a generated group", function()
 				AuraCategoryIds = categoryIds,
 				SpellNameIndex = { table.concat({ 999205, 999201, 999203 }, " ") },
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}
@@ -295,7 +295,7 @@ fw.describe("SpellSearch - copies of a spell the current data covers", function(
 				AuraCategoryIds = categoryIds,
 				SpellNameIndex = index,
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}
@@ -351,7 +351,7 @@ fw.describe("SpellSearch - one name with more ids than the picker can show", fun
 				AuraCategoryIds = categoryIds,
 				SpellNameIndex = { table.concat(raw, " ") },
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}
@@ -403,7 +403,7 @@ fw.describe("SpellSearch - a copy the client names late", function()
 				AuraCategoryIds = categoryIds,
 				SpellNameIndex = { tostring(TORRENT_IDS[1]) },
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}
@@ -485,7 +485,7 @@ fw.describe("SpellSearch - the client's own language", function()
 					tostring(OTHER),
 				},
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}
@@ -558,7 +558,7 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 					("%d %d"):format(GROUP_A, GROUP_B),
 				},
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}
@@ -690,7 +690,7 @@ fw.describe("SpellSearch - ids this build has dropped", function()
 				AuraCategoryIds = categoryIds,
 				SpellNameIndex = {},
 			},
-			Utils = {},
+			Utils = { WoWEx = addon.Utils.WoWEx },
 			Modules = {},
 			Config = {},
 		}

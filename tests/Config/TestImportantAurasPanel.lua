@@ -67,6 +67,28 @@ local function SwitchesFor(addon, labelText)
 	return found
 end
 
+---The sidebar button labelling a section, found by the text one of its regions carries.
+---@param addon table
+---@param text string
+---@return table?
+local function SidebarButton(addon, text)
+	local page = addon.Config.TabController:GetContent("ImportantAuras")
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if Inside(frame, page) then
+			for index = 1, frame:GetNumRegions() do
+				local region = select(index, frame:GetRegions())
+
+				if region.GetText and region:GetText() == text then
+					return frame
+				end
+			end
+		end
+	end
+
+	return nil
+end
+
 ---Toggles a checkbox the way a user does, flipping whatever the source currently says.
 ---@param chk table
 local function Click(chk)
@@ -132,6 +154,61 @@ fw.describe("Important Auras page - the spell picker", function()
 
 		fw.eq(overrides.Disabled[curated], nil, "the switch that had it off is cleared")
 		fw.eq(overrides.Custom[curated], nil, "and it stays in the section that owns it")
+	end)
+end)
+
+fw.describe("Important Auras page - spells this client does not have", function()
+	fw.it("drops a spell the client lacks", function()
+		local addon = Load()
+		local categoryIds = addon.Core.AuraCategoryIds
+		local dropped, kept
+
+		for spellId in pairs(categoryIds.Defensive) do
+			if not dropped or spellId < dropped then
+				dropped = spellId
+			end
+		end
+
+		fw.not_nil(dropped, "the fixture needs a defensive spell to drop")
+
+		for spellId in pairs(categoryIds.Defensive) do
+			if spellId ~= dropped then
+				kept = spellId
+				break
+			end
+		end
+
+		fw.not_nil(kept, "the fixture needs a second defensive spell to keep")
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			return spellId ~= dropped
+		end
+
+		addon.Config:EnsureWindow()
+
+		local helpers = addon.Config.PanelHelpers
+		local droppedLabel = helpers:SpellLabel(C_Spell.GetSpellName(dropped), dropped, 24)
+		local keptLabel = helpers:SpellLabel(C_Spell.GetSpellName(kept), kept, 24)
+
+		_G.C_Spell.DoesSpellExist = nil
+
+		fw.eq(#SwitchesFor(addon, droppedLabel), 0, "the client denies it exists")
+		assert(#SwitchesFor(addon, keptLabel) > 0, "another defensive spell still shows")
+	end)
+
+	fw.it("drops a class none of whose spells exist", function()
+		local addon = Load()
+		local categoryIds = addon.Core.AuraCategoryIds
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			return categoryIds.Classes[spellId] ~= "EVOKER"
+		end
+
+		addon.Config:EnsureWindow()
+		_G.C_Spell.DoesSpellExist = nil
+
+		fw.is_nil(SidebarButton(addon, "Evoker"), "no evoker spell exists on this client")
+		assert(SidebarButton(addon, "Druid"), "a class with existing spells still has its section")
 	end)
 end)
 

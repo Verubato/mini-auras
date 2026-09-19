@@ -8,6 +8,7 @@ local helpers = addon.Config.PanelHelpers
 local auraCategoryIds = addon.Core.AuraCategoryIds
 local moduleName = addon.Utils.ModuleName
 local dbDefaults = addon.Config.Defaults
+local wowEx = addon.Utils.WoWEx
 
 -- Two columns of spell rows, matching the raid frame aura lists. A row is nowhere near as wide
 -- as the page, and one column would scroll far sooner than it needs to.
@@ -137,7 +138,9 @@ function M:Build(panel)
 	local spells = {}
 
 	for spellId in pairs(auraCategoryIds.Unflagged) do
-		spells[#spells + 1] = spellId
+		if wowEx:SpellExists(spellId) then
+			spells[#spells + 1] = spellId
+		end
 	end
 
 	local columnWidth = mini:ColumnWidth(SPELL_COLUMNS, 0, 0)

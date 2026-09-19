@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local auraCategoryIds = addon.Core.AuraCategoryIds
+local wowEx = addon.Utils.WoWEx
 
 -- Every spell id the picker can offer, searchable by name. One row per id, since configured ids
 -- are matched exactly and the id a player wants is not always the one its name resolves to first.
@@ -96,23 +97,15 @@ end
 ---@param spellId number
 ---@return boolean
 local function MayYetName(spellId)
-	if not C_Spell.DoesSpellExist then
-		return true
-	end
-
-	return C_Spell.DoesSpellExist(spellId) and true or false
+	return wowEx:SpellExists(spellId)
 end
 
 ---The same for a group, which is named by whichever of its ids answers first.
 ---@param raw string
 ---@return boolean
 local function GroupMayYetName(raw)
-	if not C_Spell.DoesSpellExist then
-		return true
-	end
-
 	for id in raw:gmatch("%d+") do
-		if C_Spell.DoesSpellExist(tonumber(id)) then
+		if wowEx:SpellExists(tonumber(id)) then
 			return true
 		end
 	end

@@ -294,6 +294,21 @@ fw.describe("Portraits page - the unflagged buff list", function()
 
 		fw.eq(chk:GetChecked(), true, "the row shows what the db holds")
 	end)
+
+	fw.it("drops a buff the client lacks", function()
+		local addon = Load()
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			return spellId ~= FEINT
+		end
+
+		local page = ShowPage(addon)
+
+		_G.C_Spell.DoesSpellExist = nil
+
+		fw.eq(CheckboxFor(FEINT, page), nil, "the client denies it exists")
+		fw.not_nil(CheckboxFor(SPIRITWALKERS_GRACE, page), "another unflagged buff still shows")
+	end)
 end)
 
 fw.describe("Portraits page - the countdown numbers", function()

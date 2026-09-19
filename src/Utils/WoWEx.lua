@@ -36,6 +36,18 @@ function M:IsAuraStylingRestricted()
 	return false
 end
 
+---Whether the running client has this spell at all. Spell data loads lazily, so this is the one
+---answer that separates an id not loaded yet from one this build never had.
+---@param spellId number
+---@return boolean
+function M:SpellExists(spellId)
+	if not C_Spell.DoesSpellExist then
+		return true
+	end
+
+	return C_Spell.DoesSpellExist(spellId) and true or false
+end
+
 -- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped
 -- answering, which silently emptied every spec lookup in the addon. The classic clients only
 -- ever had the globals. Resolved per call rather than bound once, because this file loads

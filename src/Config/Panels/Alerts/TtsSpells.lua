@@ -8,6 +8,7 @@ local helpers = addon.Config.PanelHelpers
 local ttsSounds = addon.Core.AuraTtsSounds
 local ttsPacks = addon.Core.TtsPacks
 local ttsMutes = addon.Core.TtsMutes
+local wowEx = addon.Utils.WoWEx
 local verticalSpacing = mini.VerticalSpacing
 -- The announcement categories, in the order the TTS tab's own switches sit in. The colours are the
 -- alert icons' own, with a third for the enemy cooldowns that have no icon to borrow from.
@@ -57,15 +58,17 @@ local function ClipRows(category)
 	local rows = {}
 
 	for spellId, file in pairs(ttsSounds[category] or {}) do
-		local row = byFile[file]
+		if wowEx:SpellExists(spellId) then
+			local row = byFile[file]
 
-		if not row then
-			row = { File = file, SpellIds = {} }
-			byFile[file] = row
-			rows[#rows + 1] = row
+			if not row then
+				row = { File = file, SpellIds = {} }
+				byFile[file] = row
+				rows[#rows + 1] = row
+			end
+
+			row.SpellIds[#row.SpellIds + 1] = spellId
 		end
-
-		row.SpellIds[#row.SpellIds + 1] = spellId
 	end
 
 	for _, row in ipairs(rows) do

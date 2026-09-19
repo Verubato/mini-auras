@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local trackedBuffs = addon.Core.TrackedBuffs
+local wowEx = addon.Utils.WoWEx
 
 -- An id nothing will ever have, for a tracked set that comes out empty. An empty spell-id map
 -- reads to the engine as "no ids required", so the group would match every buff on the unit
@@ -151,7 +152,17 @@ function M:SpellGroups()
 	local out = {}
 
 	for _, group in ipairs(trackedBuffs.Groups) do
-		out[#out + 1] = { Key = group.Class, Ids = group.Ids }
+		local ids = {}
+
+		for _, spellId in ipairs(group.Ids) do
+			if wowEx:SpellExists(spellId) then
+				ids[#ids + 1] = spellId
+			end
+		end
+
+		if #ids > 0 then
+			out[#out + 1] = { Key = group.Class, Ids = ids }
+		end
 	end
 
 	local _, custom = Overrides()
