@@ -138,7 +138,7 @@ local CLASSIC = {
 	CrowdControl = {
 		{ SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR },     -- Kidney Shot
 		{ SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR },   -- Fear
-		{ SpellId = 19386, DispelColor = DEBUFF_TYPE_POISON_COLOR }, -- Wyvern Sting
+		{ SpellId = 118, DispelColor = DEBUFF_TYPE_MAGIC_COLOR },    -- Polymorph
 	},
 	Defensive = {
 		{ SpellId = 871 },  -- Shield Wall
