@@ -11,6 +11,8 @@ local lookWarningShown = false
 local M = addon.Config
 
 local NAV_ICON_BASE = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Nav\\"
+-- Pages whose module only ever runs inside an arena.
+local ARENA_ONLY_TABS = { Trinkets = true, EnemyKickTracker = true }
 
 ---Opens the options window, or says why it cannot. Building the window asks the client for
 ---keyboard propagation, which combat refuses, so the first open has to wait for the fight to end.
@@ -336,12 +338,11 @@ function M:EnsureWindow()
 		},
 	}
 
-	-- No arena means nothing for the trinket page to configure.
+	-- No arena means nothing for these pages to configure.
 	if not wowEx:HasArena() then
-		for index, tab in ipairs(tabs) do
-			if tab.Key == "Trinkets" then
+		for index = #tabs, 1, -1 do
+			if ARENA_ONLY_TABS[tabs[index].Key] then
 				table.remove(tabs, index)
-				break
 			end
 		end
 	end

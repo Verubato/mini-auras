@@ -6,6 +6,7 @@ local moduleLifecycle = addon.Core.ModuleLifecycle
 local inspectorFacade = addon.Core.InspectorFacade
 local kickData = addon.Core.KickData
 local testSpellData = addon.Core.TestSpells
+local wowEx = addon.Utils.WoWEx
 
 -- Loaded before this file in TOC order.
 local observer = addon.Modules.EnemyKickTracker.Observer
@@ -250,7 +251,7 @@ end
 local function IsEnabled()
 	-- No moduleUtil check here. The kick timer carries its own per-spec enabled values, and the
 	-- generic check would report false for them.
-	return M:IsEnabledForPlayer(GetOptions())
+	return wowEx:HasArena() and M:IsEnabledForPlayer(GetOptions())
 end
 
 local function Teardown()

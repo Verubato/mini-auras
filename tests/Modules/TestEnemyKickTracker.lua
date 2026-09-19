@@ -589,6 +589,18 @@ fw.describe("EnemyKickTracker - lifecycle", function()
 		assert(castFrameFor("player"), "re-enabling brings the events back")
 	end)
 
+	fw.it("stays off on a client without arena", function()
+		local frame = assert(castFrameFor("player"), "player cast frame")
+
+		wow.setBuildNumber(16001)
+		module:Refresh()
+		assert(not frame._events.UNIT_SPELLCAST_INTERRUPTED, "the events were unregistered")
+
+		wow.setBuildNumber(120100)
+		module:Refresh()
+		assert(castFrameFor("player"), "a client with arena brings them back")
+	end)
+
 	fw.it("reported no misuse through the whole run", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
 	end)

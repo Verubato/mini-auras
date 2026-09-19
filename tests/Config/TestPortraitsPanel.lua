@@ -138,6 +138,7 @@ fw.describe("Config - when the options window is built", function()
 		addon.Config:EnsureWindow()
 
 		fw.not_nil(addon.Config.TabController:GetContent("Trinkets"), "the trinket page is built")
+		fw.not_nil(addon.Config.TabController:GetContent("EnemyKickTracker"), "and the enemy kick page")
 		fw.not_nil(addon.Config.TabController:GetContent("Healer"), "its neighbour survives")
 		fw.not_nil(addon.Config.TabController:GetContent("AllyKickTracker"), "and the other one")
 	end)
@@ -152,6 +153,7 @@ fw.describe("Config - when the options window is built", function()
 
 		assert(addon.Config.TabController:GetContent("Trinkets") == nil, "no page was built")
 		assert(addon.Config.TabController:GetTabButton("Trinkets") == nil, "and no nav entry either")
+		assert(addon.Config.TabController:GetContent("EnemyKickTracker") == nil, "nor the enemy kick page")
 		fw.not_nil(addon.Config.TabController:GetContent("Healer"), "its neighbour survives")
 		fw.not_nil(addon.Config.TabController:GetContent("AllyKickTracker"), "and the other one")
 
