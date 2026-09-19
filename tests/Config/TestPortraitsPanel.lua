@@ -132,6 +132,32 @@ fw.describe("Config - when the options window is built", function()
 		assert(addon.Config.Window:IsShown(), "an already built window stayed shut in combat")
 		assert(addon.Framework:HasPendingCombatWork(), "the settings panel was left sitting behind it")
 	end)
+
+	fw.it("lists the trinket page on a client with arena", function()
+		local addon = Load()
+		addon.Config:EnsureWindow()
+
+		fw.not_nil(addon.Config.TabController:GetContent("Trinkets"), "the trinket page is built")
+		fw.not_nil(addon.Config.TabController:GetContent("Healer"), "its neighbour survives")
+		fw.not_nil(addon.Config.TabController:GetContent("AllyKickTracker"), "and the other one")
+	end)
+
+	fw.it("leaves the trinket page out on a client without arena", function()
+		local addon = Load()
+
+		WowMock.State.BuildNumber = 16001
+		WowMock.State.BuildVersion = "1.60.1"
+
+		addon.Config:EnsureWindow()
+
+		assert(addon.Config.TabController:GetContent("Trinkets") == nil, "no page was built")
+		assert(addon.Config.TabController:GetTabButton("Trinkets") == nil, "and no nav entry either")
+		fw.not_nil(addon.Config.TabController:GetContent("Healer"), "its neighbour survives")
+		fw.not_nil(addon.Config.TabController:GetContent("AllyKickTracker"), "and the other one")
+
+		WowMock.State.BuildNumber = 120100
+		WowMock.State.BuildVersion = "12.1.0"
+	end)
 end)
 
 ---The tab framework lays every page out as the window is built, so opening the tab is enough.

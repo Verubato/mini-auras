@@ -4,6 +4,7 @@ local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local wowEx = addon.Utils.WoWEx
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLOR_MODE = auraContainerDisplay.ColorMode
@@ -24,6 +25,7 @@ local ENABLE_ROW = {
 		Key = "Arena",
 		Label = function() return L["Arena"] end,
 		Tooltip = function() return L["Enable this module in arena."] end,
+		Available = function() return wowEx:HasArena() end,
 	},
 	{
 		Key = "BattleGrounds",
@@ -60,7 +62,7 @@ local function ColorModeText(mode)
 	return L["None"]
 end
 
----Builds the five per-context enable checkboxes on one row, on the shared 5-column grid so
+---Builds the per-context enable checkboxes on one row, on the shared 5-column grid so
 ---checkbox rows line up across pages.
 ---@param parent table
 ---@param anchor table? Frame the row hangs below; nil starts the row at the parent's top left.
@@ -71,33 +73,37 @@ end
 function M:BuildEnableRow(parent, anchor, enabled, tooltips, settingsKey)
 	local columnWidth = mini:ColumnWidth(5, 0, 0)
 	local first
+	local column = 0
 
-	for index, entry in ipairs(ENABLE_ROW) do
-		local key = entry.Key
-		local checkbox = mini:Checkbox({
-			Parent = parent,
-			LabelText = entry.Label(),
-			Tooltip = tooltips and tooltips[key] or entry.Tooltip(),
-			GetValue = function()
-				return enabled[key]
-			end,
-			SetValue = function(value)
-				enabled[key] = value
-				config:Apply(settingsKey)
-			end,
-		})
+	for _, entry in ipairs(ENABLE_ROW) do
+		if not entry.Available or entry.Available() then
+			column = column + 1
+			local key = entry.Key
+			local checkbox = mini:Checkbox({
+				Parent = parent,
+				LabelText = entry.Label(),
+				Tooltip = tooltips and tooltips[key] or entry.Tooltip(),
+				GetValue = function()
+					return enabled[key]
+				end,
+				SetValue = function(value)
+					enabled[key] = value
+					config:Apply(settingsKey)
+				end,
+			})
 
-		if not first then
-			first = checkbox
+			if not first then
+				first = checkbox
 
-			if anchor then
-				checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
+				if anchor then
+					checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
+				else
+					checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+				end
 			else
-				checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+				checkbox:SetPoint("LEFT", parent, "LEFT", columnWidth * (column - 1), 0)
+				checkbox:SetPoint("TOP", first, "TOP", 0, 0)
 			end
-		else
-			checkbox:SetPoint("LEFT", parent, "LEFT", columnWidth * (index - 1), 0)
-			checkbox:SetPoint("TOP", first, "TOP", 0, 0)
 		end
 	end
 

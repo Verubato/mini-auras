@@ -336,6 +336,16 @@ function M:EnsureWindow()
 		},
 	}
 
+	-- No arena means nothing for the trinket page to configure.
+	if not wowEx:HasArena() then
+		for index, tab in ipairs(tabs) do
+			if tab.Key == "Trinkets" then
+				table.remove(tabs, index)
+				break
+			end
+		end
+	end
+
 	local contentPadding = 12
 	local windowInset = 2 + contentPadding * 2 + 14 -- border (2), padding (24), scrollbar (14)
 	local tabStripWidth = 135

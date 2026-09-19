@@ -10,6 +10,7 @@
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
+local wow = require("WowApi")
 
 local env = moduleEnv.build()
 
@@ -66,6 +67,20 @@ local function CountOn(frame)
 
 	for _, container in ipairs(containers) do
 		if AnchorOf(container) == frame then
+			count = count + 1
+		end
+	end
+
+	return count
+end
+
+---How many of the module's containers are anchored to anything at all.
+---@return number
+local function AnchoredCount()
+	local count = 0
+
+	for _, container in ipairs(containers) do
+		if AnchorOf(container) ~= nil then
 			count = count + 1
 		end
 	end
@@ -141,5 +156,19 @@ fw.describe("Trinkets - the arena's own cooldown feed", function()
 
 		fw.eq(CountOn(swapped), 1, "the icon is on the frame that is actually up")
 		fw.eq(CountOn(first), 0, "and off the one that is not")
+	end)
+end)
+
+fw.describe("Trinkets - a client without arena", function()
+	fw.it("switches the module off and takes its icons down", function()
+		wow.setBuildNumber(16001)
+		trinkets:Refresh()
+
+		fw.eq(AnchoredCount(), 0, "the disable edge tore every anchor down")
+
+		wow.setBuildNumber(120100)
+		trinkets:Refresh()
+
+		assert(AnchoredCount() >= 1, "the gate is read on every refresh, not just the first one")
 	end)
 end)

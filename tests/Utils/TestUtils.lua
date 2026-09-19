@@ -1,5 +1,5 @@
 -- Tier 2 pure-logic tests: SlotDistribution, ModuleUtil (enable gating + icon sizing),
--- WoWEx (12.1 build gate + styling restriction), Array, and AuraCategoryIds sanity.
+-- WoWEx (12.1 build gate + styling restriction + arena gate), Array, and AuraCategoryIds sanity.
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -594,6 +594,34 @@ fw.describe("WoWEx spell existence", function()
 		assert(wowEx:SpellExists(408) == true, "an id the client has")
 
 		_G.C_Spell = realCSpell
+	end)
+end)
+
+fw.describe("WoWEx arena gate", function()
+	local wowEx = loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
+
+	fw.it("reads the client build, not the file's load time", function()
+		wow.setBuildNumber(16001)
+		assert(wowEx:HasArena() == false, "the 1.x client has no arena")
+
+		wow.setBuildNumber(20000)
+		assert(wowEx:HasArena() == true, "arena's first client")
+
+		wow.setBuildNumber(120100)
+		assert(wowEx:HasArena() == true, "and every client after it")
+
+		wow.setBuildNumber(120005)
+	end)
+
+	fw.it("answers no when the client gives no number", function()
+		local realGetBuildInfo = _G.GetBuildInfo
+		_G.GetBuildInfo = function()
+			return "1.60.1"
+		end
+
+		assert(wowEx:HasArena() == false, "no fourth return to compare")
+
+		_G.GetBuildInfo = realGetBuildInfo
 	end)
 end)
 

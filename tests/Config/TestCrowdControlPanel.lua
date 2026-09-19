@@ -68,6 +68,23 @@ local function HasCheckbox(page, labelText)
 	return false
 end
 
+---The checkbox frame with the given caption, or nil. Same walk as HasCheckbox, but hands back
+---the frame so a test can read where the row anchored it.
+---@param page table
+---@param labelText string
+---@return table?
+local function CheckboxFrame(page, labelText)
+	for _, frame in ipairs(WowMock.Frames) do
+		local text = frame.Text
+
+		if text and text.GetText and text:GetText() == labelText and Inside(frame, page) then
+			return frame
+		end
+	end
+
+	return nil
+end
+
 ---The colour swatch sharing a control's own parent, which is how the CC pages keep the dropdown
 ---and the swatch it governs paired without a shared label to key off.
 ---@param page table
@@ -210,5 +227,50 @@ fw.describe("Config - the pet CC page's icon colours dropdown", function()
 		fw.eq(#dropdowns, 1, "the page has a single instance, so a single dropdown")
 
 		AssertSwatchTracksMode(page, dropdowns[1], addon.L["CC"])
+	end)
+end)
+
+fw.describe("Config - the enable row on a client without arena", function()
+	fw.it("offers all five contexts on a client with arena", function()
+		local addon = Load()
+		addon.Config:EnsureWindow()
+
+		local page = addon.Config.TabController:GetContent("PetCC")
+		fw.not_nil(page, "the pet CC tab exists")
+
+		assert(HasCheckbox(page, addon.L["World"]), "World checkbox present")
+		assert(HasCheckbox(page, addon.L["Arena"]), "Arena checkbox present")
+		assert(HasCheckbox(page, addon.L["Battlegrounds"]), "Battlegrounds checkbox present")
+		assert(HasCheckbox(page, addon.L["Dungeons"]), "Dungeons checkbox present")
+		assert(HasCheckbox(page, addon.L["Raid"]), "Raid checkbox present")
+
+		local raid = CheckboxFrame(page, addon.L["Raid"])
+		fw.eq(select(4, raid:GetPoint(1)), addon.Framework:ColumnWidth(5, 0, 0) * 4,
+			"the fifth column, with arena taking its own")
+	end)
+
+	fw.it("drops the arena switch and closes the gap", function()
+		local addon = Load()
+
+		WowMock.State.BuildNumber = 16001
+		WowMock.State.BuildVersion = "1.60.1"
+
+		addon.Config:EnsureWindow()
+
+		local page = addon.Config.TabController:GetContent("PetCC")
+		fw.not_nil(page, "the pet CC tab exists")
+
+		assert(not HasCheckbox(page, addon.L["Arena"]), "the arena switch is gone")
+		assert(HasCheckbox(page, addon.L["World"]), "World checkbox present")
+		assert(HasCheckbox(page, addon.L["Battlegrounds"]), "Battlegrounds checkbox present")
+		assert(HasCheckbox(page, addon.L["Dungeons"]), "Dungeons checkbox present")
+		assert(HasCheckbox(page, addon.L["Raid"]), "Raid checkbox present")
+
+		local raid = CheckboxFrame(page, addon.L["Raid"])
+		fw.eq(select(4, raid:GetPoint(1)), addon.Framework:ColumnWidth(5, 0, 0) * 3,
+			"the gap the arena switch left has closed")
+
+		WowMock.State.BuildNumber = 120100
+		WowMock.State.BuildVersion = "12.1.0"
 	end)
 end)

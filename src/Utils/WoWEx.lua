@@ -48,6 +48,18 @@ function M:SpellExists(spellId)
 	return C_Spell.DoesSpellExist(spellId) and true or false
 end
 
+-- Arena arrived with the 2.0 client, so this is the first interface number that has one.
+local ARENA_INTERFACE_VERSION = 20000
+
+---Whether the running client has arena at all. The 1.x client reports itself as mainline and
+---ships every arena function, so only the build says.
+---@return boolean
+function M:HasArena()
+	local interfaceVersion = select(4, GetBuildInfo())
+
+	return type(interfaceVersion) == "number" and interfaceVersion >= ARENA_INTERFACE_VERSION
+end
+
 -- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped
 -- answering, which silently emptied every spec lookup in the addon. The classic clients only
 -- ever had the globals. Resolved per call rather than bound once, because this file loads

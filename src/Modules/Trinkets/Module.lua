@@ -6,6 +6,7 @@ local eventGate = addon.Core.EventGate
 local moduleLifecycle = addon.Core.ModuleLifecycle
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local wowEx = addon.Utils.WoWEx
 
 -- Loaded before this file in TOC order.
 local display = addon.Modules.Trinkets.Display
@@ -104,7 +105,7 @@ end
 
 ---@return boolean
 local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.Trinkets)
+	return wowEx:HasArena() and moduleUtil:IsModuleEnabled(moduleName.Trinkets)
 end
 
 ---@param active boolean
