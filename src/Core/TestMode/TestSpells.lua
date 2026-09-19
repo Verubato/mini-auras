@@ -129,6 +129,72 @@ M.KickSpecIds = {
 	259, -- Assassination Rogue
 }
 
+-- Pain Suppression is not in the 1.x spell table, so its absence picks the older set below.
+local RETAIL_ONLY_SPELL_ID = 33206
+
+-- The same slots for a client without the retail ids. Each entry stands in for the same role as
+-- the retail entry in its position, so the previews read the same way on both.
+local CLASSIC = {
+	CrowdControl = {
+		{ SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR },     -- Kidney Shot
+		{ SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR },   -- Fear
+		{ SpellId = 19386, DispelColor = DEBUFF_TYPE_POISON_COLOR }, -- Wyvern Sting
+	},
+	Defensive = {
+		{ SpellId = 871 },  -- Shield Wall
+		{ SpellId = 1022 }, -- Blessing of Protection
+	},
+	Important = {
+		{ SpellId = 1719 },  -- Recklessness
+		{ SpellId = 13750 }, -- Adrenaline Rush
+	},
+	Nameplates = {
+		CrowdControl = { 408, 5782 },
+		Defensive = { 871, 1022 },
+		Important = { 1719, 13750 },
+		DispelColors = {
+			[408] = DEBUFF_TYPE_NONE_COLOR,
+			[5782] = DEBUFF_TYPE_MAGIC_COLOR,
+		},
+	},
+	FrameAuras = {
+		Buffs = { 774, 8936, 139, 17 }, -- Rejuvenation, Regrowth, Renew, Power Word: Shield
+		Debuffs = { 12294, 589, 172, 980, 348 }, -- Mortal Strike, Shadow Word: Pain, Corruption, Curse of Agony, Immolate
+		DispelColors = {
+			[12294] = DEBUFF_TYPE_NONE_COLOR,
+			[589] = DEBUFF_TYPE_MAGIC_COLOR,
+			[172] = DEBUFF_TYPE_MAGIC_COLOR,
+			[980] = DEBUFF_TYPE_CURSE_COLOR,
+			[348] = DEBUFF_TYPE_MAGIC_COLOR,
+		},
+		CrowdControl = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR },
+		Important = 1719,  -- Recklessness
+		Defensive = 871,   -- Shield Wall
+		Purgeable = 1459,  -- Arcane Intellect
+	},
+	Alerts = {
+		Defensive = {
+			{ SpellId = 11958, Class = "MAGE" },   -- Ice Block
+			{ SpellId = 642, Class = "PALADIN" },  -- Divine Shield
+			{ SpellId = 871, Class = "WARRIOR" },  -- Shield Wall
+		},
+		Important = {
+			{ SpellId = 11129, Class = "MAGE" },    -- Combustion
+			{ SpellId = 13750, Class = "ROGUE" },   -- Adrenaline Rush
+			{ SpellId = 1719, Class = "WARRIOR" },  -- Recklessness
+		},
+	},
+	-- Mage and rogue lead because Counterspell and Kick keep their ids here. The hunter goes last,
+	-- which is the slot the bar draws unidentified.
+	KickSpecIds = { 62, 259, 254 },
+}
+
+if not wowEx:SpellExists(RETAIL_ONLY_SPELL_ID) then
+	for key, value in pairs(CLASSIC) do
+		M[key] = value
+	end
+end
+
 ---Fills a container's slots with fake running-cooldown icons for the given test spells and
 ---returns the next free slot, so a second category (or a trailing SetSlotUnused sweep) can pick
 ---up where it stopped. The one preview renderer: every module draws the same row of fake icons,
