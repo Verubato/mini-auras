@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local wowEx = addon.Utils.WoWEx
 
 -- The addon's central spell-ID list: every tracked spell, grouped by aura category.
 --
@@ -1333,6 +1334,19 @@ addon.Core.AuraCategoryIds = {
 		-- General
 		[377362] = "GENERAL", -- Precognition
 	},
+	-- Cooldowns worth tracking on the 1.x Classic client only.
+	ClassicImportant = {
+		[11129] = "MAGE", -- Combustion
+		[12042] = "MAGE", -- Arcane Power
+		[11426] = "MAGE", -- Ice Barrier
+		[11958] = "MAGE", -- Ice Block
+		[417141] = "DRUID", -- Berserk
+		[1311015] = "PALADIN", -- Templar's Bulwark
+		[13877] = "ROGUE", -- Blade Flurry
+		[425336] = "SHAMAN", -- Rage of the Farseer
+		[12328] = "WARRIOR", -- Death Wish
+		[12292] = "WARRIOR", -- Sweeping Strikes
+	},
 	-- Important: specials + offensive cooldowns (44 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
@@ -1426,8 +1440,19 @@ addon.Core.AuraCategoryIds = {
 	},
 }
 
--- Merge both unflagged halves so there is still one searchable superset.
 local categoryIds = addon.Core.AuraCategoryIds
+
+-- A Classic spell counts as important there, even one retail files as a defensive or ships off.
+if wowEx:IsClassic() then
+	for spellId, class in pairs(categoryIds.ClassicImportant) do
+		categoryIds.UnflaggedImportant[spellId] = true
+		categoryIds.UnflaggedDefensive[spellId] = nil
+		categoryIds.DefaultOff[spellId] = nil
+		categoryIds.Classes[spellId] = class
+	end
+end
+
+-- Merge both unflagged halves so there is still one searchable superset.
 categoryIds.Unflagged = {}
 
 for _, ids in ipairs({ categoryIds.UnflaggedImportant, categoryIds.UnflaggedDefensive }) do
@@ -1447,3 +1472,4 @@ end
 ---@field TtsDefaultOff table<number, boolean> Spells the TTS tab starts with switched off.
 ---@field DefaultOff table<number, boolean>
 ---@field Classes table<number, string>
+---@field ClassicImportant table<number, string> Spell id to class, folded in on the 1.x client.

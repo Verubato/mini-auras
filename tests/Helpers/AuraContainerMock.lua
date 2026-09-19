@@ -885,6 +885,9 @@ function M.loadDisplay()
 				HasPandemicRegions = function()
 					return true
 				end,
+				IsClassic = function()
+					return false
+				end,
 			},
 		},
 		Core = {},

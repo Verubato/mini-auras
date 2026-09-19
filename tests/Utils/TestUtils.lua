@@ -625,6 +625,34 @@ fw.describe("WoWEx arena gate", function()
 	end)
 end)
 
+fw.describe("WoWEx:IsClassic", function()
+	local wowEx = loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
+
+	fw.it("is the 1.x line and nothing after it", function()
+		wow.setBuildNumber(16001)
+		assert(wowEx:IsClassic() == true, "the Classic client")
+
+		wow.setBuildNumber(20000)
+		assert(wowEx:IsClassic() == false, "the first client with arena")
+
+		wow.setBuildNumber(120100)
+		assert(wowEx:IsClassic() == false, "retail")
+
+		wow.setBuildNumber(120005)
+	end)
+
+	fw.it("answers no when the client gives no number", function()
+		local realGetBuildInfo = _G.GetBuildInfo
+		_G.GetBuildInfo = function()
+			return "1.60.1"
+		end
+
+		assert(wowEx:IsClassic() == false, "an unknown client is taken as retail")
+
+		_G.GetBuildInfo = realGetBuildInfo
+	end)
+end)
+
 -- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped
 -- answering, which emptied every spec lookup in the addon, so profiles stopped auto switching and
 -- the kick tracker errored. The classic clients only ever had the globals, so both shapes have
@@ -683,7 +711,8 @@ fw.describe("WoWEx specialization lookup", function()
 end)
 
 fw.describe("AuraCategoryIds", function()
-	local data = loadModule("src/Core/Auras/AuraCategoryIds.lua", newAddon({})).Core.AuraCategoryIds
+	local addon = loadModule("src/Utils/WoWEx.lua", newAddon({}))
+	local data = loadModule("src/Core/Auras/AuraCategoryIds.lua", addon).Core.AuraCategoryIds
 
 	local function count(t)
 		local n = 0

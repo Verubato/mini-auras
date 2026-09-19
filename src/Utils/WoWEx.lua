@@ -51,13 +51,28 @@ end
 -- Arena arrived with the 2.0 client, so this is the first interface number that has one.
 local ARENA_INTERFACE_VERSION = 20000
 
+---@return number?
+local function InterfaceVersion()
+	local interfaceVersion = select(4, GetBuildInfo())
+
+	return type(interfaceVersion) == "number" and interfaceVersion or nil
+end
+
 ---Whether the running client has arena at all. The 1.x client reports itself as mainline and
 ---ships every arena function, so only the build says.
 ---@return boolean
 function M:HasArena()
-	local interfaceVersion = select(4, GetBuildInfo())
+	local interfaceVersion = InterfaceVersion()
 
-	return type(interfaceVersion) == "number" and interfaceVersion >= ARENA_INTERFACE_VERSION
+	return interfaceVersion ~= nil and interfaceVersion >= ARENA_INTERFACE_VERSION
+end
+
+---Whether this is the 1.x Classic client, which carries spells retail has since dropped.
+---@return boolean
+function M:IsClassic()
+	local interfaceVersion = InterfaceVersion()
+
+	return interfaceVersion ~= nil and interfaceVersion < ARENA_INTERFACE_VERSION
 end
 
 -- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped
