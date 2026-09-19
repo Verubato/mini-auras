@@ -738,6 +738,10 @@ function M.reset()
 end
 
 function M.setup()
+	-- Earlier files' parked workers each pin a whole addon load, which the 32-bit runner
+	-- cannot hold across the suite.
+	updaters = {}
+
 	local previousCreateFrame = _G.CreateFrame
 
 	_G.CreateFrame = function(frameType, name, parent, template)
