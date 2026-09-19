@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.41.0
+
+Added WoW Forever support.
+
 ## 5.40.1
 
 - Fixed crowd control such as Cyclone and Bash missing from frame aura debuffs.

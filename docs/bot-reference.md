@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.40.1. Supported interface versions: 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
+Addon version 5.41.0. Supported interface versions: 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -1365,6 +1365,14 @@ the Nameplates options Scale with Nameplate and Anchor to Health Bar.
 
 **FrameSort**: listed as an optional dependency; MiniAuras rebuilds its frame-attached
 displays when frames are re-sorted.
+
+**WoW Forever (Classic 1.60)**: supported from 5.41.0. The client runs the 12.1 interface, so
+every rule above about secret aura data applies there too. Spells and classes the client does not
+have are left out of the config spell lists, the Party Trinkets and Enemy Kicks pages and the
+arena stand-in frames in test mode stay hidden because the client has no arena, and the starter
+Personal Auras groups are not seeded. Ten Classic cooldowns are tracked as important auras there
+only: Combustion, Arcane Power, Ice Barrier, Ice Block, Berserk, Templar's Bulwark, Blade Flurry,
+Rage of the Farseer, Death Wish, and Sweeping Strikes.
 
 ## Public API (for addon authors)
 
