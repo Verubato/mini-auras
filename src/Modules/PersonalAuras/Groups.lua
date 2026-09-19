@@ -5,6 +5,7 @@ local artTextures = addon.Core.ArtTextures
 local sounds = addon.Core.Sounds
 local units = addon.Utils.UnitUtil
 local changeStamp = addon.Utils.ChangeStamp
+local wowEx = addon.Utils.WoWEx
 
 -- The shape of a personal aura group, shared by the display, the options page and the import path.
 --
@@ -549,11 +550,33 @@ function M:Normalise(group)
 	return group
 end
 
+---@param options PersonalAurasModuleOptions
+---@param template table One entry of the starter list.
+local function SeedGroup(options, template)
+	local group = M:NewGroup(options, template.Name)
+
+	group.Spells = { template.SpellId }
+	group.Icons.Glow = true
+	group.Icons.Border = true
+
+	if template.Color then
+		group.Icons.Color.R = template.Color.R
+		group.Icons.Color.G = template.Color.G
+		group.Icons.Color.B = template.Color.B
+	end
+
+	group.Sound.Applied = template.Sound or NO_SOUND
+	group.Position.X = DEFAULT_ROW_X
+	group.Position.Y = DEFAULT_ROW_Y
+
+	options.Groups[#options.Groups + 1] = M:Normalise(group)
+end
+
 ---Adds the groups a profile starts with, once. The flag is what stops them coming back after they
 ---are deleted, and an install updating from an older version has no flag, so it seeds on the next
----load like a fresh one.
+---load like a fresh one. A spell the client does not have gets no group.
 ---@param options PersonalAurasModuleOptions
----@return boolean seeded True only on the run that created them.
+---@return boolean seeded True only on the run that created at least one.
 function M:SeedDefaults(options)
 	if options.SeededDefaults then
 		return false
@@ -561,27 +584,16 @@ function M:SeedDefaults(options)
 
 	options.SeededDefaults = true
 
+	local seeded = false
+
 	for _, template in ipairs(DEFAULT_GROUPS) do
-		local group = M:NewGroup(options, template.Name)
-
-		group.Spells = { template.SpellId }
-		group.Icons.Glow = true
-		group.Icons.Border = true
-
-		if template.Color then
-			group.Icons.Color.R = template.Color.R
-			group.Icons.Color.G = template.Color.G
-			group.Icons.Color.B = template.Color.B
+		if wowEx:SpellExists(template.SpellId) then
+			seeded = true
+			SeedGroup(options, template)
 		end
-
-		group.Sound.Applied = template.Sound or NO_SOUND
-		group.Position.X = DEFAULT_ROW_X
-		group.Position.Y = DEFAULT_ROW_Y
-
-		options.Groups[#options.Groups + 1] = M:Normalise(group)
 	end
 
-	return true
+	return seeded
 end
 
 ---Copies a group, giving it a new id and a name that says what it came from. The copy lands

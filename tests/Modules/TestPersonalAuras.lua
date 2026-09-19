@@ -260,6 +260,39 @@ fw.describe("PersonalAuras - the groups a profile starts with", function()
 		assert(withSound == 1, "Precognition, but not Shroud")
 	end)
 
+	fw.it("leaves out a starter whose spell this client does not have", function()
+		local fresh = FreshOptions()
+		local exists = _G.C_Spell.DoesSpellExist
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			return spellId ~= 377362
+		end
+
+		local seeded = groups:SeedDefaults(fresh)
+
+		_G.C_Spell.DoesSpellExist = exists
+
+		assert(seeded, "one of them still exists")
+		assert(#fresh.Groups == 1 and fresh.Groups[1].Name == "Shroud", "only the one the client has")
+	end)
+
+	fw.it("seeds nothing on a client that has neither", function()
+		local fresh = FreshOptions()
+		local exists = _G.C_Spell.DoesSpellExist
+
+		_G.C_Spell.DoesSpellExist = function()
+			return false
+		end
+
+		local seeded = groups:SeedDefaults(fresh)
+
+		_G.C_Spell.DoesSpellExist = exists
+
+		assert(not seeded, "nothing was created")
+		assert(#fresh.Groups == 0, "so the profile starts empty")
+		assert(fresh.SeededDefaults, "and stays that way once the flag is set")
+	end)
+
 	fw.it("hands out ids no later group can reuse", function()
 		local fresh = FreshOptions()
 
