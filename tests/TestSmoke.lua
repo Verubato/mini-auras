@@ -38,6 +38,20 @@ local function CheckTestFrames(context)
 	fw.truthy(not arenaFrames[1]:IsShown(), "stopping puts the arena stand-ins away")
 	fw.truthy(not partyFrames[1]:IsShown(), "and the party ones")
 	fw.truthy(not frames:GetTestArenaFrameContainer():IsShown(), "container included")
+
+	-- A client without arena keeps the enemy column down even though nothing real is on screen.
+	local WowMock = require("WowMock")
+	local buildNumber = WowMock.State.BuildNumber
+
+	WowMock.State.BuildNumber = 16001
+	testMode:StartTesting()
+
+	fw.truthy(partyFrames[1]:IsShown(), "the party stand-ins still come up without arena")
+	fw.truthy(not arenaFrames[1]:IsShown(), "but the arena ones stay hidden")
+	fw.truthy(not frames:GetTestArenaFrameContainer():IsShown(), "container included")
+
+	testMode:StopTesting()
+	WowMock.State.BuildNumber = buildNumber
 end
 
 smoke.Run("MiniAuras", { extra = CheckTestFrames })

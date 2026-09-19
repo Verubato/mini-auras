@@ -1,6 +1,7 @@
 local addonName, addon = ...
 local M = addon.Core.Frames
 local fontUtil = addon.Utils.FontUtil
+local wowEx = addon.Utils.WoWEx
 local MAX_TEST_FRAMES = 3
 -- What a stand-in falls back to when no real frame has been built for it to copy.
 local FRAME_WIDTH, FRAME_HEIGHT = 144, 72
@@ -367,6 +368,9 @@ end
 
 ---@param shown boolean
 function M:SetTestArenaFramesShown(shown)
+	-- A client with no arena has no enemy column to preview.
+	shown = shown and wowEx:HasArena()
+
 	if shown then
 		LayoutTestFrames()
 	end
