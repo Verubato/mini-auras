@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.42.0
+
+- Added a Dispel colours option to Personal Auras that colours the border and glow by the aura's dispel type.
+
 ## 5.41.0
 
 Added WoW Forever support.
