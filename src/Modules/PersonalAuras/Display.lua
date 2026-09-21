@@ -68,6 +68,15 @@ local artSpecScratch = {}
 local DEFAULT_TEXT_COLOR = { R = 1, G = 1, B = 1 }
 -- What the stand-in icons show for a centred stack count, where live icons show the real one.
 local PREVIEW_STACK_COUNT = "3"
+-- A user's spell list carries no dispel types, so the stand-ins walk the game's palette instead.
+local PREVIEW_DISPEL_PALETTE = {
+	DEBUFF_TYPE_MAGIC_COLOR,
+	DEBUFF_TYPE_CURSE_COLOR,
+	DEBUFF_TYPE_DISEASE_COLOR,
+	DEBUFF_TYPE_POISON_COLOR,
+	DEBUFF_TYPE_BLEED_COLOR,
+	DEBUFF_TYPE_NONE_COLOR,
+}
 
 ---@type Db
 local db
@@ -132,6 +141,12 @@ local function BuildStyle(group)
 	local style = auraContainerDisplay:BuildStandardStyle(icons, icons.FontScale)
 
 	style.Border = icons.Border
+	-- The engine paints the dispel palette onto the border and hangs the glow's tint off that
+	-- same registration, so with no border shown there is nothing for the palette to colour.
+	style.ColorByDispelType = icons.ColorByDispelType == true and icons.Border == true
+	-- Most of a player's own buffs carry no dispel type, so without this the palette would hide
+	-- their ring and glow.
+	style.BorderWithoutDispelType = true
 	-- The same colour drives the glow, the border and a bar's fill, so one swatch covers a group
 	-- whichever shape it draws.
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
@@ -673,6 +688,12 @@ local function RenderTestIcons(state, entry)
 	-- That one is withheld unless a glow or a border asked for it, because for an icon a colour is
 	-- what draws the border in the first place.
 	local color = drawsBars and BarColor(group) or moduleUtil:GetIconColor(group.Icons)
+	local paletteOn = group.Icons.ColorByDispelType == true and group.Icons.Border == true
+	-- On an icon the palette takes over the ring and the glow, so the group colour steps aside.
+	-- A bar's fill keeps it and only the outline changes.
+	if paletteOn and not drawsBars then
+		color = nil
+	end
 	local barTexture = group.Icons.BarTexture
 	-- The live shape draws neither art nor a swipe, and keeps its countdown whatever the switches
 	-- say, so a stand-in that differed would be positioned against a look the group cannot have.
@@ -701,6 +722,8 @@ local function RenderTestIcons(state, entry)
 			ShowNumbers = textOnly,
 			Glow = group.Icons.Glow,
 			Color = color,
+			ColorByDispelType = paletteOn,
+			DispelPalette = PREVIEW_DISPEL_PALETTE,
 			TextColor = textColor,
 			CenterStackText = centerStacks and PREVIEW_STACK_COUNT or nil,
 			FontScale = fontScale,
@@ -714,6 +737,9 @@ local function RenderTestIcons(state, entry)
 		local now = GetTime()
 
 		for slot = 1, container.Count do
+			local dispelColor = paletteOn
+				and PREVIEW_DISPEL_PALETTE[(slot - 1) % #PREVIEW_DISPEL_PALETTE + 1] or nil
+
 			container:SetSlot(slot, {
 				Texture = texture,
 				DurationObject = wowEx:CreateDuration(now, 15),
@@ -724,7 +750,8 @@ local function RenderTestIcons(state, entry)
 				HideNumbers = hideNumbers,
 				ShowNumbers = textOnly,
 				Glow = group.Icons.Glow,
-				Color = color,
+				Color = color or dispelColor,
+				BorderColor = dispelColor,
 				TextColor = textColor,
 				ChargeText = centerStacks and PREVIEW_STACK_COUNT or nil,
 				ChargeTextCenter = centerStacks,

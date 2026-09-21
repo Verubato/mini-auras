@@ -31,6 +31,7 @@ L:RegisterLocale("itIT", function() return {
 	["Custom"] = "Personalizzati",
 	["Show border"] = "Mostra bordo",
 	["Draw a border around the icons."] = "Disegna un bordo attorno alle icone.",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "Colora il bordo, e con esso il bagliore, in base al tipo di dissolvimento dell'aura invece del colore del gruppo, es. blu per la magia. Richiede Mostra bordo.",
 	["Colour"] = "Colore",
 	["Change the colour of the icon's glow and border."] = "Cambia il colore del bagliore e del bordo dell'icona.",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "Cambia il colore del bagliore e del bordo dell'icona, del riempimento di una barra o della tinta di una texture.",

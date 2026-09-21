@@ -134,6 +134,12 @@ function ui.BuildAppearanceTab(ctx)
 			Set = function(group, value) group.Icons.Border = value end,
 		},
 		{
+			Label = L["Dispel colours"],
+			Tooltip = L["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."],
+			Get = function(group) return group.Icons.ColorByDispelType end,
+			Set = function(group, value) group.Icons.ColorByDispelType = value end,
+		},
+		{
 			Bars = false, Text = false,
 			Label = L["Reverse swipe"], Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 			Get = function(group) return group.Icons.ReverseCooldown end,

@@ -31,6 +31,7 @@ L:RegisterLocale("deDE", function() return {
 	["Custom"] = "Eigene",
 	["Show border"] = "Rahmen",
 	["Draw a border around the icons."] = "Zeichnet einen Rahmen um die Symbole.",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "Färbt den Rahmen, und damit auch das Leuchten, nach dem Banntyp der Aura statt in der Gruppenfarbe, z. B. Blau für Magie. Benötigt Rahmen.",
 	["Colour"] = "Farbe",
 	["Change the colour of the icon's glow and border."] = "Ändert die Farbe des Leuchtens und Rahmens des Symbols.",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "Ändert die Farbe von Leuchten und Rahmen des Symbols, der Füllung einer Leiste oder der Tönung einer Textur.",

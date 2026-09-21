@@ -32,6 +32,7 @@ L:RegisterLocale("esMX", function() return {
 	["Custom"] = "Personalizados",
 	["Show border"] = "Mostrar borde",
 	["Draw a border around the icons."] = "Dibuja un borde alrededor de los iconos.",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "Colorea el borde, y con él el brillo, según el tipo de disipación del aura en lugar del color del grupo, p. ej. azul para magia. Requiere Mostrar borde.",
 	["Colour"] = "Color",
 	["Change the colour of the icon's glow and border."] = "Cambia el color del brillo y el borde del icono.",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "Cambia el color del brillo y el borde del icono, del relleno de una barra o del tinte de una textura.",

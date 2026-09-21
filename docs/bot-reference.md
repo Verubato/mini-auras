@@ -229,7 +229,11 @@ category on or off, applies in combat as normal.
 - **Flat colour** (Trinkets, Personal Auras): the user picks one colour for the glow and
   border, because these icons carry no category to derive one from. Personal Auras carries a
   second, independent **Text colour** for its countdown, stack count and bar spell name; see
-  its Appearance tab.
+  its Appearance tab. Since 5.42.0 its **Dispel colours** switch hands the border, and the
+  glow with it, to the game's dispel palette instead; it needs **Show border** on, and an
+  aura with no dispel type keeps its ring in the palette's "None" colour. The options-page
+  preview cannot read a dispel type off a spell list, so its stand-ins walk the palette in
+  order (magic, curse, disease, poison, bleed, none) to show what the rings will look like.
 - **Kicker's class** (Enemy Kicks, since 5.38.0): the border takes the interrupter's class
   colour. It works because the class token goes straight to the game's own colour call without
   the addon reading it. Since 5.40.0 the panel's **Show border** switch turns it off.
@@ -512,6 +516,7 @@ Everything else here belongs to icons and bars.
 | Bar Texture | any shipped/LibSharedMedia bar texture (bars only) | Blizzard Raid Bar |
 | Glow icons | on/off (icons only) | off (starter groups: on) |
 | Show border | on/off | off (starter groups: on) |
+| Dispel colours | on/off; needs Show border, colours the border and glow by dispel type, the preview cycles the palette | off |
 | Reverse swipe | on/off (icons only) | on |
 | Show swipe | on/off (icons only); off drops the cooldown pie | on |
 | Show numbers | on/off (icons only); off drops the countdown text | on |

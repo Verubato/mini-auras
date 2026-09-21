@@ -31,6 +31,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Custom"] = "Свои",
 	["Show border"] = "Граница",
 	["Draw a border around the icons."] = "Рисует границу вокруг значков.",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "Окрашивает границу, а вместе с ней и свечение, по типу рассеивания ауры вместо цвета группы, например синий для магии. Требует включённой Границы.",
 	["Colour"] = "Цвет",
 	["Change the colour of the icon's glow and border."] = "Изменяет цвет свечения и границы значка.",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "Меняет цвет свечения и рамки значка, заливки полосы или оттенка текстуры.",

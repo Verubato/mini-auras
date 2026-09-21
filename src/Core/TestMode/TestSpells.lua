@@ -208,7 +208,7 @@ end
 --- ReverseCooldown/HideIcon/HideSwipe/HideNumbers/ShowNumbers/Glow/FontScale passed through
 --- to SetSlot;
 --- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead, or
---- with DispelColors[spellId] for a bare id;
+--- with DispelColors[spellId] for a bare id, or round DispelPalette by slot for a spell in neither;
 --- TextColor tints the countdown and any stand-in count, replacing the global colour-by-time
 --- while it is set;
 --- CenterStackText puts that text centred on each icon in place of the countdown (the icon
@@ -221,7 +221,8 @@ end
 --- row, which Repeat then comes round past;
 --- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s);
 --- BarTexture and Border are passed to a BarSlotContainer's fill and outline (the icon
---- containers ignore both, drawing their border off Color instead);
+--- containers ignore both, drawing their border off Color instead), and under ColorByDispelType
+--- a bar keeps Color on its fill with the dispel colour on its outline alone;
 --- SpellName false leaves a bar's fill unlabelled (default on).
 ---@return number nextSlot
 function M:FillContainer(container, spells, startSlot, options)
@@ -264,14 +265,18 @@ function M:FillContainer(container, spells, startSlot, options)
 				startTime = now - (i - 1) * 0.5
 			end
 
-			local color = options.Color
-			if not color and options.ColorByDispelType then
+			local dispelColor
+			if options.ColorByDispelType then
 				if type(spell) == "table" then
-					color = spell.DispelColor
+					dispelColor = spell.DispelColor
 				elseif options.DispelColors then
-					color = options.DispelColors[spellId]
+					dispelColor = options.DispelColors[spellId]
+				end
+				if not dispelColor and options.DispelPalette then
+					dispelColor = options.DispelPalette[(slot - startSlot) % #options.DispelPalette + 1]
 				end
 			end
+			local color = options.Color or dispelColor
 
 			container:SetSlot(slot, {
 				Texture = texture,
@@ -284,6 +289,7 @@ function M:FillContainer(container, spells, startSlot, options)
 				ShowNumbers = options.ShowNumbers,
 				Glow = options.Glow,
 				Color = color,
+				BorderColor = dispelColor,
 				TextColor = options.TextColor,
 				ChargeText = options.CenterStackText,
 				ChargeTextCenter = options.CenterStackText ~= nil,

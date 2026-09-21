@@ -31,6 +31,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Custom"] = "自訂",
 	["Show border"] = "顯示邊框",
 	["Draw a border around the icons."] = "在圖示周圍繪製邊框。",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "按光環的驅散類型而非群組顏色為邊框以及發光著色，例如魔法為藍色。需要開啟顯示邊框。",
 	["Colour"] = "顏色",
 	["Change the colour of the icon's glow and border."] = "更改圖示發光和邊框的顏色。",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "更改圖示發光和邊框的顏色、狀態條填滿的顏色，或材質的染色。",

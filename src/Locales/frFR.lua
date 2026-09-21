@@ -31,6 +31,7 @@ L:RegisterLocale("frFR", function() return {
 	["Custom"] = "Personnalisés",
 	["Show border"] = "Bordure",
 	["Draw a border around the icons."] = "Dessine une bordure autour des icônes.",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "Colore la bordure, et la lueur avec elle, selon le type de dissipation de l'aura au lieu de la couleur du groupe, p. ex. bleu pour la magie. Nécessite Bordure.",
 	["Colour"] = "Couleur",
 	["Change the colour of the icon's glow and border."] = "Change la couleur de la lueur et de la bordure de l'icône.",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "Change la couleur de la lueur et de la bordure de l'icône, du remplissage d'une barre ou de la teinte d'une texture.",

@@ -329,6 +329,7 @@ function M:SetSlot(slotIndex, options)
 	-- Both texts are sized in the layout, which a slot already in use would not otherwise run.
 	local rescale = slot.FontScale ~= options.FontScale
 	local color = options.Color
+	local borderColor = options.BorderColor or color
 
 	slot.IsUsed = true
 	slot.FontScale = options.FontScale
@@ -364,7 +365,7 @@ function M:SetSlot(slotIndex, options)
 	-- Driven by the option alone, unlike the icon containers, where a border is what a colour
 	-- draws and a running glow suppresses it. A bar has no glow and always carries its colour.
 	outline:Apply(slot.Border, options.Border == true,
-		color and color.r, color and color.g, color and color.b)
+		borderColor and borderColor.r, borderColor and borderColor.g, borderColor and borderColor.b)
 
 	local expiry = options.DurationObject and wowEx:GetDurationExpiry(options.DurationObject)
 
@@ -414,7 +415,8 @@ end
 ---@field Texture string|number Icon texture path or file ID.
 ---@field Name string? Text shown inside the fill.
 ---@field DurationObject table? A WoWEx:CreateDuration object; without one the bar sits full.
----@field Color table? {r, g, b} fill colour, which the border takes too.
+---@field Color table? {r, g, b} fill colour.
+---@field BorderColor table? {r, g, b} for the outline alone, where it differs from the fill.
 ---@field TextColor table? {r, g, b} for the name and countdown text; white leaves them as they come.
 ---@field Border boolean? Draw a border around the bar.
 ---@field FontScale number? Multiplier on both text sizes.

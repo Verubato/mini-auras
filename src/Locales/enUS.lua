@@ -32,6 +32,7 @@ L:SetDefaultStrings({
 	["Custom"] = "Custom",
 	["Show border"] = "Show border",
 	["Draw a border around the icons."] = "Draw a border around the icons.",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on.",
 	["Colour"] = "Colour",
 	["Change the colour of the icon's glow and border."] = "Change the colour of the icon's glow and border.",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "Change the colour of the icon's glow and border, a bar's fill, or a texture's tint.",

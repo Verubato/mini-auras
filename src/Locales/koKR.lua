@@ -31,6 +31,7 @@ L:RegisterLocale("koKR", function() return {
 	["Custom"] = "사용자 지정",
 	["Show border"] = "테두리 표시",
 	["Draw a border around the icons."] = "아이콘 주위에 테두리를 그립니다.",
+	["Colour the border, and the glow with it, by the aura's dispel type instead of the group colour, e.g. blue for magic. Needs Show border on."] = "테두리와 발광을 그룹 색상 대신 오라의 해제 유형에 따라 칠합니다. 예: 마법은 파란색. 테두리 표시가 켜져 있어야 합니다.",
 	["Colour"] = "색상",
 	["Change the colour of the icon's glow and border."] = "아이콘의 발광과 테두리 색상을 변경합니다.",
 	["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."] = "아이콘의 발광과 테두리, 막대의 채움, 텍스처의 색조 색상을 변경합니다.",

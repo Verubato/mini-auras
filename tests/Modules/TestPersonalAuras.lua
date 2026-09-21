@@ -122,6 +122,7 @@ fw.describe("PersonalAuras - group defaults", function()
 		assert(group.Icons.Size > 0, "an icon size")
 		assert(group.Icons.FontScale == 1.0, "text left at the size the icon would draw it anyway")
 		assert(group.Icons.ReverseCooldown, "the swipe fills up, which reads as time running out")
+		assert(group.Icons.ColorByDispelType == false, "the ring keeps the group colour until asked")
 		assert(group.Enabled, "switched on")
 		assert(group.Position.Y > 0, "placed above the middle of the screen, not on top of it")
 	end)
@@ -4042,6 +4043,152 @@ fw.describe("PersonalAuras - the countdown numbers on an icon group", function()
 
 		assert(CooldownOnPlayer()._lastArgs.SetHideCountdownNumbers[1] == false,
 			"an untouched group counts down")
+	end)
+end)
+
+---The live display drawing a screen group on the player, with its first helpful button and that
+---button's widgets.
+---@param group PersonalAuraGroup
+---@return AuraContainerDisplay, table, table
+local function PlayerDisplay(group)
+	local entry = display:GetStates()[group.Id].Screen
+	local button = ContainerFor("player")._groups.helpful.buttons[1]
+
+	return entry.Display, button, entry.Display.ButtonWidgets[button]
+end
+
+fw.describe("PersonalAuras - dispel colours on an icon group", function()
+	fw.it("keeps the group colour on a group that left the switch alone", function()
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Glow = true, Border = true },
+		})
+
+		group.Icons.Color.R, group.Icons.Color.G, group.Icons.Color.B = 0.2, 0.4, 0.8
+		module:Refresh()
+
+		local live, button, widgets = PlayerDisplay(group)
+
+		assert(live.Style.ColorByDispelType == false, "the palette stays off")
+		assert(live.Style.Border == true, "the ring is still drawn")
+		assert(live.Style.GlowColorR == 0.2, "in the group's own colour")
+		assert(widgets.DispelBorder == false, "and nothing was handed to the engine to tint")
+		assert(button._calls.AddDispelTypeTexture == nil, "so no texture was registered")
+	end)
+
+	fw.it("hands the border and the glow to the game's palette when asked", function()
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Glow = true, Border = true, ColorByDispelType = true },
+		})
+
+		module:Refresh()
+
+		local live, button, widgets = PlayerDisplay(group)
+
+		assert(live.Style.ColorByDispelType == true, "the palette is on")
+		assert(live.Style.BorderWithoutDispelType == true,
+			"and an aura with no dispel type keeps its ring rather than losing it")
+		-- The paint code opts a group out of the palette the moment it carries a tint of its own,
+		-- so the fixed colour has to stay on the style and off both groups.
+		assert(live.GroupsByKey.helpful.GlowColor == nil, "the helpful group carries no tint")
+		assert(live.GroupsByKey.harmful.GlowColor == nil, "nor does the harmful one")
+		assert(widgets.DispelBorder == true, "the ring is registered with the engine")
+		assert(widgets.DispelGlowTint == true, "and the glow follows it")
+		assert(button._calls.AddDispelTypeTexture == 2, "one registration each")
+	end)
+
+	fw.it("does nothing without a border to colour", function()
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Glow = true, Border = false, ColorByDispelType = true },
+		})
+
+		module:Refresh()
+
+		local live, _, widgets = PlayerDisplay(group)
+
+		assert(live.Style.ColorByDispelType == false, "the palette has nothing to paint")
+		assert(widgets.DispelBorder == false, "so the engine is not asked to")
+	end)
+
+	fw.it("walks the stand-in icons round the palette, since a spell list has no types to read", function()
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK, POLYMORPH },
+			Icons = { Glow = true, Border = true, ColorByDispelType = true },
+		})
+
+		group.Icons.Color.R, group.Icons.Color.G, group.Icons.Color.B = 0.2, 0.4, 0.8
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local slots = display:GetStates()[group.Id].Screen.Test.Slots
+		local first = slots[1].Container.Border._lastArgs.SetVertexColor
+		local second = slots[2].Container.Border._lastArgs.SetVertexColor
+
+		assert(first[1] == DEBUFF_TYPE_MAGIC_COLOR.r and first[2] == DEBUFF_TYPE_MAGIC_COLOR.g
+			and first[3] == DEBUFF_TYPE_MAGIC_COLOR.b, "the first ring is magic, not the group colour")
+		assert(second[1] == DEBUFF_TYPE_CURSE_COLOR.r and second[2] == DEBUFF_TYPE_CURSE_COLOR.g
+			and second[3] == DEBUFF_TYPE_CURSE_COLOR.b, "and the next moves along the palette")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("keeps a stand-in bar's fill in the group colour under the palette", function()
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = "BAR", Border = true, ColorByDispelType = true },
+		})
+
+		group.Icons.Color.R, group.Icons.Color.G, group.Icons.Color.B = 0.2, 0.4, 0.8
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local slot = display:GetStates()[group.Id].Screen.Test.Slots[1]
+		local fill = slot.Bar._color
+		local edge = slot.Border[1]._lastArgs.SetVertexColor
+
+		assert(fill[1] == 0.2 and fill[2] == 0.4 and fill[3] == 0.8, "the fill is the group's own")
+		assert(edge[1] == DEBUFF_TYPE_MAGIC_COLOR.r and edge[2] == DEBUFF_TYPE_MAGIC_COLOR.g
+			and edge[3] == DEBUFF_TYPE_MAGIC_COLOR.b, "and only the outline takes the palette")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("walks a filter group's stand-ins round the palette too", function()
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			TrackingMode = groups.TrackingMode.Filters,
+			Icons = { Border = true, ColorByDispelType = true },
+		})
+
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local slots = display:GetStates()[group.Id].Screen.Test.Slots
+		local second = slots[2].Container.Border._lastArgs.SetVertexColor
+
+		assert(second[1] == DEBUFF_TYPE_CURSE_COLOR.r and second[2] == DEBUFF_TYPE_CURSE_COLOR.g
+			and second[3] == DEBUFF_TYPE_CURSE_COLOR.b, "the second stand-in is one step along")
+
+		display:SetPreviewGroup(nil)
 	end)
 end)
 

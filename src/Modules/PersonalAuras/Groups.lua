@@ -466,6 +466,7 @@ function M:Normalise(group)
 	icons.SpellName = icons.SpellName ~= false
 	icons.Glow = icons.Glow == true
 	icons.Border = icons.Border == true
+	icons.ColorByDispelType = icons.ColorByDispelType == true
 	icons.Pandemic = icons.Pandemic == true
 	-- On unless it was turned off, since the swipe filling up reads as time running out.
 	icons.ReverseCooldown = icons.ReverseCooldown ~= false
@@ -1271,7 +1272,7 @@ end
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
 ---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
----@field Icons { Size: number, Spacing: number, FontScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, EnableSwipe: boolean, EnableNumbers: boolean, CenterStacks: boolean, ShowMilliseconds: boolean, ShowTooltips: boolean, UseGroupIcon: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Icons { Size: number, Spacing: number, FontScale: number, Glow: boolean, Border: boolean, ColorByDispelType: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, EnableSwipe: boolean, EnableNumbers: boolean, CenterStacks: boolean, ShowMilliseconds: boolean, ShowTooltips: boolean, UseGroupIcon: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Texture { Asset: string|number, Width: number, Height: number, Rotation: number, Opacity: number, Mirror: boolean, Desaturate: boolean, Additive: boolean } Texture display only; Asset is a file id or a path, and empty draws nothing.
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.

@@ -1013,8 +1013,9 @@ fw.describe("Personal auras page - laying out the appearance switches", function
 		local page = ShowPage(addon, group)
 
 		local labels = {
-			"Glow icons", "Show border", "Reverse swipe", "Show swipe", "Show numbers",
-			"Centre stacks", "Show tooltips", "Custom icon", "Pandemic", "Colour text",
+			"Glow icons", "Show border", "Dispel colours", "Reverse swipe", "Show swipe",
+			"Show numbers", "Centre stacks", "Show tooltips", "Custom icon", "Pandemic",
+			"Milliseconds", "Colour text",
 		}
 		local taken = {}
 
@@ -1071,28 +1072,89 @@ fw.describe("Personal auras page - the countdown numbers switch", function()
 	end)
 end)
 
-fw.describe("Personal auras page - the milliseconds switch", function()
-	fw.it("sits one column to the right of the pandemic switch", function()
+fw.describe("Personal auras page - the dispel colours switch", function()
+	fw.it("sits one column to the right of the border switch", function()
 		local addon, group = LoadWithGroup({ 45438 })
 
 		local page = ShowPage(addon, group)
 
 		-- Two switches known to be neighbours, so the flow's column width is read off the page.
-		local _, _, _, showSwipeX = CheckboxLabelled(page, "Show swipe"):GetPoint(1)
-		local _, _, _, showNumbersX = CheckboxLabelled(page, "Show numbers"):GetPoint(1)
-		local columnWidth = showNumbersX - showSwipeX
+		local _, _, _, glowX = CheckboxLabelled(page, "Glow icons"):GetPoint(1)
+		local border = CheckboxLabelled(page, "Show border")
+		local _, _, _, columnWidth = border:GetPoint(1)
+		columnWidth = columnWidth - glowX
 
+		local dispel = CheckboxLabelled(page, "Dispel colours")
+
+		fw.not_nil(dispel, "the dispel colours switch is on the appearance tab")
+		fw.truthy(dispel:IsShown(), "and it is shown for an icon group")
+
+		local _, borderRow, _, borderX = border:GetPoint(1)
+		local _, dispelRow, _, dispelX = dispel:GetPoint(1)
+
+		fw.eq(dispelRow, borderRow, "both sit on the same row of the flow")
+		fw.eq(dispelX - borderX, columnWidth, "and the new one is the next column along")
+	end)
+
+	fw.it("writes the switch to the group being edited", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		local page = ShowPage(addon, group)
+
+		local dispel = CheckboxLabelled(page, "Dispel colours")
+
+		fw.not_nil(dispel, "the dispel colours switch is on the appearance tab")
+		fw.eq(group.Icons.ColorByDispelType, false, "a new group keeps its own colour")
+		fw.eq(dispel:GetChecked(), false, "so the switch paints unticked")
+
+		dispel:GetScript("OnClick")(dispel)
+
+		fw.eq(group.Icons.ColorByDispelType, true, "ticking it reached the group")
+		fw.eq(dispel:GetChecked(), true, "and the switch repaints from what it wrote")
+	end)
+
+	fw.it("is put away for a group drawing art, which has no border to colour", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.PersonalAuras.Groups
+
+		group.Icons.Display = groups.DisplayStyle.Texture
+		groups:Normalise(group)
+
+		local page = ShowPage(addon, group)
+
+		local dispel = CheckboxLabelled(page, "Dispel colours")
+
+		fw.not_nil(dispel, "the dispel colours switch is built for every shape")
+		fw.falsy(dispel:IsShown(), "art draws no border to put the palette on")
+	end)
+end)
+
+fw.describe("Personal auras page - the milliseconds switch", function()
+	fw.it("opens row three once pandemic has filled row two", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		local page = ShowPage(addon, group)
+
+		-- Two switches known to be neighbours, so the flow's column width is read off the page.
+		local _, _, _, glowX = CheckboxLabelled(page, "Glow icons"):GetPoint(1)
+		local _, _, _, borderX = CheckboxLabelled(page, "Show border"):GetPoint(1)
+		local columnWidth = borderX - glowX
+
+		local showNumbers = CheckboxLabelled(page, "Show numbers")
 		local pandemic = CheckboxLabelled(page, "Pandemic")
 		local milliseconds = CheckboxLabelled(page, "Milliseconds")
 
 		fw.not_nil(milliseconds, "the milliseconds switch is on the appearance tab")
 		fw.truthy(milliseconds:IsShown(), "and it is shown for an icon group")
 
+		local _, showNumbersRow, _, showNumbersX = showNumbers:GetPoint(1)
 		local _, pandemicRow, _, pandemicX = pandemic:GetPoint(1)
 		local _, millisecondsRow, _, millisecondsX = milliseconds:GetPoint(1)
 
-		fw.eq(millisecondsRow, pandemicRow, "both sit on the same row of the flow")
-		fw.eq(millisecondsX - pandemicX, columnWidth, "and the new one is the next column along")
+		fw.eq(pandemicRow, showNumbersRow, "pandemic sits on the row show numbers opened")
+		fw.eq(pandemicX - showNumbersX, columnWidth * 4, "in its last column")
+		fw.truthy(millisecondsRow ~= pandemicRow, "so milliseconds opens the next row")
+		fw.eq(millisecondsX, glowX, "at its first column")
 	end)
 
 	fw.it("writes the switch to the group being edited", function()
@@ -1125,7 +1187,7 @@ fw.describe("Personal auras page - the milliseconds switch", function()
 		fw.falsy(milliseconds:IsShown(), "art draws no countdown to put them on")
 	end)
 
-	fw.it("opens row two and pushes colour text along on a group drawing bars", function()
+	fw.it("follows pandemic onto row two and pushes colour text along on a group drawing bars", function()
 		local addon, group = LoadWithGroup({ 45438 })
 		local groups = addon.Modules.PersonalAuras.Groups
 
@@ -1135,23 +1197,27 @@ fw.describe("Personal auras page - the milliseconds switch", function()
 		local page = ShowPage(addon, group)
 
 		local border = CheckboxLabelled(page, "Show border")
+		local pandemic = CheckboxLabelled(page, "Pandemic")
 		local milliseconds = CheckboxLabelled(page, "Milliseconds")
 		local colorText = CheckboxLabelled(page, "Colour text")
 
 		fw.not_nil(milliseconds, "the milliseconds switch is on the appearance tab")
 		fw.truthy(milliseconds:IsShown(), "and it is shown for a bars group")
 
-		-- Pandemic already fills the last of five columns on a bars group, so border and spell
-		-- name, the row's first two columns, give the flow's column width to measure against.
+		-- Custom icon already fills the last of five columns on a bars group, so border and dispel
+		-- colours, the row's first two columns, give the flow's column width to measure against.
 		local _, borderRow, _, borderX = border:GetPoint(1)
-		local _, _, _, spellNameX = CheckboxLabelled(page, "Spell name"):GetPoint(1)
-		local columnWidth = spellNameX - borderX
+		local _, _, _, dispelX = CheckboxLabelled(page, "Dispel colours"):GetPoint(1)
+		local columnWidth = dispelX - borderX
 
+		local _, pandemicRow, _, pandemicX = pandemic:GetPoint(1)
 		local _, millisecondsRow, _, millisecondsX = milliseconds:GetPoint(1)
 		local _, colorTextRow, _, colorTextX = colorText:GetPoint(1)
 
-		fw.truthy(millisecondsRow ~= borderRow, "milliseconds opens a new row rather than crowding row one")
-		fw.eq(millisecondsX, borderX, "and starts that row's first column, same as border does on row one")
+		fw.truthy(pandemicRow ~= borderRow, "pandemic opens a new row rather than crowding row one")
+		fw.eq(pandemicX, borderX, "and starts that row's first column, same as border does on row one")
+		fw.eq(millisecondsRow, pandemicRow, "milliseconds follows it onto that row")
+		fw.eq(millisecondsX - pandemicX, columnWidth, "one column to the right")
 		fw.eq(colorTextRow, millisecondsRow, "colour text is pushed onto the same row as milliseconds")
 		fw.eq(colorTextX - millisecondsX, columnWidth, "and lands one column to the right of it")
 	end)
