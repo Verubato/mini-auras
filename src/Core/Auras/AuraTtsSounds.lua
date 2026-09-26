@@ -111,6 +111,7 @@ addon.Core.AuraTtsSounds = {
 		[354610] = "Glimpse.ogg", -- Glimpse
 		[110960] = "GreaterInvisibility.ogg", -- Greater Invisibility
 		[47788] = "GuardianSpirit.ogg", -- Guardian Spirit
+		[86659] = "GuardianOfAncientKings.ogg", -- Guardian of Ancient Kings
 		[228050] = "GuardianOfTheForgottenQueen.ogg", -- Guardian of the Forgotten Queen
 		[11426] = "IceBarrier.ogg", -- Ice Barrier
 		[45438] = "IceBlock.ogg", -- Ice Block

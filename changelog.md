@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fixed the Feral Frenzy announcement watching the wrong debuff id again, added its Frantic Frenzy talent variant, and the English voices now say "Frenzy" for it.
+- Guardian of Ancient Kings now has a spoken Defensive announcement in every voice pack.
 
 ## 5.42.0
 
