@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the Feral Frenzy announcement watching the wrong debuff id again, added its Frantic Frenzy talent variant, and the English voices now say "Frenzy" for it.
+
 ## 5.42.0
 
 - Added a Dispel colours option to Personal Auras that colours the border and glow by the aura's dispel type.

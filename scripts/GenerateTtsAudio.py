@@ -82,6 +82,7 @@ SHORT_NAMES = {
     "Emerald Communion": "Communion",
     "Enraged Regeneration": "Wall",
     "Feint": "Faint",
+    "Feral Frenzy": "Frenzy",
     "Fortifying Brew": "Wall",
     "Goremaw's Bite": "Goremaw",
     "Greater Invisibility": "Invisibility",

@@ -1149,7 +1149,7 @@ addon.Core.AuraCategoryIds = {
 		[208086] = true, -- Colossus Smash
 		[360194] = true, -- Deathmark
 		[385627] = true, -- Kingsbane
-		[274837] = true, -- Feral Frenzy
+		[274838] = true, -- Feral Frenzy
 		[321538] = true, -- Bloodshed
 		[77606] = true, -- Dark Simulacrum
 		[236273] = true, -- Duel
@@ -1157,6 +1157,7 @@ addon.Core.AuraCategoryIds = {
 		[80240] = true, -- Havoc
 		[356723] = true, -- Scorpid Venom
 		[426593] = true, -- Goremaw's Bite
+		[1244079] = true, -- Feral Frenzy
 	},
 
 	-- Announced only when the player asks for them. These land often enough that a spoken name
