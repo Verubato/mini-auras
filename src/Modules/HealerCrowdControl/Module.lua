@@ -28,12 +28,17 @@ local rosterGate
 local stateSub
 -- Scratch for the watched healers handed to the unit state poller each refresh.
 local stateUnitsScratch = {}
+-- Set by the events that can seat a new healer behind a token a display already holds, and spent
+-- by the next Apply.
+local occupantsMoved = false
 local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
 end)
 
 local function OnEvent(_, event)
-	if event == "GROUP_ROSTER_UPDATE" then
+	if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD"
+		or event == "LOADING_SCREEN_DISABLED" then
+		occupantsMoved = true
 		QueueRefresh()
 	end
 end
@@ -96,7 +101,8 @@ local function Setup()
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
+	rosterGate = eventGate:New(eventsFrame,
+		{ "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LOADING_SCREEN_DISABLED" })
 
 	-- A healer leaving or re-entering the player's visible world has no event, and it decides
 	-- whether the engine evaluates the CC filter at all, so the budgets are recomputed when the
@@ -123,7 +129,9 @@ end
 
 ---@param options HealerCrowdControlModuleOptions
 local function Apply(options)
-	display:EnsureFrames()
+	local moved = occupantsMoved
+	occupantsMoved = false
+	display:EnsureFrames(moved)
 	display:ApplyOptions(options)
 	UpdateContent(options)
 	SeedStateBaselines()

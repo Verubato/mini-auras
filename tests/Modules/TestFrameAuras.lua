@@ -2534,6 +2534,135 @@ local function DebuffGroup(frame)
 	return nil
 end
 
+fw.describe("Frame Auras - a new player behind a token the frame keeps", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+	end)
+
+	---Both rows on a fresh raid frame, built and settled.
+	---@param index number
+	---@return table frame, table buffs, table debuffs
+	local function SeatedFrame(index)
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local frame = NewRaidFrame(index)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local buffs = assert(GroupRowOn(frame, PARTY_BUFF_GROUP), "the frame got a buff row")
+		local debuffs = assert(GroupRowOn(frame, DEBUFF_GROUP), "and a debuff row")
+
+		return frame, buffs, debuffs
+	end
+
+	---How often a row has been pointed at a unit, and shown. A re-read points it at nobody and
+	---back, and the show is the bounce that makes the engine act on it.
+	---@param row table
+	---@return number setUnits, number shows
+	local function Counts(row)
+		return row._calls.SetUnit or 0, row._calls.Show or 0
+	end
+
+	local function Teardown(index)
+		env.inCombat = false
+		DropRaidFrame(index)
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+	end
+
+	fw.it("re-reads both rows on every event that can seat someone new, even mid-fight", function()
+		local frame, buffs, debuffs = SeatedFrame(36)
+		local failure
+
+		-- Mid-fight, because a parked bounce would leave the last player's icons up until regen.
+		env.inCombat = true
+
+		for _, event in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LOADING_SCREEN_DISABLED" }) do
+			for _, row in ipairs({ buffs, debuffs }) do
+				local setUnits, shows = Counts(row)
+
+				Fire(event)
+
+				local afterSetUnits, afterShows = Counts(row)
+
+				if not failure and (afterSetUnits <= setUnits or afterShows <= shows
+					or row:GetUnit() ~= frame.unit) then
+					failure = event .. " left a row holding the last player's auras"
+				end
+			end
+		end
+
+		Teardown(36)
+
+		assert(not failure, failure)
+	end)
+
+	fw.it("re-reads both rows when the client re-points a frame at the token it already holds", function()
+		local hooks = PartyHooks()
+		local frame, buffs, debuffs = SeatedFrame(37)
+		local buffSetUnits = Counts(buffs)
+		local debuffSetUnits = Counts(debuffs)
+
+		hooks.OnSetUnit(frame)
+
+		local buffAfter = Counts(buffs)
+		local debuffAfter = Counts(debuffs)
+
+		Teardown(37)
+
+		assert(buffAfter > buffSetUnits, "the buff row kept the last player's auras")
+		assert(debuffAfter > debuffSetUnits, "and so did the debuff row")
+	end)
+
+	fw.it("re-reads a row whose token moved at once, even mid-fight", function()
+		local hooks = PartyHooks()
+		local frame, buffs = SeatedFrame(38)
+
+		env.inCombat = true
+		frame.unit = "party2"
+
+		local _, shows = Counts(buffs)
+
+		-- A visibility pass queues no re-read of its own, so only the token change can bounce.
+		hooks.OnUpdateVisible(frame)
+
+		local unit = buffs:GetUnit()
+		local _, afterShows = Counts(buffs)
+
+		Teardown(38)
+
+		assert(unit == "party2", "the row never followed the token, got " .. tostring(unit))
+		assert(afterShows > shows, "the bounce was parked until the fight ended")
+	end)
+
+	fw.it("leaves the rows alone on a pass that cannot seat anyone new", function()
+		local hooks = PartyHooks()
+		local frame, buffs, debuffs = SeatedFrame(39)
+		local buffSetUnits = Counts(buffs)
+		local debuffSetUnits = Counts(debuffs)
+
+		-- A raid fires these constantly, and forty frames re-read on each would be a parse per
+		-- frame for nothing.
+		hooks.OnUpdateVisible(frame)
+		hooks.OnSorted()
+		acm.tickAll(1)
+
+		local buffAfter = Counts(buffs)
+		local debuffAfter = Counts(debuffs)
+
+		Teardown(39)
+
+		assert(buffAfter == buffSetUnits, "the buff row was re-read for nothing")
+		assert(debuffAfter == debuffSetUnits, "and so was the debuff row")
+	end)
+end)
+
 ---The plain group is always the false half of the boss and role partition, whatever the two
 ---switches on the page are set to, since the game never negates that flag in a filter string.
 ---@param filters table
@@ -4934,6 +5063,36 @@ fw.describe("Frame Auras - the rows when the client will not answer about a fram
 		partyAuras:Refresh()
 
 		assert(ok, "the hook read a frame it was never allowed to touch")
+	end)
+end)
+
+fw.describe("Frame Auras - the target rows on a target switch", function()
+	fw.before_each(function()
+		module:StopTesting()
+		targetAuras.Available = true
+		options.TargetFocus.Enabled = true
+
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("re-reads both rows mid-fight, since the token never changes", function()
+		local buffs = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local debuffs = assert(DebuffContainer(targetFrame), "and a debuff row")
+		local buffSetUnits, buffShows = buffs._calls.SetUnit or 0, buffs._calls.Show or 0
+		local debuffSetUnits, debuffShows = debuffs._calls.SetUnit or 0, debuffs._calls.Show or 0
+
+		env.inCombat = true
+		Fire("PLAYER_TARGET_CHANGED")
+		env.inCombat = false
+
+		options.TargetFocus.Enabled = false
+		module:Refresh()
+
+		assert((buffs._calls.SetUnit or 0) > buffSetUnits and (buffs._calls.Show or 0) > buffShows,
+			"the buff row kept the last target's auras")
+		assert((debuffs._calls.SetUnit or 0) > debuffSetUnits and (debuffs._calls.Show or 0) > debuffShows,
+			"and so did the debuff row")
 	end)
 end)
 

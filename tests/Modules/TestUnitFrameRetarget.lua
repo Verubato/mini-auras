@@ -488,3 +488,126 @@ fw.describe("CrowdControlModule 12.1 - a kick on a frame the client left dark", 
 		assert(hidden == shown, "a hidden frame rendered anyway")
 	end)
 end)
+
+fw.describe("12.1 - a new player behind the token a frame keeps", function()
+	---Re-points a frame at the token it already holds, mid-fight, the way a roster reshuffle does.
+	---@param module table The module's display, whose hook handler is under test.
+	---@param display table
+	---@param frame table
+	---@return boolean reread Whether the display was pointed away and back and bounced.
+	local function RepointedInCombat(module, display, frame)
+		local frames = env.addon.Core.Frames
+		local realIsFriendlyCuf = frames.IsFriendlyCuf
+		local setUnits, shows = display._calls.SetUnit or 0, display._calls.Show or 0
+
+		-- The stub answers no for every frame, so the hook would turn them all away.
+		frames.IsFriendlyCuf = function()
+			return true
+		end
+
+		env.inCombat = true
+		local ok, err = pcall(module.OnCufSetUnit, module, frame, frame.unit)
+		env.inCombat = false
+		frames.IsFriendlyCuf = realIsFriendlyCuf
+
+		if not ok then
+			error(err, 0)
+		end
+
+		return (display._calls.SetUnit or 0) > setUnits and (display._calls.Show or 0) > shows
+			and display:GetUnit() == frame.unit
+	end
+
+	fw.it("re-reads the crowd control display", function()
+		ccFrame:Show()
+		crowdControl:Refresh()
+
+		local display = assert(ccDisplay(ccFrame.unit), "no display for the anchor's unit")
+
+		assert(RepointedInCombat(env.addon.Modules.CrowdControl.Display, display, ccFrame),
+			"the display kept the last player's crowd control")
+	end)
+
+	fw.it("re-reads the important auras display", function()
+		importantAurasModule:Refresh()
+
+		local display = assert(fiDisplay(fiFrame.unit), "no display for the anchor's unit")
+
+		assert(RepointedInCombat(env.addon.Modules.ImportantAuras.Display, display, fiFrame),
+			"the display kept the last player's auras")
+	end)
+
+	-- Every event that can seat a new player behind a token a frame already holds.
+	local OCCUPANT_EVENTS = { "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LOADING_SCREEN_DISABLED" }
+
+	---Fires an event at every frame listening for it, the way the client does.
+	---@param event string
+	local function Fire(event)
+		for _, listener in ipairs(require("AuraContainerMock").frames) do
+			local handler = listener._scripts and listener._scripts.OnEvent
+
+			if listener._events and listener._events[event] and handler then
+				handler(listener, event)
+			end
+		end
+	end
+
+	---@param display table
+	---@param frame table
+	---@return string? missed The first event that left the display holding the last player.
+	local function MissedOccupantEvent(display, frame)
+		for _, event in ipairs(OCCUPANT_EVENTS) do
+			local setUnits, shows = display._calls.SetUnit or 0, display._calls.Show or 0
+
+			env.inCombat = true
+			Fire(event)
+			env.inCombat = false
+
+			local reread = (display._calls.SetUnit or 0) > setUnits and (display._calls.Show or 0) > shows
+				and display:GetUnit() == frame.unit
+
+			if not reread then
+				return event
+			end
+		end
+
+		return nil
+	end
+
+	-- These anchors come from the frame walk and never fire the raid frame hook.
+	fw.it("re-reads the crowd control display on an occupant event", function()
+		ccFrame:Show()
+		crowdControl:Refresh()
+
+		local display = assert(ccDisplay(ccFrame.unit), "no display for the anchor's unit")
+
+		local missed = MissedOccupantEvent(display, ccFrame)
+
+		assert(not missed, "the display kept the last player's crowd control after " .. tostring(missed))
+	end)
+
+	fw.it("re-reads the important auras display on an occupant event", function()
+		importantAurasModule:Refresh()
+
+		local display = assert(fiDisplay(fiFrame.unit), "no display for the anchor's unit")
+
+		local missed = MissedOccupantEvent(display, fiFrame)
+
+		assert(not missed, "the display kept the last player's auras after " .. tostring(missed))
+	end)
+
+	fw.it("leaves both displays alone on a refresh, which a raid runs constantly", function()
+		local cc = assert(ccDisplay(ccFrame.unit), "no crowd control display")
+		local fi = assert(fiDisplay(fiFrame.unit), "no important auras display")
+
+		-- A roster change leaves the next refresh nothing to re-read.
+		Fire("GROUP_ROSTER_UPDATE")
+		local ccSetUnits, fiSetUnits = cc._calls.SetUnit or 0, fi._calls.SetUnit or 0
+
+		crowdControl:Refresh()
+		importantAurasModule:Refresh()
+
+		assert((cc._calls.SetUnit or 0) == ccSetUnits, "the crowd control display was re-read for nothing")
+		assert((fi._calls.SetUnit or 0) == fiSetUnits, "and so was the important auras display")
+	end)
+end)

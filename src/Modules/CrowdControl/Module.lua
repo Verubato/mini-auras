@@ -29,6 +29,9 @@ local testModeActive = false
 local stateSub
 -- Scratch for the watched units handed to the unit state poller each refresh.
 local stateUnitsScratch = {}
+-- Set by the events that can seat a new player behind a token a frame already holds, and spent
+-- by the next Apply.
+local occupantsMoved = false
 -- Deferred as well as coalesced, because the frame addons rebuild on the same event and the
 -- anchors are only worth reading once they have settled.
 local QueueRefresh = moduleUtil:Coalesced(function()
@@ -51,9 +54,11 @@ local function SeedStateBaselines()
 end
 
 local function OnEvent(_, event)
-	if event == "GROUP_ROSTER_UPDATE" or event == "LOADING_SCREEN_DISABLED" then
+	if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD"
+		or event == "LOADING_SCREEN_DISABLED" then
 		-- The screen ending is what makes the frames readable, so this is the pass that re-points
 		-- the entries the layout put on frames that turned out to hold nobody.
+		occupantsMoved = true
 		QueueRefresh()
 	elseif event == "UNIT_PET" then
 		-- A pet was summoned or dismissed, so refresh to show or hide the opt-in pet unit frame
@@ -109,7 +114,7 @@ local function Setup()
 	-- being summoned or dismissed, so the opt-in pet unit frame containers follow it whichever
 	-- unit-frame addon owns that frame.
 	rosterGate = eventGate:New(eventsFrame,
-		{ "GROUP_ROSTER_UPDATE", "UNIT_PET", "LOADING_SCREEN_DISABLED" })
+		{ "GROUP_ROSTER_UPDATE", "UNIT_PET", "PLAYER_ENTERING_WORLD", "LOADING_SCREEN_DISABLED" })
 
 	-- A unit leaving or re-entering the player's visible world has no event, and it decides whether
 	-- the engine evaluates the CC filter at all, so the budgets are recomputed when the poller sees
@@ -156,7 +161,9 @@ end
 
 ---@param options CrowdControlInstanceOptions
 local function Apply(options)
-	display:EnsureFrames()
+	local moved = occupantsMoved
+	occupantsMoved = false
+	display:EnsureFrames(moved)
 	display:ApplyOptions(options)
 	UpdateContent()
 	SeedStateBaselines()

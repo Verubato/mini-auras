@@ -282,7 +282,8 @@ end
 
 -- Every healer in the raid gets a container. Skipping the far ones would have to happen while
 -- rendering, which is the engine's job.
-local function RefreshHealers()
+---@param occupantMoved boolean? A new player may be behind the healer tokens already held.
+local function RefreshHealers(occupantMoved)
 	-- Everyone goes back to the discard pool first, so a healer that stayed is re-acquired
 	-- rather than duplicated.
 	DiscardActiveEntries()
@@ -329,6 +330,16 @@ local function RefreshHealers()
 			if item.LabelDisplay then
 				-- Enabled/shown state follows the ShowWarningText option in RefreshHealerDisplays.
 				item.LabelDisplay:SetUnit(healer)
+			end
+			-- The hide and show this refresh gives every entry does not re-read a token the
+			-- container already holds.
+			if occupantMoved then
+				if item.Display then
+					item.Display:RequestRefresh()
+				end
+				if item.LabelDisplay then
+					item.LabelDisplay:RequestRefresh()
+				end
 			end
 			item.Unit = healer
 			activePool[healer] = item
@@ -479,7 +490,8 @@ function M:Teardown()
 	sound:Clear()
 end
 
-function M:EnsureFrames()
+---@param occupantMoved boolean?
+function M:EnsureFrames(occupantMoved)
 	if not healerAnchor then
 		CreateFrames()
 	end
@@ -510,7 +522,7 @@ function M:EnsureFrames()
 	end
 
 	EnableWatchers()
-	RefreshHealers()
+	RefreshHealers(occupantMoved)
 end
 
 ---@param options HealerCrowdControlModuleOptions

@@ -1530,3 +1530,86 @@ fw.describe("Alerts 12.1 - prewarming the display pairs", function()
 		prepareDuringLoadingScreen()
 	end)
 end)
+
+fw.describe("HealerCrowdControlModule 12.1 - a new healer behind the token a display keeps", function()
+	local healerCC = env.addon.Modules.HealerCrowdControlModule
+	-- Every event that can seat a new player behind a token the healer list already holds.
+	local OCCUPANT_EVENTS = { "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LOADING_SCREEN_DISABLED" }
+	local TOKEN = "party3"
+
+	---Fires an event at every frame listening for it, the way the client does.
+	---@param event string
+	local function Fire(event)
+		for _, listener in ipairs(acm.frames) do
+			local handler = listener._scripts and listener._scripts.OnEvent
+
+			if listener._events and listener._events[event] and handler then
+				handler(listener, event)
+			end
+		end
+	end
+
+	---Runs a test with a healer on the token, and takes the healer away again even if it fails.
+	---@param fn function
+	local function WithHealer(fn)
+		env.healers[TOKEN] = true
+		healerCC:Refresh()
+
+		local ok, err = pcall(fn)
+
+		env.inCombat = false
+		env.healers[TOKEN] = nil
+		healerCC:Refresh()
+
+		if not ok then
+			error(err, 0)
+		end
+	end
+
+	---The healer's icon and label containers.
+	local function Containers()
+		local list = env.containersForUnit(TOKEN)
+		assert(#list == 2, "expected an icon and a label container for " .. TOKEN .. ", got " .. #list)
+		return list
+	end
+
+	fw.it("re-reads both of a healer's containers on an occupant event", function()
+		WithHealer(function()
+			for _, event in ipairs(OCCUPANT_EVENTS) do
+				local before = {}
+				for i, container in ipairs(Containers()) do
+					before[i] = container._calls.SetUnit or 0
+				end
+
+				env.inCombat = true
+				Fire(event)
+				env.inCombat = false
+
+				-- No bounce to count: a refresh hides every entry, and the show on the way back arms it.
+				for i, container in ipairs(Containers()) do
+					local reread = (container._calls.SetUnit or 0) > before[i] and container._unit == TOKEN
+
+					assert(reread, "a container kept the last healer's auras after " .. event)
+				end
+			end
+		end)
+	end)
+
+	fw.it("leaves them alone on a refresh, which a raid runs constantly", function()
+		WithHealer(function()
+			-- A roster change leaves the next refresh nothing to re-read.
+			Fire("GROUP_ROSTER_UPDATE")
+
+			local before = {}
+			for i, container in ipairs(Containers()) do
+				before[i] = container._calls.SetUnit or 0
+			end
+
+			healerCC:Refresh()
+
+			for i, container in ipairs(Containers()) do
+				assert((container._calls.SetUnit or 0) == before[i], "a container was re-read for nothing")
+			end
+		end)
+	end)
+end)

@@ -26,6 +26,9 @@ local testModeActive = false
 local stateSub
 -- Scratch for the watched units handed to the unit state poller each refresh.
 local stateUnitsScratch = {}
+-- Set by the events that can seat a new player behind a token a frame already holds, and spent
+-- by the next Apply.
+local occupantsMoved = false
 local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
 end)
@@ -46,9 +49,11 @@ local function SeedStateBaselines()
 end
 
 local function OnEvent(_, event, unit)
-	if event == "GROUP_ROSTER_UPDATE" or event == "LOADING_SCREEN_DISABLED" then
+	if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD"
+		or event == "LOADING_SCREEN_DISABLED" then
 		-- The screen ending is what makes the frames readable: nothing is built while one is up,
 		-- so this is the pass that builds what the world-entering pass had to skip.
+		occupantsMoved = true
 		QueueRefresh()
 	elseif event == "UNIT_FACTION" then
 		-- Mind control hands a friendly frame an enemy unit, which decides whether the engine
@@ -102,7 +107,7 @@ local function Setup()
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
 	rosterGate = eventGate:New(eventsFrame,
-		{ "GROUP_ROSTER_UPDATE", "UNIT_FACTION", "LOADING_SCREEN_DISABLED" })
+		{ "GROUP_ROSTER_UPDATE", "UNIT_FACTION", "PLAYER_ENTERING_WORLD", "LOADING_SCREEN_DISABLED" })
 
 	-- A duel flips a party member to hostile with no event of its own, and that decides whether the
 	-- spell-id filter applies at all, so the budgets have to be recomputed when it happens.
@@ -148,7 +153,9 @@ end
 
 ---@param options ImportantAurasInstanceOptions
 local function Apply(options)
-	display:EnsureFrames()
+	local moved = occupantsMoved
+	occupantsMoved = false
+	display:EnsureFrames(moved)
 	display:ApplyOptions(options)
 	UpdateContent()
 	SeedStateBaselines()

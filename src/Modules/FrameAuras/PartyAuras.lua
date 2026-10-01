@@ -176,6 +176,9 @@ local testListScratch = {}
 -- Assigned once ApplyToAll exists. The events that drive it all burst, and the one that matters
 -- most fires while the frames it walks are still settling.
 local QueueApplyToAll
+-- Set by whatever can put a new player behind a token a frame already holds, and spent by the next
+-- walk, which re-reads every frame because the engine ignores a token it already has.
+local occupantsMoved = false
 -- Background walker declaring the aura groups of the displays as they are built, urgent because
 -- these sit on unit frames the player is looking at. The engine allocates a batch of buttons the
 -- moment a group is declared, so a party converting to a raid would build eighty of them at once.
@@ -1185,8 +1188,9 @@ end
 ---exists gets its display then, and one switched off keeps it, because the engine can free neither
 ---display nor the buttons under it.
 ---@param frame table
+---@param occupantMoved boolean? A new player may be behind the token the frame already holds.
 ---@return FrameAurasEntry?
-local function EnsureEntry(frame)
+local function EnsureEntry(frame, occupantMoved)
 	if not frame or mini:IsSecret(frame) then
 		return nil
 	end
@@ -1219,17 +1223,21 @@ local function EnsureEntry(frame)
 	if not entry then
 		entry = { Frame = frame, Unit = unit }
 		watchers[frame] = entry
-	elseif entry.Unit ~= unit then
+	elseif entry.Unit ~= unit or occupantMoved then
 		entry.Unit = unit
 
-		-- SetUnit re-points and bounces, which is what makes the engine re-read a token whose
-		-- occupant changed without the string itself doing so.
-		if entry.Buffs then
-			entry.Buffs:SetUnit(unit or "none")
-		end
+		for _, side in ipairs(SIDES) do
+			local display = entry[side]
 
-		if entry.Debuffs then
-			entry.Debuffs:SetUnit(unit or "none")
+			if display then
+				display:SetUnit(unit or "none")
+
+				-- Urgent, because a roster reshuffled mid-fight has no aura event coming that would
+				-- clear the last player's icons.
+				if unit then
+					display:RequestRefresh()
+				end
+			end
 		end
 	end
 
@@ -1259,8 +1267,9 @@ local function EnsureEntry(frame)
 end
 
 ---@param frame table
-local function ApplyToFrame(frame)
-	local entry = EnsureEntry(frame)
+---@param occupantMoved boolean?
+local function ApplyToFrame(frame, occupantMoved)
+	local entry = EnsureEntry(frame, occupantMoved)
 
 	if entry then
 		ApplyEntry(entry)
@@ -1281,9 +1290,12 @@ local function ApplyToAll()
 	-- A preview names units the player does not have, and a baseline for one of those is a read
 	-- four times a second that can never flip.
 	local seeding = stateSub and not testModeActive
+	local occupantMoved = occupantsMoved
+
+	occupantsMoved = false
 
 	for _, frame in ipairs(BlizzardFrames()) do
-		ApplyToFrame(frame)
+		ApplyToFrame(frame, occupantMoved)
 
 		local unit = seeding and UnitFor(frame)
 
@@ -1302,6 +1314,12 @@ local function ApplyToAll()
 end
 
 QueueApplyToAll = moduleUtil:Coalesced(ApplyToAll)
+
+---Queues a walk that makes every frame re-read its unit, whether or not the token moved.
+local function QueueOccupantPass()
+	occupantsMoved = true
+	QueueApplyToAll()
+end
 
 ---@return boolean
 local function AnySideActive()
@@ -1375,7 +1393,7 @@ local function InstallHooks()
 	-- Deferred a frame, since this fires as the loading screen ends and the compact frames have not
 	-- finished settling onto their real units until after it. Coalesced too, because a roster
 	-- forming fires one of these per member joining.
-	eventsFrame:SetScript("OnEvent", QueueApplyToAll)
+	eventsFrame:SetScript("OnEvent", QueueOccupantPass)
 
 	-- A frame passed over for having nobody on it gets no set-unit call of its own when someone
 	-- turns up under a token it was already holding, so the roster is what says to look again.
@@ -1384,6 +1402,8 @@ local function InstallHooks()
 	-- The loading screen ending is in there because building needs a definite answer about who is
 	-- on a frame, and the client gives none while one is up. This is the pass that builds what the
 	-- world-entering pass had to skip.
+	--
+	-- Every one of them can also seat a new player behind a token a frame keeps.
 	rosterGate = eventGate:New(eventsFrame, {
 		"GROUP_ROSTER_UPDATE",
 		"PLAYER_ENTERING_WORLD",
@@ -1397,10 +1417,11 @@ local function InstallHooks()
 	frames:InstallUnitFrameHooks(eventsFrame, {
 		-- Blizzard re-points frames at units constantly while a raid sorts, and the token often
 		-- comes back the same one with a different member behind it. Nothing about that reaches
-		-- the display on its own, so every re-point is treated as a new unit.
+		-- the display on its own, so every re-point queues a walk that treats it as a new unit.
 		OnSetUnit = function(frame)
 			if AnySideActive() then
 				ApplyToFrame(frame)
+				QueueOccupantPass()
 			end
 		end,
 		OnUpdateVisible = function(frame)

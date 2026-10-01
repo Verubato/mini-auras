@@ -605,7 +605,8 @@ end
 
 ---@param anchor table
 ---@param unit string?
-local function EnsureWatcher(anchor, unit)
+---@param occupantMoved boolean? A new player may be behind the token the frame already holds.
+local function EnsureWatcher(anchor, unit, occupantMoved)
 	unit = unit or anchor.unit or anchor:GetAttribute("unit")
 	if not unit then
 		return nil
@@ -685,7 +686,9 @@ local function EnsureWatcher(anchor, unit)
 		-- until the next refresh.
 		ApplyUnitGates(entry, options)
 	else
-		if entry.Unit ~= unit then
+		local moved = entry.Unit ~= unit
+
+		if moved then
 			-- The container tracks the new unit itself, so only the token changes.
 			entry.Display:SetUnit(unit)
 
@@ -706,6 +709,12 @@ local function EnsureWatcher(anchor, unit)
 
 			UpdateKickIcon(entry)
 		end
+
+		-- The engine ignores a token it already holds, and a roster reshuffled mid-fight has no
+		-- aura event coming that would clear the last player's icons.
+		if moved or occupantMoved then
+			entry.Display:RequestRefresh()
+		end
 	end
 
 	UpdateKickIcon(entry)
@@ -723,6 +732,13 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	return entry
+end
+
+---A walk callback, whose one extra argument is the occupant flag rather than a unit.
+---@param anchor table
+---@param occupantMoved boolean?
+local function EnsureAnchorWatcher(anchor, occupantMoved)
+	EnsureWatcher(anchor, nil, occupantMoved)
 end
 
 ---Puts the entry on the display it keeps for the profile now in force, and wires up what a swap
@@ -878,8 +894,9 @@ function M:SetTestMode(value)
 	testModeActive = value
 end
 
-function M:EnsureWatchers()
-	frames:ForEachAnchor(true, testModeActive, EnsureWatcher)
+---@param occupantMoved boolean? A new player may be behind the tokens the frames already hold.
+function M:EnsureWatchers(occupantMoved)
+	frames:ForEachAnchor(true, testModeActive, EnsureAnchorWatcher, occupantMoved)
 end
 
 ---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the one
@@ -902,14 +919,15 @@ end
 
 -- Wakes every entry's display back up, then discovers any unit frames that have appeared since
 -- the last refresh.
-function M:EnsureFrames()
+---@param occupantMoved boolean?
+function M:EnsureFrames(occupantMoved)
 	for _, entry in pairs(watchers) do
 		if entry.Display then
 			entry.Display:SetEnabled(true)
 		end
 	end
 
-	M:EnsureWatchers()
+	M:EnsureWatchers(occupantMoved)
 end
 
 ---@param options ImportantAurasInstanceOptions
@@ -1075,7 +1093,7 @@ function M:OnCufSetUnit(frame, unit)
 		return
 	end
 
-	EnsureWatcher(frame, unit)
+	EnsureWatcher(frame, unit, true)
 end
 
 function M:Init()

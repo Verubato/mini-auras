@@ -673,11 +673,11 @@ local function Watcher()
 			local moved = event == "UNIT_FACTION" and host.Unit == unit
 
 			if (moved or host.Event == event) and host.Debuffs then
-				-- SetUnit is what makes the display re-read the unit, so the new target's filters
-				-- have to be in place first.
+				-- The refresh is what makes the display re-read the unit, so the new target's
+				-- filters have to be in place first.
 				Refilter(host)
-				host.Debuffs:SetUnit(host.Unit)
-				host.Buffs:SetUnit(host.Unit)
+				host.Debuffs:RequestRefresh()
+				host.Buffs:RequestRefresh()
 
 				if not moved then
 					AnchorCastBar(host)

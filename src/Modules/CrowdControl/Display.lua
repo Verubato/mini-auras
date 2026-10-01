@@ -397,7 +397,8 @@ end
 
 ---@param anchor table
 ---@param unit string?
-local function EnsureWatcher(anchor, unit)
+---@param occupantMoved boolean? A new player may be behind the token the frame already holds.
+local function EnsureWatcher(anchor, unit, occupantMoved)
 	unit = unit or anchor.unit or anchor:GetAttribute("unit")
 	if not unit then
 		return nil
@@ -485,7 +486,9 @@ local function EnsureWatcher(anchor, unit)
 		-- the next refresh.
 		ApplyUnitGates(entry, options)
 	else
-		if entry.Unit ~= unit then
+		local moved = entry.Unit ~= unit
+
+		if moved then
 			if not units:IsPetOrMinion(entry.Unit) then
 				kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
 			end
@@ -509,6 +512,12 @@ local function EnsureWatcher(anchor, unit)
 
 			UpdateKickIcon(entry)
 		end
+
+		-- The engine ignores a token it already holds, and a roster reshuffled mid-fight has no
+		-- aura event coming that would clear the last player's icons.
+		if moved or occupantMoved then
+			entry.Display:RequestRefresh()
+		end
 	end
 
 	UpdateKickIcon(entry)
@@ -526,6 +535,13 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	return entry
+end
+
+---A walk callback, whose one extra argument is the occupant flag rather than a unit.
+---@param anchor table
+---@param occupantMoved boolean?
+local function EnsureAnchorWatcher(anchor, occupantMoved)
+	EnsureWatcher(anchor, nil, occupantMoved)
 end
 
 ---@param frame table?
@@ -701,15 +717,16 @@ function M:SetTestMode(value)
 	testModeActive = value
 end
 
-function M:EnsureWatchers()
-	frames:ForEachAnchor(true, testModeActive, EnsureWatcher)
+---@param occupantMoved boolean? A new player may be behind the tokens the frames already hold.
+function M:EnsureWatchers(occupantMoved)
+	frames:ForEachAnchor(true, testModeActive, EnsureAnchorWatcher, occupantMoved)
 
 	-- Pet frames never appear in the anchor walk, so they are discovered directly.
 	if testModeActive or moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl) then
 		for i = 1, 6 do
 			local frame = _G["CompactPartyFramePet" .. i]
 			if frame and (frame:IsVisible() or testModeActive) then
-				EnsureWatcher(frame)
+				EnsureWatcher(frame, nil, occupantMoved)
 			end
 		end
 
@@ -717,7 +734,7 @@ function M:EnsureWatchers()
 		if testModeActive then
 			local testPet = frames:GetTestPetFrame()
 			if testPet then
-				EnsureWatcher(testPet)
+				EnsureWatcher(testPet, nil, occupantMoved)
 			end
 		end
 
@@ -727,7 +744,7 @@ function M:EnsureWatchers()
 		if petOptions and petOptions.IncludePetFrame then
 			for _, frame in ipairs(GetPetUnitFrames()) do
 				if frame:IsVisible() or testModeActive then
-					local petEntry = EnsureWatcher(frame, "pet")
+					local petEntry = EnsureWatcher(frame, "pet", occupantMoved)
 					if petEntry then
 						petEntry.IsPetUnitFrame = true
 					end
@@ -757,7 +774,8 @@ end
 
 -- Brings every entry's display back in line with its feature toggle, then discovers any unit
 -- frames that have appeared since the last refresh.
-function M:EnsureFrames()
+---@param occupantMoved boolean?
+function M:EnsureFrames(occupantMoved)
 	local options = GetOptions()
 	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
 	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCrowdControl)
@@ -770,7 +788,7 @@ function M:EnsureFrames()
 		end
 	end
 
-	M:EnsureWatchers()
+	M:EnsureWatchers(occupantMoved)
 end
 
 ---@param options CrowdControlInstanceOptions
@@ -929,7 +947,7 @@ function M:OnCufSetUnit(frame, unit)
 		end
 	end
 
-	EnsureWatcher(frame, unit)
+	EnsureWatcher(frame, unit, true)
 end
 
 function M:Init()
