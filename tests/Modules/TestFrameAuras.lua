@@ -36,8 +36,8 @@ _G.AuraUtil = { AuraUpdateChangedType = { Dispel = DISPEL_TYPE } }
 -- The client's aura classification policies, as AuraContainerMock publishes them.
 local PROCESS_AURA_POLICY = 1
 local NO_PROCESS_POLICY = 0
--- The debuff sort the row asks for, which ranks on what that classification writes.
-local UNIT_FRAME_DEBUFF_SORT = 2
+-- The engine's default sort, which compares nothing the classification pass may leave unset.
+local DEFAULT_SORT = 0
 
 -- One of Blizzard's party member frames, which the rows collect through Core/Frames. The lookup
 -- reads the globals by name and the mock's CreateFrame does not publish one, so it is set by hand.
@@ -3616,7 +3616,7 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 		partyAuras:Refresh()
 	end)
 
-	fw.it("ranks the row by the game's own raid frame debuff order", function()
+	fw.it("ranks every group by an order that cannot throw on an aura the classification skipped", function()
 		options.Debuffs.Enabled = true
 
 		local fresh = NewRaidFrame(17)
@@ -3624,12 +3624,27 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 		partyAuras:Refresh()
 		acm.tickAll(400)
 
-		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		-- Switched on after the build, so the group added to a row already drawing is covered too.
+		for _, dispellable in ipairs({ false, true }) do
+			options.Debuffs.DispellableByMe = dispellable
+			options.Debuffs.ShowCrowdControl = true
+			partyAuras:Refresh()
+			acm.tickAll(400)
 
-		assert(row._groups[DEBUFF_GROUP].sortMethod == UNIT_FRAME_DEBUFF_SORT,
-			"nothing can reorder a group once it has rendered, so the engine has to rank it, got "
-				.. tostring(row._groups[DEBUFF_GROUP].sortMethod))
+			local row = assert(DebuffRow(fresh), "the frame got a debuff row")
 
+			for _, key in ipairs({ DEBUFF_ROLE_GROUP, DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }) do
+				local group = assert(row._groups[key], key .. " is on the row")
+
+				assert(group.sortMethod == DEFAULT_SORT,
+					"the raid frame order throws on a pair only one of which was classified, so "
+						.. key .. " with the switch " .. tostring(dispellable) .. " got "
+						.. tostring(group.sortMethod))
+			end
+		end
+
+		options.Debuffs.DispellableByMe = false
+		options.Debuffs.ShowCrowdControl = false
 		DropRaidFrame(17)
 	end)
 

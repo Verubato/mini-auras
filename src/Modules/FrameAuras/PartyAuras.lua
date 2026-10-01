@@ -304,17 +304,10 @@ local function DispelType()
 	return AuraUtil and AuraUtil.AuraUpdateChangedType and AuraUtil.AuraUpdateChangedType.Dispel
 end
 
----Blizzard's own raid frame debuff order, which is what ranks a group's own matches against each
----other. The engine has to do it because an aura's spell id is secret, so nothing can reorder a
----group once it has rendered.
-
+---Default, because the raid frame order compares a field the dispel pass may leave unset, and throws.
 ---@return number?
 local function DebuffSort()
-	if not AuraContainerSortMethod then
-		return nil
-	end
-
-	return AuraContainerSortMethod.UnitFrameDebuff or AuraContainerSortMethod.Default
+	return AuraContainerSortMethod and AuraContainerSortMethod.Default
 end
 
 ---The aura filter string the buff groups run under. The "mine" token is the coarse half of that
