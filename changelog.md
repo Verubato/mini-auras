@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.42.2
+
+- Fixed frame auras sometimes staying on a frame permanently after entering or leaving an arena or instance.
+- Fixed frame auras, crowd control, important auras, and healer crowd control showing the previous player's auras when the group reshuffles, such as between Solo Shuffle rounds.
+- Fixed target and focus auras briefly showing the previous target's auras when switching in combat.
+
 ## 5.42.1
 
 - Fixed the Feral Frenzy announcement watching the wrong debuff id again and added its Frantic Frenzy talent variant.
