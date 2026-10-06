@@ -12,6 +12,8 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local pixels = addon.Core.Pixels
 local sweep = addon.Core.Sweep
 local testSpells = addon.Core.TestSpells
+local kickTracker = addon.Core.KickTracker
+local kickSlot = addon.Core.KickSlot
 local unitStatePoller = addon.Core.UnitStatePoller
 local spells = addon.Modules.FrameAuras.Spells
 
@@ -54,6 +56,13 @@ local DEBUFF_PLAIN_INDEX = 3
 -- What the front of the debuff row is drawn at, as a share of the rest of it. A stun or a boss and
 -- role debuff on a party member is worth more than the debuff beside it.
 local LEAD_SIZE_SCALE = 1.4
+-- The point on a kick icon a row hangs off, keyed by the point of the row that does.
+local MIRRORED_POINT = {
+	TOPLEFT = "TOPRIGHT",
+	TOPRIGHT = "TOPLEFT",
+	BOTTOMLEFT = "BOTTOMRIGHT",
+	BOTTOMRIGHT = "BOTTOMLEFT",
+}
 -- The most icons the head of the row holds. Its own cap rather than the row's, because two stuns
 -- at once on one member is already unusual.
 local MAX_CROWD_CONTROL_ICONS = 2
@@ -175,6 +184,8 @@ local hooked = false
 local frameScratch = {}
 -- Refilled per call for the same reason. The preview list is rebuilt per side per frame.
 local testListScratch = {}
+-- The kick icon's slot options, refilled per kick so no event allocates.
+local kickScratch = {}
 -- Assigned once ApplyToAll exists. The events that drive it all burst, and the one that matters
 -- most fires while the frames it walks are still settling.
 local QueueApplyToAll
@@ -450,6 +461,15 @@ local function CrowdControlIcons()
 	end
 
 	return math.min(MaxIcons("Debuffs"), MAX_CROWD_CONTROL_ICONS)
+end
+
+---Whether the debuff row leads with a kick icon. It rides the crowd control switch, since a kick
+---reads as crowd control to the player.
+---@return boolean
+local function ShowsKicks()
+	local options = SideOptions("Debuffs")
+
+	return active.Debuffs and options ~= nil and options.ShowCrowdControl == true
 end
 
 ---The boss and role group's filter. Always closed to crowd control, which has its own group, and
@@ -897,37 +917,242 @@ local function PowerBarLift(frame, point, pin)
 	return PowerBarInset(frame)
 end
 
----Pins one side's row into its corner of the frame, and puts it over the frame's own artwork.
----Parented to the frame, so the row fades and hides with the unit frame the way Blizzard's own row
----did.
----@param display AuraContainerDisplay
+---Scales a row with its frame and puts it over the frame's own artwork.
+---@param containerFrame table
+---@param frame table
+local function LayerOverHost(containerFrame, frame)
+	-- At any UI scale but 1, a row that ignored the frame's scale would take the wrong fraction of
+	-- it and its corner inset would not line up with the frame's own edge.
+	containerFrame:SetIgnoreParentScale(false)
+
+	local hostLevel = pixels:Number(frame:GetFrameLevel())
+
+	-- Buttons draw at the container's own level, so a level equal to the host's loses to its artwork.
+	if hostLevel then
+		containerFrame:SetFrameLevel(hostLevel + 1)
+	end
+end
+
+---Hangs one side's row off its corner of the frame. With a kick icon leading the row, the row
+---starts against the icon's far edge instead.
+---@param rowFrame table
 ---@param frame table
 ---@param side "Buffs"|"Debuffs"
-local function AnchorSide(display, frame, side)
-	local containerFrame = display.Frame
+---@param kickFrame table? The kick icon's frame while one leads the row.
+local function PinRow(rowFrame, frame, side, kickFrame)
 	local point = AnchorPoint(side)
 	local grow = Grow(side)
 	local pin = growAnchors:GetFlowPin(grow)
 	local offsetX, offsetY = Offset(side)
 
-	display:SetGrow(grow)
+	rowFrame:ClearAllPoints()
 
-	-- Scales with the frame, unlike the free-standing displays elsewhere. At any UI scale but 1, a
-	-- row that ignored it would take the wrong fraction of the frame and its corner inset would not
-	-- line up with the frame's own edge.
-	containerFrame:SetIgnoreParentScale(false)
+	if not kickFrame then
+		rowFrame:SetPoint(pin, frame, point, offsetX, offsetY + PowerBarLift(frame, point, pin))
 
-	-- Buttons draw at the container's own level rather than one above it, so a container level with
-	-- its host loses to the host's own artwork. The strata is left alone, since raising it would
-	-- lift the icons out of the band their host draws in.
-	local hostLevel = pixels:Number(frame:GetFrameLevel())
-
-	if hostLevel then
-		containerFrame:SetFrameLevel(hostLevel + 1)
+		return
 	end
 
-	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(pin, frame, point, offsetX, offsetY + PowerBarLift(frame, point, pin))
+	-- A centred row has no side to chain from, so the kick sits left of the anchor.
+	local rowPin = pin == "TOP" and "TOPLEFT" or pin
+	local gap = Padding(side)
+
+	rowFrame:SetPoint(rowPin, kickFrame, MIRRORED_POINT[rowPin], growAnchors:FillsLeftward(grow) and -gap or gap, 0)
+end
+
+---Puts the kick icon where the debuff row's first icon would sit.
+---@param kickFrame table
+---@param frame table
+local function PinKick(kickFrame, frame)
+	local point = AnchorPoint("Debuffs")
+	local pin = growAnchors:GetFlowPin(Grow("Debuffs"))
+	local offsetX, offsetY = Offset("Debuffs")
+	local kickPin = pin == "TOP" and "TOPRIGHT" or pin
+
+	kickFrame:ClearAllPoints()
+	kickFrame:SetPoint(kickPin, frame, point, offsetX, offsetY + PowerBarLift(frame, point, pin))
+end
+
+---Pins one side's row into its corner of the frame. Parented to the frame, so the row fades and
+---hides with the unit frame the way Blizzard's own row did.
+---@param display AuraContainerDisplay
+---@param frame table
+---@param side "Buffs"|"Debuffs"
+local function AnchorSide(display, frame, side)
+	display:SetGrow(Grow(side))
+	LayerOverHost(display.Frame, frame)
+	PinRow(display.Frame, frame, side)
+end
+
+---Skipped while the kick has not appeared or ended, since a re-point invalidates the layout of
+---every button and a kick event reaches every frame on screen.
+---@param entry FrameAurasEntry
+---@param force boolean? Set after the settings pass, which pins the row in its corner itself.
+local function AnchorDebuffRow(entry, force)
+	if not entry.Debuffs or not entry.KickContainer then
+		return
+	end
+
+	local kickActive = entry.KickActive == true
+
+	if not force and (entry.KickAnchored == true) == kickActive then
+		return
+	end
+
+	entry.KickAnchored = kickActive
+
+	local kickFrame = entry.KickContainer.Frame
+
+	PinKick(kickFrame, entry.Frame)
+	PinRow(entry.Debuffs.Frame, entry.Frame, "Debuffs", kickActive and kickFrame or nil)
+end
+
+---The kick's size, taken from the size the row's buttons actually carry. That lags the requested
+---size while a restyle is held back, and a frame with no row has only the requested one.
+---@param entry FrameAurasEntry
+---@return number
+local function KickSize(entry)
+	local size = entry.Debuffs and entry.Debuffs.Size or IconSize(entry.Frame, "Debuffs")
+
+	return size * LEAD_SIZE_SCALE
+end
+
+---@param entry FrameAurasEntry
+local function SyncKickSize(entry)
+	entry.KickContainer:SetIconSize(KickSize(entry))
+end
+
+---Draws the entry's kick, or clears the slot when there is none, and moves the row around it.
+---@param entry FrameAurasEntry
+---@param expired boolean? Set when the kick's own timer ended, so a hidden frame is cleared too.
+local function UpdateKick(entry, expired)
+	local container = entry.KickContainer
+
+	if not container or testModeActive then
+		return
+	end
+
+	SyncKickSize(entry)
+
+	-- Frames the client left dark keep their subscriptions, so a kick on the player reaches all of
+	-- them and nothing they draw can be seen. An expiry still has to clear the slot.
+	if not expired and entry.Frame.IsVisible and not entry.Frame:IsVisible() then
+		return
+	end
+
+	local kickEntry = entry.KickKey and entry.DebuffsWanted and kickTracker:GetKick(entry.KickUnit) or nil
+	local slotOptions
+
+	if kickEntry then
+		slotOptions = kickScratch
+		slotOptions.Texture = kickEntry.Texture
+		slotOptions.DurationObject = kickEntry.DurationObject
+		slotOptions.Alpha = true
+		slotOptions.Glow = false
+		slotOptions.ReverseCooldown = ReversesCooldown("Debuffs")
+		-- The kick is a lead, so only the row's own switch hides its numbers.
+		slotOptions.HideNumbers = HidesNumbers("Debuffs")
+		slotOptions.FontScale = FontScale("Debuffs")
+
+		local dispelColors = DebuffDispelColors()
+
+		slotOptions.Color = dispelColors and kickEntry.Color or nil
+		slotOptions.Border = dispelColors or nil
+	end
+
+	entry.KickTimer = kickSlot:Render(container, kickEntry, slotOptions, entry.KickTimer, entry.OnKickExpired)
+	entry.KickActive = kickEntry ~= nil
+
+	AnchorDebuffRow(entry)
+end
+
+---The entry's one-slot kick container, built the first time a kick is wanted.
+---@param entry FrameAurasEntry
+---@return IconSlotContainer
+local function EnsureKickContainer(entry)
+	local container = entry.KickContainer
+
+	if container then
+		return container
+	end
+
+	local frame = entry.Frame
+
+	container = iconSlotContainer:New(
+		frame,
+		1,
+		KickSize(entry),
+		Padding("Debuffs"),
+		MASQUE_GROUP,
+		nil,
+		MASQUE_GROUP
+	)
+	entry.KickContainer = container
+	entry.OnKick = function()
+		UpdateKick(entry)
+	end
+	entry.OnKickExpired = function()
+		entry.KickTimer = nil
+		UpdateKick(entry, true)
+	end
+
+	LayerOverHost(container.Frame, frame)
+	PinKick(container.Frame, frame)
+
+	-- Sized off a frame that may not be laid out yet, so the settings pass measures it again.
+	entry.Generation = nil
+
+	return container
+end
+
+---@param entry FrameAurasEntry
+local function ReleaseKick(entry)
+	if not entry.KickKey then
+		return
+	end
+
+	-- Never Unwatch. The tracker keeps no count, so it would end the other modules' subscriptions
+	-- on the same token.
+	kickTracker:Unsubscribe(entry.KickUnit, entry.KickKey)
+	entry.KickKey = nil
+	entry.KickUnit = nil
+end
+
+---Keeps the entry's kick subscription on the unit it is showing, and drawn or cleared to match.
+---@param entry FrameAurasEntry
+---@param wanted boolean Whether the debuff row is on show.
+local function SyncKick(entry, wanted)
+	local unit = entry.Unit
+
+	entry.DebuffsWanted = wanted
+
+	-- A pet never shows one, so its row never has to chain past it.
+	if entry.Debuffs and ShowsKicks() and unit and (entry.KickUnit == unit or not units:IsPetOrMinion(unit)) then
+		EnsureKickContainer(entry)
+
+		if entry.KickUnit ~= unit then
+			ReleaseKick(entry)
+			kickTracker:Watch(unit)
+			entry.KickUnit = unit
+			entry.KickKey = kickTracker:Subscribe(unit, entry.OnKick)
+		end
+	else
+		ReleaseKick(entry)
+	end
+
+	local container = entry.KickContainer
+
+	if not container then
+		return
+	end
+
+	if wanted then
+		container.Frame:Show()
+	else
+		container.Frame:Hide()
+	end
+
+	UpdateKick(entry)
 end
 
 ---@param container IconSlotContainer?
@@ -965,6 +1190,47 @@ local function EnsureTestContainer(entry, side)
 	return container
 end
 
+---Wipes the kick stand-in, and only a stand-in. The same container carries a live kick, which a
+---refresh must not blank.
+---@param entry FrameAurasEntry
+local function ClearKickPreview(entry)
+	if entry.KickPreviewed then
+		entry.KickPreviewed = nil
+		entry.KickContainer:ResetAllSlots()
+	end
+end
+
+---Draws the stand-in for a kick at the head of the debuff preview, or clears it when the row
+---would draw none.
+---@param entry FrameAurasEntry
+---@return table? kickFrame The frame the preview row has to chain after.
+local function ApplyKickPreview(entry)
+	if not ShowsKicks() then
+		ClearKickPreview(entry)
+
+		return nil
+	end
+
+	local container = EnsureKickContainer(entry)
+	local frame = entry.Frame
+	local dispelColors = DebuffDispelColors()
+
+	container:SetIconSize(IconSize(frame, "Debuffs") * LEAD_SIZE_SCALE)
+	testSpells:FillContainer(container, { testSpells.FrameAuras.Kick }, 1, {
+		ReverseCooldown = ReversesCooldown("Debuffs"),
+		HideNumbers = HidesNumbers("Debuffs"),
+		Glow = false,
+		Border = dispelColors or nil,
+		FontScale = FontScale("Debuffs"),
+		Count = 1,
+	})
+	PinKick(container.Frame, frame)
+	container.Frame:Show()
+	entry.KickPreviewed = true
+
+	return container.Frame
+end
+
 ---Draws one side's preview, or clears it for a side that is switched off. A row nobody asked for
 ---draws nothing in play, so it previews nothing either.
 ---@param entry FrameAurasEntry
@@ -975,6 +1241,10 @@ local function ApplyTestSide(entry, side)
 	if not active[side] then
 		ClearTestRow(container)
 
+		if side == "Debuffs" then
+			ClearKickPreview(entry)
+		end
+
 		return
 	end
 
@@ -982,10 +1252,7 @@ local function ApplyTestSide(entry, side)
 
 	local frame = entry.Frame
 	local grow = Grow(side)
-	local point = AnchorPoint(side)
 	local flow = growAnchors:GetFlow(grow)
-	local pin = growAnchors:GetFlowPin(grow)
-	local offsetX, offsetY = Offset(side)
 	local containerFrame = container.Frame
 	local count = TestIconCount(side)
 
@@ -1042,16 +1309,8 @@ local function ApplyTestSide(entry, side)
 
 	-- The same coordinate space and the same corner the live row takes, so the preview stands
 	-- exactly where the icons will be.
-	containerFrame:SetIgnoreParentScale(false)
-
-	local hostLevel = pixels:Number(frame:GetFrameLevel())
-
-	if hostLevel then
-		containerFrame:SetFrameLevel(hostLevel + 1)
-	end
-
-	containerFrame:ClearAllPoints()
-	containerFrame:SetPoint(pin, frame, point, offsetX, offsetY + PowerBarLift(frame, point, pin))
+	LayerOverHost(containerFrame, frame)
+	PinRow(containerFrame, frame, side, side == "Debuffs" and ApplyKickPreview(entry) or nil)
 	containerFrame:Show()
 end
 
@@ -1060,6 +1319,8 @@ local function ClearTestIcons(entry)
 	for _, side in ipairs(SIDES) do
 		ClearTestRow(entry[TEST_FIELDS[side]])
 	end
+
+	ClearKickPreview(entry)
 end
 
 ---Pushes one side's settings at its display: geometry first, then what the groups may draw.
@@ -1147,6 +1408,13 @@ local function ApplySettings(entry)
 
 		entry.Debuffs:SetFilterString(DEBUFF_GROUP, PlainFilter())
 		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, rest)
+
+		if entry.KickContainer then
+			-- The restyle above is refused while auras are secret, so sizing the kick on its own would
+			-- leave it at a size the rest of the row never reached.
+			SyncKickSize(entry)
+			AnchorDebuffRow(entry, true)
+		end
 	end
 end
 
@@ -1199,11 +1467,14 @@ local function ApplyEntry(entry)
 		entry.Buffs:SetShown(wanted)
 	end
 
+	local debuffsWanted = active.Debuffs and occupied
+
 	if entry.Debuffs then
-		local wanted = active.Debuffs and occupied
-		entry.Debuffs:SetEnabled(wanted)
-		entry.Debuffs:SetShown(wanted)
+		entry.Debuffs:SetEnabled(debuffsWanted)
+		entry.Debuffs:SetShown(debuffsWanted)
 	end
+
+	SyncKick(entry, debuffsWanted)
 end
 
 ---The entry for a frame, built the first time the frame is seen. A side switched on after the entry
@@ -1545,4 +1816,14 @@ end
 ---@field Generation number|string? The refresh it was last drawn for, or a stand-in while a
 ---loading screen is up.
 ---@field PowerBarInset number? The power bar height the rows were last placed above.
+---@field KickContainer IconSlotContainer? One slot for the kick icon leading the debuff row.
+---@field KickKey number? The kick tracker subscription, nil while none is held.
+---@field KickUnit string? The token that subscription is on.
+---@field KickTimer table? Clears the kick icon when its lockout ends.
+---@field KickActive boolean? Whether a kick icon is showing.
+---@field KickAnchored boolean? Whether the debuff row was last placed after the kick icon.
+---@field KickPreviewed boolean? Whether the kick container holds a test stand-in.
+---@field DebuffsWanted boolean? Whether the debuff row is on show.
+---@field OnKick fun()? The subscription callback, built once.
+---@field OnKickExpired fun()? The expiry callback, built once.
 

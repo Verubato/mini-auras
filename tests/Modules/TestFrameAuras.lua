@@ -5481,3 +5481,447 @@ fw.describe("Frame Auras - the class buff mark when the client will not answer",
 end)
 
 DropRaidFrame(40)
+
+-- The kick icon is a one-slot container the module builds itself, so the one a frame carries is
+-- found by what was built on it.
+local iconSlotContainer = env.addon.Core.IconSlotContainer
+local kickSlot = env.addon.Core.KickSlot
+local builtContainers = {}
+local realNewContainer = iconSlotContainer.New
+
+iconSlotContainer.New = function(self, ...)
+	local container = realNewContainer(self, ...)
+
+	builtContainers[#builtContainers + 1] = container
+
+	return container
+end
+
+-- The numbers the kick was handed can only be read off the options KickSlot was given.
+local kickHideNumbers = "unset"
+local realKickSlotRender = kickSlot.Render
+
+kickSlot.Render = function(self, container, kickEntry, slotOptions, previousTimer, onExpired)
+	if kickEntry then
+		kickHideNumbers = slotOptions.HideNumbers
+	end
+
+	return realKickSlotRender(self, container, kickEntry, slotOptions, previousTimer, onExpired)
+end
+
+local KICK_SPELL_ID = 1766
+
+---The one-slot container a frame carries its kick icon in, nil where none was built.
+---@param frame table
+---@return IconSlotContainer?
+local function KickContainerOn(frame)
+	for index = #builtContainers, 1, -1 do
+		local container = builtContainers[index]
+
+		if container.Count == 1 and container.Frame:GetParent() == frame then
+			return container
+		end
+	end
+
+	return nil
+end
+
+---@param unit string
+local function LandKick(unit)
+	env.kicks[unit] = { Texture = "tex:kick", DurationObject = {}, StartTime = _G.GetTime(), Duration = 3 }
+	env.fireKick(unit)
+end
+
+---How many times the tracker was asked for something about a unit.
+---@param action string
+---@param unit string
+---@param since number
+---@return number
+local function KickCalls(action, unit, since)
+	local count = 0
+
+	for _, call in ipairs(env.kickCallsSince(since, unit)) do
+		if call.Action == action then
+			count = count + 1
+		end
+	end
+
+	return count
+end
+
+fw.describe("Frame Auras - the kick icon leading the debuff row", function()
+	local frame
+	local unit
+	local shippedSize = options.Debuffs.Size
+
+	---A frame with a live debuff row, built on the current switches.
+	---@param index number
+	local function Build(index)
+		frame = NewRaidFrame(index)
+		unit = "raid" .. index
+		options.Debuffs.Enabled = true
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+	end
+
+	local function Row()
+		return assert(DebuffRow(frame), "the frame got a debuff row")
+	end
+
+	fw.before_each(function()
+		module:StopTesting()
+
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Debuffs.EnableNumbers = true
+		options.Debuffs.LeadNumbersOnly = false
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.Padding = ICON_SPACING
+		options.Debuffs.MaxIcons = 2
+		options.Debuffs.Size = shippedSize
+		acm.restricted = false
+		ResetPlacement()
+		ResetFills()
+		partyAuras:Refresh()
+
+		for key in pairs(env.kicks) do
+			env.kicks[key] = nil
+		end
+
+		kickHideNumbers = "unset"
+	end)
+
+	fw.it("builds no kick icon and holds no subscription while crowd control is off", function()
+		local since = #env.kickCalls
+
+		Build(1)
+
+		assert(KickContainerOn(frame) == nil, "no container is built for a kick nobody asked for")
+		assert(KickCalls("Watch", unit, since) == 0 and KickCalls("Subscribe", unit, since) == 0,
+			"and the tracker is never asked to watch the unit")
+	end)
+
+	fw.it("watches the unit and draws a kick at the crowd control size once crowd control is on", function()
+		options.Debuffs.ShowCrowdControl = true
+
+		local since = #env.kickCalls
+
+		Build(2)
+
+		assert(KickCalls("Watch", unit, since) == 1 and KickCalls("Subscribe", unit, since) == 1,
+			"the unit is watched and subscribed once")
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		assert(not container.Slots[1].IsUsed, "and it is empty until somebody is kicked")
+
+		LandKick(unit)
+
+		assert(container.Slots[1].IsUsed, "the kick fills the slot")
+
+		local plain = Row()._groups[DEBUFF_GROUP].layout.elementHeight
+
+		assert(plain > 0, "the row has a size to be measured against")
+		assert(math.abs(container.Slots[1].Frame:GetWidth() - plain * LEAD_SCALE) < 0.01,
+			"the icon is drawn at the size the crowd control group is, got " .. container.Slots[1].Frame:GetWidth())
+
+		env.kicks[unit] = nil
+		env.fireKick(unit)
+
+		assert(not container.Slots[1].IsUsed, "the slot clears once the kick is gone")
+	end)
+
+	fw.it("takes the row's first corner and sends the row after it while a kick shows", function()
+		options.Debuffs.ShowCrowdControl = true
+
+		Build(3)
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+		local row = Row()
+		local rowPoint, rowTo, _, rowX, rowY = row:GetPoint(1)
+
+		assert(rowTo == frame, "fixture: the row hangs off the frame until a kick lands")
+
+		LandKick(unit)
+
+		local kickPoint, kickTo, _, kickX, kickY = container.Frame:GetPoint(1)
+
+		assert(kickPoint == rowPoint and kickTo == frame and kickX == rowX and kickY == rowY,
+			"the kick sits exactly where the row's first icon did, got " .. tostring(kickPoint))
+
+		local point, relativeTo, relativePoint, x = row:GetPoint(1)
+
+		assert(relativeTo == container.Frame, "the row now hangs off the kick")
+		assert(point == "BOTTOMLEFT" and relativePoint == "BOTTOMRIGHT",
+			"from its far edge on the same line, got " .. tostring(point) .. " to " .. tostring(relativePoint))
+		assert(x == ICON_SPACING, "a gap of the row's padding away, got " .. tostring(x))
+
+		env.kicks[unit] = nil
+		env.fireKick(unit)
+
+		local _, backTo, _, backX, backY = row:GetPoint(1)
+
+		assert(backTo == frame and backX == rowX and backY == rowY, "and goes home when the kick ends")
+	end)
+
+	fw.it("mirrors the chain for a row that fills leftwards", function()
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.Anchor = "BOTTOMRIGHT"
+		options.Debuffs.Grow = "LEFT_UP"
+
+		Build(4)
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		LandKick(unit)
+
+		local point, relativeTo, relativePoint, x = Row():GetPoint(1)
+
+		assert(relativeTo == container.Frame and point == "BOTTOMRIGHT" and relativePoint == "BOTTOMLEFT",
+			"the row hangs off the kick's near side, got " .. tostring(point) .. " to " .. tostring(relativePoint))
+		assert(x == -ICON_SPACING, "and the gap opens the other way, got " .. tostring(x))
+	end)
+
+	fw.it("puts a centred row's kick left of the anchor and the row to its right", function()
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.Grow = "CENTER"
+
+		Build(5)
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		LandKick(unit)
+
+		assert(container.Frame:GetPoint(1) == "TOPRIGHT", "the kick is pinned by its right edge")
+
+		local point, relativeTo, relativePoint = Row():GetPoint(1)
+
+		assert(relativeTo == container.Frame and point == "TOPLEFT" and relativePoint == "TOPRIGHT",
+			"and the row starts at its right, got " .. tostring(point) .. " to " .. tostring(relativePoint))
+	end)
+
+	fw.it("shows and hides with the crowd control switch while a kick is up", function()
+		options.Debuffs.ShowCrowdControl = true
+
+		local since = #env.kickCalls
+
+		Build(6)
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		LandKick(unit)
+		assert(container.Slots[1].IsUsed, "fixture: the kick is showing")
+
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+
+		assert(not container.Slots[1].IsUsed, "switching it off clears the icon")
+		assert(KickCalls("Unsubscribe", unit, since) == 1, "and lets the subscription go")
+		assert(select(2, Row():GetPoint(1)) == frame, "with the row back in its corner")
+
+		env.fireKick(unit)
+
+		options.Debuffs.ShowCrowdControl = true
+		partyAuras:Refresh()
+
+		assert(container.Slots[1].IsUsed, "switching it back on shows the kick that is still running")
+		assert(KickCalls("Subscribe", unit, since) == 2, "on a fresh subscription")
+		assert(KickCalls("Unwatch", unit, since) == 0, "and the tracker is never told to stop watching")
+	end)
+
+	fw.it("moves its subscription to the unit a frame is re-pointed at", function()
+		options.Debuffs.ShowCrowdControl = true
+
+		local since = #env.kickCalls
+
+		Build(7)
+
+		frame.unit = "raid8"
+		PartyHooks().OnSetUnit(frame)
+
+		assert(KickCalls("Unsubscribe", "raid7", since) == 1, "the old unit's subscription is dropped")
+		assert(KickCalls("Subscribe", "raid8", since) == 1 and KickCalls("Watch", "raid8", since) == 1,
+			"and the new one is watched and subscribed")
+
+		for _, call in ipairs(env.kickCallsSince(since)) do
+			assert(call.Action ~= "Unwatch", "nothing is ever unwatched, the tracker keeps no count")
+		end
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		LandKick("raid8")
+
+		assert(container.Slots[1].IsUsed, "a kick on the new unit draws")
+	end)
+
+	fw.it("hides the kick's numbers with the row's switch, and keeps them under the lead rule", function()
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.EnableNumbers = false
+
+		Build(9)
+		LandKick(unit)
+
+		assert(kickHideNumbers == true, "the row's numbers switch off takes the kick's with it")
+
+		options.Debuffs.EnableNumbers = true
+		options.Debuffs.LeadNumbersOnly = true
+		partyAuras:Refresh()
+		LandKick(unit)
+
+		assert(kickHideNumbers == false,
+			"numbers kept to the head of the row keep the kick's, which is a lead, got " .. tostring(kickHideNumbers))
+	end)
+
+	fw.it("previews a kick ahead of the row, and only while crowd control is on", function()
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.MaxIcons = 3
+
+		Build(10)
+		ResetFills()
+		module:StartTesting()
+
+		local kickFill
+		local rowFill
+
+		for _, fill in ipairs(fills) do
+			if fill.Frame:GetParent() == frame then
+				if fill.Spells[1] == KICK_SPELL_ID then
+					kickFill = fill
+				else
+					rowFill = fill
+				end
+			end
+		end
+
+		assert(kickFill, "the preview drew the kick stand-in")
+		assert(rowFill and rowFill.Lead == 2, "the preview row's own stand-ins are as they were")
+		assert(select(2, rowFill.Frame:GetPoint(1)) == kickFill.Frame, "and it is chained after the kick")
+
+		local plain = rowFill.Container.Slots[3].Frame:GetWidth()
+
+		assert(math.abs(kickFill.Container.Slots[1].Frame:GetWidth() - plain * LEAD_SCALE) < 0.01,
+			"the stand-in is drawn at the lead size")
+
+		options.Debuffs.ShowCrowdControl = false
+		partyAuras:Refresh()
+
+		assert(not kickFill.Container.Slots[1].IsUsed, "switching crowd control off mid-preview wipes the stand-in")
+
+		ResetFills()
+		module:StopTesting()
+		module:StartTesting()
+
+		for _, fill in ipairs(fills) do
+			assert(fill.Spells[1] ~= KICK_SPELL_ID, "with crowd control off no kick is previewed")
+		end
+	end)
+
+	fw.it("sizes the kick off the row's own size once a held-back restyle lands", function()
+		-- The mock's screen carries no size until told, which hides a real size behind the fallback.
+		local screenWidth, screenHeight = _G.UIParent:GetWidth(), _G.UIParent:GetHeight()
+
+		_G.UIParent:SetSize(1920, 1080)
+
+		local ok, err = pcall(function()
+			options.Debuffs.ShowCrowdControl = true
+			frame = NewRaidFrame(11)
+			frame:SetSize(100, 80)
+			unit = "raid11"
+			options.Debuffs.Enabled = true
+			partyAuras:Refresh()
+			acm.tickAll(400)
+
+			local container = assert(KickContainerOn(frame), "the kick got a container")
+			local before = Row()._groups[DEBUFF_GROUP].layout.elementHeight
+
+			assert(before ~= FALLBACK_ICON_SIZE, "the row measured the frame, got " .. before)
+
+			options.Debuffs.Size = shippedSize + 25
+			acm.restricted = true
+			partyAuras:Refresh()
+
+			local held = Row()._groups[DEBUFF_GROUP].layout.elementHeight
+
+			assert(math.abs(container.Slots[1].Frame:GetWidth() - held * LEAD_SCALE) < 0.01,
+				"while a restyle is held back the kick keeps the size the row has, got "
+					.. container.Slots[1].Frame:GetWidth())
+
+			acm.restricted = false
+			acm.tickAll(400)
+			partyAuras:Refresh()
+
+			local landed = Row()._groups[DEBUFF_GROUP].layout.elementHeight
+
+			assert(landed > before, "the row took the new size")
+			assert(math.abs(container.Slots[1].Frame:GetWidth() - landed * LEAD_SCALE) < 0.01,
+				"and the kick follows it, got " .. container.Slots[1].Frame:GetWidth())
+		end)
+
+		_G.UIParent:SetSize(screenWidth, screenHeight)
+
+		assert(ok, err)
+	end)
+
+	fw.it("clears a kick that ends while its frame is hidden, and puts the row back", function()
+		options.Debuffs.ShowCrowdControl = true
+		Build(12)
+
+		local visible = true
+
+		frame.IsVisible = function()
+			return visible
+		end
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		LandKick(unit)
+		assert(select(2, Row():GetPoint(1)) == container.Frame, "the row is chained after the kick")
+
+		visible = false
+		env.kicks[unit] = nil
+		acm.runTimers()
+
+		assert(not container.Slots[1].IsUsed, "the slot cleared though nothing could be seen")
+		assert(select(2, Row():GetPoint(1)) == frame, "and the row is back in its corner")
+	end)
+
+	fw.it("lets the subscription go and clears the kick when the debuff row is switched off", function()
+		options.Debuffs.ShowCrowdControl = true
+		Build(13)
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		LandKick(unit)
+		assert(container.Slots[1].IsUsed, "the kick is up")
+
+		local since = #env.kickCalls
+
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(KickCalls("Unsubscribe", unit, since) == 1, "the subscription is let go")
+		assert(KickCalls("Unwatch", unit, since) == 0, "without the tracker being told to stop watching")
+		assert(not container.Slots[1].IsUsed, "and the slot is cleared")
+	end)
+
+	fw.it("never watches or subscribes for a pet frame", function()
+		options.Debuffs.ShowCrowdControl = true
+		env.pets.raidpet1 = true
+
+		local since = #env.kickCalls
+
+		frame = NewRaidFrame(14)
+		frame.unit = "raidpet1"
+		options.Debuffs.Enabled = true
+		partyAuras:Refresh()
+		env.pets.raidpet1 = nil
+
+		assert(KickCalls("Watch", "raidpet1", since) == 0, "a pet is not watched")
+		assert(KickCalls("Subscribe", "raidpet1", since) == 0, "nor subscribed to")
+		assert(KickContainerOn(frame) == nil, "and gets no kick container")
+	end)
+end)
+
+iconSlotContainer.New = realNewContainer
+kickSlot.Render = realKickSlotRender

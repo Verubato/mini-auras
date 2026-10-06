@@ -96,6 +96,8 @@ M.FrameAuras = {
 	CrowdControl = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }, -- Kidney Shot
 	-- Stands in for a boss or role debuff, which the live row always lets in ahead of the stun.
 	Role = { SpellId = 1259790, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }, -- Unstable Affliction
+	-- Leads the row ahead of both, the way a live kick icon does.
+	Kick = 1766, -- Kick
 	Important = 31884,   -- Avenging Wrath
 	Defensive = 33206,   -- Pain Suppression
 	-- A magic buff worth taking off an enemy, for the purge glow. Leads the buff row in the
@@ -175,6 +177,7 @@ local CLASSIC = {
 		},
 		CrowdControl = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR },
 		Role = { SpellId = 172, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }, -- Corruption
+		Kick = 1766, -- Kick
 		Important = 1719,  -- Recklessness
 		Defensive = 871,   -- Shield Wall
 		Purgeable = 1459,  -- Arcane Intellect
