@@ -10,6 +10,7 @@ local GROW_OPTIONS = {
 	"CENTER",
 }
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraButtonPaint = addon.Core.AuraButtonPaint
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 4
@@ -27,7 +28,8 @@ config.Nameplates = M
 ---@param options NameplateSpellTypeOptions
 ---@param defaults table The shipped values for this bar, which the sliders clamp back to when
 ---the typed input is not a number.
-local function BuildSpellTypeSettings(parent, options, defaults)
+---@param isEnemy boolean Whether this bar belongs to an enemy tab, the only side with buffs to purge.
+local function BuildSpellTypeSettings(parent, options, defaults, isEnemy)
 	local container = CreateFrame("Frame", nil, parent)
 
 	container:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
@@ -160,6 +162,24 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 
 	showMillisChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 2, 0)
 	showMillisChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	if isEnemy and auraButtonPaint:HasStealableFilter() then
+		local purgeOnlyChk = mini:Checkbox({
+			Parent = container,
+			LabelText = L["Only glow purgeable"],
+			Tooltip = L["Only enemy buffs you can purge glow, in the Purgeable colour from the Settings tab. Needs Glow icons."],
+			GetValue = function()
+				return options.Icons.GlowPurgeableOnly == true
+			end,
+			SetValue = function(value)
+				options.Icons.GlowPurgeableOnly = value
+				config:Apply(moduleName.Nameplates)
+			end,
+		})
+
+		purgeOnlyChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 3, 0)
+		purgeOnlyChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	end
 
 	local iconSize = helpers:BuildClampedSlider({
 		Parent = container,
@@ -405,6 +425,26 @@ local function BuildSettingsTab(parent, options, db)
 
 	PlaceSwatch(importantSwatch, 2)
 
+	if auraButtonPaint:HasStealableFilter() then
+		local purgeSwatch = mini:ColorSwatch({
+			Parent = parent,
+			LabelText = L["Purgeable"],
+			Tooltip = L["The colour a buff you can take off an enemy lights up in."],
+			HasOpacity = false,
+			GetValue = function()
+				local color = options.PurgeColor
+				return color.R, color.G, color.B, color.A
+			end,
+			SetValue = function(r, g, b, a)
+				local color = options.PurgeColor
+				color.R, color.G, color.B, color.A = r, g, b, a
+				config:Apply(moduleName.Nameplates)
+			end,
+		})
+
+		PlaceSwatch(purgeSwatch, 3)
+	end
+
 	local fontScale = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Font Scale"],
@@ -476,8 +516,8 @@ function M:Build(parent, options)
 	local plateDefaults = dbDefaults.Modules.Nameplates
 
 	BuildSettingsTab(tabCtrl:GetContent("settings"), options, db)
-	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1, plateDefaults.Enemy.Bar1)
-	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2, plateDefaults.Enemy.Bar2)
-	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1, plateDefaults.Friendly.Bar1)
-	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar2"),  options.Friendly.Bar2, plateDefaults.Friendly.Bar2)
+	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1, plateDefaults.Enemy.Bar1, true)
+	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2, plateDefaults.Enemy.Bar2, true)
+	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1, plateDefaults.Friendly.Bar1, false)
+	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar2"),  options.Friendly.Bar2, plateDefaults.Friendly.Bar2, false)
 end

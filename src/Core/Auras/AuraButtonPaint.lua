@@ -5,10 +5,26 @@ local glowStyles = addon.Core.GlowStyles
 -- What colour a 12.1 aura button's ring, glow and fill take, and which of those the engine paints
 -- rather than the addon.
 
+-- Every dispel key the engine looks a colour up by. A key left out takes Blizzard's palette instead.
+-- The empty key covers enrage, per another addon's notes.
+local DISPEL_KEYS = { "Magic", "Curse", "Disease", "Poison", "Bleed", "None", "" }
+
 ---@class AuraButtonPaint
 local M = {}
 
 addon.Core.AuraButtonPaint = M
+
+---The engine calls GetRGBA on each value, so they have to be colour objects and not plain tables.
+---@return table<string, table>
+local function StealColorMap(r, g, b)
+	local map = {}
+
+	for _, key in ipairs(DISPEL_KEYS) do
+		map[key] = CreateColor(r or 1, g or 1, b or 1, 1)
+	end
+
+	return map
+end
 
 ---Applies a glow style's asset to a button's glow frame. Only re-skins when the style actually
 ---changed, since this runs per button on every restyle.
@@ -34,6 +50,15 @@ function M:ApplyGlowStyle(widgets, button, styleName, size)
 		glow:SetPoint("TOPLEFT", button, "TOPLEFT", -padding, padding)
 		glow:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", padding, -padding)
 	end
+end
+
+---Whether the client can restrict a registered texture to stealable auras. Older clients have no
+---such enum, and passing the option blind is not safe there.
+---@return boolean
+function M:HasStealableFilter()
+	local filter = Enum and Enum.CustomAuraButtonDispelTypeStealableFilter
+
+	return filter ~= nil and filter.Stealable ~= nil
 end
 
 ---Whether this button's glow shows at all. A group's own answer wins over the display-wide switch,
@@ -130,6 +155,12 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	-- so switching the colours on never costs those icons their ring.
 	local wantPlainBorder = style.Border == true or (tinted and colored)
 	local colorR, colorG, colorB = M:ButtonColor(instance, widgets)
+	-- The engine hides the glow on anything it cannot steal, so only the purgeable buffs light up.
+	local wantStealGlow = style.GlowStealableOnly == true
+		and M:HasStealableFilter()
+		and widgets.Glow ~= nil
+		and M:GlowWanted(instance, widgets)
+	local stealR, stealG, stealB = style.StealableColorR, style.StealableColorG, style.StealableColorB
 
 	-- This runs per button on every restyle, and the retry ticker restyles every stale display once
 	-- a second. The colour is part of the check so a colour-only change still repaints.
@@ -137,9 +168,13 @@ function M:ApplyDispelTextures(instance, button, widgets)
 		and wantTypelessBorder == widgets.DispelTypelessBorder
 		and wantGlowTint == widgets.DispelGlowTint
 		and wantPlainBorder == widgets.DispelPlainBorder
+		and wantStealGlow == widgets.DispelStealGlow
 		and colorR == widgets.DispelColorR
 		and colorG == widgets.DispelColorG
-		and colorB == widgets.DispelColorB then
+		and colorB == widgets.DispelColorB
+		and stealR == widgets.DispelStealR
+		and stealG == widgets.DispelStealG
+		and stealB == widgets.DispelStealB then
 		return
 	end
 
@@ -147,9 +182,13 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	widgets.DispelTypelessBorder = wantTypelessBorder
 	widgets.DispelGlowTint = wantGlowTint
 	widgets.DispelPlainBorder = wantPlainBorder
+	widgets.DispelStealGlow = wantStealGlow
 	widgets.DispelColorR = colorR
 	widgets.DispelColorG = colorG
 	widgets.DispelColorB = colorB
+	widgets.DispelStealR = stealR
+	widgets.DispelStealG = stealG
+	widgets.DispelStealB = stealB
 	button:ClearDispelTypeTextures()
 
 	if wantBorder then
@@ -173,7 +212,16 @@ function M:ApplyDispelTextures(instance, button, widgets)
 		end
 	end
 
-	if wantGlowTint then
+	if wantStealGlow then
+		button:AddDispelTypeTexture(widgets.Glow.Texture, {
+			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
+			showWhenHarmful = false,
+			showWhenHelpful = true,
+			showWithoutDispelType = true,
+			stealableFilter = Enum.CustomAuraButtonDispelTypeStealableFilter.Stealable,
+			customDispelColorMap = StealColorMap(stealR, stealG, stealB),
+		})
+	elseif wantGlowTint then
 		-- The glow follows the border, so a group ringing only real types never lights a typeless aura.
 		button:AddDispelTypeTexture(widgets.Glow.Texture, {
 			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,

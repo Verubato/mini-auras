@@ -480,6 +480,201 @@ fw.describe("Nameplates 12.1 - pooled bar displays", function()
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_pet")
 		assert(not display._enabled and not display:IsShown(), "flip released the display")
 	end)
+
+	-- The registration the engine was last handed for a bar's first cc button, which is the glow.
+	local function lastRegistration(token)
+		local display = env.containersForUnit(token)[#env.containersForUnit(token)]
+		local button = display._groups.cc.buttons[1]
+
+		return button._lastArgs.AddDispelTypeTexture[2]
+	end
+
+	local function withPurgeOnly(barOptions, value, run)
+		local before = barOptions.Icons.GlowPurgeableOnly
+		barOptions.Icons.GlowPurgeableOnly = value
+
+		local ok, err = pcall(run)
+
+		barOptions.Icons.GlowPurgeableOnly = before
+		env.addon.Modules.NameplatesModule:Refresh()
+		assert(ok, err)
+	end
+
+	fw.it("an enemy bar set to glow purgeable only registers the stealable glow on its buttons", function()
+		local barOptions = db.Modules.Nameplates.Enemy.Bar1
+
+		withPurgeOnly(barOptions, true, function()
+			env.addon.Modules.NameplatesModule:Refresh()
+			env.enemies.np_purge = true
+			env.addPlate("np_purge")
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_purge")
+			settleGroups()
+
+			local options = lastRegistration("np_purge")
+
+			assert(options.stealableFilter == Enum.CustomAuraButtonDispelTypeStealableFilter.Stealable,
+				"the glow is held to stealable buffs")
+			assert(options.showWhenHarmful == false, "and never lights crowd control")
+
+			local purge = db.Modules.Nameplates.PurgeColor
+			local r, g, b = options.customDispelColorMap.Magic:GetRGBA()
+
+			assert(r == purge.R and g == purge.G and b == purge.B, "in the module's purgeable colour")
+
+			barOptions.Icons.GlowPurgeableOnly = false
+			env.addon.Modules.NameplatesModule:Refresh()
+			settleGroups()
+
+			assert(lastRegistration("np_purge").stealableFilter == nil, "switching it off restyles the display back")
+		end)
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_purge")
+		env.plates.np_purge = nil
+		env.enemies.np_purge = nil
+	end)
+
+	fw.it("the kick icon does not glow while its bar glows purgeable buffs only", function()
+		local barOptions = db.Modules.Nameplates.Enemy.Bar1
+		local slotClass = env.addon.Core.IconSlotContainer
+		local realSetSlot = slotClass.SetSlot
+		local kickGlow = "unset"
+
+		function slotClass:SetSlot(index, options)
+			if index == 1 then
+				kickGlow = options.Glow
+			end
+
+			return realSetSlot(self, index, options)
+		end
+
+		local ok, err = pcall(function()
+			env.kicks.np_kick = {
+				Texture = "tex:kick",
+				DurationObject = {},
+				StartTime = 0,
+				Duration = 3,
+				Color = { r = 1, g = 0.2, b = 0.2 },
+			}
+
+			env.enemies.np_kick = true
+			env.addPlate("np_kick")
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_kick")
+			settleGroups()
+
+			assert(kickGlow == true, "fixture: the kick glows with the bar's glow on")
+
+			withPurgeOnly(barOptions, true, function()
+				env.addon.Modules.NameplatesModule:Refresh()
+				kickGlow = "unset"
+				nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_kick")
+
+				assert(kickGlow == false, "the kick is not a buff, so it never glows here")
+			end)
+		end)
+
+		slotClass.SetSlot = realSetSlot
+		env.kicks.np_kick = nil
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_kick")
+		env.plates.np_kick = nil
+		env.enemies.np_kick = nil
+		assert(ok, err)
+	end)
+
+	fw.it("the preview glows no purgeable icon on a bar with Glow icons off", function()
+		local barOptions = db.Modules.Nameplates.Enemy.Bar1
+		local slotClass = env.addon.Core.IconSlotContainer
+		local realSetSlot = slotClass.SetSlot
+		local glowing = 0
+		local plainBorders = 0
+		local glowBefore = barOptions.Icons.Glow
+		local defensivesBefore = barOptions.ShowDefensives
+		barOptions.ShowDefensives = true
+
+		function slotClass:SetSlot(index, options)
+			if options.Glow then
+				glowing = glowing + 1
+			elseif options.Color ~= nil then
+				plainBorders = plainBorders + 1
+			end
+
+			return realSetSlot(self, index, options)
+		end
+
+		local ok, err = pcall(withPurgeOnly, barOptions, true, function()
+			env.addon.Modules.NameplatesModule:Refresh()
+			env.enemies.np_noglow = true
+			env.addPlate("np_noglow")
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_noglow")
+			settleGroups()
+			barOptions.Icons.Glow = true
+			glowing = 0
+			env.addon.Modules.Nameplates.Display:ShowTestIcons()
+
+			assert(glowing > 0, "fixture: the purgeable stand-in glows when the bar's glow is on")
+			assert(plainBorders > 0, "the icons that do not glow keep their coloured border")
+
+			barOptions.Icons.Glow = false
+			glowing = 0
+			env.addon.Modules.Nameplates.Display:ShowTestIcons()
+
+			assert(glowing == 0, "nothing glows when the bar's glow is off")
+		end)
+
+		slotClass.SetSlot = realSetSlot
+		barOptions.Icons.Glow = glowBefore
+		barOptions.ShowDefensives = defensivesBefore
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_noglow")
+		env.plates.np_noglow = nil
+		env.enemies.np_noglow = nil
+		env.addon.Modules.NameplatesModule:Refresh()
+		assert(ok, err)
+	end)
+
+	fw.it("a friendly bar never registers the stealable glow", function()
+		local friendlyBar = db.Modules.Nameplates.Friendly.Bar1
+		local enabledBefore = friendlyBar.Enabled
+		friendlyBar.Enabled = true
+
+		withPurgeOnly(friendlyBar, true, function()
+			env.addon.Modules.NameplatesModule:Refresh()
+			env.addPlate("np_friend_purge")
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_friend_purge")
+			settleGroups()
+
+			assert(lastRegistration("np_friend_purge").stealableFilter == nil,
+				"a friendly unit's buffs are never stealable by the player")
+		end)
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_friend_purge")
+		env.plates.np_friend_purge = nil
+		friendlyBar.Enabled = enabledBefore
+		env.addon.Modules.NameplatesModule:Refresh()
+	end)
+
+	fw.it("an enemy bar changes nothing on a client without the stealable filter", function()
+		local filter = Enum.CustomAuraButtonDispelTypeStealableFilter
+		local barOptions = db.Modules.Nameplates.Enemy.Bar1
+		Enum.CustomAuraButtonDispelTypeStealableFilter = nil
+
+		local ok, err = pcall(withPurgeOnly, barOptions, true, function()
+			env.addon.Modules.NameplatesModule:Refresh()
+			env.enemies.np_old = true
+			env.addPlate("np_old")
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_old")
+			settleGroups()
+
+			local options = lastRegistration("np_old")
+
+			assert(options.stealableFilter == nil and options.customDispelColorMap == nil,
+				"nothing stealable-related is passed")
+		end)
+
+		Enum.CustomAuraButtonDispelTypeStealableFilter = filter
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_old")
+		env.plates.np_old = nil
+		env.enemies.np_old = nil
+		assert(ok, err)
+	end)
 end)
 
 fw.describe("Duel faction flip - poll-based re-registration", function()

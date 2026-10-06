@@ -355,6 +355,8 @@ local dbDefaults = {
 			-- Taken by CC and disarm on the bars whose UseDispelColors is off. The ones still on
 			-- the dispel palette ignore it.
 			CrowdControlColor = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
+			-- The glow colour of an enemy buff the player can purge, on bars set to glow only those.
+			PurgeColor = { R = 0.35, G = 0.7, B = 1, A = 1 },
 
 			---@class NameplateFactionOptions
 			Friendly = {
@@ -427,6 +429,8 @@ local dbDefaults = {
 					Icons = {
 						Size = 35,
 						Glow = true,
+						-- Narrows Glow to enemy buffs the player can purge, in the module's PurgeColor.
+						GlowPurgeableOnly = false,
 						ReverseCooldown = true,
 						ColorMode = "DISPEL",
 						MaxIcons = 5,
@@ -450,6 +454,8 @@ local dbDefaults = {
 					Icons = {
 						Size = 35,
 						Glow = true,
+						-- Narrows Glow to enemy buffs the player can purge, in the module's PurgeColor.
+						GlowPurgeableOnly = false,
 						ReverseCooldown = true,
 						ColorMode = "DISPEL",
 						MaxIcons = 5,

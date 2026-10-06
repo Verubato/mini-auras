@@ -9,6 +9,7 @@ local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
+local auraButtonPaint = addon.Core.AuraButtonPaint
 local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
 local slotDistribution = addon.Utils.SlotDistribution
@@ -49,6 +50,7 @@ local TEST_DEFENSIVE_COUNT = #TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS
 local TEST_IMPORTANT_COUNT = #TEST_IMPORTANT_NAMEPLATE_SPELL_IDS
 
 local TEST_CC_DISPEL_COLORS = testSpellData.Nameplates.DispelColors
+local TEST_PURGEABLE = testSpellData.Nameplates.Purgeable
 
 -- Caption locale keys for the test-mode bar labels, matching the config tab titles.
 local TEST_BAR_LABELS = {
@@ -60,11 +62,13 @@ local TEST_BAR_LABELS = {
 local DEFAULT_IMPORTANT_COLOR = { R = 1, G = 0.2, B = 0.2 }
 local DEFAULT_DEFENSIVE_COLOR = { R = 0.2, G = 1, B = 0.2 }
 local DEFAULT_CC_COLOR = { R = 0.64, G = 0.21, B = 0.93 }
+local DEFAULT_PURGE_COLOR = { R = 0.35, G = 0.7, B = 1 }
 -- The configured tints, refilled rather than reallocated. Both shapes are needed: the aura groups
 -- read [1..3], the IconSlotContainer test icons read r/g/b.
 local importantColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
 local defensiveColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
+local purgeColor = { 0.35, 0.7, 1, r = 0.35, g = 0.7, b = 1, a = 1 }
 -- Group key -> tint, handed to the display at creation and on every re-acquisition. Rewritten per
 -- bar, since colouring by category is a per-bar toggle.
 local barGroupColors = {}
@@ -381,6 +385,18 @@ local function RefreshCategoryColors()
 	moduleUtil:FillColor(importantColor, nmModule and nmModule.ImportantColor, DEFAULT_IMPORTANT_COLOR)
 	moduleUtil:FillColor(defensiveColor, nmModule and nmModule.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
 	moduleUtil:FillColor(ccColor, nmModule and nmModule.CrowdControlColor, DEFAULT_CC_COLOR)
+	moduleUtil:FillColor(purgeColor, nmModule and nmModule.PurgeColor, DEFAULT_PURGE_COLOR)
+end
+
+---Whether a bar glows only the buffs the player can purge. Enemy bars only, since a friendly
+---unit's buffs are never stealable by the player, and only where the client can filter for it.
+---@param factionKey "Enemy"|"Friendly"
+---@return boolean
+local function GlowsPurgeableOnly(barOptions, factionKey)
+	return factionKey == "Enemy"
+		and barOptions.Icons.Glow == true
+		and barOptions.Icons.GlowPurgeableOnly == true
+		and auraButtonPaint:HasStealableFilter()
 end
 
 ---The tints a bar's aura groups take, keyed by group key. The engine tints a whole group, so the
@@ -405,7 +421,7 @@ end
 
 ---Fills the shared style scratch from a bar's options.
 ---@return AuraDisplayStyle
-local function BarStyle(barOptions)
+local function BarStyle(barOptions, factionKey)
 	local style = auraContainerDisplay:BuildStandardStyle(barOptions.Icons, db.Modules.Nameplates.FontScale)
 	-- Nameplates keep the colour choice in ColorMode, which the standard reader doesn't know. Any
 	-- mode but None wants the paint code's coloured path, whether the tints come from the game's
@@ -415,6 +431,13 @@ local function BarStyle(barOptions)
 	-- this a stun gets the tinted glow but no ring, which reads as the border being broken.
 	style.BorderWithoutDispelType = true
 	style.ShowTooltips = barOptions.ShowTooltips ~= false
+
+	if GlowsPurgeableOnly(barOptions, factionKey) then
+		RefreshCategoryColors()
+		style.GlowStealableOnly = true
+		style.StealableColor = purgeColor
+	end
+
 	return style
 end
 
@@ -451,7 +474,7 @@ local function BarLook(bar, barOptions, factionKey)
 
 	local size = BarIconSize(barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
-	local style = CopyStyle(BarStyle(barOptions))
+	local style = CopyStyle(BarStyle(barOptions, factionKey))
 
 	look = {
 		Generation = optionsGeneration,
@@ -896,7 +919,7 @@ end
 
 ---Shows test icons for one bar, walking TEST_BAR_CATEGORIES in priority order (CC first) and
 ---dividing the slots with the same distribution as the live path.
-local function ShowBarTestIcons(container, barOptions, now)
+local function ShowBarTestIcons(container, barOptions, factionKey, now)
 	if not container or not barOptions then
 		return
 	end
@@ -910,6 +933,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 	)
 
 	local iconsGlow = barOptions.Icons.Glow
+	local purgeOnly = GlowsPurgeableOnly(barOptions, factionKey)
 	local iconsReverse = barOptions.Icons.ReverseCooldown
 	local mode = auraContainerDisplay:ResolveColorMode(barOptions.Icons)
 	local showTooltips = barOptions.ShowTooltips ~= false
@@ -932,11 +956,22 @@ local function ShowBarTestIcons(container, barOptions, now)
 				layerScratch.Texture = tex
 				layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
 				layerScratch.Alpha = true
-				layerScratch.Glow = iconsGlow
 				layerScratch.ReverseCooldown = iconsReverse
 				layerScratch.FontScale = fontScale
 				local perSpell = mode == COLOR_MODE_DISPEL and category.Colors and category.Colors[spellId]
 				layerScratch.Color = mode ~= COLOR_MODE_NONE and (perSpell or category.Color) or nil
+
+				if purgeOnly then
+					local purgeable = TEST_PURGEABLE[spellId] == true
+					layerScratch.Glow = purgeable
+
+					if purgeable then
+						layerScratch.Color = purgeColor
+					end
+				else
+					layerScratch.Glow = iconsGlow
+				end
+
 				layerScratch.Border = true
 				layerScratch.SpellId = showTooltips and spellId or nil
 				container:SetSlot(slot, layerScratch)
@@ -952,11 +987,12 @@ end
 ---@param data NameplateData
 local function ShowDataTestIcons(data, now)
 	local options = M:GetUnitOptions(data.UnitToken)
+	local factionKey = options == nmModule.Enemy and "Enemy" or "Friendly"
 	local barLabels = options == nmModule.Enemy and TEST_BAR_LABELS.Enemy or TEST_BAR_LABELS.Friendly
 	for _, bar in ipairs(BARS) do
 		local barOptions = options[bar.Key]
 		if barOptions and barOptions.Enabled and data[bar.DataField] then
-			ShowBarTestIcons(data[bar.DataField], barOptions, now)
+			ShowBarTestIcons(data[bar.DataField], barOptions, factionKey, now)
 			moduleUtil:SetTestLabel(data[bar.DataField].Frame, L[barLabels[bar.Key]])
 		end
 	end
@@ -1145,16 +1181,18 @@ function M:UpdateKick(data)
 
 	local unitOptions = self:GetUnitOptions(data.UnitToken)
 	local kickEntry = kickTracker:GetKick(data.UnitToken)
+	local factionKey = unitOptions == nmModule.Enemy and "Enemy" or "Friendly"
 
 	for _, bar in ipairs(BARS) do
 		local barOptions = unitOptions[bar.Key]
 		local container = data[bar.DataField]
 		if barOptions and barOptions.Enabled and container then
+			local glowsPurgeableOnly = GlowsPurgeableOnly(barOptions, factionKey)
 			if barOptions.ShowCrowdControl and kickEntry then
 				layerScratch.Texture = kickEntry.Texture
 				layerScratch.DurationObject = kickEntry.DurationObject
 				layerScratch.Alpha = true
-				layerScratch.Glow = barOptions.Icons.Glow
+				layerScratch.Glow = barOptions.Icons.Glow and not glowsPurgeableOnly
 				layerScratch.ReverseCooldown = barOptions.Icons.ReverseCooldown
 				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
 				layerScratch.FontScale = db.Modules.Nameplates.FontScale

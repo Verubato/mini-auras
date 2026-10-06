@@ -537,6 +537,118 @@ fw.describe("AuraContainerDisplay - dispel-type registrations", function()
 		assert(glowRegistration("role").showWithoutDispelType == false,
 			"while a group ringing only real types does not")
 	end)
+
+	local DISPEL_KEYS = { "Magic", "Curse", "Disease", "Poison", "Bleed", "None", "" }
+
+	---The registration a button's glow texture was last handed, which is its last one since the
+	---glow registers after the borders.
+	local function lastGlowRegistration(instance)
+		local button = instance.Buttons[1]
+		local args = button._lastArgs.AddDispelTypeTexture
+
+		assert(args[1] == instance.ButtonWidgets[button].Glow.Texture, "the last registration is the glow")
+
+		return args[2]
+	end
+
+	fw.it("registers the glow for stealable buffs only, in the picked colour, when asked to", function()
+		local instance = newInstance()
+		instance:SetStyle({
+			ColorByDispelType = true,
+			Glow = true,
+			GlowStealableOnly = true,
+			StealableColor = { 0.1, 0.2, 0.3 },
+		})
+
+		local options = lastGlowRegistration(instance)
+
+		assert(options.stealableFilter == Enum.CustomAuraButtonDispelTypeStealableFilter.Stealable,
+			"the engine is told to show it on stealable auras only")
+		assert(options.showWhenHelpful == true and options.showWhenHarmful == false,
+			"on buffs, so crowd control never glows")
+		assert(options.showWithoutDispelType == true, "a buff with no dispel type still glows")
+
+		for _, key in ipairs(DISPEL_KEYS) do
+			local color = options.customDispelColorMap[key]
+
+			assert(color, "the map covers the key '" .. key .. "'")
+
+			local r, g, b, a = color:GetRGBA()
+
+			assert(r == 0.1 and g == 0.2 and b == 0.3 and a == 1,
+				"and sends it to the picked colour rather than the game's palette")
+		end
+
+		local count = 0
+
+		for _ in pairs(options.customDispelColorMap) do
+			count = count + 1
+		end
+
+		assert(count == #DISPEL_KEYS, "the map carries no key this list does not, so a new one must be listed here")
+	end)
+
+	fw.it("keeps the glow on the dispel registration when the stealable switch is off", function()
+		local instance = newInstance()
+		instance:SetStyle({ ColorByDispelType = true, Glow = true, StealableColor = { 0.1, 0.2, 0.3 } })
+
+		local options = lastGlowRegistration(instance)
+
+		assert(options.stealableFilter == nil and options.customDispelColorMap == nil,
+			"nothing about stealing reaches the engine")
+		assert(options.showWhenHarmful == true, "and harmful auras glow as before")
+	end)
+
+	fw.it("re-registers the stealable glow when only its colour changes", function()
+		local instance = newInstance()
+		local style = { Glow = true, GlowStealableOnly = true, StealableColor = { 0.1, 0.2, 0.3 } }
+		instance:SetStyle(style)
+		local adds = countCalls(instance, "AddDispelTypeTexture")
+
+		instance:SetStyle({ Glow = true, GlowStealableOnly = true, StealableColor = { 0.9, 0.8, 0.7 } })
+
+		assert(countCalls(instance, "AddDispelTypeTexture") > adds, "registered again")
+
+		local r = lastGlowRegistration(instance).customDispelColorMap.Magic:GetRGBA()
+
+		assert(r == 0.9, "with the new colour")
+	end)
+
+	fw.it("stops narrowing the glow once the switch goes off", function()
+		local instance = newInstance()
+		instance:SetStyle({ ColorByDispelType = true, Glow = true, GlowStealableOnly = true })
+		instance:SetStyle({ ColorByDispelType = true, Glow = true })
+
+		assert(lastGlowRegistration(instance).stealableFilter == nil, "back to the plain registration")
+	end)
+
+	fw.it("passes nothing stealable-related to a client without the filter", function()
+		local filter = Enum.CustomAuraButtonDispelTypeStealableFilter
+		Enum.CustomAuraButtonDispelTypeStealableFilter = nil
+
+		local ok, err = pcall(function()
+			local instance = newInstance()
+			instance:SetStyle({ ColorByDispelType = true, Glow = true, GlowStealableOnly = true })
+
+			local options = lastGlowRegistration(instance)
+
+			assert(options.stealableFilter == nil and options.customDispelColorMap == nil,
+				"the option is not passed blind")
+		end)
+
+		Enum.CustomAuraButtonDispelTypeStealableFilter = filter
+		assert(ok, err)
+	end)
+
+	fw.it("does not narrow a glow the display has switched off", function()
+		local instance = newInstance()
+		instance:SetStyle({ ColorByDispelType = true, Glow = false, GlowStealableOnly = true })
+
+		local button = instance.Buttons[1]
+		local args = button._lastArgs.AddDispelTypeTexture
+
+		assert(args[1] ~= instance.ButtonWidgets[button].Glow.Texture, "the glow texture is not registered")
+	end)
 end)
 
 fw.describe("AuraContainerDisplay - glow lifecycle", function()
@@ -748,6 +860,24 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 
 		assert(display:GetStyleGeneration("test", style, 30, 2) ~= before,
 			"changing the glow type must invalidate cached displays")
+	end)
+
+	fw.it("the style generation covers the stealable glow colour", function()
+		local style = display:GetStyleScratch()
+		style.StealableColor = { 0.1, 0.2, 0.3 }
+
+		local before = display:GetStyleGeneration("steal", style, 30, 2)
+		style.StealableColor = { 0.4, 0.2, 0.3 }
+
+		assert(display:GetStyleGeneration("steal", style, 30, 2) ~= before,
+			"a new purgeable colour must invalidate cached displays")
+	end)
+
+	fw.it("hands the style scratch out without the previous stealable colour", function()
+		local style = display:GetStyleScratch()
+		style.StealableColor = { 0.1, 0.2, 0.3 }
+
+		assert(display:GetStyleScratch().StealableColor == nil, "no colour inherited from the last caller")
 	end)
 
 	fw.it("gives each key its own generation", function()

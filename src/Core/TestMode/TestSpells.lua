@@ -58,6 +58,8 @@ M.Nameplates = {
 		[408] = DEBUFF_TYPE_NONE_COLOR,
 		[5782] = DEBUFF_TYPE_MAGIC_COLOR,
 	},
+	---The buffs the stealable-only glow lights, keyed by spell id.
+	Purgeable = { [1022] = true },
 }
 
 ---The party and raid frame rows, and the target and focus rows, whose plain icons take bare spell
@@ -158,6 +160,8 @@ local CLASSIC = {
 			[408] = DEBUFF_TYPE_NONE_COLOR,
 			[5782] = DEBUFF_TYPE_MAGIC_COLOR,
 		},
+		---The buffs the stealable-only glow lights, keyed by spell id.
+		Purgeable = { [1022] = true },
 	},
 	FrameAuras = {
 		Buffs = { 774, 8936, 139, 17 }, -- Rejuvenation, Regrowth, Renew, Power Word: Shield

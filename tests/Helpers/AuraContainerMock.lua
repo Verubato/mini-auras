@@ -790,6 +790,8 @@ function M.setup()
 	_G.Enum = _G.Enum or {}
 	_G.Enum.CustomAuraButtonDispelTypeTextureStyle = _G.Enum.CustomAuraButtonDispelTypeTextureStyle
 		or { Border = 0, BorderWithIcon = 1, Icon = 2, PreserveAsset = 3, CustomAsset = 4 }
+	_G.Enum.CustomAuraButtonDispelTypeStealableFilter = _G.Enum.CustomAuraButtonDispelTypeStealableFilter
+		or { Stealable = 0, NotStealable = 1 }
 	_G.Enum.LuaCurveType = _G.Enum.LuaCurveType or { Linear = 0, Step = 1 }
 	_G.Enum.DurationTextBindingProperty = _G.Enum.DurationTextBindingProperty
 		or { RemainingDuration = 0, RemainingPercent = 1 }
@@ -825,8 +827,14 @@ function M.setup()
 		end
 		return curve
 	end
+	-- The engine reads a colour map's values through GetRGBA, so a plain table has to fail here too.
+	local colorMethods = {
+		GetRGBA = function(self)
+			return self.r, self.g, self.b, self.a
+		end,
+	}
 	_G.CreateColor = _G.CreateColor or function(r, g, b, a)
-		return { r = r, g = g, b = b, a = a }
+		return setmetatable({ r = r, g = g, b = b, a = a }, { __index = colorMethods })
 	end
 	_G.AnchorUtil = _G.AnchorUtil or {
 		FlowLayoutAxis = { Horizontal = 0, Vertical = 1 },

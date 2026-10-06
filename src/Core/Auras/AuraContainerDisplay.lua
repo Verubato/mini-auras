@@ -44,6 +44,7 @@ local STYLE_FIELDS = {
 	"ColorByDispelType",
 	"BorderWithoutDispelType",
 	"Glow",
+	"GlowStealableOnly",
 	"FontScale",
 	"ShowTooltips",
 	"Pandemic",
@@ -493,6 +494,7 @@ local function StyleDiffersFromStored(instance, style)
 	local pandemic = style.PandemicColor
 	local text = style.TextColor
 	local label = style.LabelColor
+	local stealable = style.StealableColor
 
 	if not stored.Populated
 		or stored.DisableSwipe ~= ((db and db.DisableSwipe) or false)
@@ -513,7 +515,10 @@ local function StyleDiffersFromStored(instance, style)
 		or stored.TextColorB ~= (text and text[3])
 		or stored.LabelColorR ~= (label and label[1])
 		or stored.LabelColorG ~= (label and label[2])
-		or stored.LabelColorB ~= (label and label[3]) then
+		or stored.LabelColorB ~= (label and label[3])
+		or stored.StealableColorR ~= (stealable and stealable[1])
+		or stored.StealableColorG ~= (stealable and stealable[2])
+		or stored.StealableColorB ~= (stealable and stealable[3]) then
 		return true
 	end
 
@@ -543,6 +548,7 @@ local function StoreStyle(instance, style)
 	local pandemic = style.PandemicColor
 	local text = style.TextColor
 	local label = style.LabelColor
+	local stealable = style.StealableColor
 
 	for _, field in ipairs(STYLE_FIELDS) do
 		stored[field] = style[field]
@@ -569,6 +575,9 @@ local function StoreStyle(instance, style)
 	stored.LabelColorR = label and label[1]
 	stored.LabelColorG = label and label[2]
 	stored.LabelColorB = label and label[3]
+	stored.StealableColorR = stealable and stealable[1]
+	stored.StealableColorG = stealable and stealable[2]
+	stored.StealableColorB = stealable and stealable[3]
 	stored.Populated = true
 
 	return true
@@ -2246,6 +2255,7 @@ function M:GetStyleScratch()
 	styleScratch.PandemicColor = nil
 	styleScratch.TextColor = nil
 	styleScratch.LabelColor = nil
+	styleScratch.StealableColor = nil
 
 	return styleScratch
 end
@@ -2305,6 +2315,7 @@ function M:GetStyleGeneration(key, style, size, spacing)
 	styleStamps:Add(auraCountdownText:GetColorGeneration())
 	styleStamps:AddColor(style.TextColor)
 	styleStamps:AddColor(style.LabelColor)
+	styleStamps:AddColor(style.StealableColor)
 
 	return styleStamps:Commit()
 end
@@ -2462,6 +2473,10 @@ end
 ---@field GlowColor number[]? {r, g, b} tint for every glow on the display. A group's own
 ---GlowColor overrides it, and unset leaves the glow plain white. Resolved from the global db by
 ---StoreStyle, never by a caller.
+---@field GlowStealableOnly boolean? Narrow the glow to buffs the player can steal or purge, in
+---StealableColor. Ignored on a client without the engine's stealable filter.
+---@field StealableColor number[]? {r, g, b} the stealable-only glow takes. Copied component-wise
+---like GlowColor, so callers may pass a reused scratch.
 ---@field LabelFontSize number? Text size for a Label display's fontstrings (default 20). Resolved
 ---from the global db by StoreStyle, never by a caller.
 ---@field LabelFontFlags string? Font flags ("OUTLINE" etc.) for a Label display's fontstrings.
