@@ -52,6 +52,8 @@ local groups = {
 			432496, -- Holy Bulwark
 			432607, -- Holy Bulwark
 			432502, -- Sacred Weapon
+			431381, -- Dawnlight
+			156322, -- Eternal Flame
 		},
 	},
 	{
