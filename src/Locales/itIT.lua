@@ -544,6 +544,8 @@ L:RegisterLocale("itIT", function() return {
 	["Scales this row's countdown and stack count text."] = "Ridimensiona il conto alla rovescia e i cumuli di questa riga.",
 	["Show numbers"] = "Mostra numeri",
 	["Shows cooldown numbers."] = "Mostra i numeri del conto alla rovescia.",
+	["CC numbers only"] = "Numeri solo su CC",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "Mostra i numeri del conto alla rovescia solo sulle penalità di controllo delle masse e dei boss. Le altre penalità mostrano ancora le cariche. Richiede Mostra numeri.",
 	["Shows crowd control debuffs."] = "Mostra le penalità di controllo delle masse.",
 	["Purgeable buffs"] = "Benefici dissolvibili",
 	["Purge glow"] = "Dissolvimento",

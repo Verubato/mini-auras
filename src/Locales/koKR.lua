@@ -546,6 +546,8 @@ L:RegisterLocale("koKR", function() return {
 	["Scales this row's countdown and stack count text."] = "이 줄의 남은 시간과 중첩 수 글자 크기를 조절합니다.",
 	["Show numbers"] = "숫자 표시",
 	["Shows cooldown numbers."] = "카운트다운 숫자를 표시합니다.",
+	["CC numbers only"] = "군중 제어만 숫자",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "카운트다운 숫자를 군중 제어와 우두머리 디버프에만 표시합니다. 다른 디버프는 중첩 수를 계속 표시합니다. 숫자 표시가 켜져 있어야 합니다.",
 	["Shows crowd control debuffs."] = "군중 제어 디버프를 표시합니다.",
 	["Purgeable buffs"] = "해제 가능한 버프",
 	["Purge glow"] = "해제 발광",

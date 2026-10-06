@@ -546,6 +546,8 @@ L:RegisterLocale("deDE", function() return {
 	["Scales this row's countdown and stack count text."] = "Skaliert Zeittext und Stufenanzahl dieser Reihe.",
 	["Show numbers"] = "Zahlen zeigen",
 	["Shows cooldown numbers."] = "Zeigt die Countdown-Zahlen.",
+	["CC numbers only"] = "Zahlen nur bei CC",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "Zeigt die Countdown-Zahlen nur bei Massenkontroll- und Boss-Schwächungszaubern. Andere Schwächungszauber zeigen weiter ihre Stufen. Benötigt „Zahlen zeigen“.",
 	["Shows crowd control debuffs."] = "Zeigt Massenkontroll-Schwächungszauber.",
 	["Purgeable buffs"] = "Bannbare Buffs",
 	["Purge glow"] = "Bann-Leuchten",

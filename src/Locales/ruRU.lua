@@ -546,6 +546,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Scales this row's countdown and stack count text."] = "Масштабирует отсчёт и число зарядов в этом ряду.",
 	["Show numbers"] = "Показывать цифры",
 	["Shows cooldown numbers."] = "Показывает цифры обратного отсчёта.",
+	["CC numbers only"] = "Цифры лишь у контроля",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "Показывает цифры обратного отсчёта только на ослаблениях контроля и босса. Остальные ослабления по-прежнему показывают заряды. Нужно включить «Показывать цифры».",
 	["Shows crowd control debuffs."] = "Показывает ослабления контроля.",
 	["Purgeable buffs"] = "Рассеиваемые усиления",
 	["Purge glow"] = "Рассеивание",

@@ -287,6 +287,26 @@ fw.describe("Frame Auras page - the countdown numbers on each row", function()
 
 		assert(frameAuras.Debuffs.EnableNumbers == true, "the debuff tab's switch writes the debuff row")
 	end)
+
+	fw.it("lets the debuff tab keep the numbers on crowd control alone", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local switch = SwitchOnTabWith(addon, addon.L["CC numbers only"], addon.L["Dispellable by me"])
+
+		fw.not_nil(switch, "the debuff tab offers the switch")
+		fw.is_nil(SwitchOnTabWith(addon, addon.L["CC numbers only"], addon.L["Mine"]),
+			"and the buff tab, which has no crowd control, does not")
+
+		local debuffs = addon.Framework:GetSavedVars().Modules.FrameAuras.Debuffs
+
+		assert(debuffs.LeadNumbersOnly == false, "it ships off, so every debuff keeps its numbers")
+
+		switch:GetScript("OnClick")(switch)
+
+		assert(debuffs.LeadNumbersOnly == true, "and the switch writes the key the row reads")
+	end)
 end)
 
 fw.describe("Frame Auras page - the buff row's switches", function()

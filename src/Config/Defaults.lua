@@ -723,6 +723,8 @@ local dbDefaults = {
 				-- Only crowd control rings a debuff the game gives no dispel type.
 				ColorByDispelType = true,
 				EnableNumbers = false,
+				-- Narrows the numbers above to crowd control and the boss and role auras.
+				LeadNumbersOnly = false,
 				FontScale = 1.0,
 				CenterStacks = false,
 				ReverseCooldown = true,

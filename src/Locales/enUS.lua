@@ -547,6 +547,8 @@ L:SetDefaultStrings({
 	["Scales this row's countdown and stack count text."] = "Scales this row's countdown and stack count text.",
 	["Show numbers"] = "Show numbers",
 	["Shows cooldown numbers."] = "Shows cooldown numbers.",
+	["CC numbers only"] = "CC numbers only",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on.",
 	["Shows crowd control debuffs."] = "Shows crowd control debuffs.",
 	["Purgeable buffs"] = "Purgeable buffs",
 	["Purge glow"] = "Purge glow",

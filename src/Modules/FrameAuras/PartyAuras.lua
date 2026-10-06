@@ -28,6 +28,8 @@ local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
 local DEBUFF_ROLE_GROUP = "FrameDebuffsRole"
 local BUFF_GROUP_KEYS = { BUFF_PANDEMIC_GROUP, BUFF_GROUP }
 local DEBUFF_GROUP_KEYS = { DEBUFF_ROLE_GROUP, DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }
+-- The groups that lose their countdown when the numbers are kept to the head of the row.
+local DEBUFF_PLAIN_GROUP_KEYS = { DEBUFF_GROUP }
 local BUFF_FILTER = "HELPFUL"
 local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
 local DEBUFF_FILTER = "HARMFUL"
@@ -570,20 +572,6 @@ local function Offset(side)
 	return tonumber(offset and offset.X) or shipped.X, tonumber(offset and offset.Y) or shipped.Y
 end
 
----Whether the preview row leads with a crowd control stand-in. What draws that icon and what
----sizes it both ask this, so the two cannot drift apart.
----@param side "Buffs"|"Debuffs"
----@return boolean
-local function PreviewLeadsWithCrowdControl(side)
-	if side ~= "Debuffs" then
-		return false
-	end
-
-	local options = SideOptions(side)
-
-	return options ~= nil and options.ShowCrowdControl == true
-end
-
 ---What one row multiplies its text size by.
 ---@param side "Buffs"|"Debuffs"
 ---@return number
@@ -621,6 +609,22 @@ local function HidesNumbers(side)
 	return options ~= nil and options.EnableNumbers == false
 end
 
+---Whether the plain debuffs drop their countdown while crowd control and the boss and role auras
+---ahead of them keep theirs.
+---@return boolean
+local function PlainHidesNumbers()
+	local options = SideOptions("Debuffs")
+
+	return options ~= nil and options.LeadNumbersOnly == true
+end
+
+---The whole budget, since the live row wraps onto a second line.
+---@param side "Buffs"|"Debuffs"
+---@return number
+local function TestIconCount(side)
+	return math.max(1, MaxIcons(side))
+end
+
 ---The spells one side's preview draws, leading with a stand-in for each flagged category the row
 ---is currently letting in. Switching a category on has to move the preview with it, or the preview
 ---says nothing about what the switch does.
@@ -643,8 +647,21 @@ local function TestSpellList(side)
 		if options.ShowDefensives == true then
 			testListScratch[#testListScratch + 1] = set.Defensive
 		end
-	elseif PreviewLeadsWithCrowdControl(side) then
-		testListScratch[#testListScratch + 1] = set.CrowdControl
+	else
+		-- One slot is kept for a plain debuff, or the preview cannot show what the row is mostly
+		-- made of.
+		local room = TestIconCount(side) - 1
+		local crowdControl = options.ShowCrowdControl == true and room >= 1
+		local role = room >= (crowdControl and 2 or 1)
+
+		-- Drawn in the live row's group order, whichever of them won the room.
+		if role then
+			testListScratch[#testListScratch + 1] = set.Role
+		end
+
+		if crowdControl then
+			testListScratch[#testListScratch + 1] = set.CrowdControl
+		end
 	end
 
 	local leading = #testListScratch
@@ -654,14 +671,6 @@ local function TestSpellList(side)
 	end
 
 	return testListScratch, leading
-end
-
----How many icons the preview draws: the whole budget, since the live row wraps onto a second line
----rather than dropping what will not fit on the first.
----@param side "Buffs"|"Debuffs"
----@return number
-local function TestIconCount(side)
-	return math.max(1, MaxIcons(side))
 end
 
 ---@param side "Buffs"|"Debuffs"
@@ -991,16 +1000,19 @@ local function ApplyTestSide(entry, side)
 	-- The grid sizes the row to its full column width, so a budget that never reaches one line
 	-- would leave the frame wider than the icons in it.
 	container:SetColumns(math.min(PerRow(side), count), growAnchors:FillsLeftward(grow))
-	-- The live row hands crowd control its own group so it can be drawn larger, which a preview
-	-- row of one container has to reproduce a slot at a time.
-	container:SetLeadScale(PreviewLeadsWithCrowdControl(side) and LEAD_SIZE_SCALE or nil)
 
 	local list, leading = TestSpellList(side)
+
+	-- The live row hands its lead debuffs groups of their own so they can be drawn larger, which a
+	-- preview row of one container has to reproduce a slot at a time.
+	container:SetLeadScale(side == "Debuffs" and leading > 0 and LEAD_SIZE_SCALE or nil, leading)
 	-- The stand-ins have to fold this in themselves, where a live button gets it from the display.
 	local centersStacks = CentersStacks(side)
-	local nextSlot = testSpells:FillContainer(container, list, 1, {
+	local hideNumbers = HidesNumbers(side) or centersStacks
+	local plainHides = side == "Debuffs" and PlainHidesNumbers()
+	local fillOptions = {
 		ReverseCooldown = ReversesCooldown(side),
-		HideNumbers = HidesNumbers(side) or centersStacks,
+		HideNumbers = hideNumbers or plainHides,
 		Glow = false,
 		-- Buffs carries no switch for this, and the debuff row's own reaches every stand-in on it.
 		ColorByDispelType = side == "Debuffs" and DebuffDispelColors(),
@@ -1013,7 +1025,16 @@ local function ApplyTestSide(entry, side)
 		Count = count,
 		Repeat = true,
 		LeadCount = leading,
-	})
+	}
+	local nextSlot = testSpells:FillContainer(container, list, 1, fillOptions)
+
+	-- The head of the live row keeps its countdown, so its stand-ins are drawn again with theirs.
+	if plainHides and not hideNumbers and leading > 0 then
+		fillOptions.HideNumbers = false
+		fillOptions.Count = leading
+		fillOptions.Repeat = false
+		testSpells:FillContainer(container, list, 1, fillOptions)
+	end
 
 	for slot = nextSlot, container.Count do
 		container:SetSlotUnused(slot)
@@ -1111,6 +1132,7 @@ local function ApplySettings(entry)
 		-- A display already built keeps the group it was created with, so the switch only reaches
 		-- the row it is on this way.
 		entry.Debuffs:SetGroupColorByDispelTypes(DEBUFF_GROUP_KEYS, DebuffDispelColors())
+		entry.Debuffs:SetGroupHideNumbers(DEBUFF_PLAIN_GROUP_KEYS, PlainHidesNumbers())
 
 		-- The boss and role flag is what keeps the leading group apart from the plain group behind
 		-- it. Crowd control is kept apart by its own filter string instead.

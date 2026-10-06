@@ -664,8 +664,10 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	-- countdown's place, so it drops the numbers the same way.
 	-- None of them reach a text-only button, where the countdown is the whole display and
 	-- dropping it would leave an aura that is up with nothing on screen.
+	local group = widgets.Group
 	local hideNumbers = not instance.TextOnly and (style.HideNumbers == true
-		or style.CenterStacks == true or style.DisableNumbers == true)
+		or style.CenterStacks == true or style.DisableNumbers == true
+		or (group ~= nil and group.HideNumbers == true))
 	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns. It no-ops for
 	-- 12.1 duration objects, where fractions render through the duration-text binding below, and
 	-- the cooldown's own SetCountdownFormatter does not work there either.
@@ -2113,6 +2115,27 @@ function M:SetGroupColorByDispelTypes(groupKeys, enabled)
 	end
 end
 
+---Drops or restores the countdown text on the named groups, restyling once rather than once per
+---group. Only ever adds to the display-wide switches, so false or nil follows the display.
+---@param groupKeys string[]
+---@param hide boolean?
+function M:SetGroupHideNumbers(groupKeys, hide)
+	local changed = false
+
+	for _, groupKey in ipairs(groupKeys) do
+		local group = self.GroupsByKey[groupKey]
+
+		if group and (group.HideNumbers == true) ~= (hide == true) then
+			group.HideNumbers = hide
+			changed = true
+		end
+	end
+
+	if changed then
+		self:RestyleButtons()
+	end
+end
+
 ---A group's current icon budget, for callers that only want to act when it actually moves.
 ---@param groupKey string
 ---@return number? maxIcons Nil when this display has no such group.
@@ -2486,6 +2509,8 @@ end
 ---@field ColorByDispelType boolean? Whether this group's borders take the engine's dispel palette,
 ---overriding the display-wide Style.ColorByDispelType so one row can colour a single category.
 ---Unset follows the display. Changed after creation with SetGroupColorByDispelTypes.
+---@field HideNumbers boolean? Drops this group's countdown on top of the display-wide switches.
+---Changed after creation with SetGroupHideNumbers.
 ---@field BorderWithoutDispelType boolean? Whether this group rings an aura with no dispel type at
 ---all, overriding the display-wide Style.BorderWithoutDispelType. No module sets it today, since
 ---every row that rings at all rings a typeless aura. Unset follows the display. Fixed at creation.

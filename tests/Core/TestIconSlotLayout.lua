@@ -212,6 +212,63 @@ fw.describe("IconSlotContainer - the wrapping grid", function()
 			.. tostring(plain.Cooldown.DesiredIconSize))
 	end)
 
+	-- The live row can lead with more than one group drawn larger, boss and role auras then crowd
+	-- control, so the preview has to scale every icon standing in for them.
+	fw.it("draws every lead icon larger and lines the rest up behind them", function()
+		local container = NewGrid(5, 3, false)
+
+		container:SetLeadScale(LEAD_SCALE, 2)
+
+		local offsets = OffsetsIn(container)
+		local edges = EdgesIn(container)
+		local bottoms = LineEdgesIn(container, -1)
+
+		assert(container.Slots[1].Frame:GetWidth() == LEAD_SIZE,
+			"the first lead icon takes the scale, got " .. container.Slots[1].Frame:GetWidth())
+		assert(container.Slots[2].Frame:GetWidth() == LEAD_SIZE,
+			"and so does the second, got " .. container.Slots[2].Frame:GetWidth())
+		assert(container.Slots[3].Frame:GetWidth() == SIZE,
+			"while the one after them keeps the row's own size, got " .. container.Slots[3].Frame:GetWidth())
+		assert(offsets[2] - offsets[1] == LEAD_SIZE + SPACING,
+			"the second lead icon starts clear of the first, got " .. (offsets[2] - offsets[1]))
+		assert(offsets[3] - offsets[2] == LEAD_SIZE / 2 + SPACING + SIZE / 2,
+			"and the plain one clear of both, got " .. (offsets[3] - offsets[2]))
+		assert(bottoms[3] == bottoms[1], "every icon on the line sits on one edge, got " .. bottoms[3])
+		assert(edges[4] == edges[1],
+			"the wrapped line starts under the lead icons, got " .. edges[4] .. " against " .. edges[1])
+		assert(bottoms[4] == bottoms[1] + LEAD_SIZE + SPACING,
+			"and clears them, got " .. bottoms[4])
+		assert(container.Frame:GetWidth() == 2 * LEAD_SIZE + SIZE + 2 * SPACING,
+			"with the row as wide as its first line, got " .. container.Frame:GetWidth())
+	end)
+
+	fw.it("carries the lead icons onto the next line when they outnumber it", function()
+		local container = NewGrid(5, 3, false)
+
+		container:SetLeadScale(LEAD_SCALE, 4)
+
+		local bottoms = LineEdgesIn(container, -1)
+
+		assert(container.Slots[4].Frame:GetWidth() == LEAD_SIZE,
+			"the lead icon on the wrapped line is drawn larger too, got " .. container.Slots[4].Frame:GetWidth())
+		assert(container.Slots[5].Frame:GetWidth() == SIZE,
+			"and the plain one beside it is not, got " .. container.Slots[5].Frame:GetWidth())
+		assert(bottoms[5] == bottoms[4], "which sits on the same edge, got " .. bottoms[5])
+		assert(container.Frame:GetHeight() == 2 * LEAD_SIZE + SPACING,
+			"and both lines take the lead height, got " .. container.Frame:GetHeight())
+	end)
+
+	fw.it("redraws for a change of lead count alone", function()
+		local container = NewGrid(5, 3, false, LEAD_SCALE)
+		local before = OffsetsIn(container)
+
+		container:SetLeadScale(LEAD_SCALE, 2)
+
+		assert(container.Slots[2].Frame:GetWidth() == LEAD_SIZE,
+			"the second icon grew, got " .. container.Slots[2].Frame:GetWidth())
+		assert(OffsetsIn(container)[3] ~= before[3], "and the row moved along with it")
+	end)
+
 	fw.it("refuses a lead scale that would draw the head of the row smaller", function()
 		local container = NewGrid(5, 3, false)
 		local before = OffsetsIn(container)

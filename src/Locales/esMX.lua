@@ -547,6 +547,8 @@ L:RegisterLocale("esMX", function() return {
 	["Scales this row's countdown and stack count text."] = "Escala la cuenta atrás y las acumulaciones de esta fila.",
 	["Show numbers"] = "Mostrar números",
 	["Shows cooldown numbers."] = "Muestra los números de la cuenta atrás.",
+	["CC numbers only"] = "Números solo en CC",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "Muestra los números de la cuenta atrás solo en los perjuicios de control de masas y de jefe. Los demás perjuicios siguen mostrando sus acumulaciones. Requiere Mostrar números.",
 	["Shows crowd control debuffs."] = "Muestra los perjuicios de control de masas.",
 	["Purgeable buffs"] = "Beneficios disipables",
 	["Purge glow"] = "Brillo de disipar",

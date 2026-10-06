@@ -544,6 +544,8 @@ L:RegisterLocale("ptBR", function() return {
 	["Scales this row's countdown and stack count text."] = "Ajusta a contagem e os acúmulos desta linha.",
 	["Show numbers"] = "Mostrar números",
 	["Shows cooldown numbers."] = "Mostra os números da contagem regressiva.",
+	["CC numbers only"] = "Números só em CC",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "Mostra os números da contagem regressiva só nas penalidades de controle de grupo e de chefe. As outras penalidades ainda mostram seus acúmulos. Requer Mostrar números.",
 	["Shows crowd control debuffs."] = "Mostra as penalidades de controle de grupo.",
 	["Purgeable buffs"] = "Bônus dissipáveis",
 	["Purge glow"] = "Brilho de dissipar",

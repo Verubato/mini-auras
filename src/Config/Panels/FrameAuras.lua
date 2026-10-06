@@ -753,6 +753,11 @@ local function BuildDebuffs(content, options)
 			Tooltip = L["Shows cooldown numbers."],
 		},
 		{
+			Key = "LeadNumbersOnly",
+			Label = L["CC numbers only"],
+			Tooltip = L["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."],
+		},
+		{
 			Key = "CenterStacks",
 			Label = L["Centre stacks"],
 			Tooltip = L["Show the stack count in the middle of the icon instead of the countdown text."],

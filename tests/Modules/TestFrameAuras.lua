@@ -684,6 +684,7 @@ testSpells.FillContainer = function(self, container, previewSpells, startSlot, f
 		Spells = captured,
 		Frame = container.Frame,
 		Lead = fillOptions.LeadCount,
+		Count = fillOptions.Count,
 		HideNumbers = fillOptions.HideNumbers,
 		FontScale = fillOptions.FontScale,
 		CenterStackText = fillOptions.CenterStackText,
@@ -1881,7 +1882,8 @@ fw.describe("Frame Auras - test mode", function()
 		module:StartTesting()
 
 		assert(Includes(fills[1].Spells, stun), "letting it in puts one in the row")
-		assert(fills[1].Spells[1] == stun, "and it leads, the way a flagged category does in play")
+		assert(fills[1].Spells[2] == stun,
+			"behind the boss and role stand-in, the way the live groups line up")
 
 		options.Debuffs.ShowCrowdControl = false
 	end)
@@ -1890,7 +1892,8 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 		options.Debuffs.ColorByDispelType = true
-		options.Debuffs.MaxIcons = 6
+		-- Room for both stand-ins and every plain debuff behind them.
+		options.Debuffs.MaxIcons = 7
 
 		module:StartTesting()
 
@@ -1898,7 +1901,10 @@ fw.describe("Frame Auras - test mode", function()
 		local debuffs = testSpells.FrameAuras.Debuffs
 		local dispelColors = testSpells.FrameAuras.DispelColors
 		local none = _G.DEBUFF_TYPE_NONE_COLOR
-		local stun = row.Slots[1].Container.Border
+		local magic = _G.DEBUFF_TYPE_MAGIC_COLOR
+		local role = row.Slots[1].Container.Border
+		local roleTint = role._lastArgs.SetVertexColor
+		local stun = row.Slots[2].Container.Border
 		local stunTint = stun._lastArgs.SetVertexColor
 
 		-- The loop below compares against the map itself, so the types it holds are pinned here or a
@@ -1909,12 +1915,15 @@ fw.describe("Frame Auras - test mode", function()
 		assert(dispelColors[980] == _G.DEBUFF_TYPE_CURSE_COLOR, "Agony is Curse")
 		assert(dispelColors[146739] == _G.DEBUFF_TYPE_MAGIC_COLOR, "Corruption is Magic")
 
-		assert(stun._shown, "the stun leading the row is still ringed")
+		assert(role._shown, "the boss and role stand-in leading the row is ringed")
+		assert(roleTint[1] == magic.r and roleTint[2] == magic.g and roleTint[3] == magic.b,
+			"in Magic, which is what Unstable Affliction is")
+		assert(stun._shown, "the stun behind it is still ringed")
 		assert(stunTint[1] == none.r and stunTint[2] == none.g and stunTint[3] == none.b,
 			"in the colour the game gives a stun, which carries no dispel type")
 
 		for index, spellId in ipairs(debuffs) do
-			local border = row.Slots[index + 1].Container.Border
+			local border = row.Slots[index + 2].Container.Border
 			local expected = dispelColors[spellId]
 			local color = border._lastArgs.SetVertexColor
 
@@ -1930,7 +1939,7 @@ fw.describe("Frame Auras - test mode", function()
 
 		local plain = assert(RowOn(memberFrame), "the frame still gets a preview row")
 
-		for index = 1, #debuffs + 1 do
+		for index = 1, #debuffs + 2 do
 			assert(plain.Slots[index].Container.Border._shown == false,
 				"and switching the colours off takes every ring off the preview")
 		end
@@ -1944,7 +1953,7 @@ fw.describe("Frame Auras - test mode", function()
 		local withoutCC = assert(RowOn(memberFrame), "the row still previews without crowd control leading")
 
 		for index, spellId in ipairs(debuffs) do
-			local border = withoutCC.Slots[index].Container.Border
+			local border = withoutCC.Slots[index + 1].Container.Border
 			local expected = dispelColors[spellId]
 			local color = border._lastArgs.SetVertexColor
 
@@ -1984,47 +1993,138 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.Enabled = false
 	end)
 
-	fw.it("draws the stun leading the debuff preview 40% larger than the rest", function()
+	fw.it("draws the stand-ins leading the debuff preview 40% larger than the rest", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.MaxIcons = 3
 
 		module:StartTesting()
 
 		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
-		local plain = row.Slots[2].Frame:GetWidth()
+		local plain = row.Slots[3].Frame:GetWidth()
 
 		assert(plain > 0, "the row has a size to be measured against")
 		assert(math.abs(row.Slots[1].Frame:GetWidth() - plain * LEAD_SCALE) < 0.01,
-			"the stun leading the row is drawn larger, got " .. row.Slots[1].Frame:GetWidth())
+			"the boss and role stand-in leading the row is drawn larger, got " .. row.Slots[1].Frame:GetWidth())
+		assert(math.abs(row.Slots[2].Frame:GetWidth() - plain * LEAD_SCALE) < 0.01,
+			"and so is the stun behind it, got " .. row.Slots[2].Frame:GetWidth())
 
 		module:StopTesting()
 		ResetFills()
 		options.Debuffs.ShowCrowdControl = false
 		module:StartTesting()
 
-		local uniform = assert(RowOn(memberFrame), "the frame still gets a preview row")
+		local roleOnly = assert(RowOn(memberFrame), "the frame still gets a preview row")
 
-		assert(uniform.Slots[1].Frame:GetWidth() == uniform.Slots[2].Frame:GetWidth(),
-			"and with crowd control kept out the row is drawn at one size, got "
-			.. uniform.Slots[1].Frame:GetWidth())
+		assert(math.abs(roleOnly.Slots[1].Frame:GetWidth() - plain * LEAD_SCALE) < 0.01,
+			"with crowd control kept out the boss and role stand-in still leads larger, got "
+			.. roleOnly.Slots[1].Frame:GetWidth())
+		assert(roleOnly.Slots[2].Frame:GetWidth() == roleOnly.Slots[3].Frame:GetWidth(),
+			"and the plain debuffs behind it are drawn at one size, got "
+			.. roleOnly.Slots[2].Frame:GetWidth())
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.MaxIcons = 1
+		module:StartTesting()
+
+		local single = assert(RowOn(memberFrame), "a budget of one still gets a preview row")
+
+		assert(single.Slots[1].Frame:GetWidth() == single.Size,
+			"and with no room for a stand-in its one icon is drawn at the row's own size, got "
+			.. single.Slots[1].Frame:GetWidth())
+
+		options.Debuffs.MaxIcons = 3
 	end)
 
 	fw.it("counts the stand-ins at the head of the list, so a repeat does not draw one again", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
 
+		options.Debuffs.MaxIcons = 3
+
 		module:StartTesting()
 
-		assert(fills[1].Lead == 1,
-			"the stun leading the list is marked as a stand-in, got " .. tostring(fills[1].Lead))
+		assert(fills[1].Lead == 2,
+			"the boss and role stand-in and the stun leading the list are both marked, got "
+			.. tostring(fills[1].Lead))
 
 		module:StopTesting()
 		ResetFills()
 		options.Debuffs.ShowCrowdControl = false
 		module:StartTesting()
 
+		assert(fills[1].Lead == 1,
+			"with crowd control kept out only the boss and role stand-in is, got " .. tostring(fills[1].Lead))
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.MaxIcons = 1
+		module:StartTesting()
+
 		assert(fills[1].Lead == 0,
 			"and a row leading with nothing marks nothing, got " .. tostring(fills[1].Lead))
+
+		options.Debuffs.MaxIcons = 3
+	end)
+
+	-- The live row always lets the boss and role auras in, so the preview has a stand-in for them.
+	fw.it("leads the debuff preview with Unstable Affliction for the boss and role auras", function()
+		options.Debuffs.Enabled = true
+
+		module:StartTesting()
+
+		local role = testSpells.FrameAuras.Role
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+
+		assert(role.SpellId == 1259790, "the stand-in is Unstable Affliction, got " .. tostring(role.SpellId))
+		assert(fills[1].Spells[1] == role, "and it leads the list")
+		assert(row.Slots[1].Container.Icon:GetTexture() == "tex:1259790",
+			"drawn with that spell's own icon, got " .. tostring(row.Slots[1].Container.Icon:GetTexture()))
+	end)
+
+	-- One slot is kept for a plain debuff.
+	fw.it("hands the debuff preview's budget out to the stand-ins and keeps one plain debuff", function()
+		local set = testSpells.FrameAuras
+		local plain = "tex:" .. set.Debuffs[1]
+		local cases = {
+			{ MaxIcons = 6, CrowdControl = true, Lead = { set.Role, set.CrowdControl } },
+			{ MaxIcons = 3, CrowdControl = true, Lead = { set.Role, set.CrowdControl } },
+			{ MaxIcons = 2, CrowdControl = true, Lead = { set.CrowdControl } },
+			{ MaxIcons = 1, CrowdControl = true, Lead = {} },
+			{ MaxIcons = 2, CrowdControl = false, Lead = { set.Role } },
+		}
+
+		options.Debuffs.Enabled = true
+
+		for _, case in ipairs(cases) do
+			local label = case.MaxIcons .. " icons with crowd control " .. (case.CrowdControl and "on" or "off")
+
+			module:StopTesting()
+			ResetFills()
+			options.Debuffs.MaxIcons = case.MaxIcons
+			options.Debuffs.ShowCrowdControl = case.CrowdControl
+			module:StartTesting()
+
+			local fill = assert(fills[1], label .. ": the debuff row previews something")
+			local row = assert(RowOn(memberFrame), label .. ": the party frame got a preview row")
+			local leading = #case.Lead
+
+			assert(fill.Lead == leading, label .. ": " .. leading .. " stand-ins lead, got " .. tostring(fill.Lead))
+
+			for index, standIn in ipairs(case.Lead) do
+				assert(fill.Spells[index] == standIn, label .. ": stand-in " .. index .. " is in the live order")
+			end
+
+			assert(row:GetUsedSlotCount() == case.MaxIcons,
+				label .. ": the whole budget is drawn, got " .. row:GetUsedSlotCount())
+			assert(row.Slots[leading + 1].Container.Icon:GetTexture() == plain,
+				label .. ": a plain debuff follows them, got "
+				.. tostring(row.Slots[leading + 1].Container.Icon:GetTexture()))
+		end
+
+		options.Debuffs.MaxIcons = 3
+		options.Debuffs.ShowCrowdControl = false
 	end)
 
 	fw.it("puts a defensive in the buff preview only while defensives are let in", function()
@@ -2105,10 +2205,16 @@ fw.describe("Frame Auras - test mode", function()
 
 		module:StartTesting()
 
-		local row = assert(fills[1], "the debuff row previews something").Spells
+		local row = {}
 
-		-- Mortal Wounds, Vampiric Touch, Shadow Word: Pain, Agony, Corruption.
-		AssertOrder(row, { 115804, 34914, 589, 980, 146739 })
+		-- A stand-in is listed as a table carrying its spell id.
+		for index, spell in ipairs(assert(fills[1], "the debuff row previews something").Spells) do
+			row[index] = type(spell) == "table" and spell.SpellId or spell
+		end
+
+		-- Unstable Affliction for the boss and role auras, then Mortal Wounds, Vampiric Touch,
+		-- Shadow Word: Pain, Agony, Corruption.
+		AssertOrder(row, { testSpells.FrameAuras.Role.SpellId, 115804, 34914, 589, 980, 146739 })
 
 		options.Debuffs.Enabled = false
 	end)
@@ -2159,12 +2265,34 @@ fw.describe("Frame Auras - test mode", function()
 		module:StartTesting()
 
 		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
-		local starts = StartsIn(row, false)
+		-- The boss and role stand-in leads this row larger, so lines and starts are read off the
+		-- icons' edges rather than their centres.
+		local startByLine = {}
+
+		for index = 1, row.Count do
+			local slot = row.Slots[index]
+
+			if slot.IsUsed then
+				local _, _, _, x, y = slot.Frame:GetPoint(1)
+				local bottom = y - slot.Frame:GetHeight() / 2
+				local left = x - slot.Frame:GetWidth() / 2
+
+				startByLine[bottom] = math.min(startByLine[bottom] or left, left)
+			end
+		end
+
+		local starts = {}
+
+		for _, start in pairs(startByLine) do
+			starts[#starts + 1] = start
+		end
+
 		local _, _, _, firstX = row.Slots[1].Frame:GetPoint(1)
+		local firstLeft = firstX - row.Slots[1].Frame:GetWidth() / 2
 
 		assert(#starts == 2, "the budget wrapped onto a second line, got " .. #starts)
 		assert(starts[1] == starts[2], "both lines start on the same edge, got " .. Listed(starts))
-		assert(firstX == starts[1], "and slot 1 is the icon on it, got " .. firstX)
+		assert(firstLeft == starts[1], "and slot 1 is the icon on it, got " .. firstLeft)
 
 		options.Debuffs.MaxIcons = 3
 		options.Debuffs.PerRow = 3
@@ -4065,6 +4193,120 @@ fw.describe("Frame Auras - the countdown numbers on one row", function()
 
 		options.Debuffs.EnableNumbers = true
 		module:StopTesting()
+	end)
+
+	fw.it("keeps them on the head of the debuff row alone when asked, and the counts with them", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.LeadNumbersOnly = true
+
+		local fresh = NewRaidFrame(29)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local debuffs = assert(DebuffRow(fresh), "the frame got a debuff row")
+
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == true, "the plain debuffs lose their countdown")
+		assert(NumbersHiddenOn(debuffs, DEBUFF_CROWD_CONTROL_GROUP) == false, "crowd control keeps its own")
+		assert(NumbersHiddenOn(debuffs, DEBUFF_ROLE_GROUP) == false, "and so do the boss and role auras")
+		assert(StackAlphaOn(debuffs, DEBUFF_GROUP) == 1, "the plain debuffs still draw their stacks")
+
+		options.Debuffs.LeadNumbersOnly = false
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == false,
+			"switching it off gives a row already built its numbers back")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(29)
+	end)
+
+	fw.it("reaches a row built before the switch was flipped", function()
+		options.Debuffs.Enabled = true
+
+		local fresh = NewRaidFrame(30)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local debuffs = assert(DebuffRow(fresh), "the frame got a debuff row")
+
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == false, "the shipped row counts down")
+
+		options.Debuffs.LeadNumbersOnly = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(NumbersHiddenOn(debuffs, DEBUFF_GROUP) == true, "and the switch drops it without a rebuild")
+
+		options.Debuffs.LeadNumbersOnly = false
+		DropRaidFrame(30)
+	end)
+
+	fw.it("draws the preview's lead stand-ins with their numbers and the rest without", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.LeadNumbersOnly = true
+		options.Debuffs.MaxIcons = 3
+
+		module:StartTesting()
+
+		local row = assert(fills[1], "the debuff row previews something")
+		local lead = assert(fills[2], "and draws its head a second time")
+		local drawn = assert(RowOn(memberFrame), "the party frame got a preview row")
+
+		assert(row.HideNumbers == true, "the row's plain stand-ins drop their countdown")
+		assert(lead.Container == row.Container, "the head is redrawn on the same row")
+		assert(lead.HideNumbers == false, "with its countdown back")
+		assert(lead.Count == row.Lead, "and only as far as the stand-ins leading it")
+
+		assert(drawn.Slots[1].Container.Cooldown._lastArgs.SetHideCountdownNumbers[1] == false,
+			"the boss and role stand-in keeps its countdown")
+		assert(drawn.Slots[2].Container.Cooldown._lastArgs.SetHideCountdownNumbers[1] == false,
+			"and so does the stun")
+		assert(drawn.Slots[3].Container.Cooldown._lastArgs.SetHideCountdownNumbers[1] == true,
+			"while the plain debuff behind them drops its own")
+
+		module:StopTesting()
+		options.Debuffs.LeadNumbersOnly = false
+		options.Debuffs.ShowCrowdControl = false
+	end)
+
+	-- Either switch takes every number off the row, so the head must not get its countdown back.
+	fw.it("gives the preview's lead stand-ins no numbers while the row shows none at all", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.LeadNumbersOnly = true
+		options.Debuffs.MaxIcons = 3
+
+		local cases = {
+			{ Label = "with the numbers switched off", EnableNumbers = false, CenterStacks = false },
+			{ Label = "with the stacks centred where the countdown goes", EnableNumbers = true, CenterStacks = true },
+		}
+
+		for _, case in ipairs(cases) do
+			module:StopTesting()
+			ResetFills()
+			options.Debuffs.EnableNumbers = case.EnableNumbers
+			options.Debuffs.CenterStacks = case.CenterStacks
+			module:StartTesting()
+
+			local row = assert(fills[1], case.Label .. ": the debuff row previews something")
+			local drawn = assert(RowOn(memberFrame), case.Label .. ": the party frame got a preview row")
+
+			assert(fills[2] == nil or fills[2].Container ~= row.Container,
+				case.Label .. ": the head is not drawn a second time")
+			assert(drawn.Slots[1].Container.Cooldown._lastArgs.SetHideCountdownNumbers[1] == true,
+				case.Label .. ": the boss and role stand-in stays without its countdown")
+		end
+
+		options.Debuffs.CenterStacks = false
+
+		module:StopTesting()
+		options.Debuffs.LeadNumbersOnly = false
+		options.Debuffs.ShowCrowdControl = false
 	end)
 
 end)

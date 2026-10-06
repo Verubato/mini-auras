@@ -546,6 +546,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Scales this row's countdown and stack count text."] = "縮放該列的倒數與層數文字。",
 	["Show numbers"] = "顯示倒數數字",
 	["Shows cooldown numbers."] = "顯示倒數數字。",
+	["CC numbers only"] = "僅控場顯示數字",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "只在控場與首領減益上顯示倒數數字。其他減益仍顯示層數。需要開啟顯示倒數數字。",
 	["Shows crowd control debuffs."] = "顯示控制減益。",
 	["Purgeable buffs"] = "可驅散增益",
 	["Purge glow"] = "驅散發光",

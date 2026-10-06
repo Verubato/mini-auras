@@ -544,6 +544,8 @@ L:RegisterLocale("frFR", function() return {
 	["Scales this row's countdown and stack count text."] = "Met à l'échelle le décompte et les cumuls de cette rangée.",
 	["Show numbers"] = "Afficher le décompte",
 	["Shows cooldown numbers."] = "Affiche les chiffres du décompte.",
+	["CC numbers only"] = "Décompte CC seul",
+	["Keeps the cooldown numbers on crowd control and boss debuffs only. Other debuffs still show their stacks. Needs Show numbers on."] = "N'affiche le décompte que sur les affaiblissements de contrôle des foules et de boss. Les autres affaiblissements gardent leurs cumuls. Nécessite Afficher le décompte.",
 	["Shows crowd control debuffs."] = "Affiche les affaiblissements de contrôle des foules.",
 	["Purgeable buffs"] = "Améliorations dissipables",
 	["Purge glow"] = "Dissipation",

@@ -669,28 +669,31 @@ local function ApplyIconCorners(layer, options, borderVisible)
 	SyncAtlasCorners(layer)
 end
 
----How far a run of icons reaches, where the first of them may be drawn larger than the rest.
+---How far a run of icons reaches, where the first few of them may be drawn larger than the rest.
 ---@param count number
----@param firstSize number
+---@param leads number How many at the head of the run are drawn at leadSize.
+---@param leadSize number
 ---@param size number
 ---@param spacing number
 ---@return number
-local function RunLength(count, firstSize, size, spacing)
-	return firstSize + (count - 1) * (size + spacing)
+local function RunLength(count, leads, leadSize, size, spacing)
+	leads = math.min(leads, count)
+
+	return leads * leadSize + (count - leads) * size + (count - 1) * spacing
 end
 
 ---Where one icon's centre sits in such a run, measured from the edge the run starts at.
 ---@param index number 0-based place in the run
----@param firstSize number
+---@param leads number
+---@param leadSize number
 ---@param size number
 ---@param spacing number
 ---@return number
-local function RunOffset(index, firstSize, size, spacing)
-	if index == 0 then
-		return firstSize / 2
-	end
+local function RunOffset(index, leads, leadSize, size, spacing)
+	local leadsBefore = math.min(index, leads)
+	local own = index < leads and leadSize or size
 
-	return firstSize + spacing + (index - 1) * (size + spacing) + size / 2
+	return leadsBefore * (leadSize + spacing) + (index - leadsBefore) * (size + spacing) + own / 2
 end
 
 ---@param layer table
@@ -764,6 +767,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 	instance.InvertLayout = false
 	instance.Columns = nil
 	instance.LeadScale = nil
+	instance.LeadCount = 1
 	instance.GrowDown = false
 	instance.GrowUp = false
 	instance.NoBorder = noBorder or false
@@ -792,6 +796,7 @@ function M:Layout()
 	local numRows = (not vertical and self.NumRows and self.NumRows > 1) and self.NumRows or nil
 	local columnsPerRow = (vertical and self.Columns and self.Columns > 1) and self.Columns or nil
 	local leadScale = vertical and self.LeadScale or nil
+	local leadCount = leadScale and self.LeadCount or 0
 	local verticalTag = self.GrowUp and "U" or (self.GrowDown and "D" or "H")
 
 	layoutStamp:Begin(self)
@@ -803,6 +808,7 @@ function M:Layout()
 	layoutStamp:Add(verticalTag)
 	layoutStamp:Add(columnsPerRow or 1)
 	layoutStamp:Add(leadScale or 1)
+	layoutStamp:Add(leadCount)
 
 	for i = 1, n do
 		layoutStamp:Add(layoutScratch[i])
@@ -875,11 +881,11 @@ function M:Layout()
 		local cols = columnsPerRow or 1
 		local actualRows = math.ceil(usedCount / cols)
 		local leadSize = leadScale and self.Size * leadScale or self.Size
-		local rowWidth = RunLength(cols, self.Size, self.Size, self.Spacing)
-		-- The lead icon reaches past a plain row, and every row after it still hangs off the same
-		-- edge, so the frame takes the wider of the two.
-		local frameWidth = math.max(rowWidth, RunLength(cols, leadSize, self.Size, self.Spacing))
-		local totalHeight = RunLength(actualRows, leadSize, self.Size, self.Spacing)
+		local leadRows = math.ceil(leadCount / cols)
+		-- The first line holds the most lead icons, and every line after it still hangs off the
+		-- same edge, so it sets the frame's width.
+		local frameWidth = RunLength(cols, leadCount, leadSize, self.Size, self.Spacing)
+		local totalHeight = RunLength(actualRows, leadRows, leadSize, self.Size, self.Spacing)
 		self.Frame:SetSize(frameWidth, totalHeight)
 		self.Frame:SetAlpha(1)
 
@@ -887,14 +893,15 @@ function M:Layout()
 			local slot = self.Slots[layoutScratch[displayIndex]]
 			local rowIndex = math.floor((displayIndex - 1) / cols) -- 0-based
 			local colIndex = (displayIndex - 1) % cols             -- 0-based
-			local rowLead = rowIndex == 0 and leadSize or self.Size
-			local size = (rowIndex == 0 and colIndex == 0) and leadSize or self.Size
+			local rowLeads = math.max(0, leadCount - rowIndex * cols)
+			local rowSize = rowIndex < leadRows and leadSize or self.Size
+			local size = displayIndex <= leadCount and leadSize or self.Size
 			-- Measured from the edge the row grows from, so a part-full row hugs that edge and a
 			-- lead icon wider than the rest pushes its own row along without moving the others.
-			local across = RunOffset(colIndex, rowLead, self.Size, self.Spacing)
+			local across = RunOffset(colIndex, rowLeads, leadSize, self.Size, self.Spacing)
 			-- The live row hangs every icon off the edge it grows from, so one standing beside a
 			-- larger lead drops to that edge instead of centring on it.
-			local down = RunOffset(rowIndex, leadSize, self.Size, self.Spacing) - (rowLead - size) / 2
+			local down = RunOffset(rowIndex, leadRows, leadSize, self.Size, self.Spacing) - (rowSize - size) / 2
 			local x = self.InvertLayout and (frameWidth / 2 - across) or (across - frameWidth / 2)
 			local y
 
@@ -1037,20 +1044,24 @@ function M:SetColumns(n, invertLayout)
 	self:Layout()
 end
 
----Draws the first icon at a multiple of the container's icon size, the way a live row leads with
----a category worth more than what follows it. Vertical layouts only.
+---Draws the first icons at a multiple of the container's icon size, the way a live row leads with
+---categories worth more than what follows them. Vertical layouts only.
 ---@param scale number? nil or 1 draws the whole row at one size
-function M:SetLeadScale(scale)
+---@param count number? How many icons at the head of the row take the scale. Defaults to one.
+function M:SetLeadScale(scale, count)
 	---@diagnostic disable-next-line: cast-local-type
 	scale = tonumber(scale)
 	-- Under 1 the lead icon's row would be shorter than the icons standing in it, and the rows
 	-- behind it would be laid over the top.
 	scale = (scale and scale > 1) and scale or nil
-	if self.LeadScale == scale then
+	---@diagnostic disable-next-line: cast-local-type
+	count = math.max(1, math.floor(tonumber(count) or 1))
+	if self.LeadScale == scale and self.LeadCount == count then
 		return
 	end
 
 	self.LeadScale = scale
+	self.LeadCount = count
 	self.LayoutGeneration = nil
 	self:Layout()
 end
@@ -1450,6 +1461,7 @@ end
 ---@field InvertLayout boolean
 ---@field Columns number?
 ---@field LeadScale number?
+---@field LeadCount number
 ---@field GrowDown boolean
 ---@field GrowUp boolean
 ---@field NoBorder boolean
@@ -1459,7 +1471,7 @@ end
 ---@field SetGrowDown fun(self: IconSlotContainer, enabled: boolean)
 ---@field SetGrowUp fun(self: IconSlotContainer, enabled: boolean)
 ---@field SetColumns fun(self: IconSlotContainer, n: number?, invertLayout: boolean?)
----@field SetLeadScale fun(self: IconSlotContainer, scale: number?)
+---@field SetLeadScale fun(self: IconSlotContainer, scale: number?, count: number?)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
 ---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)
