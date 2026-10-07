@@ -812,6 +812,81 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 			"and squares back up once nothing on it glows")
 	end)
 
+	fw.it("SetGroupSizeScale resizes the named groups of a display that already exists", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 2, SizeScale = 1.25 },
+			{ Key = "also", FilterString = "HARMFUL|RAID", MaxIcons = 2, SizeScale = 1.25 },
+			{ Key = "plain", FilterString = "HARMFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { PerLine = 3 })
+		local big = instance.Frame._groups.big
+		local also = instance.Frame._groups.also
+		local plain = instance.Frame._groups.plain
+		local cap = instance.Frame._flowMaxLineSize
+
+		instance:SetGroupSizeScale({ "big", "also" }, 1.5)
+
+		assert(big.layout.elementHeight == 45 and also.layout.elementHeight == 45,
+			"the engine spaces both groups at the new share")
+		assert(big.buttons[1]:GetHeight() == 45, "and their buttons are drawn at it")
+		assert(plain.buttons[1]:GetHeight() == 30, "while the rest of the row is left alone")
+		assert(instance:GetGroupSizeScale("big") == 1.5, "the group reports the share it carries")
+		assert(instance.Frame._flowMaxLineSize == cap + 2 * 2 * 7.5, "and the wrap cap counts the extra width")
+
+		local sized = totalSetSizeCalls(instance)
+
+		instance:SetGroupSizeScale({ "big", "also" }, 1.5)
+		assert(totalSetSizeCalls(instance) == sized, "the same share restyles nothing")
+
+		acm.notifications = {}
+		instance:SetGroupSizeScale({ "nosuchgroup" }, 2)
+		assert(#acm.notifications == 0, "a key the display has no group for is not a misuse")
+
+		local settled = instance.Frame._flowMaxLineSize
+
+		acm.restricted = true
+		instance:SetGroupSizeScale({ "big", "also" }, 2)
+		-- A budget moving while restricted reworks the cap, and it must not see the new share yet.
+		instance:SetMaxIcons("big", 1)
+		instance:SetMaxIcons("big", 2)
+
+		assert(big.layout.elementHeight == 45, "no layout moves while aura styling is restricted")
+		assert(instance.Frame._flowMaxLineSize == settled, "and neither does the wrap cap")
+		assert(instance:GetGroupSizeScale("big") == 1.5, "the group still reports what its buttons carry")
+
+		acm.restricted = false
+		acm.tickAll(1)
+
+		assert(big.buttons[1]:GetHeight() == 60, "the retry settles the buttons once it lifts")
+		assert(big.layout.elementHeight == 60, "and the layout with them")
+		assert(instance.Frame._flowMaxLineSize == cap + 2 * 2 * 22.5, "and the cap")
+		assert(instance:GetGroupSizeScale("big") == 2, "and the group reports the new share")
+	end)
+
+	fw.it("a size change leaves a group's own share alone", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 2, SizeScale = 1.25 },
+		}, 30, 2, "Test")
+
+		instance:SetIconSize(40)
+
+		assert(instance.Frame._groups.big.layout.elementHeight == 50, "the share carries over to the new size")
+		assert(instance:GetGroupSizeScale("big") == 1.25, "and the group still reports it")
+	end)
+
+	fw.it("SetGroupSizeScale lands at once on a restricted display with no buttons to hold it back", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "big", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 2, SizeScale = 1.25 },
+		}, 30, 2, "Test", { DeferGroups = true })
+
+		assert(#instance.Buttons == 0, "fixture: nothing is built yet")
+
+		acm.restricted = true
+		instance:SetGroupSizeScale({ "big" }, 1.5)
+		acm.restricted = false
+
+		assert(instance:GetGroupSizeScale("big") == 1.5, "the share is committed, since no button disagrees")
+	end)
+
 	fw.it("SetGroupGlowColors recolours a display that already exists", function()
 		-- Buttons can only be built once, and rebuilding one is impossible while auras are secret,
 		-- so a colour change has to reach the buttons that are already there.

@@ -192,7 +192,7 @@ local DEBUFF_ROLE_GROUP = "FrameDebuffsRole"
 local LEAD_SCALE = 1.4
 -- The cap each of the two groups at the front of the row carries, whatever the row's own budget
 -- is.
-local LEAD_MAX_ICONS = 2
+local LEAD_MAX_ICONS = 3
 -- The gap the rows ship with between one icon and the next, and the ends of the range the slider
 -- behind it offers.
 local ICON_SPACING = 1
@@ -2014,6 +2014,31 @@ fw.describe("Frame Auras - test mode", function()
 		options.Debuffs.Enabled = false
 	end)
 
+	fw.it("draws the preview's lead stand-ins at the lead size setting, on a row already built", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.MaxIcons = 3
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+		local plain = row.Slots[3].Frame:GetWidth()
+
+		options.Debuffs.LeadScale = 1.8
+		module:Refresh()
+
+		assert(math.abs(row.Slots[1].Frame:GetWidth() - plain * 1.8) < 0.01,
+			"the boss and role stand-in follows the setting, got " .. row.Slots[1].Frame:GetWidth())
+		assert(math.abs(row.Slots[2].Frame:GetWidth() - plain * 1.8) < 0.01,
+			"and so does the stun behind it, got " .. row.Slots[2].Frame:GetWidth())
+
+		options.Debuffs.LeadScale = dbDefaults.Modules.FrameAuras.Debuffs.LeadScale
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.MaxIcons = dbDefaults.Modules.FrameAuras.Debuffs.MaxIcons
+	end)
+
 	fw.it("draws the stand-ins leading the debuff preview 40% larger than the rest", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
@@ -3405,6 +3430,66 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		DropRaidFrame(32)
 	end)
 
+	fw.it("draws the head of the row at the lead size setting, and moves a row already built", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local fresh = NewRaidFrame(33)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+		local cc = row._groups[DEBUFF_CROWD_CONTROL_GROUP]
+		local role = row._groups[DEBUFF_ROLE_GROUP]
+		local size = row._groups[DEBUFF_GROUP].layout.elementHeight
+
+		assert(math.abs(cc.layout.elementHeight - size * LEAD_SCALE) < 0.01, "the setting ships at the old size")
+
+		local line = row._flowMaxLineSize
+
+		options.Debuffs.LeadScale = 1.8
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(math.abs(cc.layout.elementHeight - size * 1.8) < 0.01,
+			"the crowd control group follows the setting, got " .. tostring(cc.layout.elementHeight))
+		assert(math.abs(role.layout.elementHeight - size * 1.8) < 0.01,
+			"and so does the boss and role group, got " .. tostring(role.layout.elementHeight))
+		assert(math.abs(cc.buttons[1]:GetHeight() - size * 1.8) < 0.01,
+			"down to the buttons already drawn, got " .. tostring(cc.buttons[1]:GetHeight()))
+		assert(math.abs(row._groups[DEBUFF_GROUP].buttons[1]:GetHeight() - size) < 0.01,
+			"while the rest of the row stays at the row's size")
+		assert(row._flowMaxLineSize > line,
+			"and the wrap cap grows with the scale, got " .. tostring(row._flowMaxLineSize) .. " from " .. tostring(line))
+
+		options.Debuffs.LeadScale = dbDefaults.Modules.FrameAuras.Debuffs.LeadScale
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(33)
+	end)
+
+	fw.it("holds three icons at the head of the row for each of crowd control and the boss and role auras", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.MaxIcons = 9
+
+		local fresh = NewRaidFrame(34)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
+
+		assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP].maxFrameCount == 3,
+			"crowd control is capped at three, got " .. tostring(row._groups[DEBUFF_CROWD_CONTROL_GROUP].maxFrameCount))
+		assert(row._groups[DEBUFF_ROLE_GROUP].maxFrameCount == 3,
+			"and so are the boss and role auras, got " .. tostring(row._groups[DEBUFF_ROLE_GROUP].maxFrameCount))
+
+		options.Debuffs.MaxIcons = dbDefaults.Modules.FrameAuras.Debuffs.MaxIcons
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(34)
+	end)
+
 	fw.it("widens the line by exactly what its scaled groups claim, role and crowd control both", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCrowdControl = true
@@ -3432,8 +3517,8 @@ fw.describe("Frame Auras - crowd control at the head of the debuff row", functio
 		local scaledGroups = 2
 		local claimed = scaledGroups * math.min(LEAD_MAX_ICONS, options.Debuffs.PerRow) * size * (LEAD_SCALE - 1)
 
-		assert(math.floor(row._flowMaxLineSize / (size + ICON_SPACING)) == options.Debuffs.PerRow + 1,
-			"the widened line now takes one more icon than PerRow asked for, which is the cost of the larger lead icons, got "
+		assert(math.floor(row._flowMaxLineSize / (size + ICON_SPACING)) == options.Debuffs.PerRow + 2,
+			"the widened line now takes two more icons than PerRow asked for, which is the cost of the larger lead icons, got "
 				.. tostring(row._flowMaxLineSize))
 		assert(math.abs((row._flowMaxLineSize - plain) - claimed) < 0.01,
 			"the widening is what the scaled groups claim, not a cap held under it, got "
@@ -3844,7 +3929,7 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
 		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
 
-		assert(role.maxFrameCount == LEAD_MAX_ICONS,
+		assert(role.maxFrameCount == math.min(options.Debuffs.MaxIcons, LEAD_MAX_ICONS),
 			"the budget is never zeroed by a switch, got " .. tostring(role.maxFrameCount))
 
 		DropRaidFrame(16)
@@ -5791,6 +5876,7 @@ fw.describe("Frame Auras - the kick icon leading the debuff row", function()
 		options.Debuffs.Padding = ICON_SPACING
 		options.Debuffs.MaxIcons = 2
 		options.Debuffs.Size = shippedSize
+		options.Debuffs.LeadScale = dbDefaults.Modules.FrameAuras.Debuffs.LeadScale
 		acm.restricted = false
 		ResetPlacement()
 		ResetFills()
@@ -5841,6 +5927,39 @@ fw.describe("Frame Auras - the kick icon leading the debuff row", function()
 		env.fireKick(unit)
 
 		assert(not container.Slots[1].IsUsed, "the slot clears once the kick is gone")
+	end)
+
+	fw.it("draws the kick at the lead size setting", function()
+		options.Debuffs.ShowCrowdControl = true
+
+		Build(5)
+
+		local container = assert(KickContainerOn(frame), "the kick got a container")
+
+		LandKick(unit)
+
+		local plain = Row()._groups[DEBUFF_GROUP].layout.elementHeight
+
+		options.Debuffs.LeadScale = 1.8
+		partyAuras:Refresh()
+
+		assert(math.abs(container.Slots[1].Frame:GetWidth() - plain * 1.8) < 0.01,
+			"the kick follows the setting, got " .. container.Slots[1].Frame:GetWidth())
+
+		options.Debuffs.LeadScale = 1.2
+		acm.restricted = true
+		partyAuras:Refresh()
+
+		assert(math.abs(container.Slots[1].Frame:GetWidth() - plain * 1.8) < 0.01,
+			"while a restyle is held back the kick keeps the share the row's buttons carry, got "
+				.. container.Slots[1].Frame:GetWidth())
+
+		acm.restricted = false
+		acm.tickAll(400)
+		partyAuras:Refresh()
+
+		assert(math.abs(container.Slots[1].Frame:GetWidth() - plain * 1.2) < 0.01,
+			"and takes the new one once it lands, got " .. container.Slots[1].Frame:GetWidth())
 	end)
 
 	fw.it("takes the row's first corner and sends the row after it while a kick shows", function()

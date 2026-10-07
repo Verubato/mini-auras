@@ -762,15 +762,16 @@ once it has rendered. The one reordering the row does is by group: unless Dispel
 the only dispel switch on, the debuffs the player can dispel (the game's `RAID` filter token) sit
 in a group of their own ahead of the plain group, with a budget of their own, so a member can show
 up to twice the max icons. With both switches on the order is mine, then the rest of the raid's.
-The game's own boss and role auras lead the row, drawn 40% larger than the rest of it and capped
-at two icons on their own budget. There is no switch to hold the group itself back: a debuff like
-Unstable Affliction has to be seen before anything else on the frame.
+The game's own boss and role auras lead the row, drawn at the Lead size (default 1.4 times the rest
+of the row) and capped at three icons on their own budget. There is no switch to hold the group
+itself back: a debuff like Unstable Affliction has to be seen before anything else on the frame.
 The lead group never holds crowd control, whatever the switch says. Since 5.40.1 a boss or role
 flagged crowd control debuff goes to the crowd control group behind it instead, so the dispellable
 switches on the lead group can no longer hide a stun.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
-  row 1-6 (default 3), icon padding 0-5 (default 1), font scale 0.5-2.0 (default 1.0).
+  row 1-6 (default 3), icon padding 0-5 (default 1), font scale 0.5-2.0 (default 1.0), lead size
+  1.0-2.0 in steps of 0.05 (default 1.4).
 - **Dispellable by me** (on) and **Dispellable by raid** (off) - only the debuffs your own spec, or
   respectively somebody in the group, can dispel. Mutually exclusive in the config UI: ticking one
   clears the other, and switching the active one off leaves both off rather than turning the other
@@ -781,7 +782,7 @@ switches on the lead group can no longer hide a stun.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
 - **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,
-  drawn 40% larger than the rest of the row and capped at two icons on its own budget. Off by
+  drawn at the Lead size and capped at three icons on its own budget. Off by
   default for the same reason as the two on the Buffs tab.
 - **Dispel colours** (on) - rings every group on the row in the game's colour for its dispel
   type. A debuff the game gives no type at all, such as a physical stun, is ringed too, in the
@@ -825,7 +826,7 @@ held back: it is only given a budget while the unit is visible, because out of s
 stops weighing the crowd control token and the group would fill with unrelated debuffs.
 
 **Test mode.** The Test button previews all three parts at once. The preview follows the category
-switches: turning crowd control on puts a stun at the head of the debuff row, drawn 40% larger
+switches: turning crowd control on puts a stun at the head of the debuff row, drawn at the Lead size
 and ringed the way the live one would be, and turning it off takes it back out, so each switch
 visibly does something. On 12.1 an aura container is
 engine-driven and cannot be handed fake auras, so the preview is a separate row of stand-in icons

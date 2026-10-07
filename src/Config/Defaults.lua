@@ -719,6 +719,8 @@ local dbDefaults = {
 				MaxIcons = 2,
 				PerRow = 3,
 				Padding = 1,
+				-- How much larger crowd control and boss and role debuffs are drawn than the rest of the row.
+				LeadScale = 1.4,
 				-- The other bottom corner, so the two rows never meet.
 				Anchor = "BOTTOMLEFT",
 				Grow = "RIGHT_UP",

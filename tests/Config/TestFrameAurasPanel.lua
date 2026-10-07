@@ -557,6 +557,47 @@ fw.describe("Frame Auras page - the font scale sliders", function()
 	end)
 end)
 
+fw.describe("Frame Auras page - the lead size slider", function()
+	---The slider on a tab with this exact range, which tells it from the font scale's 0.5 to 2.
+	local function SliderOnTabRanged(addon, tabLabel, low, high)
+		local sibling = SwitchFor(addon, tabLabel)
+
+		fw.not_nil(sibling, "the page offers " .. tabLabel .. ", which names the tab")
+
+		for _, frame in ipairs(WowMock.Frames) do
+			if frame.GetMinMaxValues and frame:GetParent() == sibling:GetParent() then
+				local min, max = frame:GetMinMaxValues()
+
+				if min == low and max == high then
+					return frame
+				end
+			end
+		end
+
+		return nil
+	end
+
+	fw.it("sits on the debuff tab alone, over one to two, shipping at 1.4", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow()
+
+		local slider = SliderOnTabRanged(addon, addon.L["Dispellable by me"], 1, 2)
+
+		fw.not_nil(slider, "the debuff tab offers a lead size slider")
+		fw.is_nil(SliderOnTabRanged(addon, addon.L["Mine"], 1, 2), "the buff tab has none")
+
+		local frameAuras = addon.Framework:GetSavedVars().Modules.FrameAuras
+
+		fw.eq(frameAuras.Debuffs.LeadScale, 1.4, "it ships at the size the lead always drew with")
+
+		-- A step off the whole numbers, which an integer clamp would round away.
+		slider:GetScript("OnValueChanged")(slider, 1.45, true)
+
+		fw.eq(frameAuras.Debuffs.LeadScale, 1.45, "it takes what the slider was dragged to")
+	end)
+end)
+
 fw.describe("Frame Auras page - the icon padding sliders", function()
 	fw.it("gives each aura row a gap slider of its own over the same range", function()
 		local addon = Load()

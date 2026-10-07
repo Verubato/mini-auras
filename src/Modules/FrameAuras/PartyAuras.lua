@@ -58,9 +58,10 @@ local DEBUFF_ROLE_INDEX = 1
 local DEBUFF_CROWD_CONTROL_INDEX = 2
 local DEBUFF_DISPEL_INDEX = 3
 local DEBUFF_PLAIN_INDEX = 4
--- What the front of the debuff row is drawn at, as a share of the rest of it. A stun or a boss and
--- role debuff on a party member is worth more than the debuff beside it.
-local LEAD_SIZE_SCALE = 1.4
+local DEFAULT_LEAD_SCALE = 1.4
+-- The groups drawn at the lead size. A stun or a boss and role debuff on a party member is worth
+-- more than the debuff beside it.
+local LEAD_GROUP_KEYS = { DEBUFF_ROLE_GROUP, DEBUFF_CROWD_CONTROL_GROUP }
 -- The point on a kick icon a row hangs off, keyed by the point of the row that does.
 local MIRRORED_POINT = {
 	TOPLEFT = "TOPRIGHT",
@@ -68,11 +69,11 @@ local MIRRORED_POINT = {
 	BOTTOMLEFT = "BOTTOMRIGHT",
 	BOTTOMRIGHT = "BOTTOMLEFT",
 }
--- The most icons the head of the row holds. Its own cap rather than the row's, because two stuns
+-- The most icons the head of the row holds. Its own cap rather than the row's, because three stuns
 -- at once on one member is already unusual.
-local MAX_CROWD_CONTROL_ICONS = 2
+local MAX_CROWD_CONTROL_ICONS = 3
 -- The same cap on the boss and role auras leading the row, and for the same reason.
-local MAX_ROLE_ICONS = 2
+local MAX_ROLE_ICONS = 3
 -- What "under a minute" means to the engine: a bound on an aura's whole duration rather than on
 -- what is left of it. Any value at all also drops the auras that never run out.
 local SHORT_AURA_SECONDS = 60
@@ -453,6 +454,15 @@ local function MaxIcons(side)
 	return tonumber(options and options.MaxIcons) or DEFAULT_MAX_ICONS[side]
 end
 
+---What the head of the debuff row is drawn at, as a share of the rest of it.
+---@return number
+local function LeadScale()
+	local options = SideOptions("Debuffs")
+	local scale = tonumber(options and options.LeadScale)
+
+	return scale and scale > 0 and scale or DEFAULT_LEAD_SCALE
+end
+
 ---The glow group's budget, which is not the row's. That group only ever matches spells that light
 ---up on refresh, and the engine allocates a group's buttons from the count it is declared with, so
 ---giving it the whole row's budget builds five buttons per frame that nothing can ever fill. One
@@ -830,7 +840,7 @@ local function CrowdControlGroup()
 		FilterString = DEBUFF_CROWD_CONTROL_FILTER,
 		MaxIcons = CrowdControlIcons(),
 		CandidateFilters = crowdControl,
-		SizeScale = LEAD_SIZE_SCALE,
+		SizeScale = LeadScale(),
 		LayoutIndex = DEBUFF_CROWD_CONTROL_INDEX,
 	}
 end
@@ -860,7 +870,7 @@ local function RoleGroup()
 		FilterString = RoleFilter(),
 		MaxIcons = RoleIcons(),
 		CandidateFilters = role,
-		SizeScale = LEAD_SIZE_SCALE,
+		SizeScale = LeadScale(),
 		LayoutIndex = DEBUFF_ROLE_INDEX,
 	}
 end
@@ -1067,9 +1077,11 @@ end
 ---@param entry FrameAurasEntry
 ---@return number
 local function KickSize(entry)
-	local size = entry.Debuffs and entry.Debuffs.Size or IconSize(entry.Frame, "Debuffs")
+	local display = entry.Debuffs
+	local size = display and display.Size or IconSize(entry.Frame, "Debuffs")
+	local scale = display and display:GetGroupSizeScale(DEBUFF_ROLE_GROUP)
 
-	return size * LEAD_SIZE_SCALE
+	return size * (scale or LeadScale())
 end
 
 ---@param entry FrameAurasEntry
@@ -1270,7 +1282,7 @@ local function ApplyKickPreview(entry)
 	local frame = entry.Frame
 	local dispelColors = DebuffDispelColors()
 
-	container:SetIconSize(IconSize(frame, "Debuffs") * LEAD_SIZE_SCALE)
+	container:SetIconSize(IconSize(frame, "Debuffs") * LeadScale())
 	testSpells:FillContainer(container, { testSpells.FrameAuras.Kick }, 1, {
 		ReverseCooldown = ReversesCooldown("Debuffs"),
 		HideNumbers = HidesNumbers("Debuffs"),
@@ -1327,7 +1339,7 @@ local function ApplyTestSide(entry, side)
 
 	-- The live row hands its lead debuffs groups of their own so they can be drawn larger, which a
 	-- preview row of one container has to reproduce a slot at a time.
-	container:SetLeadScale(side == "Debuffs" and leading > 0 and LEAD_SIZE_SCALE or nil, leading)
+	container:SetLeadScale(side == "Debuffs" and leading > 0 and LeadScale() or nil, leading)
 	-- The stand-ins have to fold this in themselves, where a live button gets it from the display.
 	local centersStacks = CentersStacks(side)
 	local hideNumbers = HidesNumbers(side) or centersStacks
@@ -1376,6 +1388,13 @@ local function ClearTestIcons(entry)
 	end
 
 	ClearKickPreview(entry)
+end
+
+---Hands the lead groups of a built display the current lead size. A display keeps the size its
+---groups were declared with.
+---@param display AuraContainerDisplay
+local function SyncLeadScale(display)
+	display:SetGroupSizeScale(LEAD_GROUP_KEYS, LeadScale())
 end
 
 ---Pushes one side's settings at its display: geometry first, then what the groups may draw.
@@ -1441,6 +1460,7 @@ local function ApplySettings(entry)
 		AddLateGroup(entry.Debuffs, DEBUFF_CROWD_CONTROL_GROUP, CrowdControlGroup, CrowdControlIcons() > 0)
 		AddLateGroup(entry.Debuffs, DEBUFF_DISPEL_GROUP, DispelGroup, SortsDispellableFirst())
 		ApplySide(entry.Debuffs, frame, "Debuffs", DEBUFF_GROUP_KEYS)
+		SyncLeadScale(entry.Debuffs)
 
 		-- The policy first, since a group asking for a classification the display is not making
 		-- matches nothing at all.

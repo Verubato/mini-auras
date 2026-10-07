@@ -63,6 +63,7 @@ local BOUNDS = {
 		PerRow = { Min = 1, Max = 6 },
 		Padding = { Min = 0, Max = 5 },
 		FontScale = { Min = 0.5, Max = 2.0, Step = 0.05 },
+		LeadScale = { Min = 1.0, Max = 2.0, Step = 0.05 },
 	},
 	ClassBuff = {
 		Size = { Min = 15, Max = 50 },
@@ -791,7 +792,11 @@ local function BuildDebuffs(content, options)
 		L["Scales this row's countdown and stack count text."], tripleControlWidth)
 	fontScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "TOPLEFT", tripleColumnWidth * 2, 0)
 
-	PlacementRow(content, options, perRow.Slider, true)
+	local leadScale = Slider(content, options, "Debuffs", "LeadScale", L["Lead size"],
+		L["How large crowd control and boss debuffs are drawn, compared with the rest of the row."], tripleControlWidth)
+	leadScale.Slider:SetPoint("TOPLEFT", perRow.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+
+	PlacementRow(content, options, leadScale.Slider, true)
 end
 
 ---The name of the buff the player brings, for a page that can then say which one it means.
