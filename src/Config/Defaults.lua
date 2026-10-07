@@ -210,6 +210,13 @@ local dbDefaults = {
 			-- On, so a portrait that has always counted down keeps doing it.
 			EnableNumbers = true,
 			FontScale = 1.0,
+			-- Which unit frames get a portrait display.
+			Units = {
+				Player = true,
+				Target = true,
+				Focus = true,
+				Pet = true,
+			},
 			-- Which of the unflagged buffs the player wants on their own portrait, under every
 			-- flagged category. Buffs only: 12.1 drops a spell id map for harmful auras on a unit
 			-- you can assist, and the layer would then match every debuff on you.

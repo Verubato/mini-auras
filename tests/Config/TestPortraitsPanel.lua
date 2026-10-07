@@ -360,3 +360,73 @@ fw.describe("Portraits page - the countdown numbers", function()
 		assert(portrait.EnableNumbers == true, "and a second click puts them back")
 	end)
 end)
+
+fw.describe("Portraits page - the unit switches", function()
+	local UNITS = { "Player", "Target", "Focus", "Pet" }
+
+	---@param addon table
+	---@return table<string, boolean>
+	local function UnitOptions(addon)
+		return addon.Framework:GetSavedVars().Modules.Portrait.Units
+	end
+
+	fw.it("offers a switch for each portrait, all on out of the box", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+
+		for _, unit in ipairs(UNITS) do
+			local switch = SwitchFor(addon.L[unit], page)
+
+			fw.not_nil(switch, "the page offers a " .. unit .. " switch")
+			assert(UnitOptions(addon)[unit] == true, unit .. " ships on")
+
+			switch:MiniRefresh()
+			fw.eq(switch:GetChecked(), true, unit .. " reads as ticked")
+		end
+	end)
+
+	fw.it("writes only the unit that was clicked, and clicking again puts it back", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+
+		for _, unit in ipairs(UNITS) do
+			Click(SwitchFor(addon.L[unit], page))
+
+			for _, other in ipairs(UNITS) do
+				assert(UnitOptions(addon)[other] == (other ~= unit),
+					unit .. " off: " .. other .. " has the wrong value")
+			end
+
+			Click(SwitchFor(addon.L[unit], page))
+			assert(UnitOptions(addon)[unit] == true, unit .. " back on")
+		end
+	end)
+
+	fw.it("reads a missing entry as on", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+		local switch = SwitchFor(addon.L["Focus"], page)
+
+		UnitOptions(addon).Focus = nil
+		switch:MiniRefresh()
+
+		fw.eq(switch:GetChecked(), true, "an absent switch shows ticked")
+	end)
+
+	fw.it("applies the module so the change lands live", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+		local applied = {}
+		local realApply = addon.Config.Apply
+
+		addon.Config.Apply = function(self, key, ...)
+			applied[#applied + 1] = key
+			return realApply(self, key, ...)
+		end
+
+		Click(SwitchFor(addon.L["Focus"], page))
+		addon.Config.Apply = realApply
+
+		fw.eq(applied[1], addon.Utils.ModuleName.Portrait, "the click refreshed the portrait module")
+	end)
+end)

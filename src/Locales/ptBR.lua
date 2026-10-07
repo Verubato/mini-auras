@@ -302,6 +302,11 @@ L:RegisterLocale("ptBR", function() return {
 	-- Portraits tab
 	["Portraits"] = "Retratos",
 	["Portraits_Short"] = "Retrato",
+	["Units"] = "Unidades",
+	["Player"] = "Jogador",
+	["Target"] = "Alvo",
+	["Focus"] = "Foco",
+	["Pet"] = "Mascote",
 	["Reverses the direction of the cooldown swipe."] = "Inverte a direção do deslize da recarga.",
 
 	-- Party Trinkets tab

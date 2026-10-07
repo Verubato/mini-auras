@@ -302,6 +302,11 @@ L:RegisterLocale("deDE", function() return {
 	-- Portraits tab
 	["Portraits"] = "Porträts",
 	["Portraits_Short"] = "Porträt",
+	["Units"] = "Einheiten",
+	["Player"] = "Spieler",
+	["Target"] = "Ziel",
+	["Focus"] = "Fokus",
+	["Pet"] = "Begleiter",
 	["Reverses the direction of the cooldown swipe."] = "Kehrt die Richtung des Abklingzeit-Wischens um.",
 
 	-- Party Trinkets tab

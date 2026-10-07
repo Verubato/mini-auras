@@ -113,13 +113,51 @@ function M:Build(panel)
 	fontScaleSlider.Slider:SetPoint("TOP", reverseSweepChk, "TOP", 0, -verticalSpacing)
 	fontScaleSlider.Slider:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
 
+	local unitsDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Units"],
+	})
+	unitsDivider:SetPoint("LEFT", panel, "LEFT")
+	unitsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	unitsDivider:SetPoint("TOP", fontScaleSlider.Slider, "BOTTOM", 0, -verticalSpacing)
+
+	local unitSwitches = {
+		{ Key = "Player", Label = L["Player"] },
+		{ Key = "Target", Label = L["Target"] },
+		{ Key = "Focus", Label = L["Focus"] },
+		{ Key = "Pet", Label = L["Pet"] },
+	}
+
+	local unitsRow
+	for index, unit in ipairs(unitSwitches) do
+		local chk = mini:Checkbox({
+			Parent = panel,
+			LabelText = unit.Label,
+			GetValue = function()
+				return db.Modules.Portrait.Units[unit.Key] ~= false
+			end,
+			SetValue = function(value)
+				db.Modules.Portrait.Units[unit.Key] = value
+				config:Apply(moduleName.Portrait)
+			end,
+		})
+
+		if index == 1 then
+			chk:SetPoint("TOPLEFT", unitsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+			unitsRow = chk
+		else
+			chk:SetPoint("TOP", unitsRow, "TOP", 0, 0)
+			chk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * (index - 1), 0)
+		end
+	end
+
 	local customDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Extra buffs"],
 	})
 	customDivider:SetPoint("LEFT", panel, "LEFT")
 	customDivider:SetPoint("RIGHT", panel, "RIGHT")
-	customDivider:SetPoint("TOP", fontScaleSlider.Slider, "BOTTOM", 0, -verticalSpacing)
+	customDivider:SetPoint("TOP", unitsRow, "BOTTOM", 0, -verticalSpacing)
 
 	local customLines = mini:TextBlock({
 		Parent = panel,

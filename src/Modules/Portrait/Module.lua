@@ -23,18 +23,25 @@ local UNIT_CHANGE_TOKEN = {
 	UNIT_PET = "pet",
 }
 
+-- The one event whose occupant change each unit's portrait waits on.
+local UNIT_CHANGE_EVENT = {
+	target = "PLAYER_TARGET_CHANGED",
+	focus = "PLAYER_FOCUS_CHANGED",
+	-- A summoned pet is assistable where the empty token was not, so its disarm layer has to be
+	-- re-budgeted the moment it turns up.
+	pet = "UNIT_PET",
+}
+
 ---@type Db
 local db
 local testModeActive = false
 local paused = false
 local enabled = false
-local blizzardAttached = false
-local thirdPartyAttached = false
 ---@type ModuleLifecycle?
 local lifecycle
--- A disabled portrait module receives no events at all.
----@type EventGate?
-local unitChangeGate
+-- One gate per unit, so a switched-off unit hears nothing.
+---@type table<string, EventGate>
+local unitChangeGates = {}
 
 ---The display stops rendering while the module is off or paused.
 local function PushSuspension()
@@ -56,21 +63,35 @@ end
 
 ---Builds the portrait containers on first enable rather than at load. Attaching moves the
 ---Blizzard portraits a strata down, which Voidform's glow draws over even when no icon is ever
----rendered, so a disabled module must leave the frames untouched.
+---rendered, so a disabled module, or a unit switched off, must leave its frames untouched.
 local function EnsureAttached()
 	if not enabled then
 		return
 	end
 
-	if not blizzardAttached then
-		blizzardAttached = true
-		anchors:AttachBlizzardFrames()
-	end
+	anchors:AttachBlizzardFrames()
 
 	-- Third-party unit frames do not exist until the world has loaded.
-	if addon:HasEnteredWorld() and not thirdPartyAttached then
-		thirdPartyAttached = true
+	if addon:HasEnteredWorld() then
 		anchors:AttachThirdPartyFrames()
+	end
+end
+
+---Brings each unit's event gate and kick subscription in line with the module and its switches.
+local function SyncUnits()
+	for unit, gate in pairs(unitChangeGates) do
+		local on = enabled and display:IsUnitOn(unit)
+
+		gate:SetActive(on)
+
+		-- Only the target and focus portraits listen for kicks.
+		if unit ~= "pet" then
+			if on then
+				observer:WatchKick(unit)
+			else
+				observer:UnwatchKick(unit)
+			end
+		end
 	end
 end
 
@@ -111,28 +132,19 @@ local function Setup()
 		display:RefreshUnitAuras(unit)
 		observer:FireUnitUpdate(unit)
 	end)
-	unitChangeGate = eventGate:New(unitChangeEvents, {
-		"PLAYER_TARGET_CHANGED",
-		"PLAYER_FOCUS_CHANGED",
-		-- A summoned pet is assistable where the empty token was not, so its disarm layer
-		-- has to be re-budgeted the moment the pet turns up.
-		"UNIT_PET",
-	})
-
-	observer:WatchKicks()
+	for unit, event in pairs(UNIT_CHANGE_EVENT) do
+		unitChangeGates[unit] = eventGate:New(unitChangeEvents, { event })
+	end
 end
 
 -- Events stay unregistered while disabled. The addon-wide Refresh is what brings the module back.
-local function OnEnable()
-	unitChangeGate:SetActive(true)
-end
-
 local function OnDisable()
-	unitChangeGate:SetActive(false)
-	display:Teardown()
+	SyncUnits()
+	anchors:DetachAll()
 end
 
 local function Apply()
+	SyncUnits()
 	EnsureAttached()
 	display:EnsureFrames()
 	display:ApplyOptions()
@@ -165,7 +177,6 @@ function M:Init()
 		GetOptions = GetOptions,
 		IsEnabled = IsEnabled,
 		Setup = Setup,
-		OnEnable = OnEnable,
 		OnDisable = OnDisable,
 		Apply = Apply,
 	})

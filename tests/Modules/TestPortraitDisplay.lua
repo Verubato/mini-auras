@@ -83,11 +83,24 @@ local function settleGroups()
 	acm.tickAll(40)
 end
 
+-- A switched-off unit's container leaves the module's list but is kept for when it comes back, so
+-- the last one seen stands in for it.
+local lastSeen = {}
+
 local function displaysFor(unit)
 	settleGroups()
 
 	local container = assert(containerFor(unit), "no portrait container for " .. unit)
+	lastSeen[unit] = container
 	return assert(container.AuraDisplay, "no aura display stack").Displays, container
+end
+
+-- The displays of a unit that may be switched off, from the container last seen while it was on.
+local function parkedDisplaysFor(unit)
+	settleGroups()
+
+	local container = containerFor(unit) or assert(lastSeen[unit], "no portrait container seen for " .. unit)
+	return assert(container.AuraDisplay, "no aura display stack").Displays
 end
 
 -- The player's portrait carries the user's own spell list under the five flagged categories.
@@ -500,7 +513,7 @@ fw.describe("Portrait 12.1 - enable/disable", function()
 		env.setModuleEnabled("Portrait", false)
 		module:Refresh()
 
-		for _, display in ipairs(displaysFor("target")) do
+		for _, display in ipairs(parkedDisplaysFor("target")) do
 			assert(not display.Frame:IsEnabled() and not display.Frame:IsShown(), "parked while disabled")
 		end
 
@@ -514,6 +527,676 @@ fw.describe("Portrait 12.1 - enable/disable", function()
 
 	fw.it("no misuse was reported anywhere in the module's lifecycle", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
+	end)
+end)
+
+fw.describe("Portrait 12.1 - per-unit switches", function()
+	local OPTION_KEY = { player = "Player", target = "Target", focus = "Focus", pet = "Pet" }
+	local UNIT_EVENT = { target = "PLAYER_TARGET_CHANGED", focus = "PLAYER_FOCUS_CHANGED", pet = "UNIT_PET" }
+	local UNITS = { "player", "target", "focus", "pet" }
+
+	---@param unit string
+	---@param on boolean
+	local function setUnit(unit, on)
+		portraitOptions().Units[OPTION_KEY[unit]] = on
+		module:Refresh()
+	end
+
+	---@param unit string
+	---@return boolean
+	local function live(unit)
+		for _, display in ipairs(displaysFor(unit)) do
+			if not display.Frame:IsEnabled() or not display.Frame:IsShown() then
+				return false
+			end
+		end
+
+		return true
+	end
+
+	---@param unit string
+	---@return boolean
+	local function parked(unit)
+		for _, display in ipairs(parkedDisplaysFor(unit)) do
+			if display.Frame:IsEnabled() or display.Frame:IsShown() then
+				return false
+			end
+		end
+
+		return true
+	end
+
+	fw.before_each(function()
+		portraitOptions().Units = { Player = true, Target = true, Focus = true, Pet = true }
+		module:Refresh()
+
+		for _, unit in ipairs(UNITS) do
+			displaysFor(unit)
+		end
+	end)
+
+	fw.it("ships with every unit on", function()
+		for _, unit in ipairs(UNITS) do
+			assert(env.addon.Config.Defaults.Modules.Portrait.Units[OPTION_KEY[unit]] == true,
+				unit .. ": on by default")
+			assert(live(unit), unit .. ": showing")
+		end
+	end)
+
+	fw.it("parks only the unit that is switched off", function()
+		for _, off in ipairs(UNITS) do
+			setUnit(off, false)
+
+			for _, unit in ipairs(UNITS) do
+				if unit == off then
+					assert(parked(unit), unit .. ": parked once switched off")
+					assert(containerFor(unit) == nil, unit .. ": out of the render set")
+				else
+					assert(live(unit), unit .. ": untouched by switching " .. off .. " off")
+				end
+			end
+
+			setUnit(off, true)
+		end
+	end)
+
+	fw.it("brings a unit back live when it is switched on again", function()
+		setUnit("focus", false)
+		assert(parked("focus"), "fixture: focus is parked")
+
+		setUnit("focus", true)
+		assert(live("focus"), "focus shows again from the ordinary refresh")
+	end)
+
+	fw.it("reads a profile with no Units table as every unit on", function()
+		local saved = portraitOptions().Units
+		portraitOptions().Units = nil
+		module:Refresh()
+
+		for _, unit in ipairs(UNITS) do
+			assert(live(unit), unit .. ": a missing table reads as on")
+		end
+
+		portraitOptions().Units = saved
+	end)
+
+	fw.it("unregisters the occupant events of the unit that is off and no other", function()
+		for _, off in ipairs({ "target", "focus", "pet" }) do
+			setUnit(off, false)
+
+			for unit, event in pairs(UNIT_EVENT) do
+				if unit == off then
+					assert(not unitChangeEvents._events[event], unit .. ": " .. event .. " still registered")
+				else
+					assert(unitChangeEvents._events[event], unit .. ": " .. event .. " lost with " .. off)
+				end
+			end
+
+			setUnit(off, true)
+			assert(unitChangeEvents._events[UNIT_EVENT[off]], off .. ": event registered again")
+		end
+	end)
+
+	fw.it("leaves the other events alone when the player is switched off", function()
+		setUnit("player", false)
+
+		for unit, event in pairs(UNIT_EVENT) do
+			assert(unitChangeEvents._events[event], unit .. ": " .. event .. " lost with the player")
+		end
+	end)
+
+	fw.it("stops hearing kicks for the unit that is off and no other", function()
+		for _, off in ipairs({ "target", "focus" }) do
+			local other = off == "target" and "focus" or "target"
+
+			assert(env.fireKick(off) == 1, off .. ": subscribed while on")
+
+			setUnit(off, false)
+			assert(env.fireKick(off) == 0, off .. ": no kick subscription while off")
+			assert(env.fireKick(other) == 1, other .. ": still subscribed")
+
+			setUnit(off, true)
+			assert(env.fireKick(off) == 1, off .. ": subscribed again")
+		end
+	end)
+
+	fw.it("subscribes to kicks once however often it is refreshed", function()
+		module:Refresh()
+		module:Refresh()
+
+		assert(env.fireKick("target") == 1, "one subscription for the target")
+	end)
+
+	fw.it("draws no kick icon on a unit that is off", function()
+		local display = env.addon.Modules.Portrait.Display
+		local _, container = displaysFor("target")
+
+		env.kicks.target = { Texture = "tex:kick", DurationObject = {}, StartTime = 0, Duration = 3 }
+		setUnit("target", false)
+		kickHideNumbers = "unset"
+		display:UpdateKickIcon("target", container)
+
+		assert(kickHideNumbers == "unset", "the kick reached the render path of a switched-off portrait")
+
+		env.kicks.target = nil
+	end)
+
+	fw.it("drops the unit's token refresh while it is off", function()
+		local display = env.addon.Modules.Portrait.Display
+		local refreshes = 0
+
+		setUnit("target", false)
+
+		local stack = parkedDisplaysFor("target")
+
+		for _, d in ipairs(stack) do
+			d.RequestRefresh = function()
+				refreshes = refreshes + 1
+			end
+		end
+
+		display:RefreshUnitAuras("target")
+
+		for _, d in ipairs(stack) do
+			d.RequestRefresh = nil
+		end
+
+		assert(refreshes == 0, "a switched-off stack was asked to re-read its auras")
+	end)
+
+	fw.it("keeps the preview off a unit that is switched off", function()
+		local filled = {}
+		local restore = {}
+
+		for _, unit in ipairs(UNITS) do
+			local _, container = displaysFor(unit)
+			local original = container.SetSlot
+
+			restore[#restore + 1] = function()
+				container.SetSlot = original
+			end
+			container.SetSlot = function(self, ...)
+				filled[unit] = true
+				return original(self, ...)
+			end
+		end
+
+		setUnit("focus", false)
+		module:StartTesting()
+		module:StopTesting()
+
+		for _, undo in ipairs(restore) do
+			undo()
+		end
+
+		assert(filled.target and filled.player and filled.pet, "the units that are on get the stand-in")
+		assert(not filled.focus, "the unit that is off does not")
+	end)
+end)
+
+fw.describe("Portrait 12.1 - a unit switched off before it is attached", function()
+	fw.it("leaves its Blizzard portrait alone until it is switched on", function()
+		local env2 = moduleEnv.build()
+		env2.setModuleEnabled("Portrait", true)
+
+		local frame = acm.NewFrame("Frame", "FocusFrame")
+		frame:SetFrameLevel(500)
+		local portrait = acm.NewFrame("Frame", "FocusFramePortrait", frame)
+		portrait:SetSize(PORTRAIT_SIZE, PORTRAIT_SIZE)
+		portrait:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
+		frame.portrait = portrait
+		_G.FocusFrame = frame
+
+		env2.loadModule("src/Modules/Portrait/Observer.lua")
+		env2.loadModule("src/Modules/Portrait/Display.lua")
+		env2.loadModule("src/Modules/Portrait/Anchors.lua")
+		env2.loadModule("src/Modules/Portrait/Module.lua")
+
+		local module2 = env2.addon.Modules.PortraitModule
+
+		env2.db.Modules.Portrait.Units.Focus = false
+		module2:Init()
+		module2:Refresh()
+
+		assert(portrait:GetParent() == frame, "the portrait was moved although focus is off")
+		for _, container in ipairs(module2:GetContainers()) do
+			assert(container.AuraUnit ~= "focus", "a focus container was built while it is off")
+		end
+
+		env2.db.Modules.Portrait.Units.Focus = true
+		module2:Refresh()
+
+		assert(portrait:GetParent() ~= frame, "the portrait was not attached once switched on")
+
+		local found = false
+		for _, container in ipairs(module2:GetContainers()) do
+			found = found or container.AuraUnit == "focus"
+		end
+
+		assert(found, "switching focus on builds its container live")
+	end)
+end)
+
+fw.describe("Portrait 12.1 - undoing what an attach did to the unit frame", function()
+	local UNITS = { "player", "target", "focus", "pet" }
+	local FRAMES = { player = "PlayerFrame", target = "TargetFrame", focus = "FocusFrame", pet = "PetFrame" }
+	local OPTION_KEY = { player = "Player", target = "Target", focus = "Focus", pet = "Pet" }
+
+	---@param event string
+	local function Fire(event)
+		for _, frame in ipairs(acm.frames) do
+			local listening = frame._events and frame._events[event]
+			local handler = frame._scripts and frame._scripts.OnEvent
+
+			if listening and handler then
+				handler(frame, event)
+			end
+		end
+	end
+
+	---Fresh unit frames, a Voidform glow, and a pet portrait that has a draw layer to read back.
+	---@param withBlizzard boolean? false leaves the target frame out
+	---@return table world
+	local function buildWorld(withBlizzard)
+		local world = { env = moduleEnv.build(), portraits = {}, saved = {} }
+		world.env.setModuleEnabled("Portrait", true)
+
+		for _, name in pairs(FRAMES) do
+			world.saved[name] = _G[name]
+		end
+		world.saved.InsanityBarFrame = _G.InsanityBarFrame
+
+		for _, unit in ipairs(UNITS) do
+			local frame = acm.NewFrame("Frame", FRAMES[unit])
+			frame:SetFrameLevel(unit == "pet" and 3 or 500)
+			local portrait = acm.NewFrame("Frame", FRAMES[unit] .. "Portrait", frame)
+			portrait:SetSize(PORTRAIT_SIZE, PORTRAIT_SIZE)
+			portrait:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
+			frame.portrait = portrait
+			_G[FRAMES[unit]] = frame
+			world.portraits[unit] = portrait
+		end
+
+		if withBlizzard == false then
+			_G.TargetFrame = nil
+		end
+
+		local glow = acm.NewFrame("Frame", "PortraitGlow")
+		glow:SetFrameStrata("MEDIUM")
+		glow:SetFrameLevel(7)
+		_G.InsanityBarFrame = { PortraitGlow = glow }
+		world.glow = glow
+
+		world.draw = { "ARTWORK", 2 }
+		local pet = world.portraits.pet
+		pet.GetDrawLayer = function()
+			return world.draw[1], world.draw[2]
+		end
+		pet.SetDrawLayer = function(_, layer, sub)
+			world.draw = { layer, sub }
+		end
+
+		return world
+	end
+
+	---@param world table
+	local function restoreGlobals(world)
+		for name, frame in pairs(world.saved) do
+			_G[name] = frame
+		end
+		_G.EllesmereUIUnitFrames_Target = nil
+	end
+
+	---Runs a test against a fresh world. Globals the world replaced are put back even when it fails.
+	---@param name string
+	---@param test fun(world: table)
+	---@param withBlizzard boolean?
+	local function worldTest(name, test, withBlizzard)
+		fw.it(name, function()
+			local world = buildWorld(withBlizzard)
+			local realInCombat = _G.InCombatLockdown
+			local ok, err = pcall(test, world)
+
+			_G.InCombatLockdown = realInCombat
+			restoreGlobals(world)
+
+			if not ok then
+				error(err, 0)
+			end
+		end)
+	end
+
+	---Runs the body as if the player were fighting. Relies on worldTest to put back the real InCombatLockdown.
+	---@param body fun()
+	local function inCombat(body)
+		_G.InCombatLockdown = function()
+			return true
+		end
+		body()
+		_G.InCombatLockdown = function()
+			return false
+		end
+	end
+
+	---@param world table
+	local function start(world)
+		local env2 = world.env
+		env2.loadModule("src/Modules/Portrait/Observer.lua")
+		env2.loadModule("src/Modules/Portrait/Display.lua")
+		env2.loadModule("src/Modules/Portrait/Anchors.lua")
+		env2.loadModule("src/Modules/Portrait/Module.lua")
+
+		world.module = env2.addon.Modules.PortraitModule
+		world.module:Init()
+	end
+
+	---Everything the attach writes to a portrait and the glow, as one comparable string.
+	---@param world table
+	---@param unit string
+	---@return string
+	local function state(world, unit)
+		local portrait = world.portraits[unit]
+		local point, relativeTo, relativePoint, x, y = portrait:GetPoint(1)
+		local parts = {
+			tostring(portrait:GetParent()),
+			tostring(portrait:GetNumPoints()),
+			tostring(point),
+			tostring(relativeTo),
+			tostring(relativePoint),
+			tostring(x),
+			tostring(y),
+		}
+
+		if unit == "player" then
+			parts[#parts + 1] = world.glow:GetFrameStrata() .. "/" .. world.glow:GetFrameLevel()
+		elseif unit == "pet" then
+			parts[#parts + 1] = world.draw[1] .. "/" .. world.draw[2]
+		end
+
+		return table.concat(parts, "|")
+	end
+
+	---@param world table
+	---@param unit string
+	---@return table? container
+	local function containerOf(world, unit)
+		for _, container in ipairs(world.module:GetContainers()) do
+			if container.AuraUnit == unit then
+				return container
+			end
+		end
+	end
+
+	---@param world table
+	---@param unit string
+	---@param on boolean
+	local function setUnit(world, unit, on)
+		world.env.db.Modules.Portrait.Units[OPTION_KEY[unit]] = on
+		world.module:Refresh()
+	end
+
+	---@param world table
+	---@return table<string, string>
+	local function snapshot(world)
+		local result = {}
+
+		for _, unit in ipairs(UNITS) do
+			result[unit] = state(world, unit)
+		end
+
+		return result
+	end
+
+	worldTest("puts back every property it changed when the unit is switched off", function(world)
+		start(world)
+
+		local before = snapshot(world)
+		world.module:Refresh()
+
+		for _, unit in ipairs(UNITS) do
+			assert(state(world, unit) ~= before[unit], unit .. ": fixture, the attach changed something")
+		end
+
+		for _, off in ipairs(UNITS) do
+			local attached = snapshot(world)
+
+			setUnit(world, off, false)
+
+			assert(state(world, off) == before[off], off .. ": not back as it was found")
+
+			for _, unit in ipairs(UNITS) do
+				if unit ~= off then
+					assert(state(world, unit) == attached[unit], unit .. ": touched by switching " .. off .. " off")
+				end
+			end
+
+			setUnit(world, off, true)
+		end
+	end)
+
+	worldTest("reattaches the same frames when the unit is switched back on", function(world)
+		start(world)
+		world.module:Refresh()
+
+		local attached = state(world, "target")
+		local container = assert(containerOf(world, "target"))
+		local count = #world.module:GetContainers()
+
+		setUnit(world, "target", false)
+		assert(containerOf(world, "target") == nil, "out of the render set while off")
+
+		setUnit(world, "target", true)
+
+		assert(containerOf(world, "target") == container, "the same container comes back, not a second one")
+		assert(#world.module:GetContainers() == count, "no extra container was built")
+		assert(state(world, "target") == attached, "the portrait is demoted again exactly as before")
+	end)
+
+	worldTest("restores every unit when the module is disabled, and attaches again when it is enabled", function(world)
+		start(world)
+
+		local before = snapshot(world)
+		world.module:Refresh()
+
+		local attached = snapshot(world)
+
+		world.env.setModuleEnabled("Portrait", false)
+		world.module:Refresh()
+
+		for _, unit in ipairs(UNITS) do
+			assert(state(world, unit) == before[unit], unit .. ": not restored by disabling the module")
+		end
+		assert(#world.module:GetContainers() == 0, "nothing left in the render set")
+
+		world.env.setModuleEnabled("Portrait", true)
+		world.module:Refresh()
+
+		for _, unit in ipairs(UNITS) do
+			assert(state(world, unit) == attached[unit], unit .. ": not attached again on enable")
+		end
+	end)
+
+	worldTest("waits for combat to end before writing to the unit frame", function(world)
+		start(world)
+
+		local before = state(world, "player")
+		world.module:Refresh()
+
+		local attached = state(world, "player")
+		inCombat(function()
+			setUnit(world, "player", false)
+
+			assert(containerOf(world, "player") == nil, "the icons go at once")
+			assert(state(world, "player") == attached, "the frame is left alone in combat")
+			assert(world.env.addon.Framework:HasPendingCombatWork(), "the restore is waiting")
+		end)
+
+		Fire("PLAYER_REGEN_ENABLED")
+
+		assert(state(world, "player") == before, "restored once combat ended")
+	end)
+
+	worldTest("takes a third-party portrait's container out and back without touching its frame", function(world)
+		local frame = acm.NewFrame("Frame", "EllesmereUIUnitFrames_Target")
+		local backdrop = acm.NewFrame("Frame", "EllesmereUIUnitFrames_TargetBackdrop", frame)
+		backdrop:SetSize(PORTRAIT_SIZE, PORTRAIT_SIZE)
+		backdrop:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
+		frame.Portrait = { backdrop = backdrop }
+		_G.EllesmereUIUnitFrames_Target = frame
+
+		start(world)
+		world.module:Refresh()
+
+		local function describe()
+			return tostring(backdrop:GetParent()) .. "|" .. tostring(backdrop:GetNumPoints()) .. "|" .. tostring(backdrop:GetFrameLevel())
+		end
+
+		local before = describe()
+		local container = assert(containerOf(world, "target"), "the third-party portrait got a container")
+		assert(describe() == before, "attaching does not touch the host portrait")
+
+		setUnit(world, "target", false)
+		assert(containerOf(world, "target") == nil, "its container leaves the render set with the unit")
+		assert(describe() == before, "and the host portrait stays as it was")
+
+		setUnit(world, "target", true)
+		assert(containerOf(world, "target") == container, "the same container returns")
+
+	end, false)
+	worldTest("writes nothing for a unit switched off and on again within one combat", function(world)
+		start(world)
+		world.module:Refresh()
+
+		local attached = state(world, "player")
+		local writes = 0
+		local portrait = world.portraits.player
+		local setParent = portrait.SetParent
+		portrait.SetParent = function(self, ...)
+			writes = writes + 1
+			return setParent(self, ...)
+		end
+
+		inCombat(function()
+			setUnit(world, "player", false)
+			setUnit(world, "player", true)
+		end)
+		Fire("PLAYER_REGEN_ENABLED")
+
+		assert(state(world, "player") == attached, "still attached")
+		assert(writes == 0, "the portrait was re-parented for nothing")
+		assert(containerOf(world, "player"), "its icons are back")
+	end)
+
+	worldTest("ends attached after on, off, on in one combat", function(world)
+		start(world)
+
+		local before = state(world, "player")
+		world.module:Refresh()
+		local attached = state(world, "player")
+
+		setUnit(world, "player", false)
+		assert(state(world, "player") == before, "fixture: restored out of combat")
+
+		inCombat(function()
+			setUnit(world, "player", true)
+			setUnit(world, "player", false)
+			setUnit(world, "player", true)
+
+			assert(state(world, "player") == before, "the frame is left alone in combat")
+		end)
+		Fire("PLAYER_REGEN_ENABLED")
+
+		assert(state(world, "player") == attached, "attached once combat ended")
+	end)
+
+	worldTest("waits for combat to end before the first attach of a unit switched on in it", function(world)
+		world.env.db.Modules.Portrait.Units.Focus = false
+		start(world)
+		world.module:Refresh()
+
+		local before = state(world, "focus")
+
+		inCombat(function()
+			setUnit(world, "focus", true)
+
+			assert(state(world, "focus") == before, "the focus portrait was re-parented in combat")
+		end)
+		Fire("PLAYER_REGEN_ENABLED")
+
+		assert(state(world, "focus") ~= before, "attached once combat ended")
+		assert(containerOf(world, "focus"), "and its icons are in the render set")
+	end)
+
+	worldTest("does not attach a unit whose build was waiting on combat when the module is disabled", function(world)
+		world.env.db.Modules.Portrait.Units.Focus = false
+		start(world)
+		world.module:Refresh()
+
+		local before = state(world, "focus")
+
+		inCombat(function()
+			setUnit(world, "focus", true)
+			world.env.setModuleEnabled("Portrait", false)
+			world.module:Refresh()
+		end)
+		Fire("PLAYER_REGEN_ENABLED")
+
+		assert(state(world, "focus") == before, "the focus portrait was re-parented on a disabled module")
+		assert(containerOf(world, "focus") == nil, "and it was put in the render set")
+	end)
+
+	worldTest("attaches a unit later when it was switched off while its build waited on combat", function(world)
+		world.env.db.Modules.Portrait.Units.Focus = false
+		start(world)
+		world.module:Refresh()
+
+		local before = state(world, "focus")
+
+		inCombat(function()
+			setUnit(world, "focus", true)
+			setUnit(world, "focus", false)
+		end)
+		Fire("PLAYER_REGEN_ENABLED")
+
+		assert(state(world, "focus") == before, "fixture: nothing was built while it was off")
+
+		setUnit(world, "focus", true)
+
+		assert(state(world, "focus") ~= before, "attached when switched on afterwards")
+		assert(containerOf(world, "focus"), "and in the render set")
+	end)
+
+	worldTest("shows the preview icon on a unit whose build waited on combat during test mode", function(world)
+		world.env.db.Modules.Portrait.Units.Focus = false
+		start(world)
+		world.module:Refresh()
+		world.module:StartTesting()
+
+		inCombat(function()
+			setUnit(world, "focus", true)
+		end)
+		Fire("PLAYER_REGEN_ENABLED")
+
+		local container = assert(containerOf(world, "focus"), "attached once combat ended")
+		assert(container.Frame.MiniAurasTestLabel, "the preview captioned it")
+
+		world.module:StopTesting()
+	end)
+
+	worldTest("clears the preview caption of a unit switched off during test mode", function(world)
+		start(world)
+		world.module:Refresh()
+		world.module:StartTesting()
+
+		local container = assert(containerOf(world, "focus"))
+		local label = assert(container.Frame.MiniAurasTestLabel, "fixture: the preview captioned it")
+		assert(label:IsShown(), "fixture: and it is on screen")
+
+		setUnit(world, "focus", false)
+
+		assert(not label:IsShown(), "the caption stayed on a switched-off unit")
+
+		world.module:StopTesting()
 	end)
 end)
 

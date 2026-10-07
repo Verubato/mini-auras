@@ -302,6 +302,11 @@ L:RegisterLocale("koKR", function() return {
 	-- Portraits tab
 	["Portraits"] = "초상화",
 	["Portraits_Short"] = "초상화",
+	["Units"] = "유닛",
+	["Player"] = "플레이어",
+	["Target"] = "대상",
+	["Focus"] = "주시 대상",
+	["Pet"] = "소환수",
 	["Reverses the direction of the cooldown swipe."] = "재사용 대기시간 스와이프 방향을 반대로 합니다.",
 
 	-- Party Trinkets tab

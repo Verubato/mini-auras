@@ -52,6 +52,14 @@ local STRATA_BELOW = {
 	TOOLTIP = "FULLSCREEN_DIALOG",
 }
 
+-- The key each portrait token has in the module's Units options.
+local UNIT_OPTION_KEY = {
+	player = "Player",
+	target = "Target",
+	focus = "Focus",
+	pet = "Pet",
+}
+
 ---@type Db
 local db
 local testModeActive = false
@@ -303,6 +311,7 @@ end
 ---has to come along, since left where it was it would cover the icons from the strata above.
 ---@param portrait table
 ---@return table? layer nil when the portrait's anchoring cannot be reproduced
+---@return PortraitSnapshot? snapshot what the portrait looked like before, for RestorePortrait
 function M:CreatePortraitLayer(portrait)
 	local parent = portrait:GetParent()
 	if not parent then
@@ -333,11 +342,31 @@ function M:CreatePortraitLayer(portrait)
 	-- portrait, such as the insanity bar's Voidform glow.
 	layer:SetFrameLevel(1)
 
+	local snapshot = { Parent = parent, Point = point, RelativeTo = relativeTo, RelativePoint = relativePoint, X = x, Y = y }
+
+	M:MovePortraitToLayer(portrait, layer, snapshot)
+
+	return layer, snapshot
+end
+
+---Puts a portrait into its demoted layer at the anchor it started with.
+---@param portrait table
+---@param layer table
+---@param snapshot PortraitSnapshot
+function M:MovePortraitToLayer(portrait, layer, snapshot)
 	portrait:SetParent(layer)
 	portrait:ClearAllPoints()
-	portrait:SetPoint(point, relativeTo or layer, relativePoint or point, x or 0, y or 0)
+	portrait:SetPoint(snapshot.Point, snapshot.RelativeTo or layer, snapshot.RelativePoint or snapshot.Point,
+		snapshot.X or 0, snapshot.Y or 0)
+end
 
-	return layer
+---Puts a portrait back exactly where CreatePortraitLayer found it.
+---@param portrait table
+---@param snapshot PortraitSnapshot
+function M:RestorePortrait(portrait, snapshot)
+	portrait:SetParent(snapshot.Parent)
+	portrait:ClearAllPoints()
+	portrait:SetPoint(snapshot.Point, snapshot.RelativeTo, snapshot.RelativePoint, snapshot.X, snapshot.Y)
 end
 
 ---Builds the kick container over a portrait, with the aura display stack underneath it.
@@ -414,6 +443,28 @@ function M:AddContainer(container)
 	containers[#containers + 1] = container
 end
 
+---Takes a container out of the render set and parks everything on it. The frames stay, since the
+---client cannot free them, and AddContainer brings the same ones back.
+---@param container IconSlotContainer
+function M:RemoveContainer(container)
+	for index, held in ipairs(containers) do
+		if held == container then
+			table.remove(containers, index)
+			break
+		end
+	end
+
+	container:ResetAllSlots()
+	moduleUtil:SetTestLabel(container.Frame, nil)
+
+	if container.AuraDisplay then
+		for _, auraDisplay in ipairs(container.AuraDisplay.Displays) do
+			auraDisplay:SetEnabled(false)
+			auraDisplay:Hide()
+		end
+	end
+end
+
 ---@return IconSlotContainer[]
 function M:GetContainers()
 	local result = {}
@@ -428,7 +479,7 @@ end
 ---@param unit string
 ---@param container IconSlotContainer
 function M:UpdateKickIcon(unit, container)
-	if suspended then
+	if suspended or not M:IsUnitOn(unit) then
 		return
 	end
 
@@ -492,6 +543,15 @@ function M:ResetAllSlots()
 	end
 end
 
+---A missing switch reads as on, so a profile saved before the switches existed keeps its portraits.
+---@param unit string
+---@return boolean
+function M:IsUnitOn(unit)
+	local switches = db.Modules.Portrait.Units
+
+	return not switches or switches[UNIT_OPTION_KEY[unit]] ~= false
+end
+
 ---@param value boolean
 function M:SetSuspended(value)
 	suspended = value
@@ -502,16 +562,9 @@ function M:SetTestMode(active)
 	testModeActive = active
 end
 
-function M:Teardown()
-	for _, container in pairs(containers) do
-		container:ResetAllSlots()
-		if container.AuraDisplay then
-			for _, display in ipairs(container.AuraDisplay.Displays) do
-				display:SetEnabled(false)
-				display:Hide()
-			end
-		end
-	end
+---@return boolean
+function M:IsTestMode()
+	return testModeActive
 end
 
 function M:EnsureFrames()
@@ -553,3 +606,12 @@ function M:Init()
 	-- One icon, so only the first preview spell is ever shown.
 	testSpell = testSpellData.CrowdControl[1]
 end
+
+
+---@class PortraitSnapshot
+---@field Parent table
+---@field Point string
+---@field RelativeTo table?
+---@field RelativePoint string?
+---@field X number?
+---@field Y number?

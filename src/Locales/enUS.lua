@@ -303,6 +303,11 @@ L:SetDefaultStrings({
 	-- Portraits tab
 	["Portraits"] = "Portraits",
 	["Portraits_Short"] = "Portraits",
+	["Units"] = "Units",
+	["Player"] = "Player",
+	["Target"] = "Target",
+	["Focus"] = "Focus",
+	["Pet"] = "Pet",
 	["Reverses the direction of the cooldown swipe."] = "Reverses the direction of the cooldown swipe.",
 
 	-- Party Trinkets tab

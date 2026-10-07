@@ -12,6 +12,9 @@ addon.Modules.Portrait.Observer = M
 -- Only target and focus have any, since they are the only portraits whose occupant changes.
 ---@type table<string, fun()[]>
 local unitUpdateFns = {}
+-- Tracker subscription key per unit, present while this module listens for that unit's kicks.
+---@type table<string, number>
+local kickKeys = {}
 
 ---@param unit string
 ---@param callback fun()
@@ -34,12 +37,27 @@ function M:FireUnitUpdate(unit)
 end
 
 ---A kick landing on the target or focus has to redraw that portrait, and no aura event covers it.
-function M:WatchKicks()
-	for _, unit in ipairs({ "target", "focus" }) do
-		local event = unit == "target" and "PLAYER_TARGET_CHANGED" or "PLAYER_FOCUS_CHANGED"
-		kickTracker:Watch(unit, { event })
-		kickTracker:Subscribe(unit, function()
-			M:FireUnitUpdate(unit)
-		end)
+---Safe to call again while already subscribed.
+---@param unit string "target" or "focus"
+function M:WatchKick(unit)
+	if kickKeys[unit] then
+		return
+	end
+
+	local event = unit == "target" and "PLAYER_TARGET_CHANGED" or "PLAYER_FOCUS_CHANGED"
+	kickTracker:Watch(unit, { event })
+	kickKeys[unit] = kickTracker:Subscribe(unit, function()
+		M:FireUnitUpdate(unit)
+	end)
+end
+
+---Drops only this module's subscription. The tracker's watch on the token may be shared, so it stays.
+---@param unit string
+function M:UnwatchKick(unit)
+	local key = kickKeys[unit]
+
+	if key then
+		kickTracker:Unsubscribe(unit, key)
+		kickKeys[unit] = nil
 	end
 end

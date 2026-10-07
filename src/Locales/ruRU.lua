@@ -302,6 +302,11 @@ L:RegisterLocale("ruRU", function() return {
 	-- Portraits tab
 	["Portraits"] = "Портреты",
 	["Portraits_Short"] = "Портрет",
+	["Units"] = "Цели",
+	["Player"] = "Игрок",
+	["Target"] = "Цель",
+	["Focus"] = "Фокус",
+	["Pet"] = "Питомец",
 	["Reverses the direction of the cooldown swipe."] = "Изменяет направление смахивания перезарядки.",
 
 	-- Party Trinkets tab

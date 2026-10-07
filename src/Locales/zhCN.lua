@@ -302,6 +302,11 @@ L:RegisterLocale("zhCN", function() return {
 	-- Portraits tab
 	["Portraits"] = "头像",
 	["Portraits_Short"] = "头像",
+	["Units"] = "单位",
+	["Player"] = "玩家",
+	["Target"] = "目标",
+	["Focus"] = "焦点",
+	["Pet"] = "宠物",
 	["Reverses the direction of the cooldown swipe."] = "反转冷却时间滑动动画的方向。",
 
 	-- Party Trinkets tab

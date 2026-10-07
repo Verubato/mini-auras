@@ -303,6 +303,11 @@ L:RegisterLocale("esMX", function() return {
 	-- Portraits tab
 	["Portraits"] = "Retratos",
 	["Portraits_Short"] = "Retrato",
+	["Units"] = "Unidades",
+	["Player"] = "Jugador",
+	["Target"] = "Objetivo",
+	["Focus"] = "Foco",
+	["Pet"] = "Mascota",
 	["Reverses the direction of the cooldown swipe."] = "Invierte la dirección del barrido del tiempo de reutilización.",
 
 	-- Party Trinkets tab

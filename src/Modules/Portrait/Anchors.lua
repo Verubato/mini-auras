@@ -4,10 +4,87 @@ local _, addon = ...
 -- Loaded before this file in TOC order.
 local observer = addon.Modules.Portrait.Observer
 local display  = addon.Modules.Portrait.Display
+local mini = addon.Framework
+
+local BLIZZARD_UNITS = { "player", "target", "focus", "pet" }
+
+local BLIZZARD_KEY = "blizzard"
+
+-- A unit is built the first time it is switched on, and never twice. Switching it off later keeps
+-- the frames and only undoes what was done to the unit frame, so switching it on reuses them.
+---@type table<string, boolean>
+local blizzardBuilt = {}
+---@type table<function, table<string, boolean>>
+local thirdPartyBuilt = {}
+
+-- Every attachment built so far, by unit and then by which frame it hangs off.
+---@type table<string, table<any, PortraitAttachment>>
+local attachments = {}
+-- Which frame the attach function running right now hangs off.
+local currentKey
 
 ---@class PortraitAnchors
 local M = {}
 addon.Modules.Portrait.Anchors = M
+
+---Brings a host frame in line with whether its attachment is meant to be on. Writing to a Blizzard
+---frame waits for combat to end, and only the latest ask counts.
+---@param attachment PortraitAttachment
+local function Settle(attachment)
+	local hook = attachment.Attached and attachment.Reapply or attachment.Restore
+
+	if not hook then
+		attachment.Applied = attachment.Attached
+		return
+	end
+
+	mini:RunWhenCombatEnds(function()
+		if attachment.Applied ~= attachment.Attached then
+			hook()
+			attachment.Applied = attachment.Attached
+		end
+	end, "MiniAurasPortrait" .. tostring(attachment))
+end
+
+---Takes a finished container into the render set and remembers how to take it out again.
+---@param unit string
+---@param container IconSlotContainer
+---@param restore fun()? Undoes what the attach changed on the host frame.
+---@param reapply fun()? Redoes it.
+local function Register(unit, container, restore, reapply)
+	attachments[unit] = attachments[unit] or {}
+	attachments[unit][currentKey] = {
+		Container = container,
+		Restore = restore,
+		Reapply = reapply,
+		Attached = true,
+		Applied = true,
+	}
+
+	display:AddContainer(container)
+end
+
+---@param attachment PortraitAttachment
+local function Attach(attachment)
+	if attachment.Attached then
+		return
+	end
+
+	attachment.Attached = true
+	display:AddContainer(attachment.Container)
+	Settle(attachment)
+end
+
+---@param attachment PortraitAttachment
+local function Detach(attachment)
+	if not attachment.Attached then
+		return
+	end
+
+	attachment.Attached = false
+	display:RemoveContainer(attachment.Container)
+	Settle(attachment)
+end
 
 ---Registers the target/focus update list, so a kick redraws the portrait when its occupant
 ---changes. The aura icons underneath track their own unit.
@@ -254,18 +331,21 @@ local function AttachBlizzardFrame(unit)
 	-- the icon edge instead of the other way round. Not the pet, whose mask anchors to the
 	-- portrait instead of carrying its own size, and moving that portrait out of PetFrame blacks
 	-- out the frame's border art.
-	local portraitLayer = unit ~= "pet" and display:CreatePortraitLayer(portrait) or nil
+	local portraitLayer, snapshot
+	if unit ~= "pet" then
+		portraitLayer, snapshot = display:CreatePortraitLayer(portrait)
+	end
 
 	-- The shadow priest insanity bar pins Voidform's portrait flipbook at LOW strata, level 1,
 	-- where the portrait's own art normally covers all but its halo. The demoted portrait would
 	-- sit a strata below that and take the whole additive wash, so the flipbook comes down to
 	-- level 0 of the portrait's new strata, behind the layer at level 1.
-	if unit == "player" and portraitLayer then
-		local voidGlow = InsanityBarFrame and InsanityBarFrame.PortraitGlow
-		if voidGlow then
-			voidGlow:SetFrameStrata(portraitLayer:GetFrameStrata())
-			voidGlow:SetFrameLevel(0)
-		end
+	local voidGlow = unit == "player" and portraitLayer and InsanityBarFrame and InsanityBarFrame.PortraitGlow or nil
+	local glowStrata = voidGlow and voidGlow:GetFrameStrata()
+	local glowLevel = voidGlow and voidGlow:GetFrameLevel()
+	if voidGlow then
+		voidGlow:SetFrameStrata(portraitLayer:GetFrameStrata())
+		voidGlow:SetFrameLevel(0)
 	end
 
 	local container = display:CreateContainer(unitFrame, portrait, unit, { 0.1, 0.9, 0.1, 0.9 }, mask, portraitLayer)
@@ -290,11 +370,39 @@ local function AttachBlizzardFrame(unit)
 
 	-- Only matters while the portrait still shares a frame with the border art, since on its own
 	-- layer it has no siblings to sort against.
-	if not portraitLayer then
+	local drawLayer, drawSubLevel
+	if not portraitLayer and portrait.GetDrawLayer then
+		drawLayer, drawSubLevel = portrait:GetDrawLayer()
 		portrait:SetDrawLayer("BACKGROUND", 0)
 	end
 
-	display:AddContainer(container)
+	local function Restore()
+		if portraitLayer then
+			display:RestorePortrait(portrait, snapshot)
+		elseif drawLayer then
+			portrait:SetDrawLayer(drawLayer, drawSubLevel)
+		end
+
+		if voidGlow then
+			voidGlow:SetFrameStrata(glowStrata)
+			voidGlow:SetFrameLevel(glowLevel)
+		end
+	end
+
+	local function Reapply()
+		if portraitLayer then
+			display:MovePortraitToLayer(portrait, portraitLayer, snapshot)
+		elseif drawLayer then
+			portrait:SetDrawLayer("BACKGROUND", 0)
+		end
+
+		if voidGlow then
+			voidGlow:SetFrameStrata(portraitLayer:GetFrameStrata())
+			voidGlow:SetFrameLevel(0)
+		end
+	end
+
+	Register(unit, container, Restore, Reapply)
 end
 
 ---@param unit string
@@ -328,7 +436,7 @@ local function AttachElvUIFrame(unit)
 	end
 
 	RegisterUnitUpdate(unit, container)
-	display:AddContainer(container)
+	Register(unit, container)
 end
 
 ---@param unit string
@@ -347,7 +455,7 @@ local function AttachTPerlFrame(unit)
 	container.Frame:SetFrameLevel(portraitLevel)
 
 	RegisterUnitUpdate(unit, container)
-	display:AddContainer(container)
+	Register(unit, container)
 end
 
 ---@param unit string
@@ -371,7 +479,7 @@ local function AttachUUFFrame(unit)
 	StretchSlotsOverPortrait(container, uufPortrait, 0.07, 0.93)
 
 	RegisterUnitUpdate(unit, container)
-	display:AddContainer(container)
+	Register(unit, container)
 end
 
 ---@param unit string
@@ -392,7 +500,7 @@ local function AttachMSUFFrame(unit)
 	StretchSlotsOverPortrait(container, msufPortrait, 0.07, 0.93)
 
 	RegisterUnitUpdate(unit, container)
-	display:AddContainer(container)
+	Register(unit, container)
 end
 
 ---@param unit string
@@ -415,7 +523,7 @@ local function AttachEllesmereUIFrame(unit)
 	StretchSlotsOverPortrait(container, euiPortrait, 0.15, 0.85, euiMask)
 
 	RegisterUnitUpdate(unit, container)
-	display:AddContainer(container)
+	Register(unit, container)
 end
 
 ---@param unit string
@@ -436,7 +544,7 @@ local function AttachEQolFrame(unit)
 	StretchSlotsOverPortrait(container, eqolPortrait, 0.07, 0.93)
 
 	RegisterUnitUpdate(unit, container)
-	display:AddContainer(container)
+	Register(unit, container)
 end
 
 ---@param unit string
@@ -457,7 +565,7 @@ local function AttachSUFFrame(unit)
 	StretchSlotsOverPortrait(container, sufPortrait, 0.07, 0.93)
 
 	RegisterUnitUpdate(unit, container)
-	display:AddContainer(container)
+	Register(unit, container)
 end
 
 -- Third-party attach functions and the units each one supports. Every addon gets a look at every
@@ -472,18 +580,115 @@ local THIRD_PARTY_ATTACH = { -- luaconv: references the attach functions above
 	{ Attach = AttachSUFFrame,          Units = { "player", "target", "focus", "pet" } },
 }
 
+---Builds the unit's frame on first use, then attaches or detaches it to follow its switch.
+---@param unit string
+---@param key any which host frame the attachment hangs off
+---@param build fun(unit: string)
+local function Follow(unit, key, build)
+	local attachment = attachments[unit] and attachments[unit][key]
+
+	if not display:IsUnitOn(unit) then
+		if attachment then
+			Detach(attachment)
+		end
+	elseif attachment then
+		Attach(attachment)
+	elseif key == BLIZZARD_KEY then
+		-- The build re-parents the host portrait, which waits for combat to end. The icons come
+		-- up with the next options pass, so a deferred build asks for one itself.
+		local immediate = true
+
+		mini:RunWhenCombatEnds(function()
+			if not display:IsUnitOn(unit) then
+				-- Switched off while waiting, so it was never built and has to be looked for later.
+				blizzardBuilt[unit] = nil
+			elseif not (attachments[unit] and attachments[unit][key]) then
+				currentKey = key
+				build(unit)
+
+				if not immediate then
+					display:EnsureFrames()
+					display:ApplyOptions()
+
+					if display:IsTestMode() then
+						display:RefreshTestIcons()
+					end
+				end
+			end
+		end, "MiniAurasPortraitBuild" .. unit)
+
+		immediate = false
+	else
+		currentKey = key
+		build(unit)
+	end
+end
+
 function M:AttachBlizzardFrames()
-	AttachBlizzardFrame("player")
-	AttachBlizzardFrame("target")
-	AttachBlizzardFrame("focus")
-	AttachBlizzardFrame("pet")
+	for _, unit in ipairs(BLIZZARD_UNITS) do
+		local attachment = attachments[unit] and attachments[unit][BLIZZARD_KEY]
+
+		-- A unit looked for once and not found is not looked for again.
+		if attachment or not blizzardBuilt[unit] then
+			if display:IsUnitOn(unit) then
+				blizzardBuilt[unit] = true
+			end
+
+			Follow(unit, BLIZZARD_KEY, AttachBlizzardFrame)
+		end
+	end
 end
 
 ---Deferred until the world loads, since third-party frames do not exist before then.
 function M:AttachThirdPartyFrames()
 	for _, entry in ipairs(THIRD_PARTY_ATTACH) do
+		local built = thirdPartyBuilt[entry.Attach]
+
+		if not built then
+			built = {}
+			thirdPartyBuilt[entry.Attach] = built
+		end
+
 		for _, unit in ipairs(entry.Units) do
-			entry.Attach(unit)
+			local attachment = attachments[unit] and attachments[unit][entry.Attach]
+
+			if attachment or not built[unit] then
+				if display:IsUnitOn(unit) then
+					built[unit] = true
+				end
+
+				Follow(unit, entry.Attach, entry.Attach)
+			end
 		end
 	end
 end
+
+---Takes every attachment of one unit back off, putting each host frame as it was found.
+---@param unit string
+function M:DetachUnit(unit)
+	for _, attachment in pairs(attachments[unit] or {}) do
+		Detach(attachment)
+	end
+end
+
+function M:DetachAll()
+	for unit in pairs(attachments) do
+		M:DetachUnit(unit)
+	end
+
+	-- A build still waiting on combat must not land on a module that has since been disabled.
+	for _, unit in ipairs(BLIZZARD_UNITS) do
+		mini:RunWhenCombatEnds(function() end, "MiniAurasPortraitBuild" .. unit)
+
+		if not (attachments[unit] and attachments[unit][BLIZZARD_KEY]) then
+			blizzardBuilt[unit] = nil
+		end
+	end
+end
+
+---@class PortraitAttachment
+---@field Container IconSlotContainer
+---@field Restore fun()? Puts back what the attach changed on the host frame.
+---@field Reapply fun()? Makes the same changes again.
+---@field Attached boolean Whether the unit is meant to be attached now.
+---@field Applied boolean Whether the host frame currently carries the attach's changes.
