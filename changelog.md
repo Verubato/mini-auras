@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.43.0
+
+- Frame auras now show debuffs you can dispel ahead of the rest of the debuff row, like Blizzard's raid frames.
+- Frame auras now show a teammate's interrupt at the front of the debuff row while crowd control is shown.
+- Added a Lead size slider to frame aura debuffs for how large crowd control and boss debuffs are drawn, and raised their limit from two to three icons each.
+- Added a frame auras option to show countdown numbers only on crowd control and boss debuffs.
+- Added a nameplate option per enemy bar to glow only the buffs you can purge, in a colour of your choice.
+- Portraits can now be turned off separately for the player, target, focus, and pet, restoring Blizzard's portrait.
+- Dawnlight and Eternal Flame are now tracked as paladin buffs.
+- Fixed Sticky Tar Bomb not showing as a disarm.
+
 ## 5.42.2
 
 - Fixed frame auras sometimes staying on a frame permanently after entering or leaving an arena or instance.
