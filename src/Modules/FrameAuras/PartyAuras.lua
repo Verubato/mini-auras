@@ -27,11 +27,12 @@ local BUFF_GROUP = "FrameBuffs"
 local BUFF_PANDEMIC_GROUP = "FrameBuffsPandemic"
 local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
+local DEBUFF_DISPEL_GROUP = "FrameDebuffsDispel"
 local DEBUFF_ROLE_GROUP = "FrameDebuffsRole"
 local BUFF_GROUP_KEYS = { BUFF_PANDEMIC_GROUP, BUFF_GROUP }
-local DEBUFF_GROUP_KEYS = { DEBUFF_ROLE_GROUP, DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }
+local DEBUFF_GROUP_KEYS = { DEBUFF_ROLE_GROUP, DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_DISPEL_GROUP, DEBUFF_GROUP }
 -- The groups that lose their countdown when the numbers are kept to the head of the row.
-local DEBUFF_PLAIN_GROUP_KEYS = { DEBUFF_GROUP }
+local DEBUFF_PLAIN_GROUP_KEYS = { DEBUFF_DISPEL_GROUP, DEBUFF_GROUP }
 local BUFF_FILTER = "HELPFUL"
 local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
 local DEBUFF_FILTER = "HARMFUL"
@@ -44,15 +45,19 @@ local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
 -- Narrows to what anybody in the group can take off.
 local REQUIRE_DISPELLABLE = "|DISPELLABLE"
+-- The game's own token for what the player can take off, spec and talents included.
+local REQUIRE_PLAYER_DISPELLABLE = "|RAID"
+local EXCLUDE_PLAYER_DISPELLABLE = "|!RAID"
 -- Neither the plain group nor the role group ever draws crowd control, whatever the switch says.
 local DEBUFF_PLAIN_FILTER = DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
 local DEBUFF_CROWD_CONTROL_FILTER = DEBUFF_FILTER .. "|CROWD_CONTROL"
--- Where each part sits in the row. Spelled out because the crowd control group is declared after
--- the others when the player switches it on mid-session, and the engine falls back to the order
+-- Where each part sits in the row. Spelled out because the crowd control and dispel groups are
+-- declared after the others when they are added mid-session, and the engine falls back to the order
 -- groups were declared in.
 local DEBUFF_ROLE_INDEX = 1
 local DEBUFF_CROWD_CONTROL_INDEX = 2
-local DEBUFF_PLAIN_INDEX = 3
+local DEBUFF_DISPEL_INDEX = 3
+local DEBUFF_PLAIN_INDEX = 4
 -- What the front of the debuff row is drawn at, as a share of the rest of it. A stun or a boss and
 -- role debuff on a party member is worth more than the debuff beside it.
 local LEAD_SIZE_SCALE = 1.4
@@ -433,6 +438,13 @@ local function ClassifiesDebuffs()
 	return options ~= nil and options.DispellableByMe == true and not DispellableByRaidOn() and DispelType() ~= nil
 end
 
+---Whether the debuffs the player can dispel lead the plain group. With Dispellable by me on the
+---plain group already holds nothing else, so a second group would only be emptied by its filter.
+---@return boolean
+local function SortsDispellableFirst()
+	return not ClassifiesDebuffs()
+end
+
 ---@param side "Buffs"|"Debuffs"
 ---@return number
 local function MaxIcons(side)
@@ -486,16 +498,33 @@ local function RoleFilter()
 end
 
 ---The plain group's filter, which narrows to what the raid can dispel the same way the role
----group's does.
+---group's does. Leaves out what the player can dispel while the dispel group shows it.
+---@param split boolean Whether the dispel group is drawing.
 ---@return string
-local function PlainFilter()
+local function PlainFilter(split)
 	local filter = DEBUFF_PLAIN_FILTER
 
 	if DispellableByRaidOn() then
 		filter = filter .. REQUIRE_DISPELLABLE
 	end
 
+	if split then
+		filter = filter .. EXCLUDE_PLAYER_DISPELLABLE
+	end
+
 	return filter
+end
+
+---The dispel group's filter, the player's half of what PlainFilter splits.
+---@return string
+local function DispelFilter()
+	local filter = DEBUFF_PLAIN_FILTER
+
+	if DispellableByRaidOn() then
+		filter = filter .. REQUIRE_DISPELLABLE
+	end
+
+	return filter .. REQUIRE_PLAYER_DISPELLABLE
 end
 
 ---How many icons the boss and role group at the head of the row may draw. Never gated on a
@@ -531,6 +560,10 @@ local function GroupIcons(side, key)
 
 	if key == DEBUFF_ROLE_GROUP then
 		return RoleIcons()
+	end
+
+	if key == DEBUFF_DISPEL_GROUP then
+		return SortsDispellableFirst() and MaxIcons(side) or 0
 	end
 
 	return MaxIcons(side)
@@ -802,6 +835,21 @@ local function CrowdControlGroup()
 	}
 end
 
+---The group of debuffs the player can dispel, ahead of the plain group. It has its own budget,
+---because no group can see how full another one is.
+---@return AuraDisplayGroupSpec
+local function DispelGroup()
+	local _, rest = DebuffCandidates()
+
+	return {
+		Key = DEBUFF_DISPEL_GROUP,
+		FilterString = DispelFilter(),
+		MaxIcons = GroupIcons("Debuffs", DEBUFF_DISPEL_GROUP),
+		CandidateFilters = rest,
+		LayoutIndex = DEBUFF_DISPEL_INDEX,
+	}
+end
+
 ---The boss and role group leading the debuff row, ahead of crowd control.
 ---@return AuraDisplayGroupSpec
 local function RoleGroup()
@@ -834,9 +882,13 @@ local function BuildDebuffs(frame, unit)
 		groups[#groups + 1] = CrowdControlGroup()
 	end
 
+	if SortsDispellableFirst() then
+		groups[#groups + 1] = DispelGroup()
+	end
+
 	groups[#groups + 1] = {
 		Key = DEBUFF_GROUP,
-		FilterString = PlainFilter(),
+		FilterString = PlainFilter(false),
 		MaxIcons = MaxIcons("Debuffs"),
 		CandidateFilters = rest,
 		LayoutIndex = DEBUFF_PLAIN_INDEX,
@@ -866,25 +918,28 @@ local function BuildDebuffs(frame, unit)
 	return display
 end
 
----Gives a debuff row the crowd control group the player has just switched on. Nothing frees a
----display, so a row built before the switch would otherwise stay without one until a reload.
+---Gives a debuff row a group the player has just made wanted. Nothing frees a display, so a row
+---built before the change would otherwise stay without one until a reload.
 ---@param display AuraContainerDisplay
-local function AddCrowdControlGroup(display)
+---@param key string
+---@param build fun(): AuraDisplayGroupSpec
+---@param wanted boolean
+local function AddLateGroup(display, key, build, wanted)
 	-- Nothing is built for a row that is switched off, however its own switches are set. The
 	-- refresh that turns the row back on is what builds this.
-	if not active.Debuffs or CrowdControlIcons() == 0 or display:HasGroup(DEBUFF_CROWD_CONTROL_GROUP) then
+	if not active.Debuffs or not wanted or display:HasGroup(key) then
 		return
 	end
 
 	-- Whatever the display already owes is on the walker, and one item walks the lot.
 	local walking = display:HasPendingGroups()
 
-	display:AddPendingGroup(CrowdControlGroup())
+	display:AddPendingGroup(build())
 
 	local sort = DebuffSort()
 
 	if sort then
-		display:SetSortMethod(DEBUFF_CROWD_CONTROL_GROUP, sort)
+		display:SetSortMethod(key, sort)
 	end
 
 	if not walking then
@@ -1383,7 +1438,8 @@ local function ApplySettings(entry)
 
 	if entry.Debuffs then
 		-- Before the budgets go out, so a group that has just been added takes one.
-		AddCrowdControlGroup(entry.Debuffs)
+		AddLateGroup(entry.Debuffs, DEBUFF_CROWD_CONTROL_GROUP, CrowdControlGroup, CrowdControlIcons() > 0)
+		AddLateGroup(entry.Debuffs, DEBUFF_DISPEL_GROUP, DispelGroup, SortsDispellableFirst())
 		ApplySide(entry.Debuffs, frame, "Debuffs", DEBUFF_GROUP_KEYS)
 
 		-- The policy first, since a group asking for a classification the display is not making
@@ -1406,7 +1462,12 @@ local function ApplySettings(entry)
 			entry.Debuffs:SetCandidateFilters(DEBUFF_CROWD_CONTROL_GROUP, crowdControl)
 		end
 
-		entry.Debuffs:SetFilterString(DEBUFF_GROUP, PlainFilter())
+		if entry.Debuffs:HasGroup(DEBUFF_DISPEL_GROUP) then
+			entry.Debuffs:SetCandidateFilters(DEBUFF_DISPEL_GROUP, rest)
+		end
+
+		-- SyncDispelSplit writes the filter strings, once it sees the settings have moved.
+		entry.DispelSplit = nil
 		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, rest)
 
 		if entry.KickContainer then
@@ -1416,6 +1477,40 @@ local function ApplySettings(entry)
 			AnchorDebuffRow(entry, true)
 		end
 	end
+end
+
+---Splits the plain group from the dispel group for one entry, or undoes the split.
+---
+---Outside the visible world the engine may stop weighing the player's dispel token, so the split is
+---undone there.
+---@param entry FrameAurasEntry
+local function SyncDispelSplit(entry)
+	local display = entry.Debuffs
+
+	if not display then
+		return
+	end
+
+	local hasGroup = display:HasGroup(DEBUFF_DISPEL_GROUP)
+	local split = hasGroup and SortsDispellableFirst() and entry.Unit ~= nil and units:IsVisible(entry.Unit) == true
+
+	-- Urgent, because a unit out of view emits no aura events.
+	if hasGroup then
+		display:SetMaxIcons(DEBUFF_DISPEL_GROUP, split and GroupIcons("Debuffs", DEBUFF_DISPEL_GROUP) or 0, true)
+	end
+
+	-- The display bounces on every filter write, so only write on a change.
+	if entry.DispelSplit == split then
+		return
+	end
+
+	entry.DispelSplit = split
+
+	if hasGroup then
+		display:SetFilterString(DEBUFF_DISPEL_GROUP, DispelFilter())
+	end
+
+	display:SetFilterString(DEBUFF_GROUP, PlainFilter(split))
 end
 
 ---@param entry FrameAurasEntry
@@ -1458,6 +1553,8 @@ local function ApplyEntry(entry)
 		local budget = entry.Unit and units:IsVisible(entry.Unit) and CrowdControlIcons() or 0
 		entry.Debuffs:SetMaxIcons(DEBUFF_CROWD_CONTROL_GROUP, budget, true)
 	end
+
+	SyncDispelSplit(entry)
 
 	-- A container the client is still tracking weighs every aura on the unit against its groups
 	-- whether or not anything is drawn, and a raid is forty frames of that.
@@ -1816,6 +1913,7 @@ end
 ---@field Generation number|string? The refresh it was last drawn for, or a stand-in while a
 ---loading screen is up.
 ---@field PowerBarInset number? The power bar height the rows were last placed above.
+---@field DispelSplit boolean? Whether the plain filter last left out what the player can dispel.
 ---@field KickContainer IconSlotContainer? One slot for the kick icon leading the debuff row.
 ---@field KickKey number? The kick tracker subscription, nil while none is held.
 ---@field KickUnit string? The token that subscription is on.

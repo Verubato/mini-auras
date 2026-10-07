@@ -758,9 +758,13 @@ end, because flipping it makes the client rebuild the raid frames.
 wrapping upward, and carrying the same Anchor, Grow, and Offset X/Y controls as the buff row.
 Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. The row is
 ordered by the game itself, because an aura's spell id is secret and nothing can reorder a group
-once it has rendered. The game's own boss and role auras lead the row, drawn 40% larger than
-the rest of it and capped at two icons on their own budget. There is no switch to hold the group
-itself back: a debuff like Unstable Affliction has to be seen before anything else on the frame.
+once it has rendered. The one reordering the row does is by group: unless Dispellable by me is
+the only dispel switch on, the debuffs the player can dispel (the game's `RAID` filter token) sit
+in a group of their own ahead of the plain group, with a budget of their own, so a member can show
+up to twice the max icons. With both switches on the order is mine, then the rest of the raid's.
+The game's own boss and role auras lead the row, drawn 40% larger than the rest of it and capped
+at two icons on their own budget. There is no switch to hold the group itself back: a debuff like
+Unstable Affliction has to be seen before anything else on the frame.
 The lead group never holds crowd control, whatever the switch says. Since 5.40.1 a boss or role
 flagged crowd control debuff goes to the crowd control group behind it instead, so the dispellable
 switches on the lead group can no longer hide a stun.

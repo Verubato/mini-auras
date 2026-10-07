@@ -186,6 +186,7 @@ local FULL_BLOOM = 290754
 local PARTY_BUFF_GROUP = "FrameBuffs"
 local DEBUFF_GROUP = "FrameDebuffs"
 local DEBUFF_CROWD_CONTROL_GROUP = "FrameDebuffsCrowdControl"
+local DEBUFF_DISPEL_GROUP = "FrameDebuffsDispel"
 local DEBUFF_ROLE_GROUP = "FrameDebuffsRole"
 -- What the front of the row is drawn at, as a share of the rest of it.
 local LEAD_SCALE = 1.4
@@ -935,6 +936,26 @@ fw.describe("Frame Auras - what one frame costs", function()
 			"the row budgets are what a frame costs, expected " .. expected .. " got " .. buttons)
 
 		DropPartyFrame(3)
+	end)
+
+	fw.it("budgets the dispel group its own batch of buttons while Dispellable by me is off", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.DispellableByMe = false
+
+		local fresh = NewPartyFrame(3)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local groups, buttons = CostOf(fresh)
+		local expected = 2 * options.Debuffs.MaxIcons + math.min(options.Debuffs.MaxIcons, LEAD_MAX_ICONS)
+
+		options.Debuffs.DispellableByMe = true
+		DropPartyFrame(3)
+
+		assert(groups == 3, "the role, dispel, and plain groups, got " .. groups)
+		assert(buttons == expected,
+			"and it costs the row's budget over again, expected " .. expected .. " got " .. buttons)
 	end)
 
 	fw.it("drops the glow group entirely when the reveal is off", function()
@@ -3890,7 +3911,7 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 
 			local row = assert(DebuffRow(fresh), "the frame got a debuff row")
 
-			for _, key in ipairs({ DEBUFF_ROLE_GROUP, DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_GROUP }) do
+			for _, key in ipairs({ DEBUFF_ROLE_GROUP, DEBUFF_CROWD_CONTROL_GROUP, DEBUFF_DISPEL_GROUP, DEBUFF_GROUP }) do
 				local group = assert(row._groups[key], key .. " is on the row")
 
 				assert(group.sortMethod == DEFAULT_SORT,
@@ -3942,6 +3963,7 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 
 	fw.it("draws the rest of the row in one group, so the whole budget is one pool", function()
 		options.Debuffs.Enabled = true
+		options.Debuffs.DispellableByMe = true
 		options.Debuffs.MaxIcons = 4
 
 		local fresh = NewRaidFrame(24)
@@ -3965,6 +3987,7 @@ fw.describe("Frame Auras - how the debuff row ranks what it shows", function()
 			"but the role group still takes its own cap, not the row's, got "
 				.. tostring(row._groups[DEBUFF_ROLE_GROUP].maxFrameCount))
 
+		options.Debuffs.DispellableByMe = false
 		options.Debuffs.MaxIcons = dbDefaults.Modules.FrameAuras.Debuffs.MaxIcons
 		DropRaidFrame(24)
 	end)
@@ -4108,6 +4131,194 @@ local function StackRatioOn(row, groupKey)
 
 	return stacks._stackRatio
 end
+
+fw.describe("Frame Auras - debuffs you can dispel leading the plain group", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.DispellableByMe = false
+		options.Debuffs.DispellableByRaid = false
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.ColorByDispelType = false
+		options.Debuffs.LeadNumbersOnly = false
+		options.Debuffs.EnableNumbers = true
+		db.DisableNumbers = false
+		partyAuras:Refresh()
+	end)
+
+	---Builds a raid row for one frame under the current settings and walks it to completion.
+	---@param index number
+	---@return table frame
+	---@return table row
+	local function BuildRow(index)
+		local frame = NewRaidFrame(index)
+
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		return frame, assert(DebuffRow(frame), "the frame got a debuff row")
+	end
+
+	fw.it("builds the dispel group between crowd control and the plain group", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+
+		local _, row = BuildRow(1)
+		local role = row._groups[DEBUFF_ROLE_GROUP]
+		local cc = row._groups[DEBUFF_CROWD_CONTROL_GROUP]
+		local dispel = assert(row._groups[DEBUFF_DISPEL_GROUP], "the row carries the dispel group")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(HasFilterToken(dispel.filterString, "RAID"),
+			"it takes what the player can dispel, got " .. tostring(dispel.filterString))
+		assert(HasFilterToken(dispel.filterString, "!CROWD_CONTROL"),
+			"and never a stun, got " .. tostring(dispel.filterString))
+		assert(HasFilterToken(plain.filterString, "!RAID"),
+			"the plain group takes the rest, got " .. tostring(plain.filterString))
+		assert(not HasFilterToken(plain.filterString, "RAID"), "and not the same debuffs twice")
+		assert(role.layout.layoutIndex < cc.layout.layoutIndex, "role leads crowd control")
+		assert(cc.layout.layoutIndex < dispel.layout.layoutIndex, "which leads the dispel group")
+		assert(dispel.layout.layoutIndex < plain.layout.layoutIndex, "which leads the plain group")
+		assert(dispel.maxFrameCount == options.Debuffs.MaxIcons,
+			"the dispel group has the row's budget of its own, got " .. tostring(dispel.maxFrameCount))
+		assert(dispel.candidateFilters and dispel.candidateFilters.isBossOrRoleAura == false,
+			"and leaves the boss and role auras to their own group")
+
+		options.Debuffs.ShowCrowdControl = false
+		DropRaidFrame(1)
+	end)
+
+	fw.it("builds no dispel group while Dispellable by me narrows the plain group already", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.DispellableByMe = true
+
+		local _, row = BuildRow(2)
+
+		assert(row._groups[DEBUFF_DISPEL_GROUP] == nil, "a group its own sibling would empty is a waste of buttons")
+		assert(not HasFilterToken(row._groups[DEBUFF_GROUP].filterString, "RAID")
+			and not HasFilterToken(row._groups[DEBUFF_GROUP].filterString, "!RAID"),
+			"and the plain group is not split, got " .. tostring(row._groups[DEBUFF_GROUP].filterString))
+
+		options.Debuffs.DispellableByMe = false
+		DropRaidFrame(2)
+	end)
+
+	fw.it("adds the group to a row built without it, and closes it again", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.DispellableByMe = true
+
+		local _, row = BuildRow(3)
+
+		assert(row._groups[DEBUFF_DISPEL_GROUP] == nil, "it starts without the group")
+
+		options.Debuffs.DispellableByMe = false
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		local dispel = assert(row._groups[DEBUFF_DISPEL_GROUP], "switching it off hands a built row the group")
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(dispel.maxFrameCount == options.Debuffs.MaxIcons, "it takes the row's budget")
+		assert(HasFilterToken(plain.filterString, "!RAID"),
+			"and the plain group splits, got " .. tostring(plain.filterString))
+		assert(dispel.layout.layoutIndex < plain.layout.layoutIndex, "though it was declared last, it leads")
+		assert(dispel.sortMethod == DEFAULT_SORT,
+			"and is ranked by the order that cannot throw, got " .. tostring(dispel.sortMethod))
+
+		options.Debuffs.DispellableByMe = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(dispel.maxFrameCount == 0, "switching it back on closes the group, got " .. tostring(dispel.maxFrameCount))
+		assert(not HasFilterToken(plain.filterString, "!RAID"),
+			"and unsplits the plain group, got " .. tostring(plain.filterString))
+
+		options.Debuffs.DispellableByMe = false
+		DropRaidFrame(3)
+	end)
+
+	fw.it("splits the raid's dispellable debuffs the same way, and follows the switch", function()
+		options.Debuffs.Enabled = true
+
+		local _, row = BuildRow(4)
+		local dispel = row._groups[DEBUFF_DISPEL_GROUP]
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(not HasFilterToken(dispel.filterString, "DISPELLABLE"), "it starts without the raid half")
+
+		options.Debuffs.DispellableByRaid = true
+		partyAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(HasFilterToken(dispel.filterString, "DISPELLABLE") and HasFilterToken(dispel.filterString, "RAID"),
+			"mine first within the raid's, got " .. tostring(dispel.filterString))
+		assert(HasFilterToken(plain.filterString, "DISPELLABLE") and HasFilterToken(plain.filterString, "!RAID"),
+			"then the raid's rest, got " .. tostring(plain.filterString))
+
+		options.Debuffs.DispellableByRaid = false
+		DropRaidFrame(4)
+	end)
+
+	fw.it("undoes the split for a unit outside the visible world", function()
+		options.Debuffs.Enabled = true
+
+		local _, row = BuildRow(5)
+		local dispel = row._groups[DEBUFF_DISPEL_GROUP]
+		local plain = row._groups[DEBUFF_GROUP]
+
+		assert(dispel.maxFrameCount > 0 and HasFilterToken(plain.filterString, "!RAID"), "in view the split is on")
+
+		env.phased["raid5"] = true
+		acm.tickAll(400)
+
+		local budgetOut = dispel.maxFrameCount
+		local plainOut = plain.filterString
+
+		env.phased["raid5"] = nil
+		acm.tickAll(400)
+
+		options.Debuffs.Enabled = false
+		DropRaidFrame(5)
+
+		assert(budgetOut == 0, "the dispel group keeps no budget out of view, got " .. tostring(budgetOut))
+		assert(not HasFilterToken(plainOut, "!RAID") and not HasFilterToken(plainOut, "RAID"),
+			"and the plain group takes everything, got " .. tostring(plainOut))
+		assert(dispel.maxFrameCount > 0, "coming back restores the budget, got " .. tostring(dispel.maxFrameCount))
+		assert(HasFilterToken(plain.filterString, "!RAID"),
+			"and the plain filter, got " .. tostring(plain.filterString))
+	end)
+
+	fw.it("takes the countdown off the dispel group with the rest of the plain row", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCrowdControl = true
+		options.Debuffs.LeadNumbersOnly = true
+
+		local _, row = BuildRow(6)
+
+		assert(NumbersHiddenOn(row, DEBUFF_DISPEL_GROUP) == true, "the dispel group is part of the plain row")
+		assert(NumbersHiddenOn(row, DEBUFF_CROWD_CONTROL_GROUP) == false, "crowd control keeps its own")
+
+		options.Debuffs.ShowCrowdControl = false
+		options.Debuffs.LeadNumbersOnly = false
+		DropRaidFrame(6)
+	end)
+
+	fw.it("rings the dispel group in the game's dispel colours", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ColorByDispelType = true
+
+		local _, row = BuildRow(7)
+		local dispel = row._groups[DEBUFF_DISPEL_GROUP]
+
+		assert((dispel.buttons[1]._calls.AddDispelTypeTexture or 0) > 0,
+			"the one switch on the row reaches the dispel group")
+
+		options.Debuffs.ColorByDispelType = false
+		DropRaidFrame(7)
+	end)
+end)
 
 fw.describe("Frame Auras - the countdown numbers on one row", function()
 	fw.before_each(function()
