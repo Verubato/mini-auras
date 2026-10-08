@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.43.0. Supported interface versions: 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
+Addon version 5.43.1. Supported interface versions: 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -1383,7 +1383,9 @@ have are left out of the config spell lists, the Party Trinkets and Enemy Kicks 
 arena stand-in frames in test mode stay hidden because the client has no arena, and the starter
 Personal Auras groups are not seeded. Ten Classic cooldowns are tracked as important auras there
 only: Combustion, Arcane Power, Ice Barrier, Ice Block, Berserk, Templar's Bulwark, Blade Flurry,
-Rage of the Farseer, Death Wish, and Sweeping Strikes.
+Rage of the Farseer, Death Wish, and Sweeping Strikes. Frame Auras buffs and the missing class
+buff mark match every rank of a spell there, and the mark also counts the single-target and
+group halves of Fortitude, Mark of the Wild, and Arcane Intellect as the same buff.
 
 ## Public API (for addon authors)
 

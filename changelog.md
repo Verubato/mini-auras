@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.43.1
+
+- Frame auras buffs and the missing class buff mark now recognise every rank of a spell on WoW Forever, so a lower rank no longer reads as missing.
+
 ## 5.43.0
 
 - Frame auras now show debuffs you can dispel ahead of the rest of the debuff row, like Blizzard's raid frames.
