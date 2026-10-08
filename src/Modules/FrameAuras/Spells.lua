@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local trackedBuffs = addon.Core.TrackedBuffs
+local spellRanks = addon.Core.SpellRanks
 local wowEx = addon.Utils.WoWEx
 
 -- An id nothing will ever have, for a tracked set that comes out empty. An empty spell-id map
@@ -209,7 +210,7 @@ function M:BuildSpellMap()
 	local map = {}
 
 	for _, spellId in ipairs(M:TrackedList({})) do
-		map[spellId] = true
+		spellRanks:AddRanks(spellId, map)
 	end
 
 	-- An empty map reads to the engine as "no ids required", so it would match every buff on the
@@ -236,9 +237,9 @@ function M:BuildSpellSets()
 
 	for _, spellId in ipairs(M:TrackedList({})) do
 		if glowing and trackedBuffs.Pandemic[spellId] == true then
-			pandemic[spellId] = true
+			spellRanks:AddRanks(spellId, pandemic)
 		else
-			plain[spellId] = true
+			spellRanks:AddRanks(spellId, plain)
 		end
 	end
 

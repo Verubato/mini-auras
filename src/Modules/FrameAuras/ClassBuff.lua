@@ -7,6 +7,7 @@ local frames = addon.Core.Frames
 local pixels = addon.Core.Pixels
 local classBuffs = addon.Core.ClassBuffs
 local readableAuraIds = addon.Core.ReadableAuraIds
+local spellRanks = addon.Core.SpellRanks
 local moduleUtil = addon.Utils.ModuleUtil
 
 -- Marks a party or raid frame whose member is missing the group buff the player's class brings.
@@ -46,6 +47,10 @@ local active = false
 local testModeActive = false
 -- The buff the player brings, or nil for a class that brings none.
 local playerBuff
+-- Worked out with the buff so UNIT_AURA reads a set that is already built.
+local playerAuras
+-- Refilled with the player's buff on a client whose spells come in ranks.
+local playerAurasScratch = {}
 -- Whether every id playerBuff can land as stays readable while auras are secret. Worked out with
 -- the buff, since HasBuff reads it on the UNIT_AURA path.
 local playerBuffReadable
@@ -187,10 +192,10 @@ end
 
 ---Whether every id a buff can land as is one the client still answers about while auras are
 ---secret.
----@param buff ClassBuff
+---@param auras table<number, boolean>
 ---@return boolean
-local function BuffIsReadable(buff)
-	for spellId in pairs(buff.Auras) do
+local function AurasAreReadable(auras)
+	for spellId in pairs(auras) do
 		if not readableAuraIds[spellId] then
 			return false
 		end
@@ -214,7 +219,7 @@ local function HasBuff(unit)
 		return nil
 	end
 
-	for spellId in pairs(playerBuff.Auras) do
+	for spellId in pairs(playerAuras) do
 		if C_UnitAuras.GetUnitAuraBySpellID(unit, spellId) then
 			return true
 		end
@@ -436,7 +441,8 @@ function M:Refresh()
 
 	if wanted then
 		playerBuff = PlayerBuff()
-		playerBuffReadable = playerBuff ~= nil and BuffIsReadable(playerBuff)
+		playerAuras = playerBuff and spellRanks:ExpandSet(playerBuff.Auras, playerAurasScratch)
+		playerBuffReadable = playerAuras ~= nil and AurasAreReadable(playerAuras)
 	end
 
 	-- A class with no buff of its own has nothing the mark could ever draw, so it never arms the

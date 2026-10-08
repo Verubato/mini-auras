@@ -70,6 +70,7 @@ Core\Auras\AuraCountdownText.lua
 Core\Auras\AuraMasque.lua
 Core\Auras\AuraButtonPaint.lua
 Core\Auras\AuraContainerDisplay.lua
+Core\Auras\SpellRanks.lua
 Core\Auras\TrackedBuffs.lua
 Core\Auras\ClassBuffs.lua
 

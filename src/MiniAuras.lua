@@ -377,6 +377,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Frames Frames
 ---@field Pixels Pixels
 ---@field TrackedBuffs TrackedBuffs
+---@field SpellRanks SpellRanks
 ---@field Inspector Inspector
 ---@field IconSlotContainer IconSlotContainer
 ---@field AuraContainerDisplay AuraContainerDisplay

@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local wowEx = addon.Utils.WoWEx
 
 -- The group-wide buff each class brings, keyed by the class that casts it. Only the classes that
 -- have one are listed.
@@ -75,6 +76,20 @@ local readableIds = {
 	[462854] = true, -- Skyfury
 	[474754] = true, -- Symbiotic Relationship
 }
+
+-- Each buff's other half on the 1.x client.
+local classicAuras = {
+	DRUID = 21849, -- Gift of the Wild
+	MAGE = 23028, -- Arcane Brilliance
+	-- 21562 is the group Prayer of Fortitude there.
+	PRIEST = 1243, -- Power Word: Fortitude
+}
+
+if wowEx:IsClassic() then
+	for class, spellId in pairs(classicAuras) do
+		buffs[class].Auras[spellId] = true
+	end
+end
 
 addon.Core.ClassBuffs = buffs
 addon.Core.ReadableAuraIds = readableIds

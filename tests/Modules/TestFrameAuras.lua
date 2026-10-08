@@ -126,6 +126,7 @@ targetFrame.spellbar:SetPoint(CASTBAR_HOME.Point, targetFrame, CASTBAR_HOME.Rela
 _G.TargetFrame = targetFrame
 
 env.loadModule("src/Core/Display/Pixels.lua")
+env.loadModule("src/Core/Auras/SpellRanks.lua")
 env.loadModule("src/Core/Auras/TrackedBuffs.lua")
 env.loadModule("src/Core/Auras/ClassBuffs.lua")
 env.loadModule("src/Modules/FrameAuras/Spells.lua")
@@ -181,6 +182,15 @@ local CURATED = CuratedId()
 local CUSTOM = 99000001
 -- The second Lifebloom, which the client names after the spell it copies.
 local FULL_BLOOM = 290754
+-- Rejuvenation, which ships tracked, and its second rank on the 1.x client.
+local REJUVENATION = 774
+local REJUVENATION_RANK_2 = 1058
+-- Power Word: Fortitude on the 1.x client, at its first rank and its third.
+local FORTITUDE_RANK_1 = 1243
+local FORTITUDE_RANK_3 = 1245
+-- The 1.x client's build, where every rank of a spell has an id of its own.
+local RANKED_BUILD = 16001
+local RETAIL_BUILD = 120100
 -- The aura groups the rows draw through. Boss and role auras lead the debuff row, then crowd
 -- control, both drawn larger than the rest of it.
 local PARTY_BUFF_GROUP = "FrameBuffs"
@@ -397,6 +407,53 @@ fw.describe("Frame Auras - the tracked buff list", function()
 		assert(plain[glowing], "it draws through the plain group instead")
 
 		options.Buffs.PandemicGlow = true
+	end)
+end)
+
+---The spell maps the buff rows hand the engine, built on a client reporting `buildNumber`.
+---@param buildNumber number
+---@return table<number, boolean> map, table<number, boolean> plain
+local function SpellMapsOn(buildNumber)
+	wow.setBuildNumber(buildNumber)
+
+	local ok, map, plain = pcall(function()
+		local built = spells:BuildSpellMap()
+		local _, plainSet = spells:BuildSpellSets()
+
+		return built, plainSet
+	end)
+
+	wow.setBuildNumber(RETAIL_BUILD)
+	assert(ok, map)
+
+	return map, plain
+end
+
+fw.describe("Frame Auras - the ranks of a tracked buff", function()
+	fw.it("lets every rank of a tracked spell through on the 1.x client", function()
+		ResetSpells()
+		spells:SetTracked(FORTITUDE_RANK_1, true)
+
+		local map, plain = SpellMapsOn(RANKED_BUILD)
+
+		ResetSpells()
+
+		assert(map[REJUVENATION] and map[REJUVENATION_RANK_2], "a lower rank of a curated spell matches")
+		assert(plain[REJUVENATION_RANK_2], "in the set the party rows draw from too")
+		assert(map[FORTITUDE_RANK_3], "and a hand-added spell brings its other ranks with it")
+	end)
+
+	fw.it("matches only the id itself on retail", function()
+		ResetSpells()
+		spells:SetTracked(FORTITUDE_RANK_1, true)
+
+		local map, plain = SpellMapsOn(RETAIL_BUILD)
+
+		ResetSpells()
+
+		assert(map[REJUVENATION] and not map[REJUVENATION_RANK_2], "retail has no ranks to add")
+		assert(not plain[REJUVENATION_RANK_2], "in either set")
+		assert(map[FORTITUDE_RANK_1] and not map[FORTITUDE_RANK_3], "a hand-added id stays exact")
 	end)
 end)
 
@@ -5326,6 +5383,68 @@ fw.describe("Frame Auras - where the missing class buff mark shows", function()
 	end)
 end)
 
+---Whether the mark goes up over a member carrying exactly one aura id, on a client reporting
+---`buildNumber`.
+---@param spellId number
+---@param buildNumber number
+---@return boolean
+local function MarkedCarrying(spellId, buildNumber)
+	local realGetAura = _G.C_UnitAuras.GetUnitAuraBySpellID
+
+	_G.C_UnitAuras.GetUnitAuraBySpellID = function(unit, id)
+		if unit == MARK_UNIT and id == spellId then
+			return {}
+		end
+
+		return nil
+	end
+
+	-- What ClassBuffs adds for a priest when it loads on the 1.x client.
+	classBuffs[MARK_CLASS].Auras[FORTITUDE_RANK_1] = true
+	wow.setBuildNumber(buildNumber)
+
+	local ok, marked = pcall(function()
+		module:Refresh()
+
+		return Marked(markFrame)
+	end)
+
+	wow.setBuildNumber(RETAIL_BUILD)
+	classBuffs[MARK_CLASS].Auras[FORTITUDE_RANK_1] = nil
+	_G.C_UnitAuras.GetUnitAuraBySpellID = realGetAura
+	module:Refresh()
+	assert(ok, marked)
+
+	return marked
+end
+
+fw.describe("Frame Auras - the missing class buff mark and spell ranks", function()
+	fw.before_each(function()
+		module:StopTesting()
+
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.TargetFocus.Enabled = false
+		options.ClassBuff.Enabled = true
+		options.ClassBuff.InstancesOnly = false
+
+		wow.setUnitClass("player", MARK_CLASS)
+		acm.restricted = false
+		_G.UnitIsDeadOrGhost = nil
+		MoveTo("none")
+	end)
+
+	fw.it("counts a lower rank of the buff as having it on the 1.x client", function()
+		assert(not MarkedCarrying(FORTITUDE_RANK_3, RANKED_BUILD), "rank 3 is the same buff as rank 1")
+		assert(MarkedCarrying(REJUVENATION, RANKED_BUILD), "while some other buff still is not")
+	end)
+
+	fw.it("matches only the ids the buff lists on retail", function()
+		assert(MarkedCarrying(FORTITUDE_RANK_3, RETAIL_BUILD), "retail has no ranks to fold in")
+		assert(not MarkedCarrying(FORTITUDE_RANK_1, RETAIL_BUILD), "the listed id itself still counts")
+	end)
+end)
+
 local SHIPPED_MARK = dbDefaults.Modules.FrameAuras.ClassBuff
 
 ---Puts the mark back on the placement the addon ships, for the same reason ResetPlacement does it
@@ -5478,6 +5597,24 @@ fw.describe("Frame Auras - the class buffs the mark reads", function()
 					.. ", which the client hides while auras are secret")
 			end
 		end
+	end)
+
+	fw.it("adds Power Word: Fortitude to the priest buff on the 1.x client only", function()
+		local function PriestAurasOn(buildNumber)
+			local target = { Core = {}, Utils = { WoWEx = env.addon.Utils.WoWEx } }
+
+			wow.setBuildNumber(buildNumber)
+
+			local ok, err = pcall(assert(loadfile("src/Core/Auras/ClassBuffs.lua")), "MiniAuras", target)
+
+			wow.setBuildNumber(RETAIL_BUILD)
+			assert(ok, err)
+
+			return target.Core.ClassBuffs.PRIEST.Auras
+		end
+
+		assert(PriestAurasOn(RANKED_BUILD)[FORTITUDE_RANK_1], "21562 is the group spell there")
+		assert(not PriestAurasOn(RETAIL_BUILD)[FORTITUDE_RANK_1], "retail keeps the one id it lists")
 	end)
 
 	fw.it("brings a buff from exactly the classes that have one", function()
