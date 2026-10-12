@@ -146,8 +146,7 @@ fw.describe("Config - when the options window is built", function()
 	fw.it("leaves the trinket page out on a client without arena", function()
 		local addon = Load()
 
-		WowMock.State.BuildNumber = 16001
-		WowMock.State.BuildVersion = "1.60.1"
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_CAMELOT
 
 		addon.Config:EnsureWindow()
 
@@ -157,8 +156,7 @@ fw.describe("Config - when the options window is built", function()
 		fw.not_nil(addon.Config.TabController:GetContent("Healer"), "its neighbour survives")
 		fw.not_nil(addon.Config.TabController:GetContent("AllyKickTracker"), "and the other one")
 
-		WowMock.State.BuildNumber = 120100
-		WowMock.State.BuildVersion = "12.1.0"
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_MAINLINE
 	end)
 end)
 

@@ -48,31 +48,17 @@ function M:SpellExists(spellId)
 	return C_Spell.DoesSpellExist(spellId) and true or false
 end
 
--- Arena arrived with the 2.0 client, so this is the first interface number that has one.
-local ARENA_INTERFACE_VERSION = 20000
-
----@return number?
-local function InterfaceVersion()
-	local interfaceVersion = select(4, GetBuildInfo())
-
-	return type(interfaceVersion) == "number" and interfaceVersion or nil
-end
-
----Whether the running client has arena at all. The 1.x client reports itself as mainline and
----ships every arena function, so only the build says.
+---Whether the running client has arena at all. The 1.x Forever client ships the arena functions
+---but has no arena, so only the project says.
 ---@return boolean
 function M:HasArena()
-	local interfaceVersion = InterfaceVersion()
-
-	return interfaceVersion ~= nil and interfaceVersion >= ARENA_INTERFACE_VERSION
+	return WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 end
 
----Whether this is the 1.x Classic client, which carries spells retail has since dropped.
+---Whether this is the 1.x Forever client, which carries spells retail has since dropped.
 ---@return boolean
 function M:IsClassic()
-	local interfaceVersion = InterfaceVersion()
-
-	return interfaceVersion ~= nil and interfaceVersion < ARENA_INTERFACE_VERSION
+	return WOW_PROJECT_ID == WOW_PROJECT_CAMELOT
 end
 
 -- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped

@@ -65,7 +65,11 @@ function M.setup()
 		return out
 	end
 
-	-- The build number is the 4th return value, tested as select(4, GetBuildInfo()) >= 120005.
+	-- Real distinct ids, because two nils compare equal and would put a client on the wrong path.
+	_G.WOW_PROJECT_MAINLINE = _G.WOW_PROJECT_MAINLINE or 1
+	_G.WOW_PROJECT_ID = _G.WOW_PROJECT_ID or _G.WOW_PROJECT_MAINLINE
+
+	-- The build number is the 4th return value. Client gates read WOW_PROJECT_ID instead.
 	_G.GetBuildInfo = function()
 		return "0.0.0", "0", "Jan 1 2020", _buildNumber
 	end
@@ -219,10 +223,16 @@ function M.markSecret(v)
 	return v
 end
 
----Set the TOC build number returned by GetBuildInfo (4th return value).
----Call before loading any module that reads GetBuildInfo() at module scope.
+---Set the client the addon runs on, by WOW_PROJECT_ID.
+function M.setProjectId(id)
+	_G.WOW_PROJECT_ID = id
+end
+
+---Set the TOC build number returned by GetBuildInfo (4th return value), and the project id the
+---client of that build reports. Builds below 20000 are the 1.x client, which is Forever.
 function M.setBuildNumber(n)
 	_buildNumber = n
+	_G.WOW_PROJECT_ID = n < 20000 and _G.WOW_PROJECT_CAMELOT or _G.WOW_PROJECT_MAINLINE
 	_G.GetBuildInfo = function()
 		return "0.0.0", "0", "Jan 1 2020", n
 	end

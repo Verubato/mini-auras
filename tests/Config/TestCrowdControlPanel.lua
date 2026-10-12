@@ -252,8 +252,7 @@ fw.describe("Config - the enable row on a client without arena", function()
 	fw.it("drops the arena switch and closes the gap", function()
 		local addon = Load()
 
-		WowMock.State.BuildNumber = 16001
-		WowMock.State.BuildVersion = "1.60.1"
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_CAMELOT
 
 		addon.Config:EnsureWindow()
 
@@ -270,7 +269,6 @@ fw.describe("Config - the enable row on a client without arena", function()
 		fw.eq(select(4, raid:GetPoint(1)), addon.Framework:ColumnWidth(5, 0, 0) * 3,
 			"the gap the arena switch left has closed")
 
-		WowMock.State.BuildNumber = 120100
-		WowMock.State.BuildVersion = "12.1.0"
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_MAINLINE
 	end)
 end)

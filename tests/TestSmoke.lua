@@ -40,10 +40,7 @@ local function CheckTestFrames(context)
 	fw.truthy(not frames:GetTestArenaFrameContainer():IsShown(), "container included")
 
 	-- A client without arena keeps the enemy column down even though nothing real is on screen.
-	local WowMock = require("WowMock")
-	local buildNumber = WowMock.State.BuildNumber
-
-	WowMock.State.BuildNumber = 16001
+	_G.WOW_PROJECT_ID = _G.WOW_PROJECT_CAMELOT
 	testMode:StartTesting()
 
 	fw.truthy(partyFrames[1]:IsShown(), "the party stand-ins still come up without arena")
@@ -51,7 +48,7 @@ local function CheckTestFrames(context)
 	fw.truthy(not frames:GetTestArenaFrameContainer():IsShown(), "container included")
 
 	testMode:StopTesting()
-	WowMock.State.BuildNumber = buildNumber
+	_G.WOW_PROJECT_ID = _G.WOW_PROJECT_MAINLINE
 end
 
 smoke.Run("MiniAuras", { extra = CheckTestFrames })

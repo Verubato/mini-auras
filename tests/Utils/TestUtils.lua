@@ -600,56 +600,32 @@ end)
 fw.describe("WoWEx arena gate", function()
 	local wowEx = loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
 
-	fw.it("reads the client build, not the file's load time", function()
-		wow.setBuildNumber(16001)
+	fw.it("reads the client project, not the file's load time", function()
+		wow.setProjectId(_G.WOW_PROJECT_CAMELOT)
 		assert(wowEx:HasArena() == false, "the 1.x client has no arena")
 
-		wow.setBuildNumber(20000)
-		assert(wowEx:HasArena() == true, "arena's first client")
-
-		wow.setBuildNumber(120100)
-		assert(wowEx:HasArena() == true, "and every client after it")
-
-		wow.setBuildNumber(120005)
+		wow.setProjectId(_G.WOW_PROJECT_MAINLINE)
+		assert(wowEx:HasArena() == true, "retail")
 	end)
 
-	fw.it("answers no when the client gives no number", function()
-		local realGetBuildInfo = _G.GetBuildInfo
-		_G.GetBuildInfo = function()
-			return "1.60.1"
-		end
+	fw.it("answers no when the client gives no project", function()
+		wow.setProjectId(nil)
 
-		assert(wowEx:HasArena() == false, "no fourth return to compare")
+		assert(wowEx:HasArena() == false, "no project id to compare")
 
-		_G.GetBuildInfo = realGetBuildInfo
+		wow.setProjectId(_G.WOW_PROJECT_MAINLINE)
 	end)
 end)
 
 fw.describe("WoWEx:IsClassic", function()
 	local wowEx = loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
 
-	fw.it("is the 1.x line and nothing after it", function()
-		wow.setBuildNumber(16001)
-		assert(wowEx:IsClassic() == true, "the Classic client")
+	fw.it("is the Forever client and nothing else", function()
+		wow.setProjectId(_G.WOW_PROJECT_CAMELOT)
+		assert(wowEx:IsClassic() == true, "the 1.x client")
 
-		wow.setBuildNumber(20000)
-		assert(wowEx:IsClassic() == false, "the first client with arena")
-
-		wow.setBuildNumber(120100)
+		wow.setProjectId(_G.WOW_PROJECT_MAINLINE)
 		assert(wowEx:IsClassic() == false, "retail")
-
-		wow.setBuildNumber(120005)
-	end)
-
-	fw.it("answers no when the client gives no number", function()
-		local realGetBuildInfo = _G.GetBuildInfo
-		_G.GetBuildInfo = function()
-			return "1.60.1"
-		end
-
-		assert(wowEx:IsClassic() == false, "an unknown client is taken as retail")
-
-		_G.GetBuildInfo = realGetBuildInfo
 	end)
 end)
 

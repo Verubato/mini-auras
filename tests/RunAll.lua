@@ -9,6 +9,9 @@
 -- a fresh clone needs `git submodule update --init` first.
 package.path = "build/Lua/?.lua;tests/Helpers/?.lua;tests/?.lua;" .. package.path
 
+-- The shared mock does not define the Forever project constant.
+_G.WOW_PROJECT_CAMELOT = 18
+
 -- Required up front, before any test file has put an addon global into _G: the mock snapshots
 -- the globals that exist when it loads and treats everything added afterwards as an addon's,
 -- clearing it whenever it installs a fresh client.
