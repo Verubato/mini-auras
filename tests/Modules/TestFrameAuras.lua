@@ -3930,7 +3930,7 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		DropRaidFrame(40)
 	end)
 
-	fw.it("narrows by whatever the rest of the row is narrowed by, on both halves of the partition", function()
+	fw.it("narrows by duration on both halves of the partition, and by dispellable on the plain half only", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShortOnly = true
 		options.Debuffs.DispellableByMe = true
@@ -3945,8 +3945,10 @@ fw.describe("Frame Auras - the boss and role auras leading the debuff row", func
 		local roleFilters = assert(role.candidateFilters, "with a filter set on it")
 		local plainFilters = assert(row._groups[DEBUFF_GROUP].candidateFilters, "and on the rest of the row")
 
-		assert(roleFilters.maxDuration == 60 and roleFilters.processedAuraType == DISPEL_TYPE,
-			"the two switches on the page narrow the role group too, not only the rest of the row")
+		assert(roleFilters.maxDuration == 60,
+			"the duration switch narrows the role group too, not only the rest of the row")
+		assert(roleFilters.processedAuraType == nil,
+			"but the dispellable switch leaves it alone, got " .. tostring(roleFilters.processedAuraType))
 		assert(plainFilters.maxDuration == 60 and plainFilters.processedAuraType == DISPEL_TYPE,
 			"which the rest of the row still carries")
 		assert(roleFilters.isBossOrRoleAura == true, "without losing the partition")
@@ -4157,7 +4159,7 @@ fw.describe("Frame Auras - the raid half of the dispellable switch", function()
 		partyAuras:Refresh()
 	end)
 
-	fw.it("narrows the role and plain groups by what the raid can dispel, and leaves crowd control alone", function()
+	fw.it("narrows the plain group by what the raid can dispel, and leaves role and crowd control alone", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.DispellableByRaid = true
 		options.Debuffs.ShowCrowdControl = true
@@ -4172,10 +4174,10 @@ fw.describe("Frame Auras - the raid half of the dispellable switch", function()
 		local plain = assert(row._groups[DEBUFF_GROUP], "and the plain group behind it")
 		local cc = assert(row._groups[DEBUFF_CROWD_CONTROL_GROUP], "and the crowd control group")
 
-		assert(HasFilterToken(role.filterString, "DISPELLABLE"),
-			"the role group narrows to what the raid can dispel, got " .. tostring(role.filterString))
+		assert(not HasFilterToken(role.filterString, "DISPELLABLE"),
+			"an undispellable boss aura still shows, got " .. tostring(role.filterString))
 		assert(HasFilterToken(plain.filterString, "DISPELLABLE"),
-			"and so does the plain group behind it, got " .. tostring(plain.filterString))
+			"the plain group behind it narrows to what the raid can dispel, got " .. tostring(plain.filterString))
 		assert(not HasFilterToken(cc.filterString, "DISPELLABLE"),
 			"a spec's inability to dispel a stun is not a reason to hide it, got " .. tostring(cc.filterString))
 
@@ -4195,13 +4197,10 @@ fw.describe("Frame Auras - the raid half of the dispellable switch", function()
 		acm.tickAll(400)
 
 		local row = assert(DebuffRow(fresh), "the frame got a debuff row")
-		local role = assert(row._groups[DEBUFF_ROLE_GROUP], "the row carries the role group")
-		local plain = assert(row._groups[DEBUFF_GROUP], "and the plain group behind it")
+		local plain = assert(row._groups[DEBUFF_GROUP], "the row carries the plain group")
 
-		assert(role.candidateFilters and role.candidateFilters.processedAuraType == nil,
-			"the raid filter component narrows the row now, not the per-aura classification")
 		assert(plain.candidateFilters and plain.candidateFilters.processedAuraType == nil,
-			"same for the plain group behind it")
+			"the raid filter component narrows the plain group now, not the per-aura classification")
 		assert(row._processingPolicy == NO_PROCESS_POLICY,
 			"and nothing asks the engine to classify an aura nobody reads a classification for, got "
 				.. tostring(row._processingPolicy))

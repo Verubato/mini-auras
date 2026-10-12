@@ -766,8 +766,9 @@ The game's own boss and role auras lead the row, drawn at the Lead size (default
 of the row) and capped at three icons on their own budget. There is no switch to hold the group
 itself back: a debuff like Unstable Affliction has to be seen before anything else on the frame.
 The lead group never holds crowd control, whatever the switch says. Since 5.40.1 a boss or role
-flagged crowd control debuff goes to the crowd control group behind it instead, so the dispellable
-switches on the lead group can no longer hide a stun.
+flagged crowd control debuff goes to the crowd control group behind it instead. The dispellable
+switches never narrow the lead group, so an undispellable boss or role debuff still
+shows.
 
 - Icon size 15-50 (percent of the frame's height, default 35), max icons 1-9 (default 2), icons per
   row 1-6 (default 3), icon padding 0-5 (default 1), font scale 0.5-2.0 (default 1.0), lead size
@@ -777,8 +778,8 @@ switches on the lead group can no longer hide a stun.
   clears the other, and switching the active one off leaves both off rather than turning the other
   on, which is the state where neither narrows the row. A hand-edited save or an imported profile
   can still carry both true; the raid half, being the superset, is the one that then narrows the
-  row. Either switch exempts the crowd control group behind the lead group, since a spec's
-  inability to dispel a stun is not a reason to hide it.
+  row. Either switch exempts the boss and role lead group and the crowd control group behind it,
+  since a spec's inability to dispel a boss debuff or a stun is not a reason to hide it.
 - **Under 1min** (on) - only debuffs whose whole duration is under a minute. Setting a bound at all
   also drops the debuffs that never run out.
 - **Crowd control** (off) - gives crowd control a group of its own behind the boss and role auras,

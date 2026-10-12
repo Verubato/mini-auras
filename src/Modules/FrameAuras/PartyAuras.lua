@@ -415,7 +415,6 @@ local function DebuffCandidates()
 
 	roleDebuffCandidates = {
 		maxDuration = maxDuration,
-		processedAuraType = dispellable,
 		isBossOrRoleAura = true,
 	}
 	restDebuffCandidates = {
@@ -494,21 +493,15 @@ local function ShowsKicks()
 	return active.Debuffs and options ~= nil and options.ShowCrowdControl == true
 end
 
----The boss and role group's filter. Always closed to crowd control, which has its own group, and
----narrows to what the raid can dispel when the Dispellable by raid switch is on.
+---The boss and role group's filter, closed to crowd control, which has its own group.
+---An undispellable boss aura still has to show, so the dispellable switches never narrow it.
 ---@return string
 local function RoleFilter()
-	local filter = DEBUFF_PLAIN_FILTER
-
-	if DispellableByRaidOn() then
-		filter = filter .. REQUIRE_DISPELLABLE
-	end
-
-	return filter
+	return DEBUFF_PLAIN_FILTER
 end
 
----The plain group's filter, which narrows to what the raid can dispel the same way the role
----group's does. Leaves out what the player can dispel while the dispel group shows it.
+---The plain group's filter, which narrows to what the raid can dispel when that switch is on.
+---Leaves out what the player can dispel while the dispel group shows it.
 ---@param split boolean Whether the dispel group is drawing.
 ---@return string
 local function PlainFilter(split)
