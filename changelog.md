@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.43.3
+
+- Fixed portrait aura icons not filling the whole portrait on ElvUI unit frames.
+
 ## 5.43.2
 
 - Fixed personal auras not showing on Blizzard's raid frames in a raid with Keep Groups Together on.
