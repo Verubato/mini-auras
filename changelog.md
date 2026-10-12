@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.43.2
+
+- Fixed personal auras not showing on Blizzard's raid frames in a raid with Keep Groups Together on.
+- Frame auras now show boss and role debuffs whether or not you can dispel them, whatever the dispellable switches say.
+
 ## 5.43.1
 
 - Frame auras buffs and the missing class buff mark now recognise every rank of a spell on WoW Forever, so a lower rank no longer reads as missing.
