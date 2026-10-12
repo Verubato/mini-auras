@@ -68,6 +68,7 @@ local testFiles = {
     "tests/Modules/TestAlertsLateMedia.lua",
     "tests/Modules/TestPortraitDisplay.lua",
     "tests/Modules/TestPortraitEllesmereMask.lua",
+    "tests/Modules/TestPortraitElvUI.lua",
     "tests/Modules/TestUnitFrameRetarget.lua",
     "tests/Modules/TestUnitFrameWarmup.lua",
     "tests/Modules/TestUnitFrameProfiles.lua",

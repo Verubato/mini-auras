@@ -373,8 +373,9 @@ end
 ---Returns nil when the portrait's dimensions are secret, which is the tainted-frame case.
 ---@param portraitLayer table? demoted layer from CreatePortraitLayer. The container goes inside
 ---it and matches the portrait rect exactly, since the border art now covers the icon's edges.
+---@param flush boolean? match the portrait rect exactly, for a portrait whose border sits outside it.
 ---@return IconSlotContainer?
-function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLayer)
+function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLayer, flush)
 	-- One slot with multiple layers, and no border for portrait icons.
 	local container = iconSlotContainer:New(portraitLayer or unitFrame, 1, 0, 0, nil, true, "Portraits")
 
@@ -391,8 +392,12 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLa
 		container.Frame:SetAllPoints(portrait)
 		container.Frame:SetFrameLevel(portraitLayer:GetFrameLevel() + 1)
 	else
-		container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
-		container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
+		if flush then
+			container.Frame:SetAllPoints(portrait)
+		else
+			container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
+			container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
+		end
 		container.Frame:SetFrameLevel(math.max(0, (unitFrame:GetFrameLevel() or 0) - 1))
 	end
 
@@ -412,9 +417,8 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLa
 	local h = portrait:GetHeight()
 	if issecretvalue(w) or issecretvalue(h) then return nil end
 
-	-- The 2px inset exists only to keep an un-layered icon off the border art. A layered icon is
-	-- covered by that art already and wants the full portrait rect.
-	local inset = portraitLayer and 0 or 4
+	-- The 2px inset keeps an icon off border art drawn over the portrait.
+	local inset = (portraitLayer or flush) and 0 or 4
 	local size = math.min(w - inset, h - inset)
 	if size <= 0 then size = 32 end
 

@@ -413,7 +413,8 @@ local function AttachElvUIFrame(unit)
 		return
 	end
 
-	local container = display:CreateContainer(elvuiFrame, elvuiPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
+	-- ElvUI draws its border outside the portrait, so there is nothing to inset from.
+	local container = display:CreateContainer(elvuiFrame, elvuiPortrait, unit, { 0.07, 0.93, 0.07, 0.93 }, nil, nil, true)
 	if not container then return end
 	-- 3D models are frames, whereas 2D portraits are textures with no frame level of their own.
 	local portraitLevel = elvuiPortrait.GetFrameLevel and elvuiPortrait:GetFrameLevel()
