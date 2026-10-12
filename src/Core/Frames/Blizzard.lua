@@ -2,6 +2,8 @@ local _, addon = ...
 local M = addon.Core.Frames
 local MAX_PARTY = MAX_PARTY_MEMBERS or 4
 local MAX_RAID = MAX_RAID_MEMBERS or 40
+local MAX_RAID_GROUPS = NUM_RAID_GROUPS or 8
+local MAX_GROUP_MEMBERS = MEMBERS_PER_RAID_GROUP or 5
 
 -- What a frame turned out to be, kept because the answer is about the frame itself and cannot
 -- change: a name and a parent are fixed when the client builds it. Blizzard calls the hooks this
@@ -54,6 +56,17 @@ function M:BlizzardFrames(visibleOnly, frames)
 
 		if frame and (frame:IsVisible() or not visibleOnly) then
 			frames[#frames + 1] = frame
+		end
+	end
+
+	-- Keep Groups Together builds CompactRaidGroup<g>Member<m> instead of the flat CompactRaidFrame<n>.
+	for group = 1, MAX_RAID_GROUPS do
+		for member = 1, MAX_GROUP_MEMBERS do
+			local frame = _G["CompactRaidGroup" .. group .. "Member" .. member]
+
+			if frame and (frame:IsVisible() or not visibleOnly) then
+				frames[#frames + 1] = frame
+			end
 		end
 	end
 end

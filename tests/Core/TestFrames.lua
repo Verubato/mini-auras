@@ -127,6 +127,32 @@ fw.describe("Frames:GetAll - the reuse contract", function()
 	end)
 end)
 
+fw.describe("Frames:BlizzardFrames", function()
+	fw.it("finds the raid frames built per group when groups are kept together", function()
+		local names = { "CompactRaidGroup1Member1", "CompactRaidGroup3Member5", "CompactRaidGroup8Member2" }
+
+		for _, name in ipairs(names) do
+			NewAnchor(name)
+		end
+
+		local result = {}
+		local ok, err = pcall(frames.BlizzardFrames, frames, false, result)
+		local expected = {}
+
+		for i, name in ipairs(names) do
+			expected[i] = _G[name]
+			_G[name] = nil
+		end
+
+		assert(ok, err)
+		assert(#result == 3, "each per-group raid member frame is an anchor, got " .. #result)
+
+		for i, frame in ipairs(expected) do
+			assert(result[i] == frame, "anchor " .. i .. " is " .. names[i])
+		end
+	end)
+end)
+
 -- ForEachAnchor takes that contract off the callers: it owns the list it walks, so the only way to
 -- break it is to start a second walk inside the first, which it refuses.
 fw.describe("Frames:ForEachAnchor", function()
