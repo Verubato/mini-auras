@@ -2510,6 +2510,98 @@ local function PartyHooks()
 	return partyHooks
 end
 
+fw.describe("Frame Auras - pet frames", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+	end)
+
+	fw.it("builds nothing on a frame showing a pet", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local frame = NewRaidFrame(36)
+
+		frame.unit = "raidpet36"
+		partyAuras:Refresh()
+
+		local built = ContainersOn(frame)
+
+		DropRaidFrame(36)
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(built == 0, "a pet frame was given aura rows, got " .. built)
+	end)
+
+	fw.it("leaves a pet frame bare in test mode and once it ends", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local member = NewRaidFrame(38)
+		local pet = NewRaidFrame(39)
+
+		pet.unit = "raidpet39"
+		module:StartTesting()
+
+		local memberPreview = RowOn(member)
+		local petPreview = RowOn(pet)
+		local petDuring = ContainersOn(pet)
+
+		module:StopTesting()
+		partyAuras:Refresh()
+
+		local petAfter = ContainersOn(pet)
+
+		DropRaidFrame(38)
+		DropRaidFrame(39)
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(memberPreview, "the member frame got no preview row")
+		assert(petPreview == nil, "the pet frame got a preview row")
+		assert(petDuring == 0, "the pet frame got containers during test mode, got " .. petDuring)
+		assert(petAfter == 0, "the pet frame got containers after test mode, got " .. petAfter)
+	end)
+
+	fw.it("drops the rows on a frame that flips to a pet", function()
+		local hooks = PartyHooks()
+
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local frame = NewRaidFrame(37)
+
+		partyAuras:Refresh()
+
+		local before = ContainersOn(frame)
+
+		frame.unit = "raidpet37"
+		hooks.OnSetUnit(frame)
+
+		local shown = 0
+
+		for _, candidate in ipairs(acm.frames) do
+			if candidate._type == "AuraContainer" and candidate:GetParent() == frame
+				and candidate:IsShown() then
+				shown = shown + 1
+			end
+		end
+
+		DropRaidFrame(37)
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		partyAuras:Refresh()
+
+		assert(before > 0, "the member frame never got rows")
+		assert(shown == 0, "the frame kept " .. shown .. " rows after it turned into a pet")
+	end)
+end)
+
 fw.describe("Frame Auras - frames the client has not shown yet", function()
 	fw.before_each(function()
 		module:StopTesting()
