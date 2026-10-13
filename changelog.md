@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.43.7
+
+- Fixed a Lua error in arena from patch 12.1.5, which now keeps enemy specs secret.
+
 ## 5.43.6
 
 - Fixed portrait aura icons not filling the whole portrait on EllesmereUI unit frames. The 5.43.3 fix was aimed at ElvUI by mistake and has been undone.
