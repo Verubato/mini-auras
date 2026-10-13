@@ -1,9 +1,9 @@
-## Interface: 120100, 16001
+## Interface: 120105, 120100, 16001
 ## Title: MiniAuras
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Category: Mini
 ## Author: Verz
-## Version: 5.43.4
+## Version: 5.43.5
 ## SavedVariables: MiniAurasDB
 ## OptionalDeps: MiniCC, ElvUI, Grid2, DandersFrames, FrameSort, Masque, TPerl, TidyPlates_ThreatPlates, VuhDo, BuzzardFrames, NDui, EllesmereUIUnitFrames
 ## IconTexture: Interface\AddOns\MiniAuras\Icon.blp

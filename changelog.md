@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.43.5
+
+Updated for patch 12.1.5.
+
 ## 5.43.4
 
 - Frame auras no longer show buffs or debuffs on pet frames.
