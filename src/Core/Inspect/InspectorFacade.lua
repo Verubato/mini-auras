@@ -8,7 +8,6 @@ addon.Core.InspectorFacade = M
 ---Returns the spec ID for a unit using a best-effort fallback chain:
 ---  1. FrameSort (most authoritative, real-time)
 ---  2. Internal Inspector (tooltip + async inspect queue)
----  3. GetArenaOpponentSpec for arena1-9 units
 ---@param unit string
 ---@return number|nil
 function M:GetUnitSpecId(unit)
@@ -20,18 +19,5 @@ function M:GetUnitSpecId(unit)
 		end
 	end
 
-	local id = addon.Core.Inspector:GetUnitSpecId(unit)
-	if id then
-		return id
-	end
-
-	local arenaIndex = unit:match("^arena(%d)$")
-	if arenaIndex then
-		local arenaId = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(arenaIndex))
-		if arenaId and arenaId > 0 then
-			return arenaId
-		end
-	end
-
-	return nil
+	return addon.Core.Inspector:GetUnitSpecId(unit)
 end

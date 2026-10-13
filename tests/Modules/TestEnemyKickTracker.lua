@@ -428,21 +428,8 @@ fw.describe("EnemyKickTracker - identifying the interrupt", function()
 	-- Cooldowns are read from KickData rather than repeated, so a balance change moves both.
 	local COUNTERSPELL_CD = env.addon.Core.KickData.SpecData[62].KickCd
 	local COUNTER_SHOT_CD = env.addon.Core.KickData.SpecData[253].KickCd
-	local WIND_SHEAR_CD = env.addon.Core.KickData.SpecData[262].KickCd
+	local UNATTRIBUTED_CD = 15
 	local GENERIC_ICON = "tex:1766"
-
-	---Leaves the arena and comes back, which is the only path that rereads the opponents' specs.
-	local function reenterArena()
-		env.inInstance = false
-		env.instanceType = "none"
-		env.invalidateWorldState()
-		module:Refresh()
-
-		env.inInstance = true
-		env.instanceType = "arena"
-		env.invalidateWorldState()
-		module:Refresh()
-	end
 
 	---Kicks the player's cast and reports what the module handed the display.
 	---@param guid any
@@ -465,12 +452,6 @@ fw.describe("EnemyKickTracker - identifying the interrupt", function()
 	fw.before_each(function()
 		options.UnknownKickIcon = "class"
 		wipe(env.unitClasses)
-		wipe(env.arenaSpecs)
-		-- A shaman on the enemy team holds the unattributed floor below every cooldown asserted
-		-- here, so a fallback duration cannot pass for an identified one.
-		env.arenaSpecs.arena1 = 62
-		env.arenaSpecs.arena2 = 262
-		reenterArena()
 		display:Clear()
 	end)
 
@@ -484,9 +465,7 @@ fw.describe("EnemyKickTracker - identifying the interrupt", function()
 		fw.is_nil(kick.Atlas, "an identified kick needs no class crest to stand in")
 	end)
 
-	fw.it("identifies a class nobody on the enemy team is playing", function()
-		-- No rogue spec is on the team, so the arena tells the addon nothing and the class's own
-		-- interrupt has to carry it.
+	fw.it("identifies a class with a single interrupt", function()
 		env.unitClasses["arena1"] = "ROGUE"
 
 		local kick = kickedBy("arena1")
@@ -496,11 +475,8 @@ fw.describe("EnemyKickTracker - identifying the interrupt", function()
 	end)
 
 	fw.it("picks the interrupt most of a split class's specs share", function()
-		-- Two hunter specs are up and they interrupt with different spells at different cooldowns.
-		-- Counter Shot covers two of the three, so it is the safer thing to show.
-		env.arenaSpecs.arena1 = 253
-		env.arenaSpecs.arena2 = 255
-		reenterArena()
+		-- The hunter specs interrupt with different spells at different cooldowns. Counter Shot
+		-- covers two of the three, so it is the safer thing to show.
 		env.unitClasses["arena1"] = "HUNTER"
 
 		local kick = kickedBy("arena1")
@@ -509,13 +485,13 @@ fw.describe("EnemyKickTracker - identifying the interrupt", function()
 		fw.eq(kick.Duration, COUNTER_SHOT_CD, "at the cooldown Counter Shot carries")
 	end)
 
-	fw.it("falls back to the shortest cooldown on the team for a class it may not read", function()
+	fw.it("falls back to the default cooldown for a class it may not read", function()
 		env.unitClasses["arena1"] = wow.markSecret({})
 
 		local kick = kickedBy("arena1")
 
 		fw.eq(kick.Icon, GENERIC_ICON, "no interrupt was named, so the generic icon stands in")
-		fw.eq(kick.Duration, WIND_SHEAR_CD, "and the fastest interrupt the team could have")
+		fw.eq(kick.Duration, UNATTRIBUTED_CD, "and the default cooldown for an unattributed kick")
 	end)
 
 	fw.it("crests the icon with a class it may not read", function()
@@ -569,6 +545,18 @@ fw.describe("EnemyKickTracker - lifecycle", function()
 		assert(usedSlots() == preview, "a real kick must not land on top of the preview")
 
 		module:StopTesting()
+	end)
+
+	fw.it("clears the bar when the next Solo Shuffle round reaches prep", function()
+		local frame = assert(castFrameFor("player"), "player cast frame")
+		frame:TriggerEvent("UNIT_SPELLCAST_START", "player")
+		frame:TriggerEvent("UNIT_SPELLCAST_INTERRUPTED", "player", "cast-7", 0, "arena1")
+		assert(usedSlots() > 0, "a kick from the last round")
+
+		local prepFrame = assert(acm.lastFrameForEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS"), "prep frame")
+		prepFrame:TriggerEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+
+		assert(usedSlots() == 0, "the new round starts with an empty bar")
 	end)
 
 	fw.it("switching every spec toggle off tears the bar down", function()

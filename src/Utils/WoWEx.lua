@@ -129,18 +129,6 @@ function M:GetNumSpecializations()
 	return fn() or 0
 end
 
----@param specId number
----@return number? specId
-function M:GetSpecializationInfoByID(specId)
-	local fn = SpecFunction("GetSpecializationInfoByID")
-
-	if not fn then
-		return nil
-	end
-
-	return fn(specId)
-end
-
 ---@param classId number
 ---@return number
 function M:GetNumSpecializationsForClassID(classId)

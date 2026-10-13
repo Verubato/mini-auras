@@ -41,10 +41,6 @@ module:Refresh()
 local events = assert(acm.lastFrameForEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS"), "alerts event frame")
 
 local BORDER_ASSET = env.addon.Core.BorderTextures:GetDispelAsset()
--- Spec ids the tests hand out, mapped to classes the mock knows a colour for.
-local ROGUE_SPEC, MAGE_SPEC = 259, 62
-env.specClasses[ROGUE_SPEC] = "ROGUE"
-env.specClasses[MAGE_SPEC] = "MAGE"
 
 local ROGUE = _G.RAID_CLASS_COLORS.ROGUE
 local MAGE = _G.RAID_CLASS_COLORS.MAGE
@@ -86,14 +82,15 @@ local function isColor(color, expected)
 		and color[1] == expected[1] and color[2] == expected[2] and color[3] == expected[3]
 end
 
----Enters an arena whose opponents hold the given specs, from a clean world load so the
----high-water opponent count starts over. A nil entry models a spec the client will not give up.
-local function enterArenaWithSpecs(...)
-	local specs = { n = select("#", ...), ... }
+---Enters an arena whose opponents are the given classes, from a clean world load so the
+---high-water opponent count starts over. A nil entry models a class the client will not give up.
+local function enterArenaWithClasses(...)
+	local classes = { n = select("#", ...), ... }
 
 	env.inInstance = false
 	env.instanceType = "none"
 	env.arenaSpecs = {}
+	wipe(env.unitClassBase)
 	env.arenaOpponents = 0
 	env.invalidateWorldState()
 	env.loadWorld(module)
@@ -103,21 +100,21 @@ local function enterArenaWithSpecs(...)
 	env.invalidateWorldState()
 	env.loadWorld(module)
 
-	for index = 1, specs.n do
-		env.arenaSpecs["arena" .. index] = specs[index]
+	for index = 1, classes.n do
+		env.unitClassBase["arena" .. index] = classes[index]
 	end
 
-	-- The opponent count comes off the spec list, so an arena of unnamed specs still has to say
-	-- how many there are.
-	env.arenaOpponents = specs.n
+	env.arenaOpponents = classes.n
 	events:TriggerEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 end
 
 fw.describe("Alerts - colouring the icons by class", function()
-	fw.it("takes an arena opponent's colour from their specialisation", function()
-		-- The unit's own class is secret in here. The spec is not, and a spec belongs to exactly
-		-- one class, which is the only route to a readable colour.
-		enterArenaWithSpecs(ROGUE_SPEC, MAGE_SPEC)
+	fw.before_each(function()
+		wipe(env.unitClassBase)
+	end)
+
+	fw.it("takes an arena opponent's colour from their class", function()
+		enterArenaWithClasses("ROGUE", "MAGE")
 
 		assert(isColor(ringColorOf("arena1"), { ROGUE.r, ROGUE.g, ROGUE.b }),
 			"arena1 is ringed in the rogue colour")
@@ -126,7 +123,7 @@ fw.describe("Alerts - colouring the icons by class", function()
 	end)
 
 	fw.it("falls back to the category tints when the client will not name a class", function()
-		enterArenaWithSpecs(nil, nil)
+		enterArenaWithClasses(nil, nil)
 
 		assert(isColor(ringColorOf("arena1"), CATEGORY_DEFENSIVE),
 			"an unnamed class keeps the defensive category tint")
@@ -134,7 +131,7 @@ fw.describe("Alerts - colouring the icons by class", function()
 
 	fw.it("uses the category tints when the option is off", function()
 		alerts.Icons.ClassColors = false
-		enterArenaWithSpecs(ROGUE_SPEC)
+		enterArenaWithClasses("ROGUE")
 
 		assert(isColor(ringColorOf("arena1"), CATEGORY_DEFENSIVE), "the category tint is back")
 
@@ -251,12 +248,12 @@ fw.describe("Alerts - a token that changes class between matches", function()
 		-- The bug this guards is silent and lasts a whole match: reusing arena1's rogue pair for
 		-- a mage rings every alert in the rogue colour, and no restyle can reach those buttons
 		-- to fix it while the match is on.
-		enterArenaWithSpecs(ROGUE_SPEC)
+		enterArenaWithClasses("ROGUE")
 		local roguePair = liveDefOf("arena1")
 		assert(roguePair, "the rogue pair is live")
 		assert(isColor(ringColorOf("arena1"), { ROGUE.r, ROGUE.g, ROGUE.b }), "in the rogue colour")
 
-		enterArenaWithSpecs(MAGE_SPEC)
+		enterArenaWithClasses("MAGE")
 
 		assert(liveDefOf("arena1") ~= roguePair, "a different class gets a different pair")
 		assert(isColor(ringColorOf("arena1"), { MAGE.r, MAGE.g, MAGE.b }),
@@ -279,7 +276,7 @@ fw.describe("Alerts - a token that changes class between matches", function()
 		-- would abandon a pair per opponent, and a WoW frame can never be given back.
 		local before = env.auraContainerCount()
 
-		enterArenaWithSpecs(ROGUE_SPEC)
+		enterArenaWithClasses("ROGUE")
 
 		assert(env.auraContainerCount() == before,
 			"a class seen before built " .. (env.auraContainerCount() - before) .. " more containers")

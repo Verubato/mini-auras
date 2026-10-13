@@ -108,10 +108,14 @@ function M.build()
 	_G.UnitNameFromGUID = function(guid)
 		return env.unitNames[guid]
 	end
-	-- Only the player is modelled. The class conditions on personal aura groups are about who the
-	-- user is playing, and nothing else in the addon asks a token for its base class.
+	-- The player answers from env.playerClass. Any other token answers from env.unitClassBase, and
+	-- a missing entry models the client refusing to say.
+	env.unitClassBase = {}
 	_G.UnitClassBase = function(unit)
-		return unit == "player" and env.playerClass or nil
+		if unit == "player" then
+			return env.playerClass
+		end
+		return env.unitClassBase[unit]
 	end
 	-- Returns the localised name first and the class token second, as the client does. Kept
 	-- distinct so a caller that reads the wrong one fails a test instead of passing by luck.
@@ -653,8 +657,7 @@ function M.build()
 		end
 		return list
 	end
-	-- Arena opponent specs, keyed by the arena unit token. The kick tracker reads them to work
-	-- out the shortest interrupt cooldown it could be looking at.
+	-- Arena opponent specs, keyed by the arena unit token. Only the count is read.
 	env.arenaSpecs = {}
 	_G.GetNumArenaOpponentSpecs = function()
 		local count = 0
@@ -671,18 +674,9 @@ function M.build()
 	end
 	addon.Core.InspectorFacade = {
 		GetUnitSpecId = function(_, unit)
-			return env.arenaSpecs[unit]
+			return nil
 		end,
 	}
-	-- Spec id -> class token, which is how an arena opponent's class is worked out. The unit's own
-	-- class is secret in there, and a spec belongs to exactly one class. Only the specs a test
-	-- names are known, so an unmapped one models the client refusing to say.
-	env.specClasses = {}
-	_G.GetSpecializationInfoByID = function(specId)
-		local class = env.specClasses[specId]
-
-		return specId, "Spec " .. tostring(specId), "", 134400, "DAMAGER", class
-	end
 
 	loadFile("src/Core/Kicks/KickData.lua")
 	loadFile("src/Core/Kicks/KickEvents.lua")

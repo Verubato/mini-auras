@@ -3,7 +3,6 @@ local _, addon = ...
 local mini = addon.Framework
 local eventGate = addon.Core.EventGate
 local moduleLifecycle = addon.Core.ModuleLifecycle
-local inspectorFacade = addon.Core.InspectorFacade
 local kickData = addon.Core.KickData
 local testSpellData = addon.Core.TestSpells
 local wowEx = addon.Utils.WoWEx
@@ -24,6 +23,9 @@ local testModeActive = false
 -- The rogue Kick icon, shown when the interrupter's own spell is unknown.
 local KICK_ICON = C_Spell.GetSpellTexture(1766)
 
+-- Shown for a kick that cannot be attributed to a spell.
+local UNATTRIBUTED_KICK_COOLDOWN = 15
+
 local TEST_SPEC_IDS = testSpellData.KickSpecIds
 -- One stand-in kicker per spec id in TEST_SPEC_IDS, so the preview shows the name and class colour
 -- a live kick would. Keyed by spec id rather than position, so a spec added to KickSpecIds without
@@ -38,8 +40,8 @@ local testEntriesScratch = {}
 
 ---@type table<string, ClassKick[]>?
 local classKicks
----@type number[]
-local opponentSpecIds = {}
+---@type table<string, ClassKick>
+local chosenKicks = {}
 
 ---@type ModuleLifecycle?
 local lifecycle
@@ -48,9 +50,6 @@ local matchPrepGate
 -- Whether the last refresh found the player in an arena, so entering one can be told from
 -- refreshing inside one.
 local wasInArena = false
--- Shortest interrupt cooldown on the enemy team, so an unattributed kick is shown at its most
--- pessimistic. Falls back to 15s until the opponents' specs are known.
-local minKickCooldown = 15
 
 local function IsArena()
 	local inInstance, instanceType = IsInInstance()
@@ -75,49 +74,36 @@ local function GetClassKicks()
 
 	local built = {}
 
-	for specId, specInfo in pairs(kickData.SpecData) do
+	for _, specInfo in pairs(kickData.SpecData) do
 		if specInfo.SpellId and specInfo.KickCd and specInfo.Class then
 			local list = built[specInfo.Class] or {}
 			built[specInfo.Class] = list
-			list[#list + 1] = { SpecId = specId, SpellId = specInfo.SpellId, KickCd = specInfo.KickCd }
+			list[#list + 1] = { SpellId = specInfo.SpellId, KickCd = specInfo.KickCd }
 		end
+	end
+
+	-- Most specs sharing a spell wins, then the shortest cooldown, then the first entry.
+	for class, kicks in pairs(built) do
+		local counts = {}
+		for _, kick in ipairs(kicks) do
+			counts[kick.SpellId] = (counts[kick.SpellId] or 0) + 1
+		end
+
+		local match = kicks[1]
+		for _, kick in ipairs(kicks) do
+			local better = counts[kick.SpellId] > counts[match.SpellId]
+				or (counts[kick.SpellId] == counts[match.SpellId] and kick.KickCd < match.KickCd)
+			if better then
+				match = kick
+			end
+		end
+
+		chosenKicks[class] = match
 	end
 
 	classKicks = built
 
 	return built
-end
-
-local function UpdateOpponents()
-	local minCd = 15
-	local found = false
-
-	wipe(opponentSpecIds)
-
-	local specs = GetNumArenaOpponentSpecs()
-
-	for i = 1, specs do
-		local specId = inspectorFacade:GetUnitSpecId("arena" .. i)
-		if specId and specId > 0 then
-			opponentSpecIds[#opponentSpecIds + 1] = specId
-
-			local info = kickData.SpecData[specId]
-			local cd = info and info.KickCd
-			if cd then
-				if not found or cd < minCd then
-					minCd = cd
-				end
-				found = true
-			end
-		end
-	end
-
-	minKickCooldown = found and minCd or 15
-end
-
-local function OnArenaPrep()
-	UpdateOpponents()
-	display:Clear()
 end
 
 ---@param spellId number
@@ -139,35 +125,7 @@ local function ResolveKick(class)
 		return nil, nil
 	end
 
-	local match
-	local ambiguous = false
-
-	for _, specId in ipairs(opponentSpecIds) do
-		for _, kick in ipairs(kicks) do
-			if kick.SpecId == specId then
-				if match and (match.SpellId ~= kick.SpellId or match.KickCd ~= kick.KickCd) then
-					ambiguous = true
-				end
-				match = match or kick
-			end
-		end
-	end
-
-	if ambiguous or not match then
-		local counts = {}
-		for _, kick in ipairs(kicks) do
-			counts[kick.SpellId] = (counts[kick.SpellId] or 0) + 1
-		end
-
-		match = kicks[1]
-		for _, kick in ipairs(kicks) do
-			local better = counts[kick.SpellId] > counts[match.SpellId]
-				or (counts[kick.SpellId] == counts[match.SpellId] and kick.KickCd < match.KickCd)
-			if better then
-				match = kick
-			end
-		end
-	end
+	local match = chosenKicks[class]
 
 	return match.KickCd, GetKickIcon(match.SpellId)
 end
@@ -204,7 +162,7 @@ local function OnKicked(name, class)
 		atlas = UnknownKickVisual(GetOptions(), class)
 	end
 
-	display:AddKick(duration or minKickCooldown, icon or KICK_ICON, name, class, atlas)
+	display:AddKick(duration or UNATTRIBUTED_KICK_COOLDOWN, icon or KICK_ICON, name, class, atlas)
 end
 
 -- The cast events only produce icons inside an arena, so they stay unregistered elsewhere
@@ -235,7 +193,7 @@ local function ShowTestIcons()
 
 		if specInfo and specInfo.KickCd then
 			testEntriesScratch[#testEntriesScratch + 1] = {
-				Duration = identified and specInfo.KickCd or minKickCooldown,
+				Duration = identified and specInfo.KickCd or UNATTRIBUTED_KICK_COOLDOWN,
 				Icon = identified and GetKickIcon(specInfo.SpellId) or KICK_ICON,
 				Name = kicker and kicker.Name,
 				Class = kicker and kicker.Class,
@@ -283,15 +241,16 @@ local function Setup()
 	observer:Create()
 	observer:RegisterKickCallback(OnKicked)
 
-	-- Prep data only exists inside arenas, so the gate below keeps the event off everywhere else.
+	-- Solo Shuffle stays in one instance, so each round's prep is the only cue to clear the bar.
 	local matchEventsFrame = CreateFrame("Frame")
-	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
+	matchEventsFrame:SetScript("OnEvent", function()
+		display:Clear()
+	end)
 	matchPrepGate = eventGate:New(matchEventsFrame, { "ARENA_PREP_OPPONENT_SPECIALIZATIONS" })
 end
 
 local function OnDisable()
-	-- Reset, or a module switched off in one arena and back on in the next takes the new match
-	-- for a refresh inside the old one and never re-reads the opponents' cooldowns.
+	-- Reset so re-enabling in the next arena counts as entering it.
 	wasInArena = false
 
 	matchPrepGate:SetActive(false)
@@ -306,13 +265,13 @@ local function Apply(options)
 
 	matchPrepGate:SetActive(inArena)
 
-	-- Only on the way in. The prep pass clears the bar, so running it on every refresh would
-	-- wipe live icons whenever a setting changed mid-match.
+	-- Only on the way in. Clearing on every refresh would wipe live icons whenever a setting
+	-- changed mid-match.
 	if inArena ~= wasInArena then
 		wasInArena = inArena
 
 		if inArena then
-			OnArenaPrep()
+			display:Clear()
 		end
 	end
 
@@ -389,6 +348,5 @@ function M:Init()
 end
 
 ---@class ClassKick
----@field SpecId number
 ---@field SpellId number
 ---@field KickCd number

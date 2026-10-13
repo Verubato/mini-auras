@@ -886,10 +886,9 @@ from an older version reads back as RIGHT, because the row is horizontal.
 
 **Class colours** (on by default) tints every icon in the owner's class colour instead of the
 two category colours, which is what makes a row readable at a glance in an arena. It needs the
-client to name the enemy's class: on a nameplate that is read directly, and on an arena token,
-where the class itself is secret, it comes from the opponent's specialisation once the client
-reports it. Where neither answers, the icon keeps the category colour. The two colour swatches
-are ignored while it is on.
+client to name the enemy's class. That is read directly on a nameplate, but it is secret on an
+arena token, so arena opponents keep the category colour. Wherever the client will not answer,
+the icon keeps the category colour. The two colour swatches are ignored while it is on.
 
 Positions (dragged in test mode): combined bar centred, 150 px below the top of the screen.
 **Split bars** gives important spells their own separately movable bar: defensives default
@@ -1234,14 +1233,12 @@ module assumes enabled.
 Since 5.40.0 the tracker works out **which interrupt was used** and counts that spell's own
 cooldown down, drawing the spell's icon. It can only do that when your own cast was the one
 interrupted, because that is the only case where the game lets the addon read the kicker's
-class. The class is matched against the enemy team's specs to pick the exact spell; where a
-class's specs interrupt with different spells and the arena has not said which spec is
-present, the spell most of that class's specs share wins, with the shortest cooldown breaking
-a tie.
+class. The tracker never reads the enemy team's specs, because the client hides them. Where a
+class's specs interrupt with different spells, the spell most of that class's specs share
+wins, with the shortest cooldown breaking a tie.
 
 Every other kick is unidentified, which includes every kick on a teammate. Those show the
-**shortest known interrupt cooldown on the enemy team** (15 s fallback until the opponents'
-specs are known), and **Unknown kicks** picks what is drawn on them: **Class crest**
+**fixed 15 s cooldown**, and **Unknown kicks** picks what is drawn on them: **Class crest**
 (default) puts the kicker's class crest on the icon, **Generic kick icon** leaves the rogue
 Kick art there instead.
 
@@ -1595,7 +1592,7 @@ see trinkets used in the starting room.
 
 **"Enemy kick tracker missing."** It only shows inside arena, and only if your role matches
 its enable settings (Healer and Caster on by default; tick "Any" to force it for every
-spec). A kick the addon cannot identify is timed with the enemy team's shortest kick cooldown,
+spec). A kick the addon cannot identify is timed with a fixed 15 s cooldown,
 which is expected behaviour; only a kick on your own cast can be traced back to the spell that
 did it. Since 5.38.0 the kicker's name sits above the icon and their class colour tints the
 border.

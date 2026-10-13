@@ -211,7 +211,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Play a sound when a defensive spell is pressed."] = "Воспроизводить звук при использовании защитного заклинания.",
 	["Show alert icons in the alerts region."] = "Показывать значки оповещений в области оповещений.",
 	["Class colours"] = "Цвет класса",
-	["Colour every icon by its owner's class instead of by category. Arena opponents are coloured from their specialisation; battlegrounds keep the category colours, because the game will not name a class in there."] = "Окрашивает каждый значок по классу его владельца, а не по категории. Противники на арене окрашиваются по специализации, а на полях боя остаются цвета категорий, потому что там игра не сообщает класс.",
+	["Colour every icon by its owner's class instead of by category. Arena opponents and battlegrounds keep the category colours, because the game will not name a class in there."] = "Окрашивает каждый значок по классу его владельца, а не по категории. На арене и на полях боя остаются цвета категорий, потому что там игра не сообщает класс.",
 	["Show CC icons when healer is CC'd."] = "Показывать иконки контроля, когда целитель под контролем.",
 	["Show icons"] = "Значки",
 	["Split bars"] = "Раздельно",

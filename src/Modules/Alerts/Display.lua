@@ -11,7 +11,6 @@ local sweep = addon.Core.Sweep
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local testSpellData = addon.Core.TestSpells
-local inspectorFacade = addon.Core.InspectorFacade
 
 -- Loaded before this file in TOC order.
 local sound = addon.Modules.Alerts.Sound
@@ -39,9 +38,6 @@ local defensiveGlowColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 -- Refilled per lookup like the two above. One scratch is enough because a colour is read straight
 -- into a group before the next unit is asked about.
 local classGlowColor = { 1, 1, 1, r = 1, g = 1, b = 1, a = 1 }
--- spec id -> class token, or false once asked and refused. The mapping is static client data, so
--- one answer per spec lasts the session.
-local classTokenBySpec = {}
 
 ---@type Db
 local db
@@ -155,45 +151,12 @@ local function AlertGlowColors()
 		moduleUtil:FillColor(defensiveGlowColor, icons.DefensiveColor, DEFAULT_DEFENSIVE_GLOW_COLOR)
 end
 
----The class a specialization belongs to. Nothing in the addon maps the two, so this asks the
----client and keeps the answer.
----@param specId number
----@return string?
-local function ClassTokenForSpec(specId)
-	local cached = classTokenBySpec[specId]
-
-	if cached ~= nil then
-		return cached or nil
-	end
-
-	local _, _, _, _, _, classToken = addon.Utils.WoWEx:GetSpecializationInfoByID(specId)
-	local class = classToken or false
-
-	classTokenBySpec[specId] = class
-
-	return class or nil
-end
-
 ---The class token of whoever a token is tracking, or nil when the client will not say.
 ---
----An arena opponent is identified through their specialization, since the client hands the spec
----out in plain numbers where the unit's own class is a secret value. Everywhere else the unit is
----asked directly, which answers outdoors and goes secret inside an instance.
+---Readable outdoors, secret inside an instance.
 ---@param unitToken string
 ---@return string?
 local function EnemyClassToken(unitToken)
-	if unitToken:match("^arena%d$") then
-		local specId = inspectorFacade:GetUnitSpecId(unitToken)
-
-		-- A unit the client will not identify answers with a secret spec, and nothing can be
-		-- looked up with one.
-		if specId == nil or issecretvalue(specId) then
-			return nil
-		end
-
-		return ClassTokenForSpec(specId)
-	end
-
 	local class = UnitClassBase and UnitClassBase(unitToken)
 
 	if class == nil or issecretvalue(class) then

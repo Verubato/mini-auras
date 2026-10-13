@@ -121,7 +121,7 @@ local function BuildSettingsTab(parent, options)
 	local classColorsChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Class colours"],
-		Tooltip = L["Colour every icon by its owner's class instead of by category. Arena opponents are coloured from their specialisation; battlegrounds keep the category colours, because the game will not name a class in there."],
+		Tooltip = L["Colour every icon by its owner's class instead of by category. Arena opponents and battlegrounds keep the category colours, because the game will not name a class in there."],
 		GetValue = function()
 			return options.Icons.ClassColors == true
 		end,
