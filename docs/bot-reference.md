@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.43.3. Supported interface versions: 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
+Addon version 5.43.4. Supported interface versions: 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -717,6 +717,7 @@ so an updated curated list still reaches existing profiles.
 Sidebar: General > Frame Auras. Draws the auras on Blizzard's own party and raid frames, in place
 of the ones the game puts there. Separate from Important Auras, which adds a row of tracked CC and
 defensive icons on top of whatever else is on a frame; this one **replaces** what Blizzard draws.
+Pet frames are skipped entirely and get no frame auras of either kind (since 5.43.4).
 
 No "Enable in" row: these stand in for frames the game draws everywhere, so they are on or off
 everywhere. Four sub-tabs. The first three each carry their own switch, and **all three ship switched off**; Spells is the buff whitelist the Buffs tab filters against.

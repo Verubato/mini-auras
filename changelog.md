@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.43.4
+
+- Frame auras no longer show buffs or debuffs on pet frames.
+
 ## 5.43.3
 
 - Fixed portrait aura icons not filling the whole portrait on ElvUI unit frames.
