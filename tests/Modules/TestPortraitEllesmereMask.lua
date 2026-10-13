@@ -1,5 +1,4 @@
--- A detached, shaped portrait clips itself with a MaskTexture its own addon owns and mutates in
--- place on a live shape change. The icon overlay reuses that same object so it clips to the shape.
+-- EllesmereUI portraits: the shape mask the icons reuse, and icon sizing over the backdrop.
 
 local fw = require("Framework")
 local acm = require("AuraContainerMock")
@@ -27,6 +26,11 @@ local function newEllesmereFrame(name, hasMask)
 	local backdrop = acm.NewFrame("Frame", name .. "Backdrop", frame)
 	backdrop:SetSize(60, 60)
 	backdrop:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
+	-- The mock drops hooks, so keep them to fire a resize by hand.
+	backdrop._hooks = {}
+	function backdrop:HookScript(script, fn)
+		self._hooks[script] = fn
+	end
 	frame.Portrait = { backdrop = backdrop }
 
 	if hasMask then
@@ -125,5 +129,31 @@ fw.describe("Portrait EllesmereUI - detached shaped portrait mask", function()
 
 	fw.it("no misuse was reported anywhere in the module's lifecycle", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
+	end)
+end)
+
+fw.describe("Portrait EllesmereUI - icon size", function()
+	fw.it("covers the backdrop rect with no inset", function()
+		local points = containerFor("target").Frame._points
+		assert(#points == 1 and points[1].point == "ALL" and points[1].relativeTo == targetBackdrop,
+			"covers the backdrop rect exactly")
+	end)
+
+	fw.it("sizes every aura icon to the whole backdrop", function()
+		for _, display in ipairs(containerFor("target").AuraDisplay.Displays) do
+			assert(display.PendingSize == 60, "icon covers the backdrop, got " .. tostring(display.PendingSize))
+		end
+	end)
+
+	fw.it("follows the backdrop when it is resized after attaching", function()
+		-- Not square, as the layout pass trims the width on its own.
+		targetBackdrop:SetSize(70, 80)
+		targetBackdrop._hooks.OnSizeChanged(targetBackdrop, 70, 80)
+
+		local target = containerFor("target")
+		assert(target.Size == 70, "the kick icon follows the short side, got " .. tostring(target.Size))
+		for _, display in ipairs(target.AuraDisplay.Displays) do
+			assert(display.PendingSize == 70, "icon follows the short side, got " .. tostring(display.PendingSize))
+		end
 	end)
 end)

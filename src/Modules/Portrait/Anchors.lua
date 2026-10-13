@@ -413,8 +413,7 @@ local function AttachElvUIFrame(unit)
 		return
 	end
 
-	-- ElvUI draws its border outside the portrait, so there is nothing to inset from.
-	local container = display:CreateContainer(elvuiFrame, elvuiPortrait, unit, { 0.07, 0.93, 0.07, 0.93 }, nil, nil, true)
+	local container = display:CreateContainer(elvuiFrame, elvuiPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
 	if not container then return end
 	-- 3D models are frames, whereas 2D portraits are textures with no frame level of their own.
 	local portraitLevel = elvuiPortrait.GetFrameLevel and elvuiPortrait:GetFrameLevel()
@@ -512,7 +511,8 @@ local function AttachEllesmereUIFrame(unit)
 		return
 	end
 
-	local container = display:CreateContainer(euiFrame, euiPortrait, unit, { 0.15, 0.85, 0.15, 0.85 }, euiMask)
+	-- EllesmereUI paints its portrait edge to edge, so there is nothing to inset from.
+	local container = display:CreateContainer(euiFrame, euiPortrait, unit, { 0.15, 0.85, 0.15, 0.85 }, euiMask, nil, true)
 	if not container then return end
 	local portraitLevel = euiPortrait.GetFrameLevel and euiPortrait:GetFrameLevel()
 		or euiFrame:GetFrameLevel()
@@ -522,6 +522,18 @@ local function AttachEllesmereUIFrame(unit)
 	-- EllesmereUI insets its portrait texture with SetTexCoord(0.15, 0.85). Match that on our
 	-- overlay so the CC icon visually fills the same area as the portrait beneath it.
 	StretchSlotsOverPortrait(container, euiPortrait, 0.15, 0.85, euiMask)
+
+	-- EllesmereUI resizes the backdrop after we first read it.
+	euiPortrait:HookScript("OnSizeChanged", function(_, width, height)
+		if issecretvalue(width) or issecretvalue(height) then return end
+		local size = math.min(width, height)
+		if size <= 0 then return end
+
+		container:SetIconSize(size)
+		for _, auraDisplay in ipairs(container.AuraDisplay.Displays) do
+			auraDisplay:SetIconSize(size)
+		end
+	end)
 
 	RegisterUnitUpdate(unit, container)
 	Register(unit, container)
