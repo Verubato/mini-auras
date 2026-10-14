@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 5.43.8
 
-- Fixed crowd control no longer showing on party and raid frames since patch 12.1.5, and enemy defensives and important buffs going missing from alerts. The Frame Auras buff row on the target and focus frames no longer goes blank on an enemy with the tracked buff list on.
+- Fixed crowd control no longer showing on party and raid frames since patch 12.1.5.
+- Fixed enemy defensives and important buffs going missing from alerts since patch 12.1.5.
+- Fixed the Frame Auras buff row on the target and focus frames going blank on an enemy with the tracked buff list on since patch 12.1.5.
 
 ## 5.43.7
 
