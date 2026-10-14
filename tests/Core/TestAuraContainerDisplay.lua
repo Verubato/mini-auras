@@ -2421,3 +2421,119 @@ fw.describe("AuraContainerDisplay - the icon cover", function()
 		end
 	end)
 end)
+
+fw.describe("AuraContainerDisplay - spell-id maps behind the identity gate", function()
+	-- A group carrying an includeSpellIDs map on a path the identity gate refuses rejects every
+	-- aura, so a category group has to leave its map off wherever the gate would refuse it.
+	local categoryIds = addon.Core.AuraCategoryIds
+	local CC_ID = next(categoryIds.CC)
+	local DEFENSIVE_ID = next(categoryIds.Defensive)
+	local DISARM_ID = next(auraFilters.CandidateFilters.Disarm.includeSpellIDs)
+	-- An id no curated list carries, standing in for an aura the map exists to keep out.
+	local UNLISTED_ID = 1
+	local hostile = {}
+
+	local function buildFor(unit, categoryKey)
+		local instance = display:New(_G.UIParent, unit, {
+			auraFilters:GroupSpec(categoryKey, 5),
+		}, 30, 2, "Test")
+
+		return instance, auraFilters.GroupKey[categoryKey]
+	end
+
+	local function shows(instance, groupKey, spellId, helpful)
+		return acm.passesSpellIdFilters(instance.Frame, groupKey, { spellId = spellId, isHelpful = helpful })
+	end
+
+	fw.before_each(function()
+		acm.reset()
+		wipe(hostile)
+		_G.UnitCanAssist = function(_, unit)
+			return hostile[unit] ~= true
+		end
+	end)
+
+	fw.it("shows crowd control on a unit the player can assist", function()
+		local instance, key = buildFor("party1", "CrowdControl")
+
+		assert(shows(instance, key, CC_ID, false), "a party member's stun reaches the CC group")
+	end)
+
+	fw.it("shows a helpful category on a unit the player cannot assist", function()
+		hostile.arena1 = true
+
+		local instance, key = buildFor("arena1", "BigDefensive")
+
+		assert(shows(instance, key, DEFENSIVE_ID, true), "an enemy's defensive reaches the group")
+	end)
+
+	fw.it("keeps the map where the gate applies it", function()
+		hostile.arena1 = true
+
+		local cc, ccKey = buildFor("arena1", "CrowdControl")
+		local defensive, defensiveKey = buildFor("party1", "BigDefensive")
+
+		assert(shows(cc, ccKey, CC_ID, false), "a listed stun on an enemy shows")
+		assert(not shows(cc, ccKey, UNLISTED_ID, false), "and an unlisted debuff is kept out")
+		assert(shows(defensive, defensiveKey, DEFENSIVE_ID, true), "a listed defensive on a friend shows")
+		assert(not shows(defensive, defensiveKey, UNLISTED_ID, true), "and an unlisted buff is kept out")
+	end)
+
+	fw.it("moves the map when the tracked unit changes sides", function()
+		local instance, key = buildFor("target", "CrowdControl")
+
+		hostile.target = true
+		instance:ApplyIdentityGate()
+
+		assert(instance.Frame._groups[key].candidateFilters == auraFilters.CandidateFilters.CrowdControl,
+			"the map goes back on once the unit is an enemy")
+		assert(not shows(instance, key, UNLISTED_ID, false), "and narrows the group again")
+
+		hostile.target = nil
+		instance:SetUnit("target")
+
+		assert(shows(instance, key, CC_ID, false), "and comes off again when it is a friend")
+	end)
+
+	fw.it("bounces a side flip through in combat", function()
+		local instance = buildFor("target", "CrowdControl")
+		local frame = instance.Frame
+		local showCount = frame._calls.Show or 0
+
+		hostile.target = true
+		_G.InCombatLockdown = function() return true end
+		instance:ApplyIdentityGate()
+		_G.InCombatLockdown = function() return false end
+		hostile.target = nil
+
+		assert((frame._calls.Show or 0) > showCount, "a flip brings no aura event that would settle it")
+	end)
+
+	fw.it("leaves the container alone when the side has not changed", function()
+		local instance = buildFor("target", "CrowdControl")
+		local frame = instance.Frame
+		local showCount = frame._calls.Show or 0
+
+		instance:ApplyIdentityGate()
+
+		fw.eq(frame._calls.Show or 0, showCount, "a gate with nothing to move costs no re-parse")
+	end)
+
+	fw.it("never swaps out filters a caller supplied", function()
+		local own = { includeSpellIDs = { [UNLISTED_ID] = true } }
+		local spec = auraFilters:GroupSpec("CrowdControl", 5, { CandidateFilters = own })
+		local instance = display:New(_G.UIParent, "party1", { spec }, 30, 2, "Test")
+		local key = auraFilters.GroupKey.CrowdControl
+
+		instance:ApplyIdentityGate()
+
+		assert(instance.Frame._groups[key].candidateFilters == own, "the caller's filters stay")
+	end)
+
+	fw.it("keeps the disarm map on a friend, where it shows nothing", function()
+		local instance, key = buildFor("party1", "Disarm")
+
+		assert(not shows(instance, key, DISARM_ID, false), "the refused map rejects even a disarm")
+		assert(not shows(instance, key, UNLISTED_ID, false), "and every other debuff with it")
+	end)
+end)

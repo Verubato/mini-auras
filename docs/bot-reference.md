@@ -420,8 +420,8 @@ the old Precognition module's settings is frozen at what that release shipped.
   on no character but that one.
 
 **The spell-ID rule (why some combinations are refused).** The game only honours a spell-ID
-filter for helpful auras on units you can assist, and for harmful auras on units you cannot;
-anywhere else the ID list is silently ignored and the group would match everything. So in
+filter for helpful auras on units you can assist, and for harmful auras on units you cannot.
+Anywhere else the ID list rejects every aura, so the group would show nothing. So in
 Spell IDs mode, debuffs cannot be tracked on Self, My Pet or Raid Frames (all always
 assistable), and the editor says so in red: "Debuffs cannot be tracked on yourself or your
 pet." / "Debuffs cannot be tracked on group members." Switching to Aura filters mode makes
@@ -1040,9 +1040,9 @@ everywhere.
 **Extra buffs** (since 5.19.0) is a searchable spell list under the settings, and the buffs
 ticked there are shown on the player's own portrait, under every flagged category. It exists
 because the game flags only the auras it considers notable, and anything unflagged can never
-appear otherwise. Buffs only, and the player only: on 12.1 a spell-id filter is skipped for
-harmful auras on a unit you can assist, so the same layer aimed at debuffs would match every
-debuff on you. Nothing is ticked by default.
+appear otherwise. Buffs only, and the player only. On 12.1 a spell-id filter rejects every
+harmful aura on a unit you can assist, so the same layer aimed at debuffs would show nothing on
+you. Nothing is ticked by default.
 
 One icon each for five categories: important, external defensive, big defensive, disarm and
 CC. Like nameplates, portraits show everything the game flags rather than only the addon's

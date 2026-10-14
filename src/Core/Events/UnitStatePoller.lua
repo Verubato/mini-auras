@@ -33,8 +33,8 @@ local visibleState = {}
 local charmedState = {}
 -- Assistability is the identity gate: a spell-ID filter applies to helpful auras only on a unit the
 -- player can assist, and to harmful auras only on one it cannot (see Core/Auras/AuraFilters). A unit
--- that changes sides keeps the groups it was built with, and one whose map the gate now skips falls
--- back to its filter string alone, which for the disarm group is every non-CC debuff it has.
+-- that changes sides keeps the groups it was built with, and a map the gate now refuses rejects
+-- every aura, so each flip has to move the maps.
 local assistState = {}
 -- Reference counted, so one subscriber dropping a token cannot strand another with a missing
 -- baseline, which would read as a flip on the next poll.

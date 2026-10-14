@@ -586,3 +586,33 @@ fw.describe("Alerts - an opponent somebody mind controls", function()
 		assert(restored, "both back when the charm ends")
 	end)
 end)
+
+fw.describe("Alerts - spell-id maps on an enemy", function()
+	-- An enemy fails the identity gate for buffs, so a group carrying its curated map would reject
+	-- every buff the enemy has.
+	local auraFilters = env.addon.Core.AuraFilters
+	local IMPORTANT_KEY = auraFilters.GroupKey.Important
+
+	fw.it("shows an enemy's important buffs", function()
+		enterWorld()
+		addEnemyPlate("nameplate3")
+		acm.tickAll(400)
+
+		local container
+
+		for _, candidate in ipairs(env.containersForUnit("nameplate3")) do
+			if candidate._enabled and candidate._groups[IMPORTANT_KEY] then
+				container = candidate
+			end
+		end
+
+		assert(container, "the plate got a live container with an important group")
+
+		local spellId = next(env.addon.Core.AuraCategoryIds.Important)
+
+		assert(acm.passesSpellIdFilters(container, IMPORTANT_KEY, { spellId = spellId, isHelpful = true }),
+			"a listed important buff reaches the group")
+
+		removePlate("nameplate3")
+	end)
+end)

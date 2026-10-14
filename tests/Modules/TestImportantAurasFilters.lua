@@ -396,3 +396,44 @@ fw.describe("AnchoredIcons - the stale styling flag", function()
 		assert(applied, "through the module's own callback")
 	end)
 end)
+
+fw.describe("ImportantAuras - the crowd control map behind the identity gate", function()
+	local acm = require("AuraContainerMock")
+	local CC_GROUP_KEY = env.addon.Core.AuraFilters.GroupKey.CrowdControl
+	local CC_ID = next(categoryIds.CC)
+
+	---The CC group on party1's container, once the walker has declared it.
+	---@return table container, table group
+	local function CcGroup()
+		module:Refresh()
+		acm.tickAll(40)
+
+		local container = assert(env.containersForUnit("party1")[1], "no aura container for party1")
+
+		return container, assert(container._groups[CC_GROUP_KEY], "no CC group")
+	end
+
+	fw.before_each(function()
+		options.ShowCrowdControl = true
+		env.enemies.party1 = nil
+	end)
+
+	fw.it("shows a party member's crowd control", function()
+		local container = CcGroup()
+
+		assert(acm.passesSpellIdFilters(container, CC_GROUP_KEY, { spellId = CC_ID }),
+			"a stun on a friend reaches the group")
+	end)
+
+	fw.it("puts the map back on while a duel makes the unit an enemy", function()
+		CcGroup()
+		env.enemies.party1 = true
+
+		local _, group = CcGroup()
+
+		fw.eq(group.candidateFilters, env.addon.Core.AuraFilters.CandidateFilters.CrowdControl,
+			"the curated map applies to an enemy")
+
+		env.enemies.party1 = nil
+	end)
+end)

@@ -102,8 +102,16 @@ function M.setup()
 
 	-- Units are friendly unless a test overrides this.
 	_G.UnitCanAttack = function(a, b) return false end
+	_G.UnitCanAssist = function(a, b) return true end
 
 	_G.UnitIsUnit = function(a, b) return a == b end
+
+	-- Judged by the token alone, like the client.
+	_G.UnitIsPlayerControlledOrGroupMember = function(unit)
+		return type(unit) == "string" and (unit == "player" or unit == "pet" or unit == "vehicle"
+			or unit:match("^party%d+$") ~= nil or unit:match("^partypet%d+$") ~= nil
+			or unit:match("^raid%d+$") ~= nil or unit:match("^raidpet%d+$") ~= nil)
+	end
 
 	-- Group and roles. A unit counts as grouped once it has been given a role, which is the
 	-- only thing anything here asks about a roster.

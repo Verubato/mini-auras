@@ -299,8 +299,8 @@ local function AnchorBarDisplay(display, container, nameplate, barOptions, kickA
 end
 
 ---Whether the disarm group is worth building for this side. Its only real filter is the spell-ID
----map, which the identity gate skips on a unit the player can assist, so a friendly bar can never
----show it.
+---map, which the identity gate refuses on a unit the player can assist, so a friendly bar can
+---never show it.
 ---@param factionKey "Enemy"|"Friendly"
 ---@return boolean
 local function DisarmPossible(barOptions, factionKey)
@@ -835,8 +835,8 @@ local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 		barOptions.ShowDefensives,
 		barOptions.ShowImportant,
 		-- Disarm rides the CC toggle, but only where the engine actually applies its spell-ID
-		-- filter: on an assistable unit the identity gate skips the map and the group would
-		-- show every debuff on the plate.
+		-- filter. On an assistable unit the identity gate refuses the map and the group can show
+		-- nothing.
 		barOptions.ShowCrowdControl and not units:CanAssist(token)
 	)
 

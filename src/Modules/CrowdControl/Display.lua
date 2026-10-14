@@ -239,6 +239,7 @@ local function ApplyUnitGates(entry, options)
 	local crowdControl = units:IsVisible(entry.Unit) and iconCount or 0
 
 	if entry.Display then
+		entry.Display:ApplyIdentityGate()
 		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, crowdControl, true)
 	end
 

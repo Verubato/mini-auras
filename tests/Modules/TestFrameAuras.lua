@@ -249,6 +249,20 @@ local function Fire(event)
 	end
 end
 
+---Fires a unit event at every frame listening for it.
+---@param event string
+---@param unit string
+local function FireUnit(event, unit)
+	for _, frame in ipairs(acm.frames) do
+		local listening = frame._events and frame._events[event]
+		local handler = frame._scripts and frame._scripts.OnEvent
+
+		if listening and handler then
+			handler(frame, event, unit)
+		end
+	end
+end
+
 fw.describe("Frame Auras - the tracked buff list", function()
 	fw.it("tracks every curated spell out of the box", function()
 		ResetSpells()
@@ -4958,6 +4972,60 @@ fw.describe("Frame Auras - the purge glow on the target row", function()
 		assert(plain and plain.maxDuration, "and so is the plain one")
 
 		options.TargetFocus.ShortBuffsOnly = false
+	end)
+end)
+
+fw.describe("Frame Auras - the tracked buff list on an enemy target", function()
+	fw.before_each(function()
+		module:StopTesting()
+		targetAuras.Available = true
+		options.TargetFocus.Enabled = true
+		options.TargetFocus.Filtered = true
+		env.enemies.target = nil
+
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("narrows a friendly target's buffs to the tracked list", function()
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local filters = container._groups[BUFF_GROUP].candidateFilters
+
+		assert(filters and filters.includeSpellIDs, "the row filters by spell id")
+	end)
+
+	fw.it("leaves the list off an enemy target, where it would reject every buff", function()
+		env.enemies.target = true
+		module:Refresh()
+
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local buff = next(spells:BuildSpellMap())
+
+		assert(acm.passesSpellIdFilters(container, BUFF_GROUP, { spellId = buff, isHelpful = true }),
+			"a tracked buff on an enemy still shows")
+
+		env.enemies.target = nil
+		module:Refresh()
+	end)
+
+	fw.it("takes the list off when a duel turns the target hostile", function()
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+
+		env.enemies.target = true
+		FireUnit("UNIT_FLAGS", "target")
+		env.enemies.target = nil
+
+		fw.is_nil(container._groups[BUFF_GROUP].candidateFilters, "the row drops the list it cannot use")
+		module:Refresh()
+	end)
+
+	fw.it("ignores a flags change that leaves the target on the same side", function()
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local setUnits = container._calls.SetUnit or 0
+
+		FireUnit("UNIT_FLAGS", "target")
+
+		fw.eq(container._calls.SetUnit or 0, setUnits, "a combat toggle re-reads nothing")
 	end)
 end)
 

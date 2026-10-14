@@ -271,11 +271,13 @@ local function ApplyUnitGates(item)
 	local visible = units:IsVisible(item.Unit)
 
 	if item.Display then
+		item.Display:ApplyIdentityGate()
 		item.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl,
 			visible and IconBudget(db.Modules.HealerCrowdControl) or 0, true)
 	end
 
 	if item.LabelDisplay then
+		item.LabelDisplay:ApplyIdentityGate()
 		item.LabelDisplay:SetMaxIcons(auraFilters.GroupKey.CrowdControl, visible and LABEL_MAX_ICONS or 0, true)
 	end
 end

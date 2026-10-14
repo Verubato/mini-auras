@@ -1593,6 +1593,26 @@ local function ApplyGroupLayout(instance)
 	end
 end
 
+---Points every category group at the candidate filters the identity gate allows on the unit. A map
+---on a path the gate refuses rejects every aura, so a unit changing sides has to move the map.
+---@param instance AuraContainerDisplay
+---@param unit string?
+local function ApplyIdentityGate(instance, unit)
+	for _, group in ipairs(instance.Groups) do
+		local category = group.GatedCategory
+
+		if category then
+			local filters = auraFilters:GatedCandidateFilters(category, unit)
+
+			-- Only on a change, because every push bounces the container into a full re-parse. Urgent,
+			-- because a side flip in combat brings no aura event to settle it.
+			if filters ~= group.CandidateFilters then
+				instance:SetCandidateFilters(group.Key, filters, true)
+			end
+		end
+	end
+end
+
 ---Declares one group on the container, which is where the engine allocates its batch of buttons
 ---and runs the initializer over each. The smallest piece a deferred build can be paced in.
 ---@param instance AuraContainerDisplay
@@ -1736,6 +1756,11 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
 
+		-- Set straight on the spec, since nothing has been declared to the engine yet.
+		if group.GatedCategory then
+			group.CandidateFilters = auraFilters:GatedCandidateFilters(group.GatedCategory, unit)
+		end
+
 		-- A group is what the engine charges for, since it allocates a fixed batch of buttons the
 		-- moment one is declared. Deferring hands that cost to the caller's own pacing, one group
 		-- at a time, and only suits a display nothing is waiting on.
@@ -1804,6 +1829,10 @@ function M:AddPendingGroup(group)
 	self.GroupsByKey[group.Key] = group
 	StoreGroupGlow(self)
 
+	if group.GatedCategory then
+		group.CandidateFilters = auraFilters:GatedCandidateFilters(group.GatedCategory, self.Frame:GetUnit())
+	end
+
 	-- A group drawn larger than the display widens where a line wraps, and nothing else on the
 	-- path that adds one re-applies that.
 	if self.PerLine then
@@ -1846,12 +1875,22 @@ end
 
 ---@param unit string
 function M:SetUnit(unit)
+	-- Ahead of the early return, since a token the display already holds can have changed sides.
+	ApplyIdentityGate(self, unit)
+
 	if self.Frame:GetUnit() == unit then
 		return
 	end
 
 	self.Frame:SetUnit(unit)
 	MarkBouncePending(self)
+end
+
+---Re-picks the category groups' spell-ID maps for the unit's current side. For an owner that hears
+---of a duel, a mind control or a faction change on a token it keeps. See AuraFilters
+---GatedCandidateFilters.
+function M:ApplyIdentityGate()
+	ApplyIdentityGate(self, self.Frame:GetUnit())
 end
 
 ---@return string
@@ -1870,6 +1909,9 @@ end
 function M:RequestRefresh()
 	local frame = self.Frame
 	local unit = frame:GetUnit()
+
+	-- The new occupant can be on the other side.
+	ApplyIdentityGate(self, unit)
 
 	-- Both halves in the same frame, so nothing renders in between.
 	if unit and unit ~= NO_UNIT then
@@ -2008,8 +2050,9 @@ end
 ---engine, so a change to the tracked spell list re-filters in place. The buttons can't be rebuilt
 ---while auras are secret.
 ---@param groupKey string
----@param filters table
-function M:SetCandidateFilters(groupKey, filters)
+---@param filters table?
+---@param urgent boolean? Bounce even in combat, for a swap no aura event will settle.
+function M:SetCandidateFilters(groupKey, filters, urgent)
 	if not RequireGroup(self, groupKey, "SetCandidateFilters") then
 		return
 	end
@@ -2027,7 +2070,7 @@ function M:SetCandidateFilters(groupKey, filters)
 	end
 
 	self.Frame:SetAuraGroupCandidateFilters(groupKey, filters)
-	MarkBouncePending(self)
+	MarkBouncePending(self, urgent)
 end
 
 ---Sets a group's icon budget. A value of 0 hides the group entirely, which is how the per-category
@@ -2562,6 +2605,9 @@ end
 ---@field FilterString string Aura filter string (e.g. "HARMFUL|CROWD_CONTROL").
 ---@field MaxIcons number? Icon budget for this group (default 3).
 ---@field CandidateFilters table? 12.1 candidate filters (e.g. { includeSpellIDs = ..., maxDuration = 4.1 }). Every standard category passes an includeSpellIDs map here. See Core/AuraFilters for why it is needed on top of the filter string.
+---@field GatedCategory string? The standard category whose spell-ID map this group carries only
+---where the identity gate applies it. Set by AuraFilters GroupSpec, and the display then owns
+---CandidateFilters, re-picking it whenever the unit or its side changes.
 ---@field SortDirection number? AuraContainerSortDirection value (default Normal, Reverse = newest first).
 ---@field SizeScale number? What this group's icons are drawn at, as a share of the display's own
 ---size. Unset draws them at it, which is what every group but a deliberately larger one wants.

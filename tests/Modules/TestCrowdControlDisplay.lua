@@ -218,3 +218,29 @@ fw.describe("CrowdControl - the kick icon's countdown", function()
 		assert(kickSlotHideNumbers == false, "a module with no Show numbers switch reads as on")
 	end)
 end)
+
+fw.describe("CrowdControl - a unit changing sides", function()
+	local ccDisplay = env.addon.Modules.CrowdControl.Display
+	local auraFilters = env.addon.Core.AuraFilters
+	local CC_KEY = auraFilters.GroupKey.CrowdControl
+
+	fw.before_each(function()
+		env.enemies[held.unit] = nil
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("moves the crowd control map when the unit state poller re-asks", function()
+		local display = assert(DisplayFor(held.unit), "fixture: the frame got a display")
+		local group = display.Frame._groups[CC_KEY]
+
+		fw.is_nil(group.candidateFilters, "a friend's CC group carries no map")
+
+		env.enemies[held.unit] = true
+		ccDisplay:ReapplyUnitGates(held.unit)
+		env.enemies[held.unit] = nil
+
+		assert(group.candidateFilters == auraFilters.CandidateFilters.CrowdControl,
+			"the map goes back on once a duel makes the unit an enemy")
+	end)
+end)

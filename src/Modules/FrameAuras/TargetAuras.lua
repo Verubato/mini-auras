@@ -4,6 +4,7 @@ local mini = addon.Framework
 local moduleUtil = addon.Utils.ModuleUtil
 local eventGate = addon.Core.EventGate
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local iconSlotContainer = addon.Core.IconSlotContainer
 local frames = addon.Core.Frames
 local growAnchors = addon.Core.GrowAnchors
@@ -153,11 +154,16 @@ local function Candidates(host)
 	end
 
 	local assistable = CanAssist(host.Unit)
+	local mapAllowed = auraFilters:CanFilterBySpellId(host.Unit, true)
 	local buffs, debuffs
 
-	if options.Filtered then
-		-- The engine honours a spell-id map for a helpful aura on an assistable unit and skips it
-		-- everywhere else, so on an enemy target this quietly does nothing.
+	-- Kept so a flags change can tell whether the unit actually moved sides.
+	host.Assistable = assistable
+	host.MapAllowed = mapAllowed
+
+	-- The engine honours a spell-id map for a helpful aura on an assistable unit and rejects every
+	-- buff elsewhere, so an enemy target keeps its whole buff row.
+	if options.Filtered and mapAllowed then
 		buffs = { includeSpellIDs = spells:BuildSpellMap() }
 	end
 
@@ -655,12 +661,21 @@ local function ApplyToAll()
 	end
 end
 
+---Whether the host's unit now answers either side question differently from its last refilter.
+---@param host table
+---@return boolean
+local function SideChanged(host)
+	return CanAssist(host.Unit) ~= host.Assistable
+		or auraFilters:CanFilterBySpellId(host.Unit, true) ~= host.MapAllowed
+end
+
 ---Switching target keeps the token, so the engine never sees a unit change and the last target's
 ---auras stay on the buttons. The change has to be told to the display.
 ---
 ---A faction change moves the rows the same way. Mind control, a duel or a phase leaves the same
 ---unit on the frame on the other side of the "can I help this" question, which is what both of the
----"mine" switches answer to.
+---"mine" switches answer to. A duel start fires only UNIT_FLAGS, which also fires on every combat
+---toggle, so that one counts only when the answer actually changed.
 ---@return EventGate
 local function Watcher()
 	if watcher then
@@ -670,7 +685,8 @@ local function Watcher()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, unit)
 		for _, host in ipairs(hosts) do
-			local moved = event == "UNIT_FACTION" and host.Unit == unit
+			local moved = host.Unit == unit
+				and (event == "UNIT_FACTION" or (event == "UNIT_FLAGS" and SideChanged(host)))
 
 			if (moved or host.Event == event) and host.Debuffs then
 				-- The refresh is what makes the display re-read the unit, so the new target's
@@ -686,7 +702,9 @@ local function Watcher()
 		end
 	end)
 
-	watcher = eventGate:New(eventsFrame, { "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "UNIT_FACTION" })
+	watcher = eventGate:New(eventsFrame, {
+		"PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "UNIT_FACTION", "UNIT_FLAGS",
+	})
 
 	return watcher
 end

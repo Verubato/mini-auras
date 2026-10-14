@@ -52,7 +52,7 @@ local settingsScratch = {}
 
 -- Helpful auras are filtered by spell id alone rather than by Blizzard's category flags. That is
 -- only possible because the gate on spell-id filters is UnitCanAssist and this module tracks
--- assistable units. On an enemy-facing display the same swap would show every buff. It buys the
+-- assistable units. On an enemy-facing display the same swap would show no buff at all. It buys the
 -- spells the game never flags, at the cost of showing nothing that is not explicitly listed.
 --
 -- With the category tokens gone both groups carry the same filter string, and the categories are
@@ -382,10 +382,9 @@ end
 ---Budgets every group for the entry's current unit, which is a question about the unit rather
 ---than about the options.
 ---
----Assist: spell-id filters are gated on UnitCanAssist, so a unit that stops being assistable
----drops includeSpellIDs and the bare HELPFUL token then matches every buff they have. A duel
----flips the unit under the frame, and a mind control has Blizzard hand a friendly frame an enemy
----unit outright.
+---Assist: spell-id filters are gated on UnitCanAssist. The helpful groups show nothing while the
+---unit cannot be assisted, and the CC group's map comes off while it can. A duel flips the unit
+---under the frame, and a mind control has Blizzard hand a friendly frame an enemy unit outright.
 ---
 ---Visible: outside the player's visible world the engine stops evaluating the filters correctly
 ---and both groups fill with unrelated auras, so a unit that far away shows nothing at all.
@@ -403,6 +402,8 @@ local function ApplyUnitGates(entry, options)
 	local crowdControl = visible and options.ShowCrowdControl and maxIcons or 0
 
 	if entry.Display then
+		entry.Display:ApplyIdentityGate()
+
 		-- Every switched-on category gets the whole budget, since aura counts cannot be read to
 		-- split the slots between them, and a category switched off has an empty id set already.
 		-- Urgent, because the unit a gate zeroes is outside the visible world and emits no aura

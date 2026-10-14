@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed crowd control no longer showing on party and raid frames since patch 12.1.5, and enemy defensives and important buffs going missing from alerts. The Frame Auras buff row on the target and focus frames no longer goes blank on an enemy with the tracked buff list on.
+
 ## 5.43.7
 
 - Fixed a Lua error in arena from patch 12.1.5, which now keeps enemy specs secret.

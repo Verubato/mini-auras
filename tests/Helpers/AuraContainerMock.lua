@@ -673,6 +673,48 @@ local function NewAuraContainer(name, parent, template)
 	return container
 end
 
+---Whether the client lets an aura through a declared group's spell-id candidate filters, on the
+---unit the container tracks. Models AuraContainerUtil.DoesAuraPassCandidateFilters, where a map on
+---a path the identity gate refuses rejects every aura.
+---@param container table
+---@param groupKey string
+---@param aura { spellId: number, isHelpful: boolean? }
+---@return boolean
+function M.passesSpellIdFilters(container, groupKey, aura)
+	local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
+	local filters = group.candidateFilters
+
+	if filters == nil then
+		return true
+	end
+
+	local unit = container._unit
+	local helpful = aura.isHelpful == true
+	local gateOpen
+
+	if helpful and _G.UnitIsPlayerControlledOrGroupMember(unit) then
+		gateOpen = true
+	else
+		local canAssist = _G.UnitCanAssist("player", unit, true, true) and true or false
+
+		if helpful then
+			gateOpen = canAssist
+		else
+			gateOpen = not canAssist
+		end
+	end
+
+	if not gateOpen then
+		return filters.includeSpellIDs == nil
+	end
+
+	if filters.excludeSpellIDs and filters.excludeSpellIDs[aura.spellId] then
+		return false
+	end
+
+	return filters.includeSpellIDs == nil or filters.includeSpellIDs[aura.spellId] == true
+end
+
 function M.tickAll(times)
 	for _ = 1, times or 1 do
 		for _, ticker in ipairs(tickers) do

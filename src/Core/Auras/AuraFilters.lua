@@ -17,13 +17,13 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 --
 -- Spell-ID maps are identity-gated. AuraContainerUtil's CanApplyIdentityCandidateFilters rejects a
 -- harmful aura when UnitCanAssist("player", unit) and a helpful one when it does not, so the maps
--- apply only to helpful auras on assistable units and harmful auras on non-assistable ones. A spell
--- whose C_Secrets.GetSpellAuraSecrecy is NeverSecret is exempt and filterable on any unit, and that
--- check is made first and wins outright.
+-- apply only to helpful auras on assistable units and harmful auras on non-assistable ones. Helpful
+-- auras on the player, a pet, or a party or raid token always pass, as does a spell whose
+-- C_Secrets.GetSpellAuraSecrecy is NeverSecret.
 --
--- Everywhere else, debuffs on friendlies and buffs on enemies, the map is skipped with no error and
--- every aura passes. The token stays alongside it because on those paths the token is the only
--- filter left. A map can only ever tighten a group, never loosen it.
+-- On a path the gate refuses, a group carrying an includeSpellIDs map rejects every aura. A
+-- category group therefore carries its map only where the gate allows it. GatedCandidateFilters
+-- picks per unit and AuraContainerDisplay re-picks whenever the unit or its side changes.
 --
 -- The ID lists come from Core/AuraCategoryIds, the same generated in-game scan of the
 -- CROWD_CONTROL / IMPORTANT / defensive spell flags that feeds the aura-sound registrations,
@@ -34,8 +34,9 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- until someone re-runs the scan. Nameplates and portraits take that over the workaround through
 -- GroupSpec's dropSpellIds, because a plate only exists for a unit the client is drawing and a
 -- portrait shows your own unit or one you picked. A far-away focus is the gap that leaves. Raid
--- frames, the healer CC display and the alert sounds keep the maps, since a group member or a BG
--- healer is out of range constantly. Disarm keeps its map everywhere. See M.Filter.Disarm.
+-- frames, the healer CC display and the alert sounds keep the maps wherever the gate allows them,
+-- since a group member or a BG healer is out of range constantly. Disarm keeps its map everywhere.
+-- See M.Filter.Disarm.
 local spellIds = {
 	CrowdControl = auraCategoryIds.CC,
 	BigDefensive = auraCategoryIds.Defensive,
@@ -61,6 +62,11 @@ local CATEGORY_ORDER = { "CrowdControl", "Disarm", "BigDefensive", "ExternalDefe
 -- Refilled per CategorySet call. BuildCategoryGroups only ever reads it.
 local categorySetScratch = {}
 local NEGATION_BYTE = string.byte("!")
+-- The categories whose auras are buffs, which the identity gate judges the other way round.
+local HELPFUL_CATEGORIES = { BigDefensive = true, ExternalDefensive = true, Important = true }
+-- Matches the flags the identity gate passes to UnitCanAssist, so the two answers agree.
+local ASSIST_IMMUNE = true
+local ASSIST_UNINTERACTABLE = true
 
 ---@class AuraFilters
 local M = {}
@@ -77,8 +83,8 @@ M.Filter = {
 	CrowdControl = "HARMFUL|CROWD_CONTROL",
 	-- Disarms carry no category flag, so the spell-ID map is the only filter that narrows this
 	-- group and the string is just "any non-CC debuff".
-	-- On an assistable unit the identity gate skips the map and the group would show every debuff
-	-- the unit has, so callers have to budget it to zero there, keyed off units:CanAssist.
+	-- On an assistable unit the identity gate refuses the map and the group shows nothing. Callers
+	-- budget it to zero there, keyed off units:CanAssist.
 	-- The negation keeps a disarm out of this group if the game ever starts flagging them as CC.
 	Disarm = "HARMFUL|!CROWD_CONTROL",
 	BigDefensive = "HELPFUL|BIG_DEFENSIVE",
@@ -166,6 +172,55 @@ function M:Canonical(filterString)
 	return canonical
 end
 
+---Whether the engine tests a spell-ID map against a helpful or a harmful aura on this unit. Mirrors
+---AuraContainerUtil.CanApplyIdentityCandidateFilters, less the never-secret exemption, which
+---depends on the spell rather than the unit.
+---An answer that cannot be read counts as a refusal, since leaving a map off can only show more.
+---@param unit string
+---@param helpful boolean
+---@return boolean
+function M:CanFilterBySpellId(unit, helpful)
+	if helpful then
+		local member = UnitIsPlayerControlledOrGroupMember(unit)
+
+		if not issecretvalue(member) and member then
+			return true
+		end
+	end
+
+	local canAssist = UnitCanAssist("player", unit, ASSIST_IMMUNE, ASSIST_UNINTERACTABLE)
+
+	if issecretvalue(canAssist) then
+		return false
+	end
+
+	if helpful then
+		return canAssist and true or false
+	end
+
+	return not canAssist
+end
+
+---The candidate filters a standard category group takes on this unit: its shared map where the
+---identity gate applies it, and nil where the gate would turn the map into a reject-all.
+---Disarm keeps its map everywhere. See M.Filter.Disarm.
+---@param categoryKey string
+---@param unit string? Nil keeps the map, for a display with no unit to judge yet.
+---@return table?
+function M:GatedCandidateFilters(categoryKey, unit)
+	local filters = M.CandidateFilters[categoryKey]
+
+	if categoryKey == "Disarm" or not unit then
+		return filters
+	end
+
+	if self:CanFilterBySpellId(unit, HELPFUL_CATEGORIES[categoryKey] == true) then
+		return filters
+	end
+
+	return nil
+end
+
 ---One standard-category group spec in the shape AuraContainerDisplay's New takes. Returns a fresh
 ---table. New keeps the list it is given for the display's lifetime, so specs must never be shared
 ---between displays.
@@ -197,11 +252,19 @@ function M:GroupSpec(categoryKey, maxIcons, extra, dropSpellIds)
 	-- Disarm is exempt, because with no category flag behind it the map is all that narrows it.
 	if dropSpellIds and categoryKey ~= "Disarm" then
 		spec.CandidateFilters = nil
+	elseif categoryKey ~= "Disarm" then
+		-- The display swaps the map on and off as its unit changes sides.
+		spec.GatedCategory = categoryKey
 	end
 
 	if extra then
 		for field, value in pairs(extra) do
 			spec[field] = value
+		end
+
+		-- A caller's own filters are what it asked for, so the gate must not swap them out.
+		if extra.CandidateFilters ~= nil then
+			spec.GatedCategory = nil
 		end
 	end
 
@@ -287,8 +350,8 @@ end
 ---@param showCC boolean?
 ---@param showDefensives boolean? Covers both the big and external defensive groups.
 ---@param showImportant boolean?
----@param showDisarm boolean? Must be false while the tracked unit is assistable. The disarm
----group's only real filter is its spell-ID map, which the identity gate skips there.
+---@param showDisarm boolean? False while the tracked unit is assistable. The disarm group's only
+---real filter is its spell-ID map, which the identity gate refuses there, so it can show nothing.
 function M:ApplyCategoryBudgets(display, maxIcons, showCC, showDefensives, showImportant, showDisarm)
 	SetCategoryBudget(display, M.GroupKey.CrowdControl, showCC and maxIcons or 0)
 	SetCategoryBudget(display, M.GroupKey.Disarm, showDisarm and maxIcons or 0)

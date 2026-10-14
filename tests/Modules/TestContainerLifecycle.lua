@@ -1808,3 +1808,42 @@ fw.describe("HealerCrowdControlModule 12.1 - a new healer behind the token a dis
 		end)
 	end)
 end)
+
+fw.describe("HealerCrowdControlModule 12.1 - a healer changing sides", function()
+	local healerCC = env.addon.Modules.HealerCrowdControlModule
+	local healerDisplay = env.addon.Modules.HealerCrowdControl.Display
+	local auraFilters = env.addon.Core.AuraFilters
+	local CC_KEY = auraFilters.GroupKey.CrowdControl
+	local TOKEN = "party3"
+
+	fw.it("moves the crowd control map on both containers when the unit state poller re-asks", function()
+		env.healers[TOKEN] = true
+		healerCC:Refresh()
+		acm.tickAll(400)
+
+		local ok, err = pcall(function()
+			local containers = env.containersForUnit(TOKEN)
+			assert(#containers == 2, "an icon and a label container for " .. TOKEN)
+
+			for _, container in ipairs(containers) do
+				fw.is_nil(container._groups[CC_KEY].candidateFilters, "a friend's CC group carries no map")
+			end
+
+			env.enemies[TOKEN] = true
+			healerDisplay:ReapplyUnitGates(TOKEN)
+
+			for _, container in ipairs(containers) do
+				assert(container._groups[CC_KEY].candidateFilters == auraFilters.CandidateFilters.CrowdControl,
+					"the map goes back on once a duel makes the healer an enemy")
+			end
+		end)
+
+		env.enemies[TOKEN] = nil
+		env.healers[TOKEN] = nil
+		healerCC:Refresh()
+
+		if not ok then
+			error(err, 0)
+		end
+	end)
+end)

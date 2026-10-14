@@ -22,9 +22,8 @@ local sound = addon.Modules.PersonalAuras.Sound
 -- they need no aura data.
 --
 -- Every container carries both a helpful and a harmful group, only one ever budgeted above zero.
--- The engine drops a spell-id filter silently on the wrong-sided one, and the bare token left
--- behind matches every aura on the unit. Both are pre-registered because aura groups can be
--- reconfigured but never removed.
+-- The engine makes a spell-id filter reject every aura on the wrong-sided one, so only one side
+-- can ever draw. Both are pre-registered because aura groups can be reconfigured but never removed.
 
 addon.Modules.PersonalAuras = addon.Modules.PersonalAuras or {}
 

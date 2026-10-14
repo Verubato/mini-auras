@@ -100,9 +100,9 @@ local function BuildPortraitStyle()
 	return style
 end
 
----The disarm layer's only real filter is its spell-ID map, which the engine skips for debuffs on
----assistable units, leaving the layer showing whatever debuff is newest. Budgeted away while the
----occupant is assistable, and re-checked whenever the token's occupant changes.
+---The disarm layer's only real filter is its spell-ID map, which the engine refuses for debuffs on
+---assistable units, so the layer can show nothing there. Budgeted away while the occupant is
+---assistable, and re-checked whenever the token's occupant changes.
 ---@param auraDisplay { DisarmDisplay: AuraContainerDisplay }
 ---@param unit string
 local function ApplyDisarmBudget(auraDisplay, unit)

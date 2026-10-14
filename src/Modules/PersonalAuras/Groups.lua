@@ -10,8 +10,8 @@ local wowEx = addon.Utils.WoWEx
 -- The shape of a personal aura group, shared by the display, the options page and the import path.
 --
 -- 12.1 only honours includeSpellIDs for helpful auras on assistable units and harmful auras on the
--- rest. Everywhere else the engine drops the map silently and the bare token matches every aura on
--- the unit, which is why AuraType is explicit.
+-- rest. Everywhere else a group carrying a map rejects every aura, which is why AuraType is
+-- explicit.
 --
 -- That rule covers spell ids only. A filter string and every other candidate filter are applied
 -- whatever the unit's reaction, so a group tracking by filter is free of it. The exception is the

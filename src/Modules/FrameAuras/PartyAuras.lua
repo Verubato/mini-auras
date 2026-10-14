@@ -37,9 +37,8 @@ local BUFF_FILTER = "HELPFUL"
 local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
 local DEBUFF_FILTER = "HARMFUL"
 -- The flagged categories Important Auras draws its own row of. Kept out by negating the game's own
--- token, which is the only filter weighed on every unit. A spell-id map would be skipped for a
--- helpful aura on an enemy and for a harmful one on a friendly, and these frames are the friendly
--- half.
+-- token, which is the only filter weighed on every unit. A spell-id map rejects every harmful aura
+-- on a friendly, and these frames are the friendly half.
 local EXCLUDE_IMPORTANT = "|!IMPORTANT"
 local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
 local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"

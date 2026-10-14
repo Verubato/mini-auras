@@ -624,48 +624,20 @@ local function CreateAlertDisplayPair(unitToken, defer)
 	local defGroups = {}
 
 	if IncludeDefensives(options) then
-		defGroups[#defGroups + 1] = {
-			Key = auraFilters.GroupKey.BigDefensive,
-			FilterString = auraFilters.Filter.BigDefensive,
-			CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
-			MaxIcons = maxIcons,
-
-			GlowColor = bigDefColor,
-		}
-		defGroups[#defGroups + 1] = {
-			Key = auraFilters.GroupKey.ExternalDefensive,
-			FilterString = auraFilters.Filter.ExternalDefensive,
-			CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
-			MaxIcons = maxIcons,
-
-			GlowColor = extDefColor,
-		}
+		defGroups[#defGroups + 1] = auraFilters:GroupSpec("BigDefensive", maxIcons, { GlowColor = bigDefColor })
+		defGroups[#defGroups + 1] = auraFilters:GroupSpec("ExternalDefensive", maxIcons, { GlowColor = extDefColor })
 	end
 
 	-- Combined mode renders all three categories in one container, so the important icons flow
 	-- tight against the defensive ones. Split mode gives them their own.
 	if ImportantOnDef(options) then
-		defGroups[#defGroups + 1] = {
-			Key = auraFilters.GroupKey.Important,
-			FilterString = auraFilters.Filter.Important,
-			CandidateFilters = auraFilters.CandidateFilters.Important,
-			MaxIcons = maxIcons,
-
-			GlowColor = importantColor,
-		}
+		defGroups[#defGroups + 1] = auraFilters:GroupSpec("Important", maxIcons, { GlowColor = importantColor })
 	end
 
 	local impGroups = {}
 
 	if ImportantOnImp(options) then
-		impGroups[1] = {
-			Key = auraFilters.GroupKey.Important,
-			FilterString = auraFilters.Filter.Important,
-			CandidateFilters = auraFilters.CandidateFilters.Important,
-			MaxIcons = maxIcons,
-
-			GlowColor = importantColor,
-		}
+		impGroups[1] = auraFilters:GroupSpec("Important", maxIcons, { GlowColor = importantColor })
 	end
 
 	local displayOptions = { Style = style, MasqueGroup = "Alerts", DeferGroups = defer }
