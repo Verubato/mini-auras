@@ -5,6 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
+local spellPicker = addon.Config.SpellPicker
 local auraCategoryIds = addon.Core.AuraCategoryIds
 local moduleName = addon.Utils.ModuleName
 local dbDefaults = addon.Config.Defaults
@@ -15,6 +16,10 @@ local wowEx = addon.Utils.WoWEx
 local SPELL_COLUMNS = 2
 local SPELL_ROW_HEIGHT = 26
 local SPELL_ICON_SIZE = 18
+-- How far in from a column's right edge an added row's remove cross sits.
+local REMOVE_COLUMN_INSET = 26
+-- The picker's field border draws outside its box, so it sits this far in to line up with the label.
+local ADD_BOX_INSET = 6
 
 ---@type Db
 local db
@@ -169,30 +174,48 @@ function M:Build(panel)
 
 	customLines:SetPoint("TOPLEFT", customDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local addLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	addLabel:SetText(L["Add a spell"])
+	addLabel:SetPoint("TOPLEFT", customLines, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local grid = CreateFrame("Frame", nil, panel)
-	grid:SetPoint("TOPLEFT", customLines, "BOTTOMLEFT", 0, -verticalSpacing)
 	grid:SetPoint("RIGHT", panel, "RIGHT")
 
-	local spells = {}
+	-- The shipped buffs the page offers, which a typed id ticks rather than adds a second time.
+	local offered = {}
+	local columnWidth = mini:ColumnWidth(SPELL_COLUMNS, 0, 0)
+	local shippedRows = {}
+	-- Kept once built, since the client cannot free a frame.
+	local addedRows = {}
+	local RefreshRows
 
 	for spellId in pairs(auraCategoryIds.Unflagged) do
 		if wowEx:SpellExists(spellId) then
-			spells[#spells + 1] = spellId
+			offered[spellId] = true
 		end
 	end
 
-	local columnWidth = mini:ColumnWidth(SPELL_COLUMNS, 0, 0)
-	local rows = {}
+	---The saved list a row writes to, read each time so a profile switch is picked up.
+	---@param added boolean
+	---@return table<number, boolean>
+	local function ListFor(added)
+		local options = db.Modules.Portrait
 
-	for _, spellId in ipairs(spells) do
+		return added and options.AddedSpells or options.CustomSpells
+	end
+
+	---@param spellId number
+	---@param added boolean
+	---@return table row
+	local function CreateRow(spellId, added)
 		local chk = mini:Checkbox({
 			Parent = grid,
 			LabelText = tostring(spellId),
 			GetValue = function()
-				return db.Modules.Portrait.CustomSpells[spellId] == true
+				return ListFor(added)[spellId] == true
 			end,
 			SetValue = function(value)
-				db.Modules.Portrait.CustomSpells[spellId] = value or nil
+				ListFor(added)[spellId] = value or nil
 				config:Apply(moduleName.Portrait)
 			end,
 		})
@@ -203,32 +226,105 @@ function M:Build(panel)
 		icon.SpellId = spellId
 		icon:SetPoint("RIGHT", chk, "LEFT", -2, 0)
 
-		rows[#rows + 1] = { Checkbox = chk, Icon = icon, SpellId = spellId }
+		local row = { Checkbox = chk, Icon = icon, SpellId = spellId }
+
+		if added then
+			row.Remove = helpers:CreateRemoveButton(grid, function()
+				db.Modules.Portrait.AddedSpells[spellId] = nil
+				config:Apply(moduleName.Portrait)
+				RefreshRows()
+			end)
+		end
+
+		return row
 	end
 
-	grid:SetHeight(math.max(1, math.ceil(#rows / SPELL_COLUMNS) * SPELL_ROW_HEIGHT))
+	for spellId in pairs(offered) do
+		shippedRows[#shippedRows + 1] = CreateRow(spellId, false)
+	end
 
-	---Names the rows and lays them out alphabetically. Re-run when the page is opened, because
-	---the whole window is built at login and the client can still be too early to name a spell;
-	---a row named then would read as a bare id for the rest of the session.
-	local function RefreshRows()
-		table.sort(rows, function(a, b)
-			return (C_Spell.GetSpellName(a.SpellId) or tostring(a.SpellId))
-				< (C_Spell.GetSpellName(b.SpellId) or tostring(b.SpellId))
-		end)
+	local addBox = spellPicker:Create({
+		Parent = panel,
+		-- An id the shipped index has never heard of is still a buff worth showing.
+		AcceptsTypedIds = true,
+		OnAccept = function(spellId)
+			if offered[spellId] then
+				db.Modules.Portrait.CustomSpells[spellId] = true
+			else
+				db.Modules.Portrait.AddedSpells[spellId] = true
+			end
+
+			config:Apply(moduleName.Portrait)
+			RefreshRows()
+		end,
+	})
+
+	addBox:SetPoint("TOPLEFT", addLabel, "BOTTOMLEFT", ADD_BOX_INSET, -4)
+	grid:SetPoint("TOPLEFT", addBox, "BOTTOMLEFT", -ADD_BOX_INSET, -verticalSpacing)
+
+	---@param a table
+	---@param b table
+	---@return boolean
+	local function ByName(a, b)
+		return (C_Spell.GetSpellName(a.SpellId) or tostring(a.SpellId))
+			< (C_Spell.GetSpellName(b.SpellId) or tostring(b.SpellId))
+	end
+
+	---Names the rows and lays them out alphabetically. Re-run when the page is opened, because the
+	---window is built at login and the client can still be too early to name a spell.
+	function RefreshRows()
+		for _, row in pairs(addedRows) do
+			row.Checkbox:Hide()
+			row.Icon:Hide()
+			row.Remove:Hide()
+		end
+
+		local added = {}
+
+		for spellId in pairs(db.Modules.Portrait.AddedSpells) do
+			addedRows[spellId] = addedRows[spellId] or CreateRow(spellId, true)
+			added[#added + 1] = addedRows[spellId]
+		end
+
+		table.sort(shippedRows, ByName)
+		table.sort(added, ByName)
+
+		local rows = {}
+
+		for _, row in ipairs(shippedRows) do
+			rows[#rows + 1] = row
+		end
+
+		for _, row in ipairs(added) do
+			rows[#rows + 1] = row
+		end
 
 		for index, row in ipairs(rows) do
 			local column = (index - 1) % SPELL_COLUMNS
 			local line = math.floor((index - 1) / SPELL_COLUMNS)
+			local columnX = column * columnWidth
 
 			row.Checkbox.Text:SetText(C_Spell.GetSpellName(row.SpellId) or tostring(row.SpellId))
 			row.Icon.Icon:SetTexture(C_Spell.GetSpellTexture(row.SpellId))
 			row.Checkbox:ClearAllPoints()
 			row.Checkbox:SetPoint("TOPLEFT", grid, "TOPLEFT",
-				column * columnWidth + SPELL_ICON_SIZE + 8, -line * SPELL_ROW_HEIGHT)
+				columnX + SPELL_ICON_SIZE + 8, -line * SPELL_ROW_HEIGHT)
+			row.Checkbox:Show()
+			row.Checkbox:MiniRefresh()
+			row.Icon:Show()
+
+			if row.Remove then
+				row.Remove:ClearAllPoints()
+				row.Remove:SetPoint("TOPLEFT", grid, "TOPLEFT",
+					columnX + columnWidth - REMOVE_COLUMN_INSET, -line * SPELL_ROW_HEIGHT - 4)
+				row.Remove:Show()
+			end
 		end
+
+		grid:SetHeight(math.max(1, math.ceil(#rows / SPELL_COLUMNS) * SPELL_ROW_HEIGHT))
 	end
 
 	RefreshRows()
 	panel:HookScript("OnShow", RefreshRows)
+	panel.OnMiniRefresh = RefreshRows
 end

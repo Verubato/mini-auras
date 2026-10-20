@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- You can now add your own spell IDs to the player portrait page, to show buffs on yourself that the list does not offer.
+
 ## 5.43.8
 
 - Fixed crowd control no longer showing on party and raid frames since patch 12.1.5.

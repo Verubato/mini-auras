@@ -337,6 +337,153 @@ fw.describe("Portraits page - the unflagged buff list", function()
 	end)
 end)
 
+fw.describe("Portraits page - adding a spell by hand", function()
+	-- Past anything the shipped list carries.
+	local TYPED = 424242
+
+	---@param page table
+	---@return table?
+	local function Picker(page)
+		for _, frame in ipairs(WowMock.Frames) do
+			if frame.OnAccept and frame:GetScript("OnArrowPressed") and Inside(frame, page) then
+				return frame
+			end
+		end
+
+		return nil
+	end
+
+	---The remove cross drawn beside a row, found by sitting at the row's height on the same grid.
+	---@param chk table
+	---@return table?
+	local function RemoveFor(chk)
+		local grid = chk:GetParent()
+
+		for _, frame in ipairs(WowMock.Frames) do
+			if frame:GetParent() == grid and frame:IsShown() and frame:GetScript("OnClick")
+				and not frame.SpellId and not frame.MiniRefresh then
+				local _, _, _, _, y = frame:GetPoint(1)
+				local _, _, _, _, rowY = chk:GetPoint(1)
+
+				if y == rowY - 4 then
+					return frame
+				end
+			end
+		end
+
+		return nil
+	end
+
+	---@param addon table
+	---@return table<number, boolean>
+	local function Added(addon)
+		return addon.Framework:GetSavedVars().Modules.Portrait.AddedSpells
+	end
+
+	---@param box table
+	---@param spellId number
+	local function Accept(box, spellId)
+		box:SetText(tostring(spellId))
+		box:GetScript("OnTextChanged")(box, true)
+		box:GetScript("OnEnterPressed")(box)
+	end
+
+	fw.it("stores a typed id, gives it a row, and refreshes the portrait", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+		local box = Picker(page)
+		local applied = {}
+		local realApply = addon.Config.Apply
+
+		fw.not_nil(box, "the page offers the picker")
+
+		addon.Config.Apply = function(self, key, ...)
+			applied[#applied + 1] = key
+			return realApply(self, key, ...)
+		end
+
+		Accept(box, TYPED)
+		addon.Config.Apply = realApply
+
+		fw.eq(Added(addon)[TYPED], true, "the id reached the saved variables")
+		fw.eq(Count(Spells(addon)), 0, "and not the shipped list's ticks")
+		fw.eq(applied[1], addon.Utils.ModuleName.Portrait, "the add refreshed the portrait module")
+
+		local chk = CheckboxFor(TYPED, page)
+
+		fw.not_nil(chk, "the added id has a row")
+		fw.eq(chk:GetChecked(), true, "shown ticked")
+	end)
+
+	fw.it("ticks a shipped buff rather than adding it twice", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+
+		Accept(Picker(page), FEINT)
+
+		fw.eq(Spells(addon)[FEINT], true, "the shipped row took the tick")
+		fw.eq(Count(Added(addon)), 0, "and nothing was added beside it")
+		fw.eq(CheckboxFor(FEINT, page):GetChecked(), true, "its row shows the tick")
+	end)
+
+	fw.it("forgets an added id from its remove cross and hides the row", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+
+		Accept(Picker(page), TYPED)
+
+		local chk = CheckboxFor(TYPED, page)
+		local remove = RemoveFor(chk)
+
+		fw.not_nil(remove, "the added row carries a remove cross")
+		remove:GetScript("OnClick")(remove)
+
+		fw.eq(Added(addon)[TYPED], nil, "the id is gone from the saved variables")
+		fw.eq(chk:IsShown(), false, "and its row is hidden")
+	end)
+
+	fw.it("brings an id back ticked when it is removed and added again", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+		local box = Picker(page)
+
+		Accept(box, TYPED)
+
+		local remove = RemoveFor(CheckboxFor(TYPED, page))
+
+		remove:GetScript("OnClick")(remove)
+		Accept(box, TYPED)
+
+		local chk = CheckboxFor(TYPED, page)
+
+		fw.eq(chk:IsShown(), true, "the row is shown again")
+		fw.eq(chk:GetChecked(), true, "and ticked")
+	end)
+
+	fw.it("follows the saved variables when the page is refreshed after a profile switch", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+
+		Accept(Picker(page), TYPED)
+
+		local chk = CheckboxFor(TYPED, page)
+
+		fw.eq(chk:IsShown(), true, "the first profile's added row is shown")
+
+		addon.Framework:GetSavedVars().Modules.Portrait.AddedSpells = {}
+		page:MiniRefresh()
+
+		fw.eq(chk:IsShown(), false, "the new profile has none, so the row goes")
+	end)
+
+	fw.it("gives the shipped rows no remove cross", function()
+		local addon = Load()
+		local page = ShowPage(addon)
+
+		fw.eq(RemoveFor(CheckboxFor(FEINT, page)), nil, "a shipped buff is unticked, never removed")
+	end)
+end)
+
 fw.describe("Portraits page - the countdown numbers", function()
 	fw.it("ships on and writes where the portrait reads it", function()
 		local addon = Load()

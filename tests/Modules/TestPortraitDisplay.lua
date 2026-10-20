@@ -341,6 +341,33 @@ fw.describe("Portrait 12.1 - the custom spell layer", function()
 		assert(group.maxFrameCount == 0, "clearing the list closes the layer again")
 	end)
 
+	fw.it("matches an added id the way it matches a ticked one, and drops it once removed", function()
+		-- A made-up id the shipped list has never carried.
+		local ADDED = 424242
+
+		setCustomSpells(FEINT)
+		portraitOptions().AddedSpells[ADDED] = true
+		module:Refresh()
+		settleGroups()
+
+		local group = customDisplay("player").Frame._groups[CUSTOM_KEY]
+		local ids = group.candidateFilters and group.candidateFilters.includeSpellIDs
+
+		assert(ids and ids[ADDED] == true, "the added id reached the container")
+		assert(ids[FEINT] == true, "beside the ticked one")
+		assert(group.maxFrameCount == 1, "with the layer open")
+
+		setCustomSpells()
+		assert(group.candidateFilters.includeSpellIDs[ADDED] == true, "an added id alone keeps the layer open")
+		assert(group.maxFrameCount == 1, "with its budget")
+
+		portraitOptions().AddedSpells[ADDED] = nil
+		module:Refresh()
+
+		assert(group.candidateFilters == nil, "removing it takes the map away")
+		assert(group.maxFrameCount == 0, "and closes the layer")
+	end)
+
 	fw.it("allocates its buttons up front, so a later addition can render", function()
 		-- The client builds a group's buttons from the count it was created with. A group born
 		-- at zero has none to hand out however high the budget is raised afterwards.

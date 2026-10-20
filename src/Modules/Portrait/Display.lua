@@ -37,6 +37,8 @@ local buildSweep = sweep:New(true)
 local CUSTOM_UNIT = "player"
 local CUSTOM_GROUP_KEY = "portraitcustom"
 local CUSTOM_FILTER = "HELPFUL"
+local CUSTOM_LIST_KEYS = { "CustomSpells", "AddedSpells" }
+local EMPTY = {}
 
 -- One strata down from whatever the portrait's own parent sits in. A portrait moved into a frame
 -- at this strata keeps everything drawn over it under the unit frame's border art, whatever frame
@@ -120,24 +122,21 @@ local function DeclareNextGroup(display)
 	end
 end
 
----The custom list as the map the engine's includeSpellIDs filter wants, exactly the ticked ids.
----A fresh table each call, since the engine keeps the reference it is handed.
+---The custom list as the map the engine's includeSpellIDs filter wants, exactly the ticked and
+---added ids. A fresh table each call, since the engine keeps the reference it is handed.
 ---@return table? candidateFilters nil while the list is empty.
 local function BuildCustomFilters()
-	local spells = db.Modules.Portrait.CustomSpells
+	local options = db.Modules.Portrait
+	local ids
 
-	-- The ticked spells are a hash, whose length is always zero.
-	if not spells or next(spells) == nil then
-		return nil
+	for _, key in ipairs(CUSTOM_LIST_KEYS) do
+		for spellId in pairs(options[key] or EMPTY) do
+			ids = ids or {}
+			ids[spellId] = true
+		end
 	end
 
-	local ids = {}
-
-	for spellId in pairs(spells) do
-		ids[spellId] = true
-	end
-
-	return { includeSpellIDs = ids }
+	return ids and { includeSpellIDs = ids } or nil
 end
 
 ---Pushes the current spell list at the custom layer. An empty list budgets it away rather than

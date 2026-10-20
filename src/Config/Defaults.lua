@@ -201,6 +201,7 @@ local dbDefaults = {
 		},
 		---@class PortraitModuleOptions
 		---@field CustomSpells table<number, boolean> Ticked buffs. Opaque to CleanTable, which would strip every id against the empty template. See Config/Migrator.
+		---@field AddedSpells table<number, boolean> Spell ids the player typed in. Opaque to CleanTable for the same reason.
 		Portrait = {
 			Enabled = {
 				Always = true,
@@ -221,6 +222,8 @@ local dbDefaults = {
 			-- flagged category. Buffs only: 12.1 drops a spell id map for harmful auras on a unit
 			-- you can assist, and the layer would then match every debuff on you.
 			CustomSpells = {},
+			-- Ids the player typed in, shown on the same layer under the same buffs-only rule.
+			AddedSpells = {},
 		},
 		---@class AlertsModuleOptions
 		Alerts = {

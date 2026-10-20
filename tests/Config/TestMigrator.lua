@@ -250,6 +250,17 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 
 		assert(spells[1966] == true and spells[79206] == true, "the ticked buffs survive")
 	end)
+
+	fw.it("keeps the portrait's hand-added spells across a login", function()
+		_G.MiniAurasDB = nil
+
+		local db = migrator:GetAndUpgradeDb()
+		db.Modules.Portrait.AddedSpells[424242] = true
+
+		local spells = migrator:GetAndUpgradeDb().Modules.Portrait.AddedSpells
+
+		assert(spells[424242] == true, "the added spell survives")
+	end)
 end)
 
 fw.describe("Migrator - arbitrary input safety", function()
