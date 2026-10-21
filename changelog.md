@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 5.44.0
 
-- You can now add your own spell IDs to the player portrait page, to show buffs on yourself that the list does not offer.
+- Added ability to add custom spells to the portraits module.
 
 ## 5.43.8
 

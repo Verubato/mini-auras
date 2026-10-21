@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.43.8. Supported interface versions: 120105 (patch 12.1.5), 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
+Addon version 5.44.0. Supported interface versions: 120105 (patch 12.1.5), 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -1042,7 +1042,9 @@ ticked there are shown on the player's own portrait, under every flagged categor
 because the game flags only the auras it considers notable, and anything unflagged can never
 appear otherwise. Buffs only, and the player only. On 12.1 a spell-id filter rejects every
 harmful aura on a unit you can assist, so the same layer aimed at debuffs would show nothing on
-you. Nothing is ticked by default.
+you. Nothing is ticked by default. Since 5.44.0 an **Add a spell** box above the list takes
+any spell id or name, and an id the list does not offer gets its own row with a remove cross.
+Added ids are saved per profile and follow the same buffs-only rule.
 
 One icon each for five categories: important, external defensive, big defensive, disarm and
 CC. Like nameplates, portraits show everything the game flags rather than only the addon's
