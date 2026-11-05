@@ -471,6 +471,31 @@ fw.describe("Frame Auras - the ranks of a tracked buff", function()
 	end)
 end)
 
+fw.describe("Frame Auras - the rank family of one spell", function()
+	local spellRanks = env.addon.Core.SpellRanks
+
+	fw.it("lists the family from any rank on the 1.x client", function()
+		wow.setBuildNumber(RANKED_BUILD)
+
+		local family = spellRanks:FamilyOf(REJUVENATION_RANK_2)
+
+		wow.setBuildNumber(RETAIL_BUILD)
+
+		assert(family and family[1] == REJUVENATION and #family > 2, "the whole family, lowest first")
+	end)
+
+	fw.it("is nil for an unknown spell and on retail", function()
+		wow.setBuildNumber(RANKED_BUILD)
+
+		local unknown = spellRanks:FamilyOf(1)
+
+		wow.setBuildNumber(RETAIL_BUILD)
+
+		assert(unknown == nil, "no family in the data")
+		assert(spellRanks:FamilyOf(REJUVENATION) == nil, "retail has no ranks")
+	end)
+end)
+
 fw.describe("Frame Auras - Blizzard's own aura rows", function()
 	fw.it("hands the row back on a login after a reload stranded the write", function()
 		-- What a reload mid-fight leaves behind: the side off, and the flag still set because the

@@ -1281,6 +1281,50 @@ fw.describe("Personal auras page - a string exported before the icon switches fl
 	end)
 end)
 
+---Imports one payload group through the window and returns the group that was stored.
+---@param payloadGroup table
+---@return table
+local function ImportGroup(payloadGroup)
+	local addon, group = LoadWithGroup({ 45438 })
+	local options = addon.Framework:GetSavedVars().Modules.PersonalAuras
+
+	ShowPage(addon, group)
+
+	local realDeserialize = _G.C_EncodingUtil.DeserializeCBOR
+
+	_G.C_EncodingUtil.DeserializeCBOR = function()
+		return { V = 1, Groups = { payloadGroup } }
+	end
+
+	local ok, err = pcall(function()
+		addon.Config.PersonalAurasUI.ShowImportWindow({})
+
+		local window = _G.MiniAurasAuraIOWindow
+
+		window.ImportBox:SetText("!MiniAuras:Auras:1!payload")
+		ButtonSaying(window, "Import"):Click()
+	end)
+
+	_G.C_EncodingUtil.DeserializeCBOR = realDeserialize
+	assert(ok, err)
+
+	return options.Groups[#options.Groups]
+end
+
+fw.describe("Personal auras page - importing a group and its all ranks flag", function()
+	fw.it("turns it off for a string exported before the flag existed", function()
+		local imported = ImportGroup({ Unit = "player", Spells = { 774 } })
+
+		fw.eq(imported.AllRanks, false, "a missing key means off")
+	end)
+
+	fw.it("keeps it on when the string carried it", function()
+		local imported = ImportGroup({ Unit = "player", Spells = { 774 }, AllRanks = true })
+
+		fw.eq(imported.AllRanks, true, "the author's choice survives")
+	end)
+end)
+
 fw.describe("Personal auras page - limiting a group to a spec", function()
 	-- The player's own class on the mock is class 1, so 101 to 103 are this character's specs.
 	local MINE_FIRST, MINE_SECOND = 101, 102
@@ -1445,4 +1489,67 @@ fw.describe("Personal auras page - limiting a group to a spec", function()
 	end)
 
 	_G.GetSpecializationInfoForClassID = realSpecsForClass
+end)
+
+fw.describe("Personal auras page - the all ranks switch", function()
+	---Builds the page as the given client, with the group tracking the given way.
+	---@param projectId number
+	---@param mode string?
+	---@return table page
+	---@return table group
+	local function PageOn(projectId, mode)
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.PersonalAuras.Groups
+
+		group.AllRanks = false
+
+		if mode then
+			group.TrackingMode = mode
+		end
+
+		groups:Normalise(group)
+		_G.WOW_PROJECT_ID = projectId
+
+		return ShowPage(addon, group), group
+	end
+
+	fw.it("shows on the 1.x client when tracking spell ids, and writes the group", function()
+		local page, group = PageOn(_G.WOW_PROJECT_CAMELOT)
+		local switch = CheckboxLabelled(page, "All ranks")
+
+		local shown = switch and switch:IsShown()
+		local checked = switch and switch:GetChecked()
+
+		if switch then
+			switch:GetScript("OnClick")(switch)
+		end
+
+		-- Put back before the asserts, so a failure cannot leave the 1.x client id behind.
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_MAINLINE
+
+		fw.not_nil(switch, "the switch is on the trigger tab")
+		fw.truthy(shown, "and on screen")
+		fw.eq(checked, false, "painted from the group")
+		fw.eq(group.AllRanks, true, "ticking it sets the flag")
+	end)
+
+	fw.it("hides in filter mode", function()
+		local page = PageOn(_G.WOW_PROJECT_CAMELOT, "FILTERS")
+		local switch = CheckboxLabelled(page, "All ranks")
+
+		local shown = switch and switch:IsShown()
+
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_MAINLINE
+
+		fw.not_nil(switch, "the switch exists")
+		fw.eq(shown, false, "but a filter group has no spell list to expand")
+	end)
+
+	fw.it("hides on mainline", function()
+		local page = PageOn(_G.WOW_PROJECT_MAINLINE)
+		local switch = CheckboxLabelled(page, "All ranks")
+
+		fw.not_nil(switch, "the switch exists")
+		fw.eq(switch:IsShown(), false, "there are no ranks to track")
+	end)
 end)

@@ -576,12 +576,19 @@ local function Index()
 	return byId
 end
 
+---Every rank of a spell, lowest first. Nil off the 1.x client or for a spell the data does not know.
+---@param spellId number
+---@return number[]?
+function M:FamilyOf(spellId)
+	return wowEx:IsClassic() and Index()[spellId] or nil
+end
+
 ---Adds a spell to a set along with every other rank of it. The 1.x client gives each rank its own
 ---id, so a teammate carrying a lower rank would otherwise read as missing the spell.
 ---@param spellId number
 ---@param out table<number, boolean>
 function M:AddRanks(spellId, out)
-	local family = wowEx:IsClassic() and Index()[spellId]
+	local family = M:FamilyOf(spellId)
 
 	-- A spell the data does not know stays exact rather than guessing at its ranks.
 	if not family then

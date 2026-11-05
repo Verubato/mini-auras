@@ -6,6 +6,7 @@ local sounds = addon.Core.Sounds
 local units = addon.Utils.UnitUtil
 local changeStamp = addon.Utils.ChangeStamp
 local wowEx = addon.Utils.WoWEx
+local spellRanks = addon.Core.SpellRanks
 
 -- The shape of a personal aura group, shared by the display, the options page and the import path.
 --
@@ -214,6 +215,8 @@ local DEFAULT_ROW_Y = 80
 
 -- What each group's filters were last built from.
 local filterStamp = changeStamp:New()
+-- Group id -> the expansion last built for it, so a plate refresh does not rebuild it.
+local trackedCache = {}
 
 ---@class PersonalAurasGroups
 local M = {}
@@ -381,6 +384,8 @@ function M:NewGroup(options, name)
 	return M:Normalise({
 		Id = "g" .. id,
 		Name = name,
+		-- A group saved without the key was set up rank by rank, so only new groups start with it on.
+		AllRanks = true,
 	})
 end
 
@@ -538,6 +543,7 @@ function M:Normalise(group)
 	group.ShowWhen = (group.ShowWhen == SHOW_WHEN.InCombat
 		or group.ShowWhen == SHOW_WHEN.OutOfCombat) and group.ShowWhen or SHOW_WHEN.Always
 	group.Specs = SpecSet(group.Specs)
+	group.AllRanks = group.AllRanks == true
 
 	-- Rebuilt rather than cleaned in place, so an import cannot smuggle in keys the engine would
 	-- reject and a component Blizzard has since dropped falls out on its own.
@@ -1186,6 +1192,64 @@ function M:BuildFilterString(group)
 	return table.concat(parts, "|")
 end
 
+---Whether a cached expansion was built from this exact spell list.
+---@param entry table?
+---@param group PersonalAuraGroup
+---@return boolean
+local function CacheHolds(entry, group)
+	local spells = group.Spells
+
+	if not entry or entry.Count ~= #spells then
+		return false
+	end
+
+	for index = 1, #spells do
+		if entry.Source[index] ~= spells[index] then
+			return false
+		end
+	end
+
+	return true
+end
+
+---The spell ids a group matches. Without the all ranks flag, or off the 1.x client, that is the
+---stored list itself. Otherwise each listed spell brings the rest of its ranks, in listed order and
+---without repeats.
+---@param group PersonalAuraGroup
+---@return number[]
+function M:TrackedSpellIds(group)
+	if not group.AllRanks or not wowEx:IsClassic() then
+		return group.Spells
+	end
+
+	local entry = trackedCache[group.Id]
+
+	if CacheHolds(entry, group) then
+		return entry.Ids
+	end
+
+	local ids = {}
+	local seen = {}
+
+	local function Add(spellId)
+		if not seen[spellId] then
+			seen[spellId] = true
+			ids[#ids + 1] = spellId
+		end
+	end
+
+	for _, spellId in ipairs(group.Spells) do
+		for _, rankId in ipairs(spellRanks:FamilyOf(spellId) or { spellId }) do
+			Add(rankId)
+		end
+	end
+
+	-- Built fresh rather than refilled, because the last sound requests still hold the old one.
+	trackedCache[group.Id] = { Count = #group.Spells, Source = { unpack(group.Spells) }, Ids = ids }
+
+	return ids
+end
+
 ---The candidate filters a group's container tracks with. Only the spell id maps are subject to
 ---the engine's assist rule, and everything else here applies on any unit.
 ---Returns a fresh table each time, because the engine keeps the reference it is handed.
@@ -1195,7 +1259,7 @@ function M:BuildFilters(group)
 	local filters = {}
 
 	if M:TracksSpells(group) then
-		filters.includeSpellIDs = SpellIdMap(group.Spells)
+		filters.includeSpellIDs = SpellIdMap(M:TrackedSpellIds(group))
 	end
 
 	for _, flag in ipairs(CANDIDATE_FLAGS) do
@@ -1236,6 +1300,7 @@ function M:GetFilterGeneration(group)
 	-- components that happen to build the same string still has to reach the engine, because only
 	-- one of the two sends an includeSpellIDs map at all.
 	filterStamp:Add(group.TrackingMode)
+	filterStamp:Add(group.AllRanks)
 	filterStamp:Add(M:BuildFilterString(group))
 	filterStamp:Add(group.Sort)
 
@@ -1258,6 +1323,7 @@ end
 ---@param groupId string
 function M:ForgetFilterGeneration(groupId)
 	filterStamp:Forget(groupId)
+	trackedCache[groupId] = nil
 end
 
 ---@class PersonalAuraGroup
@@ -1283,3 +1349,4 @@ end
 ---@field ShowWhen string "ALWAYS"|"INCOMBAT"|"OUTOFCOMBAT"
 ---@field Specs table<number, boolean>? Spec ids the group is limited to; absent means every spec.
 ---@field Spells number[]
+---@field AllRanks boolean Also tracks every other rank of each listed spell. Only does anything on the 1.x client.

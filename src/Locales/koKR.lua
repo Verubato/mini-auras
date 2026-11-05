@@ -408,6 +408,8 @@ L:RegisterLocale("koKR", function() return {
 	["Recorded Auras"] = "기록된 효과",
 	["Records the auras you gain so you can add them without looking up IDs."] = "받은 효과를 기록하여 ID를 찾지 않고도 추가할 수 있습니다.",
 	["Nothing is recorded in combat, or anywhere else the client hides your auras."] = "전투 중이거나 클라이언트가 효과를 숨기는 다른 곳에서는 아무것도 기록되지 않습니다.",
+	["All ranks"] = "모든 등급",
+	["Also tracks every other rank of each spell in the list."] = "목록에 있는 각 주문의 다른 모든 등급도 추적합니다.",
 	["Export"] = "내보내기",
 	["Export All"] = "모두 내보내기",
 	["Import/Export Auras"] = "오라 가져오기/내보내기",

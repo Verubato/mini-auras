@@ -409,6 +409,8 @@ L:SetDefaultStrings({
 	["Recorded Auras"] = "Recorded Auras",
 	["Records the auras you gain so you can add them without looking up IDs."] = "Records the auras you gain so you can add them without looking up IDs.",
 	["Nothing is recorded in combat, or anywhere else the client hides your auras."] = "Nothing is recorded in combat, or anywhere else the client hides your auras.",
+	["All ranks"] = "All ranks",
+	["Also tracks every other rank of each spell in the list."] = "Also tracks every other rank of each spell in the list.",
 	["Export"] = "Export",
 	["Export All"] = "Export All",
 	["Import/Export Auras"] = "Import/Export Auras",

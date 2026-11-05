@@ -406,6 +406,8 @@ L:RegisterLocale("frFR", function() return {
 	["Recorded Auras"] = "Auras enregistrées",
 	["Records the auras you gain so you can add them without looking up IDs."] = "Enregistre les auras que vous recevez pour les ajouter sans chercher leur ID.",
 	["Nothing is recorded in combat, or anywhere else the client hides your auras."] = "Rien n'est enregistré en combat, ni ailleurs où le client masque vos auras.",
+	["All ranks"] = "Tous les rangs",
+	["Also tracks every other rank of each spell in the list."] = "Suit aussi tous les autres rangs de chaque sort de la liste.",
 	["Export"] = "Exporter",
 	["Export All"] = "Tout exporter",
 	["Import/Export Auras"] = "Importer/Exporter des auras",

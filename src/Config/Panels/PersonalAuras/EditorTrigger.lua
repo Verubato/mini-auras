@@ -497,6 +497,26 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		GameTooltip:Hide()
 	end)
 
+	local allRanksCheck = mini:Checkbox({
+		Parent = triggerPanel,
+		LabelText = L["All ranks"],
+		Tooltip = L["Also tracks every other rank of each spell in the list."],
+		GetValue = function()
+			local group = ui.Current()
+
+			return group ~= nil and group.AllRanks == true
+		end,
+		SetValue = function(value)
+			local group = ui.Current()
+
+			if group then
+				group.AllRanks = value
+				ui.Apply()
+			end
+		end,
+	})
+	allRanksCheck:SetPoint("LEFT", recordBtn, "RIGHT", 16, 0)
+
 	local recordLabel = triggerPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	recordLabel:SetText(L["Recorded Auras"])
 	recordLabel:SetPoint("TOPLEFT", recordRow, "TOPLEFT", 0, 0)
@@ -655,6 +675,8 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		pickerLabel:SetShown(bySpells)
 		picker:SetShown(bySpells)
 		recordBtn:SetShown(bySpells)
+		-- Ranks only exist on the 1.x client, so anywhere else the box would do nothing.
+		allRanksCheck:SetShown(bySpells and wowEx:IsClassic())
 		pickerRow:SetHeight(bySpells and pickerRowHeight or 1)
 		componentsRow:SetHeight(bySpells and 1 or componentsHeight)
 		ctx.SetRowGap(componentsRow, bySpells and 0 or 4)

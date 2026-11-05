@@ -1401,7 +1401,7 @@ local function CollectSoundRequests(state)
 		end
 	end
 
-	local spellIds = group.Spells
+	local spellIds = groups:TrackedSpellIds(group)
 
 	local function Add(unit)
 		for _, trigger in ipairs(configured) do

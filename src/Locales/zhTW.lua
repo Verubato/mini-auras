@@ -408,6 +408,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Recorded Auras"] = "已錄製的光環",
 	["Records the auras you gain so you can add them without looking up IDs."] = "錄製你獲得的光環，不用查找 ID 即可新增。",
 	["Nothing is recorded in combat, or anywhere else the client hides your auras."] = "戰鬥中不會錄製，客戶端隱藏你的光環時也不會。",
+	["All ranks"] = "所有等級",
+	["Also tracks every other rank of each spell in the list."] = "同時追蹤清單中每個法術的所有其他等級。",
 	["Export"] = "匯出",
 	["Export All"] = "匯出全部",
 	["Import/Export Auras"] = "匯入/匯出光環",

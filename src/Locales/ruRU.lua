@@ -408,6 +408,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Recorded Auras"] = "Записанные эффекты",
 	["Records the auras you gain so you can add them without looking up IDs."] = "Записывает получаемые эффекты, чтобы добавлять их без поиска ID.",
 	["Nothing is recorded in combat, or anywhere else the client hides your auras."] = "Ничего не записывается в бою и везде, где клиент скрывает ваши эффекты.",
+	["All ranks"] = "Все ранги",
+	["Also tracks every other rank of each spell in the list."] = "Также отслеживает все остальные ранги каждого заклинания из списка.",
 	["Export"] = "Экспорт",
 	["Export All"] = "Экспорт всего",
 	["Import/Export Auras"] = "Импорт/экспорт аур",

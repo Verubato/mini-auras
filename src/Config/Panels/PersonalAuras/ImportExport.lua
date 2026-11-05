@@ -94,6 +94,9 @@ local function ImportGroups(text)
 			group.Id = nil
 			local fresh = groups:NewGroup(options)
 
+			-- An export from before the flag existed has no key, and that means off.
+			fresh.AllRanks = false
+
 			for key, value in pairs(group) do
 				if key ~= "Id" then
 					fresh[key] = value

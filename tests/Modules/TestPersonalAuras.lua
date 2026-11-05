@@ -11,6 +11,7 @@ local acm = require("AuraContainerMock")
 local env = moduleEnv.build()
 local addon = env.addon
 
+env.loadModule("src/Core/Auras/SpellRanks.lua")
 env.loadModule("src/Modules/PersonalAuras/Groups.lua")
 env.loadModule("src/Modules/PersonalAuras/Sound.lua")
 env.loadModule("src/Modules/PersonalAuras/Recorder.lua")
@@ -42,6 +43,8 @@ local ICE_BLOCK = 45438
 local POLYMORPH = 118
 -- Four ids of one ability, so a tracked id can be proven to match only itself.
 local TORRENT_IDS = { 33390, 36022, 47779, 222783 }
+-- Rejuvenation, which SpellRanks knows as one family.
+local RANKS = { 774, 1058, 1430, 2090, 2091, 3627, 8910, 9839, 9840, 9841, 25299 }
 
 -- Ids nothing in the addon carries, which is the point: the wrong-side check asks the client, so
 -- it has to answer for whatever somebody types into the picker. Stubbed here rather than in the
@@ -877,6 +880,117 @@ fw.describe("PersonalAuras - spell filters", function()
 		-- Against the reading taken after the spell landed, not the first one. Comparing with that
 		-- passes on the spell alone and says nothing about the aura type.
 		assert(groups:GetFilterGeneration(group) ~= withSpell, "so is flipping the aura type")
+	end)
+end)
+
+fw.describe("PersonalAuras - all ranks", function()
+	---Runs the body as the 1.x client, then puts the project back.
+	---@param body function
+	local function OnClassic(body)
+		local mainline = _G.WOW_PROJECT_ID
+
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_CAMELOT
+		local ok, err = pcall(body)
+
+		_G.WOW_PROJECT_ID = mainline
+		assert(ok, err)
+	end
+
+	---@param map table<number, boolean>
+	---@return number
+	local function Count(map)
+		local count = 0
+
+		for _ in pairs(map) do
+			count = count + 1
+		end
+
+		return count
+	end
+
+	fw.it("matches every rank of a listed spell on the 1.x client", function()
+		OnClassic(function()
+			local group = groups:Normalise({ Spells = { RANKS[2] }, AllRanks = true })
+			local ids = groups:BuildFilters(group).includeSpellIDs
+
+			for _, rank in ipairs(RANKS) do
+				assert(ids[rank], "rank " .. rank .. " is matched")
+			end
+
+			assert(Count(ids) == #RANKS, "and nothing beyond the family")
+			assert(#group.Spells == 1, "the stored list is still what the user listed")
+		end)
+	end)
+
+	fw.it("keeps an unlisted id as itself and does not repeat a rank", function()
+		OnClassic(function()
+			local group = groups:Normalise({
+				Spells = { RANKS[1], ICE_BLOCK, RANKS[3] },
+				AllRanks = true,
+			})
+			local ids = groups:TrackedSpellIds(group)
+
+			assert(#ids == #RANKS + 1, "the family once, plus the id with no family")
+			assert(groups:BuildFilters(group).includeSpellIDs[ICE_BLOCK], "the plain id survives")
+		end)
+	end)
+
+	fw.it("matches only the listed ids with the flag off", function()
+		OnClassic(function()
+			local group = groups:Normalise({ Spells = { RANKS[1] }, AllRanks = false })
+			local ids = groups:BuildFilters(group).includeSpellIDs
+
+			assert(Count(ids) == 1 and ids[RANKS[1]], "just the listed rank")
+		end)
+	end)
+
+	fw.it("matches only the listed ids on mainline with the flag on", function()
+		local group = groups:Normalise({ Spells = { RANKS[1] }, AllRanks = true })
+		local ids = groups:BuildFilters(group).includeSpellIDs
+
+		assert(Count(ids) == 1 and ids[RANKS[1]], "there are no ranks to add")
+	end)
+
+	fw.it("changes its generation when the flag flips", function()
+		local group = groups:Normalise({ Spells = { RANKS[1] }, AllRanks = false })
+		local before = groups:GetFilterGeneration(group)
+
+		group.AllRanks = true
+
+		assert(groups:GetFilterGeneration(group) ~= before, "the engine has to hear about it")
+	end)
+
+	fw.it("rebuilds the expansion when the listed spells change", function()
+		OnClassic(function()
+			local group = groups:Normalise({ Spells = { RANKS[1] }, AllRanks = true })
+
+			assert(#groups:TrackedSpellIds(group) == #RANKS, "the family")
+
+			group.Spells[1] = ICE_BLOCK
+
+			local ids = groups:TrackedSpellIds(group)
+
+			assert(#ids == 1 and ids[1] == ICE_BLOCK, "not the cached one")
+		end)
+	end)
+
+	fw.it("treats a missing or non-boolean flag as off, and a new group as on", function()
+		assert(groups:Normalise({}).AllRanks == false, "a group saved before the flag")
+		assert(groups:Normalise({ AllRanks = "yes" }).AllRanks == false, "something that is not a boolean")
+		assert(groups:NewGroup(options, "Fresh").AllRanks == true, "a group made now")
+	end)
+
+	fw.it("carries the flag across a duplicate", function()
+		local source = AddGroup({ AllRanks = false })
+		local off = groups:Duplicate(options, source.Id, "Copy")
+
+		assert(off and off.AllRanks == false, "off stays off")
+
+		source.AllRanks = true
+
+		local on = groups:Duplicate(options, source.Id, "Copy")
+
+		assert(on and on.AllRanks == true, "on stays on")
 	end)
 end)
 
@@ -2521,6 +2635,29 @@ fw.describe("PersonalAuras - sounds", function()
 
 		assert(last.Unit == "player", "on the group's unit")
 		assert(last.Trigger == Enum.UnitAuraSoundTrigger.Added, "on the applied trigger")
+	end)
+
+	fw.it("registers a sound for every rank when the group tracks all ranks", function()
+		ClearGroups()
+		addon.Modules.PersonalAuras.Sound:Clear()
+
+		local before = env.auraSoundAdds
+		local mainline = _G.WOW_PROJECT_ID
+
+		_G.WOW_PROJECT_ID = _G.WOW_PROJECT_CAMELOT
+
+		AddGroup({
+			Unit = "player",
+			Spells = { RANKS[1] },
+			AllRanks = true,
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		local ok, err = pcall(module.Refresh, module)
+
+		_G.WOW_PROJECT_ID = mainline
+		assert(ok, err)
+
+		assert(env.auraSoundAdds == before + #RANKS, "one registration per rank")
 	end)
 
 	fw.it("carries a group's Sound.File over to the applied trigger", function()
