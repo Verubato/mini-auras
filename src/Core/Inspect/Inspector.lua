@@ -65,20 +65,13 @@ local function GetTooltipSpecMap()
 
 	tooltipSpecMap = {}
 
-	if not (GetNumClasses and GetClassInfo) then
-		return tooltipSpecMap
-	end
-
 	local wowEx = addon.Utils.WoWEx
 
-	for classIdx = 1, GetNumClasses() do
-		local className, _, classId = GetClassInfo(classIdx)
-		if className and classId then
-			for specIdx = 1, wowEx:GetNumSpecializationsForClassID(classId) do
-				local specId, specName = wowEx:GetSpecializationInfoForClassID(classId, specIdx)
-				if specId and specName then
-					tooltipSpecMap[specName .. " " .. className] = specId
-				end
+	for _, class in ipairs(wowEx:GetClasses()) do
+		for specIdx = 1, wowEx:GetNumSpecializationsForClassID(class.Id) do
+			local specId, specName = wowEx:GetSpecializationInfoForClassID(class.Id, specIdx)
+			if specId and specName then
+				tooltipSpecMap[specName .. " " .. class.Name] = specId
 			end
 		end
 	end

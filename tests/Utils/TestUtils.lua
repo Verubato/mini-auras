@@ -843,3 +843,55 @@ fw.describe("ChangeStamp", function()
 		assert(stamp(stamps, "k", 1) ~= before, "the key starts again from nothing")
 	end)
 end)
+
+fw.describe("WoWEx class list on a client with gaps in the class ids", function()
+	local CLASSIC_IDS = { 1, 2, 3, 4, 5, 7, 8, 9, 11 }
+	local DRUID = 11
+
+	local function loadClassic()
+		local byId = {}
+
+		for _, id in ipairs(CLASSIC_IDS) do
+			byId[id] = "Class" .. id
+		end
+
+		-- The classic clients index GetClassInfo by class id, so the nine ids leave holes.
+		_G.GetNumClasses = function()
+			return #CLASSIC_IDS
+		end
+		_G.GetClassInfo = function(id)
+			if byId[id] then
+				return byId[id], "TOKEN" .. id, id
+			end
+			return nil
+		end
+		_G.GetNumSpecializationsForClassID = function()
+			return 1
+		end
+		_G.GetSpecializationInfoForClassID = function(classId)
+			return classId * 100, "Spec" .. classId
+		end
+
+		return loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
+	end
+
+	fw.it("lists Druid although GetNumClasses stops at nine", function()
+		local realNum, realInfo = _G.GetNumClasses, _G.GetClassInfo
+		local realSpecCount, realSpecInfo = _G.GetNumSpecializationsForClassID, _G.GetSpecializationInfoForClassID
+		local wowEx = loadClassic()
+		local classes = wowEx:GetClasses()
+		local specs = wowEx:GetAllSpecs()
+		local hasDruid = false
+
+		for _, spec in ipairs(specs) do
+			hasDruid = hasDruid or spec.Id == DRUID
+		end
+
+		_G.GetNumClasses, _G.GetClassInfo = realNum, realInfo
+		_G.GetNumSpecializationsForClassID, _G.GetSpecializationInfoForClassID = realSpecCount, realSpecInfo
+
+		assert(#classes == #CLASSIC_IDS, "all nine classes, got " .. #classes)
+		assert(#specs == #CLASSIC_IDS, "every class carries a spec, got " .. #specs)
+		assert(hasDruid, "Druid, class id 11, is offered")
+	end)
+end)

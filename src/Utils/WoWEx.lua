@@ -6,6 +6,9 @@ local M = {}
 
 addon.Utils.WoWEx = M
 
+-- Evoker, the highest class id on any client.
+local MAX_CLASS_ID = 13
+
 -- Expiry times for duration objects built by CreateDuration, keyed weakly so expired objects
 -- can collect. Duration objects are otherwise write-only to addon code; this is how displays
 -- colour a countdown whose times the addon itself supplied (test icons, kick timers) while
@@ -155,41 +158,53 @@ function M:GetSpecializationInfoForClassID(classId, specIndex)
 	return fn(classId, specIndex)
 end
 
----Every class the client knows and the specs it offers, in the client's own order. Not cached: a
----cache warmed before the client has spec data would stick empty for the session.
----@return SpecClass[]
-function M:GetAllSpecs()
+---Every class the client has, in class id order. Class ids have gaps on the classic clients (Druid
+---is 11 beside nine classes), so walking 1 to GetNumClasses() stops short of the high ids.
+---@return { Id: number, Name: string }[]
+function M:GetClasses()
 	local out = {}
 
 	if not (GetNumClasses and GetClassInfo) then
 		return out
 	end
 
-	local _, _, playerClassId = UnitClass("player")
-
-	for classIndex = 1, GetNumClasses() do
+	for classIndex = 1, math.max(GetNumClasses(), MAX_CLASS_ID) do
 		local className, _, classId = GetClassInfo(classIndex)
 
 		if className and classId then
-			local entry = {
-				Id = classId,
-				Name = className,
-				Player = classId == playerClassId,
-				Specs = {},
-			}
+			out[#out + 1] = { Id = classId, Name = className }
+		end
+	end
 
-			for specIndex = 1, M:GetNumSpecializationsForClassID(classId) do
-				local specId, specName = M:GetSpecializationInfoForClassID(classId, specIndex)
+	return out
+end
 
-				if type(specId) == "number" and specId > 0 then
-					entry.Specs[#entry.Specs + 1] = { Id = specId, Name = specName or tostring(specId) }
-				end
+---Every class the client knows and the specs it offers, in class id order. Not cached: a
+---cache warmed before the client has spec data would stick empty for the session.
+---@return SpecClass[]
+function M:GetAllSpecs()
+	local out = {}
+	local _, _, playerClassId = UnitClass("player")
+
+	for _, class in ipairs(M:GetClasses()) do
+		local entry = {
+			Id = class.Id,
+			Name = class.Name,
+			Player = class.Id == playerClassId,
+			Specs = {},
+		}
+
+		for specIndex = 1, M:GetNumSpecializationsForClassID(class.Id) do
+			local specId, specName = M:GetSpecializationInfoForClassID(class.Id, specIndex)
+
+			if type(specId) == "number" and specId > 0 then
+				entry.Specs[#entry.Specs + 1] = { Id = specId, Name = specName or tostring(specId) }
 			end
+		end
 
-			-- A class the client has no spec data for is left out.
-			if #entry.Specs > 0 then
-				out[#out + 1] = entry
-			end
+		-- A class the client has no spec data for is left out.
+		if #entry.Specs > 0 then
+			out[#out + 1] = entry
 		end
 	end
 
