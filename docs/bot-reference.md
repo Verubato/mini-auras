@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.44.0. Supported interface versions: 120105 (patch 12.1.5), 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
+Addon version 5.45.0. Supported interface versions: 120105 (patch 12.1.5), 120100 (patch 12.1) and 16001 (Classic Beta 1.60). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -462,6 +462,11 @@ shown for one, and none of the red refusals or yellow caveats apply.
 - A group holds at most **200 spells** ("A group can hold at most 200 spells."), no
   duplicates. Configured ids are matched exactly; the aura the game applies is often not the
   spellbook ID, so a spell with several ids needs each one added.
+- **All ranks**: since 5.45.0, a checkbox beside Record, shown only on WoW Forever. When ticked,
+  each listed spell also matches every other rank of it, from the addon's own rank table, so
+  one ID covers the whole spell. The saved list keeps only the IDs entered, so the 200 cap
+  counts those, and ranks added to the table later apply without editing the group. On for
+  new groups; groups saved before 5.45.0 and imported strings without the field read as off.
 - A Spell IDs group with an empty list shows nothing (the empty list itself is the reason).
 
 **Aura filters mode** replaces the spell list with a grid of the engine's own filter
@@ -1382,7 +1387,8 @@ displays when frames are re-sorted.
 every rule above about secret aura data applies there too. Spells and classes the client does not
 have are left out of the config spell lists, the Party Trinkets and Enemy Kicks pages and the
 arena stand-in frames in test mode stay hidden because the client has no arena, and the starter
-Personal Auras groups are not seeded. Ten Classic cooldowns are tracked as important auras there
+Personal Auras groups are not seeded. Since 5.45.0 the For spec list includes Druid, which
+earlier versions left out there, and Personal Auras groups offer the All ranks checkbox. Ten Classic cooldowns are tracked as important auras there
 only: Combustion, Arcane Power, Ice Barrier, Ice Block, Berserk, Templar's Bulwark, Blade Flurry,
 Rage of the Farseer, Death Wish, and Sweeping Strikes. Frame Auras buffs and the missing class
 buff mark match every rank of a spell there, and the mark also counts the single-target and

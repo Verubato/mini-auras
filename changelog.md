@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.45.0
+
+- Added an All ranks option to personal auras on WoW Forever, so one spell ID tracks every rank of that spell. It is on for new groups.
+- Fixed Druid missing from the personal auras spec dropdown on WoW Forever.
+
 ## 5.44.0
 
 - Added ability to add custom spells to the portraits module.
